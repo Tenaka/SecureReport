@@ -1,4 +1,4 @@
-﻿#Remove any DVD from client
+#Remove any DVD from client
 $drv = (psdrive | where{$_.Free -eq 0})
 if($drv.free -eq "0" -and $_.name -ne "C")
     {
@@ -14,20 +14,20 @@ else
 {
     #Enable detection of PowerShell or ISE, enable to run from both
     #Script name has been defined and must be saved as that name.
-    $secure10 = "C:\Secure10"
+    $VulnReport = "C:\VulnReport"
     if($psise -ne $null)
     {
         $ISEPath = $psise.CurrentFile.FullPath
         $ISEWork = $ISEPath.TrimEnd("SecureWin10.ps1")
-        New-Item -Path C:\Secure10 -ItemType Directory -Force
-        $secure10 = "C:\Secure10"
-        #copy $ISEWork\* $secure10 -Recurse -Force 
+        New-Item -Path C:\VulnReport -ItemType Directory -Force
+        $VulnReport = "C:\VulnReport"
+        #copy $ISEWork\* $VulnReport -Recurse -Force 
     }
     else
     {
         $PSWork = split-path -parent $MyInvocation.MyCommand.Path
-        New-Item -Path C:\Secure10 -ItemType Directory -Force
-        #copy $PSWork\* $secure10 -Recurse -Force   
+        New-Item -Path C:\VulnReport -ItemType Directory -Force
+        #copy $PSWork\* $VulnReport -Recurse -Force   
     }
 
 
@@ -110,7 +110,7 @@ function reports
         {
 
         $PWName = $PWPol.split(":")[0]
-        $PWSet = $PWPol.split(":")[1].replace(" ","")
+        $PWSet = $PWPol.split(":")[1]
 
         $newObjPassPol = New-Object -TypeName PSObject
         Add-Member -InputObject $newObjPassPol -Type NoteProperty -Name PasswordPolicy -Value $PWName
@@ -207,19 +207,19 @@ function reports
 ################################################
 
     #Virtualization - msinfo32
-    $secure10 = "C:\Secure10"
+    $VulnReport = "C:\VulnReport"
     $OutFunc = "MSInfo" 
                 
-    $tpSec10 = Test-Path "C:\Secure10\output\$OutFunc\"
+    $tpSec10 = Test-Path "C:\VulnReport\output\$OutFunc\"
         if ($tpSec10 -eq $false)
         {
-        New-Item -Path "C:\Secure10\output\$OutFunc\" -ItemType Directory -Force
+        New-Item -Path "C:\VulnReport\output\$OutFunc\" -ItemType Directory -Force
         }
-    $msinfoPath = "C:\Secure10\output\$OutFunc\" + "$OutFunc.txt"
-    $msinfoPathcsv = "C:\Secure10\output\$OutFunc\" + "$OutFunc.csv"
-    $msinfoPathXml = "C:\Secure10\output\$OutFunc\" + "$OutFunc.xml"
+    $msinfoPath = "C:\VulnReport\output\$OutFunc\" + "$OutFunc.txt"
+    $msinfoPathcsv = "C:\VulnReport\output\$OutFunc\" + "$OutFunc.csv"
+    $msinfoPathXml = "C:\VulnReport\output\$OutFunc\" + "$OutFunc.xml"
 
-    & cmd /c msinfo32 /nfo "C:\Secure10\output\$OutFunc\" /report $msinfoPath
+    & cmd /c msinfo32 /nfo "C:\VulnReport\output\$OutFunc\" /report $msinfoPath
     $getMsinfo = Get-Content $msinfoPath | select -First 50
 
     Set-Content -Path $msinfoPathcsv -Value 'Virtualization;On\Off'
@@ -352,20 +352,45 @@ function reports
     Add-Member -InputObject $newObjElevate -Type NoteProperty -Name AlwaysElevateSetting -Value  $ElevateSet
     Add-Member -InputObject $newObjElevate -Type NoteProperty -Name AlwaysElevateRegistry -Value $ElevateReg
     $fragPCElevate += $newObjElevate 
-    
 
+ #AutoLogon Details in REG inc password   
+    $getAutoLogon = Get-Item  "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon"
+    $AutoLogonDefUser =  $getAutoLogon.GetValue("DefaultUserName")
+    $AutoLogonDefPass =  $getAutoLogon.GetValue("DefaultPassword ") 
+
+    $fragAutoLogon =@()
+
+        if ($AutoLogonDefPass  -ne "$null")
+        {
+        $AutoLPass = "There is no Default Password set for AutoLogon" 
+        $AutoLUser = "There is no Default User set for AutoLogon" 
+        $AutoLReg = "HKLM:\SOFTWARE\Microsoft\Windows NT\Currentversion\Winlogon"
+        }
+        else
+        {
+        $AutoLPass = "Warning - AutoLogon default password is set with a vaule of $AutoLogonDefPass" 
+        $AutoLUser = "Warning - AutoLogon Default User is set with a vaule of $AutoLogonDefUser " 
+        $AutoLReg = "HKLM:\SOFTWARE\Microsoft\Windows NT\Currentversion\Winlogon"
+        }
+
+    $newObjAutoLogon = New-Object -TypeName PSObject
+    Add-Member -InputObject $newObjAutoLogon -Type NoteProperty -Name AutoLogonUsername -Value $AutoLUser
+    Add-Member -InputObject $newObjAutoLogon -Type NoteProperty -Name AutoLogonPassword -Value  $AutoLPass
+    Add-Member -InputObject $newObjAutoLogon -Type NoteProperty -Name AutoLogonRegistry -Value $AutoLReg
+    $fragAutoLogon += $newObjAutoLogon
+        
 ################################################
 #########  LEGACY NETWORK PROTOCOLS  ##########
 ################################################
 #Legacy Network
-$secure10 = "C:\Secure10"
+$VulnReport = "C:\VulnReport"
 $OutFunc = "llmnr" 
-    $tpSec10 = Test-Path "C:\Secure10\output\$OutFunc\"
+    $tpSec10 = Test-Path "C:\VulnReport\output\$OutFunc\"
     if ($tpSec10 -eq $false)
     {
-    New-Item -Path "C:\Secure10\output\$OutFunc\" -ItemType Directory -Force
+    New-Item -Path "C:\VulnReport\output\$OutFunc\" -ItemType Directory -Force
     }
-    $llnmrpath = "C:\Secure10\output\$OutFunc\" + "$OutFunc.log"
+    $llnmrpath = "C:\VulnReport\output\$OutFunc\" + "$OutFunc.log"
    
 $fragLegNIC=@()
     #llmnr = 0 is disabled
@@ -703,17 +728,17 @@ $fragLegNIC=@()
     }
 
     #Firewall Rules
-            $secure10 = "C:\Secure10"
+            $VulnReport = "C:\VulnReport"
             $OutFunc = "firewall" 
                 
-            $tpSec10 = Test-Path "C:\Secure10\output\$OutFunc\"
+            $tpSec10 = Test-Path "C:\VulnReport\output\$OutFunc\"
         if ($tpSec10 -eq $false)
             {
-            New-Item -Path "C:\Secure10\output\$OutFunc\" -ItemType Directory -Force
+            New-Item -Path "C:\VulnReport\output\$OutFunc\" -ItemType Directory -Force
             }
-            $fwpath = "C:\Secure10\output\$OutFunc\" + "$OutFunc.log"
-            $fwpathcsv = "C:\Secure10\output\$OutFunc\" + "$OutFunc.csv"
-            $fwpathxml = "C:\Secure10\output\$OutFunc\" + "$OutFunc.xml"
+            $fwpath = "C:\VulnReport\output\$OutFunc\" + "$OutFunc.log"
+            $fwpathcsv = "C:\VulnReport\output\$OutFunc\" + "$OutFunc.csv"
+            $fwpathxml = "C:\VulnReport\output\$OutFunc\" + "$OutFunc.xml"
 
         [System.Text.StringBuilder]$fwtxt = New-Object System.Text.StringBuilder
 
@@ -758,15 +783,15 @@ $fragLegNIC=@()
 ############  UNQUOTED PATHS  ##################
 ################################################
     #Unquoted paths   
-    $secure10 = "C:\Secure10"
+    $VulnReport = "C:\VulnReport"
     $OutFunc = "UnQuoted" 
                 
-    $tpSec10 = Test-Path "C:\Secure10\output\$OutFunc\"
+    $tpSec10 = Test-Path "C:\VulnReport\output\$OutFunc\"
         if ($tpSec10 -eq $false)
             {
-            New-Item -Path "C:\Secure10\output\$OutFunc\" -ItemType Directory -Force
+            New-Item -Path "C:\VulnReport\output\$OutFunc\" -ItemType Directory -Force
             }
-            $qpath = "C:\Secure10\output\$OutFunc\" + "$OutFunc.log"
+            $qpath = "C:\VulnReport\output\$OutFunc\" + "$OutFunc.log"
  
     #Unquoted paths
     $vulnSvc = gwmi win32_service | foreach{$_} | 
@@ -821,16 +846,16 @@ $fragLegNIC=@()
 ############  WRITEABLE FILES  ##################
 ################################################
 
-    $secure10 = "C:\Secure10"
+    $VulnReport = "C:\VulnReport"
     $OutFunc = "WriteableFiles"  
 
-    $tpSec10 = Test-Path "C:\Secure10\output\$OutFunc\"
+    $tpSec10 = Test-Path "C:\VulnReport\output\$OutFunc\"
     if ($tpSec10 -eq $false)
     {
-    New-Item -Path "C:\Secure10\output\$OutFunc\" -ItemType Directory -Force
+    New-Item -Path "C:\VulnReport\output\$OutFunc\" -ItemType Directory -Force
     }
 
-    $hpath = "C:\Secure10\output\$OutFunc\" + "$OutFunc.log"
+    $hpath = "C:\VulnReport\output\$OutFunc\" + "$OutFunc.log"
 
     $hfiles =  Get-ChildItem C:\  | where {$_.Name -eq "PerfLogs" -or ` 
     $_.Name -eq "Program Files" -or `
@@ -875,16 +900,16 @@ $fragLegNIC=@()
 #########  WRITEABLE REGISTRY HIVES  ############
 ################################################
 
-    $secure10 = "C:\Secure10"
+    $VulnReport = "C:\VulnReport"
     $OutFunc = "WriteableReg"  
 
-    $tpSec10 = Test-Path "C:\Secure10\output\$OutFunc\"
+    $tpSec10 = Test-Path "C:\VulnReport\output\$OutFunc\"
     if ($tpSec10 -eq $false)
     {
-        New-Item -Path "C:\Secure10\output\$OutFunc\" -ItemType Directory -Force
+        New-Item -Path "C:\VulnReport\output\$OutFunc\" -ItemType Directory -Force
     }
 
-    $rpath = "C:\Secure10\output\$OutFunc\" + "$OutFunc.log"
+    $rpath = "C:\VulnReport\output\$OutFunc\" + "$OutFunc.log"
 
     #Registry Permissions
     $HKLMSvc = 'HKLM:\SYSTEM\CurrentControlSet\Services'
@@ -936,15 +961,15 @@ $fragLegNIC=@()
 ############  NON SYSTEM FOLDERS  ##############
 ################################################
 
-    $secure10 = "C:\Secure10"
+    $VulnReport = "C:\VulnReport"
     $OutFunc = "WriteableFolders"  
 
-    $tpSec10 = Test-Path "C:\Secure10\output\$OutFunc\"
+    $tpSec10 = Test-Path "C:\VulnReport\output\$OutFunc\"
     if ($tpSec10 -eq $false)
     {
-        New-Item -Path "C:\Secure10\output\$OutFunc\" -ItemType Directory -Force
+        New-Item -Path "C:\VulnReport\output\$OutFunc\" -ItemType Directory -Force
     }
-    $fpath = "C:\Secure10\output\$OutFunc\" + "$OutFunc.log"
+    $fpath = "C:\VulnReport\output\$OutFunc\" + "$OutFunc.log"
     
     #Additional Folders off the root of C: that are not system
     $hfolders =  Get-ChildItem c:\  | where {$_.Name -ne "PerfLogs" -and ` 
@@ -996,15 +1021,15 @@ $fragLegNIC=@()
 ###############  SYSTEM FOLDERS  ###############
 ################################################
     
-    $secure10 = "C:\Secure10"
+    $VulnReport = "C:\VulnReport"
     $OutFunc = "SystemFolders"  
 
-    $tpSec10 = Test-Path "C:\Secure10\output\$OutFunc\"
+    $tpSec10 = Test-Path "C:\VulnReport\output\$OutFunc\"
     if ($tpSec10 -eq $false)
     {
-        New-Item -Path "C:\Secure10\output\$OutFunc\" -ItemType Directory -Force
+        New-Item -Path "C:\VulnReport\output\$OutFunc\" -ItemType Directory -Force
     }
-    $sysPath = "C:\Secure10\output\$OutFunc\" + "$OutFunc.log"
+    $sysPath = "C:\VulnReport\output\$OutFunc\" + "$OutFunc.log"
     
     $sysfolders =  Get-ChildItem C:\  | where {$_.Name -eq "PerfLogs" -or ` 
     $_.Name -eq "Program Files" -or `
@@ -1068,6 +1093,28 @@ $fragLegNIC=@()
         $fragPSPass += $newObjPSPass
         }
 
+
+#passwords embedded in files
+#findstrg /si password *.txt - alt
+    $getUserFolder = Get-ChildItem -Path "C:\Users\","C:\ProgramData\","C:\Windows\System32\Tasks\" -Recurse -Force -ErrorAction SilentlyContinue | 
+    where {$_.Extension -eq ".txt"  -or $_.Extension -eq ".ini"} #-or $_.Extension -eq ".xml" }  #xml increase output, breaks report
+
+    $passwordExcluded = $getUserFolder | where {$_.DirectoryName -notlike "*Packages*" -and $_.DirectoryName -notlike "*Containers\BaseImages*"}
+    $fragFilePass=@()
+    foreach ($PassFile in $passwordExcluded)
+    {
+    $SelectPassword  = Get-Content $PassFile.FullName |  Select-String -Pattern password, credential
+ 
+    if ($SelectPassword -like "*password*")
+        {
+        $newObjFilePass = New-Object -TypeName PSObject
+        Add-Member -InputObject $newObjFilePass -Type NoteProperty -Name FilesContainingPassword -Value  $PassFile.FullName 
+        $fragFilePass += $newObjFilePass
+        }
+    }
+
+
+     
 ################################################
 ##########  HTML GENERATION  ###################
 ################################################
@@ -1170,20 +1217,19 @@ $fragLegNIC=@()
     </Style>
 "@
  
-    $secure10 = "C:\Secure10"
+    $VulnReport = "C:\VulnReport"
     $OutFunc = "SystemReport"  
-    $tpSec10 = Test-Path "C:\Secure10\output\$OutFunc\"
+    $tpSec10 = Test-Path "C:\VulnReport\output\$OutFunc\"
     if ($tpSec10 -eq $false)
     {
-        New-Item -Path "C:\Secure10\output\$OutFunc\" -ItemType Directory -Force
+        New-Item -Path "C:\VulnReport\output\$OutFunc\" -ItemType Directory -Force
     }
 
-    $working = "C:\Secure10\output\$OutFunc\"
-    $Report = "C:\Secure10\output\$OutFunc\" + "$OutFunc.html"
+    $working = "C:\VulnReport\output\$OutFunc\"
+    $Report = "C:\VulnReport\output\$OutFunc\" + "$OutFunc.html"
 
     $Intro = "The results in this report are a guide and not a guarantee that the tested system is not without further defect or vulnerabilities. 
-    The tests focus on known and common issues with Windows that can be exploited by an attacker. The tests do not check that the latest 
-    Windows or Application patch has been installed, always follow best practice and patch regularly."
+    The tests focus on known and common issues with Windows that can be exploited by an attacker."
 
     $Finish = "This script has been provided by Tenaka.net, its part of a larger piece of work to provide easy security validation of Windows. The script is free to use, if you do use it and benefit from its use, please provide feedback and any additional feature requests gratefully received. "
     
@@ -1209,8 +1255,9 @@ $fragLegNIC=@()
     $frag_DLLSafe  =  $fragDLLSafe   | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:#4682B4'>DLL Safe Search Order</span></h2>" | Out-String
     $frag_Code  =  $fragCode   | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:#4682B4'>Hypervisor Enforced Code Integrit</span></h2>" | Out-String
     $frag_PCElevate  =  $fragPCElevate   | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:#4682B4'>Automatically Elevates User Installing Software</span></h2>" | Out-String
-
-     $frag_UnQu = $fragUnQuoted  | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:#4682B4'>Vectors that Allow UnQuoted Paths Attack</span></h2>" | Out-String
+    $frag_FilePass  =  $fragFilePass   | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:#4682B4'>Files that Contain the work PASSWORD</span></h2>" | Out-String
+    $frag_AutoLogon  =  $fragAutoLogon   | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:#4682B4'>AutoLogon Credentials in Registry</span></h2>" | Out-String
+    $frag_UnQu = $fragUnQuoted  | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:#4682B4'>Vectors that Allow UnQuoted Paths Attack</span></h2>" | Out-String
     $frag_LegNIC = $fragLegNIC | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:#4682B4'>Attacks Against Network Protocols</span></h2>" | Out-String
     $frag_SysRegPerms = $fragReg | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:#4682B4'>Registry Permissions Allowing User Access - Security Risk if Exist</span></h2>" | Out-String
     $frag_PSPass = $fragPSPass | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:#4682B4'>Processes where CommandLine contains a Password</span></h2>" | Out-String
@@ -1237,6 +1284,10 @@ $fragLegNIC=@()
     $frag_Msinfo,
     $frag_LSAPPL,
     $frag_DLLSafe,
+    $frag_Code,
+    $frag_PCElevate,
+    $frag_FilePass,
+    $frag_AutoLogon,
     $frag_UnQu, 
     $frag_PSPass,
     $frag_LegNIC,
@@ -1266,14 +1317,11 @@ reports
 
 $ExecutionContext.SessionState.LanguageMode -eq "ConstrainedLanguage"
 
-uac
+uac? - too many keys 
 AutoPlay
-Password in files & reg
 
+Password in Registry - slow to get back results
 Proxy password reg key
-
-stored creds
-
 
 
 #>
