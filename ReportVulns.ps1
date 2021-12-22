@@ -39,14 +39,18 @@ function reports
 
 .DESCRIPTION
    
-.EXAMPLE
-    
+  
 .VERSION
+
+211219.1 - Released to Github
+211221.1 - Added Security Options
+211222.1 - Changed f$Rep.Replace  | Out-File $Report to Foreach {$_ -replace "",""}
+211222.2 - Added Warning to be RED with a replace and set-content
 
 #> 
 
 ################################################
-#################  BITLOCKER  ###################
+#################  BITLOCKER  ##################
 ################################################
 
     #Bitlocker Details
@@ -83,13 +87,13 @@ function reports
     }
     ELse
     { 
-    $BitDisabled = "Warning - Bitlocker is disabled"
+    $BitDisabled = "Warning - Bitlocker is disabled Warning"
     Add-Member -InputObject $newObjBit -Type NoteProperty -Name BitLockerDisabled -Value $BitDisabled
     $fragBitLocker += $newObjBit
     }
 
 ################################################
-################  OS DETAILS  ####################
+################  OS DETAILS  ##################
 ################################################
 
     #OS Details
@@ -100,7 +104,7 @@ function reports
 
 
 ################################################
-##############  ACCOUNT DETAILS  ################
+##############  ACCOUNT DETAILS  ###############
 ################################################
     #Pasword Policy
     cd c:\
@@ -143,7 +147,7 @@ function reports
         }
 
 #Group Members
-#Looping Split breaks HTML import resulting in numbers...back to drawing board - to fix
+#Cant remove "," as looping the Split breaks HTML import...back to drawing board - to fix
         $getLGrp = Get-LocalGroup 
         $GroupDetails=@()
         foreach ($LGpItem in $getLGrp)
@@ -181,7 +185,7 @@ function reports
     }
 
 ################################################
-##############  INSTALLED APPS  #################
+##############  INSTALLED APPS  ################
 ################################################
 
     $getUnin = Get-ChildItem  "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\"
@@ -237,7 +241,7 @@ function reports
     Get-Content $msinfoPathXml 
 
 ################################################
-#############  MISC REG SETTINGS  ###############
+#############  MISC REG SETTINGS  ##############
 ################################################
 
 #LSA
@@ -254,7 +258,7 @@ function reports
         }
         else
         {
-        $lsaSet = "Warning - LSA is disabled  set RunAsPPL to 1" 
+        $lsaSet = "Warning - LSA is disabled  set RunAsPPL to 1 Warning" 
         $lsaReg = "HKLM:\SYSTEM\CurrentControlSet\Control\lsa\"
         $lsaCom = "Required for Win8.1 and below"
         }
@@ -278,7 +282,7 @@ function reports
         }
         else
         {
-        $dllSet = "Warning - DLLSafeSearch is disabled set SafeDLLSearchMode to 1" 
+        $dllSet = "Warning - DLLSafeSearch is disabled set SafeDLLSearchMode to 1 Warning" 
         $dllReg = "HKLM:\System\CurrentControlSet\Control\Session Manager"
         $dllCom = "Protects against DLL search order hijacking"
         }
@@ -303,15 +307,15 @@ function reports
         }
         else
         {
-        $CodeSet = "Warning - Hypervisor Enforced Code Integrity is disabled set Enabled to 1" 
+        $CodeSet = "Warning - Hypervisor Enforced Code Integrity is disabled set Enabled to 1 Warning" 
         $CodeReg = "HKLM:\SYSTEM\CurrentControlSet\Control\DeviceGuard\Scenarios\HypervisorEnforcedCodeIntegrity"
-        $CodeCom = "Protects against credential theft"
+        #$CodeCom = "Protects against credential theft"
         }
 
     $newObjCode = New-Object -TypeName PSObject
     Add-Member -InputObject $newObjCode -Type NoteProperty -Name CodeSetting -Value  $CodeSet
     Add-Member -InputObject $newObjCode -Type NoteProperty -Name CodeValue -Value $CodeReg 
-    Add-Member -InputObject $newObjCode -Type NoteProperty -Name CodeComment -Value $CodeCom
+    #Add-Member -InputObject $newObjCode -Type NoteProperty -Name CodeComment -Value $CodeCom
     $fragCode += $newObjCode
 
 #InstallElevated
@@ -323,7 +327,7 @@ function reports
     $fragPCElevate =@()
         if ($PCElevate -eq "1")
                 {
-        $ElevateSet = "Warning - Client setting Always Install Elevate is enabled" 
+        $ElevateSet = "Warning - Client setting Always Install Elevate is enabled Warning" 
         $ElevateReg = "HKLM:\SOFTWARE\Policies\Microsoft\Windows\Installer"
         }
         else
@@ -339,7 +343,7 @@ function reports
 
         if ($UserElevate -eq "1")
         {
-        $ElevateSet = "Warning - User setting Always Install Elevate is enabled" 
+        $ElevateSet = "Warning - User setting Always Install Elevate is enabled Warning" 
         $ElevateReg = "HKCU:\SOFTWARE\Policies\Microsoft\Windows\Installer"
         }
         else
@@ -368,8 +372,8 @@ function reports
         }
         else
         {
-        $AutoLPass = "Warning - AutoLogon default password is set with a vaule of $AutoLogonDefPass" 
-        $AutoLUser = "Warning - AutoLogon Default User is set with a vaule of $AutoLogonDefUser " 
+        $AutoLPass = "Warning - AutoLogon default password is set with a vaule of $AutoLogonDefPass Warning" 
+        $AutoLUser = "Warning - AutoLogon Default User is set with a vaule of $AutoLogonDefUser Warning" 
         $AutoLReg = "HKLM:\SOFTWARE\Microsoft\Windows NT\Currentversion\Winlogon"
         }
 
@@ -405,7 +409,7 @@ $fragLegNIC=@()
         }
         else
         {
-        $legProt = "Warning - LLMNR (Responder) is Enabled" 
+        $legProt = "Warning - LLMNR (Responder) is Enabled Warning" 
         $legReg = "HKLM:\SOFTWARE\Policies\Microsoft\Windows NT\DNSClient.EnableMulticast"
         }
         $newObjLegNIC = New-Object psObject
@@ -426,7 +430,7 @@ $fragLegNIC=@()
         }
         else
         {
-        $legProt = "Warning - NetBios is enabled" 
+        $legProt = "Warning - NetBios is enabled Warning" 
         $legReg = "HKLM:\SOFTWARE\Policies\Microsoft\Windows NT\DNSClient.QueryNetBTFQDN"
         $legValue = $enNetBTGPO
         $legWarn = "Incorrect"
@@ -448,7 +452,7 @@ $fragLegNIC=@()
         }
         else
         {
-        $legProt = "Warning - IPv6 is enabled" 
+        $legProt = "Warning - IPv6 is enabled Warning" 
         $legReg = "HKLM:\SYSTEM\CurrentControlSet\Services\Tcpip6\Parameters.DisabledComponents"
         }
         $newObjLegNIC = New-Object psObject
@@ -468,7 +472,7 @@ $fragLegNIC=@()
         }
         else
         {
-        $legProt = "Warning - Disable LMHosts" 
+        $legProt = "Warning - Disable LMHosts Warning" 
         $legReg = "HKLM:\System\CurrentControlSet\Services\NetBT\Parameters.EnableLMHosts"
         }
         $newObjLegNIC = New-Object psObject
@@ -488,7 +492,7 @@ $fragLegNIC=@()
         }
         else
         {
-        $legProt = "Warning - NetBios Node Type is set to $enNetBTReg, its incorrect and should be set to 2"
+        $legProt = "Warning - NetBios Node Type is set to $enNetBTReg, its incorrect and should be set to 2 Warning"
         $legReg = "HKLM:\System\CurrentControlSet\Services\NetBT\Parameters.NodeType"
         }
         $newObjLegNIC = New-Object psObject
@@ -512,7 +516,7 @@ $fragLegNIC=@()
             }
             else
             {
-            $legProt = "Warning NetBios is set to $enNetBTReg, its incorrect and should be set to 2"
+            $legProt = "Warning - NetBios is set to $enNetBTReg, its incorrect and should be set to 2 Warning"
             $legReg = "HKLM:\SYSTEM\CurrentControlSet\services\NetBT\Parameters\Interfaces.$NetBiosPath"
             }
             $newObjLegNIC = New-Object psObject
@@ -531,7 +535,7 @@ $fragLegNIC=@()
         }
         else
         {
-        $legProt = "Warning - Peer to Peer is enabled"
+        $legProt = "Warning - Peer to Peer is enabled Warning"
         $legReg = "HKLM:\Software\policies\Microsoft\Peernet"
         }
         $newObjLegNIC = New-Object psObject
@@ -551,7 +555,7 @@ $fragLegNIC=@()
         }
         else
         {
-        $legProt = "Warning - Enable Font Providers is enabled"
+        $legProt = "Warning - Enable Font Providers is enabled Warning"
         $legReg = "HKLM:\Software\Policies\Microsoft\Windows\System"
         }
         $newObjLegNIC = New-Object psObject
@@ -579,7 +583,7 @@ $fragLegNIC=@()
     }
     else
     {
-       $legProt = "Warning - EnableLLTDIO is enabled"
+       $legProt = "Warning - EnableLLTDIO is enabled Warning"
        $legReg = "HKLM:\SOFTWARE\Policies\Microsoft\Windows\LLTD"
     }
     $newObjLegNIC = New-Object psObject
@@ -596,7 +600,7 @@ $fragLegNIC=@()
      }
     else
     {
-       $legProt = "Warning - EnableRspndr is enabled"
+       $legProt = "Warning - EnableRspndr is enabled Warning"
        $legReg = "HKLM:\SOFTWARE\Policies\Microsoft\Windows\LLTD"
     }
     $newObjLegNIC = New-Object psObject
@@ -613,7 +617,7 @@ $fragLegNIC=@()
     }
     else
     {
-       $legProt = "Warning - AllowLLTDIOOnDomain is enabled"
+       $legProt = "Warning - AllowLLTDIOOnDomain is enabled Warning"
        $legReg = "HKLM:\SOFTWARE\Policies\Microsoft\Windows\LLTD"
     }
     $newObjLegNIC = New-Object psObject
@@ -630,7 +634,7 @@ $fragLegNIC=@()
     }
     else
     {
-       $legProt = "Warning - AllowLLTDIOOnPublicNet is enabled"
+       $legProt = "Warning - AllowLLTDIOOnPublicNet is enabled Warning"
        $legReg = "HKLM:\SOFTWARE\Policies\Microsoft\Windows\LLTD"
     }
     $newObjLegNIC = New-Object psObject
@@ -647,7 +651,7 @@ $fragLegNIC=@()
     }
     else
     {
-       $legProt = "Warning - AllowRspndrOnDomain is enabled"
+       $legProt = "Warning - AllowRspndrOnDomain is enabled Warning"
        $legReg = "HKLM:\SOFTWARE\Policies\Microsoft\Windows\LLTD"
     }
     $newObjLegNIC = New-Object psObject
@@ -663,7 +667,7 @@ $fragLegNIC=@()
     }
     else
     {
-       $legProt = "Warning - AllowRspndrOnPublicNet is enabled"
+       $legProt = "Warning - AllowRspndrOnPublicNet is enabled Warning"
        $legReg = "HKLM:\SOFTWARE\Policies\Microsoft\Windows\LLTD"
     }
     $newObjLegNIC = New-Object psObject
@@ -680,7 +684,7 @@ $fragLegNIC=@()
     }
     else
     {
-       $legProt = "Warning - ProhibitLLTDIOOnPrivateNet is enabled"
+       $legProt = "Warning - ProhibitLLTDIOOnPrivateNet is enabled Warning"
        $legReg = "HKLM:\SOFTWARE\Policies\Microsoft\Windows\LLTD"
     }
     $newObjLegNIC = New-Object psObject
@@ -697,7 +701,7 @@ $fragLegNIC=@()
     }
     else
     {
-       $legProt = "Warning - ProhibitLLTDIOOnPrivateNet is enabled"
+       $legProt = "Warning - ProhibitLLTDIOOnPrivateNet is enabled Warning"
        $legReg = "HKLM:\SOFTWARE\Policies\Microsoft\Windows\LLTD"
     }
     $newObjLegNIC = New-Object psObject
@@ -706,7 +710,183 @@ $fragLegNIC=@()
     $fragLegNIC += $newObjLegNIC
   
 ################################################
-############  FIREWALL DETAILS  #################
+############  SECURITY OPTIONS  ################
+################################################ 
+    $fragSecOptions=@()
+    $secOpTitle1 = "Domain member: Digitally encrypt or sign secure channel data (always)" # = 1
+    $getSecOp1 = get-item 'HKLM:\SYSTEM\CurrentControlSet\Services\Netlogon\Parameters'
+    $getSecOp1res = $getSecOp1.getvalue("RequireSignOrSeal")
+
+        if ($getSecOp1res -eq "1")
+        {
+        $SecOptName = "$secOpTitle1 - Enabled"
+        }
+        else
+        {
+        $SecOptName = "Warning - $secOpTitle1 - Disabled Warning"
+        }
+        $newObjSecOptions = New-Object psObject
+        Add-Member -InputObject $newObjSecOptions -Type NoteProperty -Name SecurityOptions -Value $SecOptName
+        $fragSecOptions +=  $newObjSecOptions 
+
+
+    $secOpTitle2 = "Microsoft network client: Digitally sign communications (always)" # = 1
+    $getSecOp2 = get-item 'HKLM:\SYSTEM\CurrentControlSet\Services\LanmanWorkstation\Parameters'
+    $getSecOp2res = $getSecOp2.getvalue("RequireSecuritySignature")
+
+        if ($getSecOp2res -eq "1")
+        {
+        $SecOptName = "$secOpTitle2 - Enabled"
+        }
+        else
+        {
+        $SecOptName = "Warning - $secOpTitle2 - Disabled Warning"
+        }
+        $newObjSecOptions = New-Object psObject
+        Add-Member -InputObject $newObjSecOptions -Type NoteProperty -Name SecurityOptions -Value $SecOptName
+        $fragSecOptions +=  $newObjSecOptions 
+
+
+    $secOpTitle3 = "Microsoft network server: Digitally sign communications (always)" # = 1
+    $getSecOp3 = get-item 'HKLM:\SYSTEM\CurrentControlSet\Services\LanmanServer\Parameters'
+    $getSecOp3res = $getSecOp3.getvalue("RequireSecuritySignature")
+
+        if ($getSecOp3res -eq "1")
+        {
+        $SecOptName = "$secOpTitle3 - Enabled"
+        }
+        else
+        {
+        $SecOptName = "Warning - $secOpTitle3 - Disabled Warning"
+        }
+        $newObjSecOptions = New-Object psObject
+        Add-Member -InputObject $newObjSecOptions -Type NoteProperty -Name SecurityOptions -Value $SecOptName
+        $fragSecOptions +=  $newObjSecOptions 
+
+
+    $secOpTitle4 = "Microsoft network client: Send unencrypted password to connect to third-party SMB servers" #  = 0
+    $getSecOp4 = get-item 'HKLM:\SYSTEM\CurrentControlSet\Services\LanmanWorkstation\Parameters'
+    $getSecOp4res = $getSecOp4.getvalue("EnablePlainTextPassword")
+
+        if ($getSecOp4res -eq "0")
+        {
+        $SecOptName = "$secOpTitle4 - Enabled"
+        }
+        else
+        {
+        $SecOptName = "Warning - $secOpTitle4 - Disabled Warning"
+        }
+        $newObjSecOptions = New-Object psObject
+        Add-Member -InputObject $newObjSecOptions -Type NoteProperty -Name SecurityOptions -Value $SecOptName
+        $fragSecOptions +=  $newObjSecOptions 
+
+
+    $secOpTitle5 = "Network security: Do not store LAN Manager hash value on next password change" #  = 1
+    $getSecOp5 = get-item 'HKLM:\SYSTEM\CurrentControlSet\Control\Lsa\'
+    $getSecOp5res = $getSecOp5.getvalue("NoLmHash")
+
+        if ($getSecOp5res -eq "1")
+        {
+        $SecOptName = "$secOpTitle5 - Enabled"
+        }
+        else
+        {
+        $SecOptName = "Warning - $secOpTitle5 - Disabled Warning"
+        }
+        $newObjSecOptions = New-Object psObject
+        Add-Member -InputObject $newObjSecOptions -Type NoteProperty -Name SecurityOptions -Value $SecOptName
+        $fragSecOptions +=  $newObjSecOptions
+
+
+    $secOpTitle6 = "Network security: LAN Manager authentication level (Send NTLMv2 response only\refuse LM & NTLM)" #  = 5
+    $getSecOp6 = get-item 'HKLM:\SYSTEM\CurrentControlSet\Control\Lsa\'
+    $getSecOp6res = $getSecOp6.getvalue("lmcompatibilitylevel")
+
+        if ($getSecOp6res -eq "5")
+        {
+        $SecOptName = "$secOpTitle6 - Enabled"
+        }
+        else
+        {
+        $SecOptName = "Warning - $secOpTitle6 - Disabled Warning"
+        }
+        $newObjSecOptions = New-Object psObject
+        Add-Member -InputObject $newObjSecOptions -Type NoteProperty -Name SecurityOptions -Value $SecOptName
+        $fragSecOptions +=  $newObjSecOptions
+
+
+    $secOpTitle7 = "Network access: Do not allow anonymous enumeration of SAM accounts" #  = 1
+    $getSecOp7 = get-item 'HKLM:\SYSTEM\CurrentControlSet\Control\Lsa\'
+    $getSecOp7res = $getSecOp7.getvalue("restrictanonymoussam")
+
+        if ($getSecOp7res -eq "1")
+        {
+        $SecOptName = "$secOpTitle7 - Enabled"
+        }
+        else
+        {
+        $SecOptName = "Warning - $secOpTitle7 - Disabled Warning"
+        }
+        $newObjSecOptions = New-Object psObject
+        Add-Member -InputObject $newObjSecOptions -Type NoteProperty -Name SecurityOptions -Value $SecOptName
+        $fragSecOptions +=  $newObjSecOptions
+
+
+    $secOpTitle8 = "Network access: Do not allow anonymous enumeration of SAM accounts and shares" #  = 1
+    $getSecOp8 = get-item 'HKLM:\SYSTEM\CurrentControlSet\Control\Lsa\'
+    $getSecOp8res = $getSecOp8.getvalue("restrictanonymous")
+
+        if ($getSecOp8res -eq "1")
+        {
+        $SecOptName = "$secOpTitle8 - Enabled"
+        }
+        else
+        {
+        $SecOptName = "Warning - $secOpTitle8 - Disabled Warning"
+        }
+        $newObjSecOptions = New-Object psObject
+        Add-Member -InputObject $newObjSecOptions -Type NoteProperty -Name SecurityOptions -Value $SecOptName
+        $fragSecOptions +=  $newObjSecOptions
+
+    $secOpTitle9 = "Network access: Let Everyone permissions apply to anonymous users" # = 0
+    $getSecOp9 = get-item 'HKLM:\SYSTEM\CurrentControlSet\Control\Lsa\'
+    $getSecOp9res = $getSecOp9.getvalue("everyoneincludesanonymous")
+
+        if ($getSecOp9res -eq "0")
+        {
+        $SecOptName = "$secOpTitle9 - Enabled"
+        }
+        else
+        {
+        $SecOptName = "Warning - $secOpTitle9 - Disabled Warning"
+        }
+        $newObjSecOptions = New-Object psObject
+        Add-Member -InputObject $newObjSecOptions -Type NoteProperty -Name SecurityOptions -Value $SecOptName
+        $fragSecOptions +=  $newObjSecOptions
+
+    $secOpTitle10 = "Network security: LDAP client signing requirements" # = 2 Required
+    $getSecOp10 = get-item 'HKLM:\SYSTEM\CurrentControlSet\Services\NTDS\parameters'
+    $getSecOp10res = $getSecOp10.getvalue("ldapserverintegrity")
+
+        if ($getSecOp9res -eq "2")
+        {
+        $SecOptName = "$secOpTitle10 - Enabled"
+        }
+        else
+        {
+        $SecOptName = "Warning - $secOpTitle10 - Disabled Warning"
+        }
+        $newObjSecOptions = New-Object psObject
+        Add-Member -InputObject $newObjSecOptions -Type NoteProperty -Name SecurityOptions -Value $SecOptName
+        $fragSecOptions +=  $newObjSecOptions
+
+
+#Network access: Restrict anonymous access to Named Pipes and Shares
+#Network security: Do not store LAN Manager hash value on next password change
+
+
+################################################
+############  FIREWALL DETAILS  ################
 ################################################                
     #Firewall Enabled \ Disabled
 
@@ -843,7 +1023,7 @@ $fragLegNIC=@()
                 }
 
 ################################################
-############  WRITEABLE FILES  ##################
+############  WRITEABLE FILES  #################
 ################################################
 
     $VulnReport = "C:\VulnReport"
@@ -897,7 +1077,7 @@ $fragLegNIC=@()
             }
 
 ################################################
-#########  WRITEABLE REGISTRY HIVES  ############
+#########  WRITEABLE REGISTRY HIVES  ###########
 ################################################
 
     $VulnReport = "C:\VulnReport"
@@ -1073,7 +1253,7 @@ $fragLegNIC=@()
         }
 
 ################################################
-############  EMBEDDED PASSWORDS  ############
+############  EMBEDDED PASSWORDS  ##############
 ################################################  
 
 #Passwords in Processes
@@ -1125,6 +1305,7 @@ $fragLegNIC=@()
 #4682B4 = Blue dark pastel
 #FF4040 = Red pastel
 #DBDBDB = grey
+#<font color="red"> <font>
 
 #HTML GENERATOR
  $style = @"
@@ -1227,6 +1408,7 @@ $fragLegNIC=@()
 
     $working = "C:\VulnReport\output\$OutFunc\"
     $Report = "C:\VulnReport\output\$OutFunc\" + "$OutFunc.html"
+    $FinalReport = "C:\VulnReport\" + "$OutFunc.html"
 
     $Intro = "The results in this report are a guide and not a guarantee that the tested system is not without further defect or vulnerabilities. 
     The tests focus on known and common issues with Windows that can be exploited by an attacker."
@@ -1237,14 +1419,11 @@ $fragLegNIC=@()
     $FragDescrip1 =  $Descrip1 | ConvertTo-Html -as table -Fragment -PreContent "<h3><span style=font-family:helvetica;>$Intro</span></h3>" | Out-String
     $fragHost = $hn | ConvertTo-Html -As List -Property Name,Domain,Model -fragment -PreContent "<h2><span style='color:#4682B4'>Host Details</span></h2>"  | Out-String
     $fragOS = $OS | ConvertTo-Html -As List -property Caption,Version,OSArchitecture,InstallDate -fragment -PreContent "<h2><span style='color:#4682B4'>Windows Details</span></h2>" | Out-String
-    
     $FragAccountDetails = $AccountDetails  | ConvertTo-Html -As Table -fragment -PreContent "<h2><span style='color:#4682B4'>Account Details</span></h2>" | Out-String
     $FragGroupDetails =  $GroupDetails  | ConvertTo-Html -As Table -fragment -PreContent "<h2><span style='color:#4682B4'>Group Members</span></h2>" | Out-String
     $FragPassPol = $PassPol | Select-Object -SkipLast 3 | ConvertTo-Html -As Table -fragment -PreContent "<h2><span style='color:#4682B4'>Password Policy</span></h2>" | Out-String
-     
     $fragInstaApps  =  $InstallApps | Sort-Object publisher,displayname -Unique  | ConvertTo-Html -As Table  -fragment -PreContent "<h2><span style='color:#4682B4'>Installed Applications</span></h2>" | Out-String
     $fragHotFix = $HotFix | ConvertTo-Html -As Table -property HotFixID,InstalledOn,Caption -fragment -PreContent "<h2><span style='color:#4682B4'>Installed Updates</span></h2>" | Out-String
-        
     $fragBios = $bios | ConvertTo-Html -As List -property Name,Manufacturer,SerialNumber,SMBIOSBIOSVersion,ReleaseDate -fragment -PreContent "<h2><span style='color:#4682B4'>Bios Details</span></h2>" | Out-String
     $fragCpu = $cpu | ConvertTo-Html -As List -property Name,MaxClockSpeed,NumberOfCores,ThreadCount -fragment -PreContent "<h2><span style='color:#4682B4'>Processor Details</span></h2>" | Out-String
     $frag_BitLocker = $fragBitLocker  | ConvertTo-Html -As List -fragment -PreContent "<h2><span style='color:#4682B4'>Bitlocker and TPM Details</span></h2>" | Out-String
@@ -1255,13 +1434,13 @@ $fragLegNIC=@()
     $frag_DLLSafe  =  $fragDLLSafe   | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:#4682B4'>DLL Safe Search Order</span></h2>" | Out-String
     $frag_Code  =  $fragCode   | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:#4682B4'>Hypervisor Enforced Code Integrit</span></h2>" | Out-String
     $frag_PCElevate  =  $fragPCElevate   | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:#4682B4'>Automatically Elevates User Installing Software</span></h2>" | Out-String
-    $frag_FilePass  =  $fragFilePass   | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:#4682B4'>Files that Contain the work PASSWORD</span></h2>" | Out-String
+    $frag_FilePass  =  $fragFilePass   | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:#4682B4'>Files that Contain the word PASSWORD</span></h2>" | Out-String
     $frag_AutoLogon  =  $fragAutoLogon   | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:#4682B4'>AutoLogon Credentials in Registry</span></h2>" | Out-String
     $frag_UnQu = $fragUnQuoted  | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:#4682B4'>Vectors that Allow UnQuoted Paths Attack</span></h2>" | Out-String
     $frag_LegNIC = $fragLegNIC | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:#4682B4'>Attacks Against Network Protocols</span></h2>" | Out-String
     $frag_SysRegPerms = $fragReg | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:#4682B4'>Registry Permissions Allowing User Access - Security Risk if Exist</span></h2>" | Out-String
     $frag_PSPass = $fragPSPass | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:#4682B4'>Processes where CommandLine contains a Password</span></h2>" | Out-String
-      
+    $frag_SecOptions = $fragSecOptions | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:#4682B4'>Security Options</span></h2>" | Out-String
     $frag_wFolders = $fragwFold | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:#4682B4'>Non System Folders that are Writeable - User Created Folders Off Root of C: are Fine</span></h2>" | Out-String
     $frag_SysFolders = $fragsysFold | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:#4682B4'>System Default Folders that are Writeable - Security Risk if Exist</span></h2>" | Out-String
     $frag_wFile =  $fragwFile | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:#4682B4'>System Files that are Writeable - Security Risk if Exist</span></h2>" | Out-String
@@ -1282,6 +1461,7 @@ $fragLegNIC=@()
     $fragcpu, 
     $frag_BitLocker, 
     $frag_Msinfo,
+    $frag_SecOptions,
     $frag_LSAPPL,
     $frag_DLLSafe,
     $frag_Code,
@@ -1299,7 +1479,16 @@ $fragLegNIC=@()
     $frag_FW,
     $FragDescripFin  | out-file $Report
 
-    $Rep = Get-Content $Report
+    Get-Content $Report | 
+    foreach {$_ -replace "<tr><th>*</th></tr>",""} | 
+    foreach {$_ -replace "<tr><td> </td></tr>",""} |
+    foreach {$_ -replace "<td>Warning","<td><font color=#FF4040>Warning"} | 
+    foreach {$_ -replace "Warning</td>","<font></td>"} | Set-Content $FinalReport -Force
+
+<#
+
+   <th>*</th>
+
     $Rep.Replace("<tr><th>*</th></tr>","") | Out-File $Report
     $Rep = Get-Content $Report
     $Rep.Replace("<th>*</th>","") | Out-File $Report
@@ -1307,6 +1496,9 @@ $fragLegNIC=@()
     $Rep.Replace("<tr><td> </td></tr>","") | Out-File $Report
     $Rep = Get-Content $Report
     $Rep.Replace("<tr><td></td><td></td></tr>","") | Out-File $Report
+#>
+
+    #Copy-Item $Report $VulnReport -Force
    
     }
 }
@@ -1325,4 +1517,5 @@ Proxy password reg key
 
 
 #>
+
 
