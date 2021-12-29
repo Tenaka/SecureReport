@@ -18,16 +18,14 @@ else
     if($psise -ne $null)
     {
         $ISEPath = $psise.CurrentFile.FullPath
-        $ISEWork = $ISEPath.TrimEnd("SecureWin10.ps1")
+        $ISEWork = $ISEPath.TrimEnd(".ReportVulns.ps1")
         New-Item -Path C:\VulnReport -ItemType Directory -Force
         $VulnReport = "C:\VulnReport"
-        #copy $ISEWork\* $VulnReport -Recurse -Force 
     }
     else
     {
         $PSWork = split-path -parent $MyInvocation.MyCommand.Path
         New-Item -Path C:\VulnReport -ItemType Directory -Force
-        #copy $PSWork\* $VulnReport -Recurse -Force   
     }
 
 
@@ -46,6 +44,9 @@ function reports
 211221.1 - Added Security Options
 211222.1 - Changed f$Rep.Replace  | Out-File $Report to Foreach {$_ -replace "",""}
 211222.2 - Added Warning to be RED with a replace and set-content
+211223.1 - Added -postContent with explanations
+211223.2 - Bitlocker fixed null response
+211229.1 - Added explanations and changed colour.
 
 #> 
 
@@ -56,7 +57,7 @@ function reports
     #Bitlocker Details
     $fragBitLocker=@()
     $getBit = Get-BitLockerVolume -MountPoint C: | Select-Object * -ErrorAction SilentlyContinue
-    $GetTPM = Get-Tpm
+    $GetTPM = Get-Tpm -ErrorAction SilentlyContinue
 
     $BitMP = $getBit.MountPoint
     $BitEM = $getBit.EncryptionMethod
@@ -69,7 +70,7 @@ function reports
     $TPMPres = $GetTPM.TpmPresent
     $TPMEn = $GetTPM.TpmEnabled
     $TPMVer = $GetTPM.ManufacturerVersion
-    $TPMSpec = wmic /namespace:\\root\cimv2\security\microsofttpm path win32_tpm get specversion
+    $TPMSpec = wmic /namespace:\\root\cimv2\security\microsofttpm path win32_tpm get specversion 
     $TPMSpecVer = $TPMSpec[2]
 
     if ($bitVS -eq "FullyEncrypted"){
@@ -88,6 +89,7 @@ function reports
     ELse
     { 
     $BitDisabled = "Warning - Bitlocker is disabled Warning"
+    $newObjBit = New-Object psObject
     Add-Member -InputObject $newObjBit -Type NoteProperty -Name BitLockerDisabled -Value $BitDisabled
     $fragBitLocker += $newObjBit
     }
@@ -101,7 +103,6 @@ function reports
     $OS = Get-CimInstance -ClassName win32_operatingsystem
     $bios = Get-CimInstance -ClassName win32_bios
     $cpu = Get-CimInstance -ClassName win32_processor
-
 
 ################################################
 ##############  ACCOUNT DETAILS  ###############
@@ -908,26 +909,25 @@ $fragLegNIC=@()
     }
 
     #Firewall Rules
-            $VulnReport = "C:\VulnReport"
-            $OutFunc = "firewall" 
+    $VulnReport = "C:\VulnReport"
+    $OutFunc = "firewall" 
                 
-            $tpSec10 = Test-Path "C:\VulnReport\output\$OutFunc\"
-        if ($tpSec10 -eq $false)
-            {
-            New-Item -Path "C:\VulnReport\output\$OutFunc\" -ItemType Directory -Force
-            }
-            $fwpath = "C:\VulnReport\output\$OutFunc\" + "$OutFunc.log"
-            $fwpathcsv = "C:\VulnReport\output\$OutFunc\" + "$OutFunc.csv"
-            $fwpathxml = "C:\VulnReport\output\$OutFunc\" + "$OutFunc.xml"
+    $tpSec10 = Test-Path "C:\VulnReport\output\$OutFunc\"
+    if ($tpSec10 -eq $false)
+    {
+    New-Item -Path "C:\VulnReport\output\$OutFunc\" -ItemType Directory -Force
+    }
+    $fwpath = "C:\VulnReport\output\$OutFunc\" + "$OutFunc.log"
+    $fwpathcsv = "C:\VulnReport\output\$OutFunc\" + "$OutFunc.csv"
+    $fwpathxml = "C:\VulnReport\output\$OutFunc\" + "$OutFunc.xml"
 
-        [System.Text.StringBuilder]$fwtxt = New-Object System.Text.StringBuilder
+    [System.Text.StringBuilder]$fwtxt = New-Object System.Text.StringBuilder
 
-        $getFw = Get-NetFirewallRule | 
-        Select-Object Displayname,ID,Enabled,Direction,Action,Status  | 
-        where {$_.enabled -eq "true"} | 
-        Sort-Object direction -Descending
-
-        foreach($fw in $getFw)
+   $getFw = Get-NetFirewallRule | 
+   Select-Object Displayname,ID,Enabled,Direction,Action,Status  | 
+   where {$_.enabled -eq "true"} | 
+   Sort-Object direction -Descending
+   foreach($fw in $getFw)
         {
         $fwID = $fw.ID
         $fwAddFilter = Get-NetFirewallAddressFilter | where {$_.InstanceID -eq $fwID}
@@ -950,13 +950,13 @@ $fragLegNIC=@()
         $fwtxt.Append($fwAppFilter.Program)
         $fwtxt.AppendLine()
 
-        Set-Content -Path $fwpath -Value 'DisplayName,Direction,Protocol,LocalIP,LocalPort,RemoteIP,RemotePort,Program'
-        }
-        Add-Content -Path $fwpath -Value $fwtxt
-       # $fwtxt = $null
-        Get-Content $fwpath | Out-File $fwpathcsv
-        $fwCSV = Import-Csv $fwpathcsv -Delimiter "," | Export-Clixml $fwpathxml
-        $fragFW = Import-Clixml $fwpathxml
+    Set-Content -Path $fwpath -Value 'DisplayName,Direction,Protocol,LocalIP,LocalPort,RemoteIP,RemotePort,Program'
+    }
+    Add-Content -Path $fwpath -Value $fwtxt
+    # $fwtxt = $null
+    Get-Content $fwpath | Out-File $fwpathcsv
+    $fwCSV = Import-Csv $fwpathcsv -Delimiter "," | Export-Clixml $fwpathxml
+    $fragFW = Import-Clixml $fwpathxml
 
 
 ################################################
@@ -967,60 +967,58 @@ $fragLegNIC=@()
     $OutFunc = "UnQuoted" 
                 
     $tpSec10 = Test-Path "C:\VulnReport\output\$OutFunc\"
-        if ($tpSec10 -eq $false)
-            {
-            New-Item -Path "C:\VulnReport\output\$OutFunc\" -ItemType Directory -Force
-            }
-            $qpath = "C:\VulnReport\output\$OutFunc\" + "$OutFunc.log"
+    if ($tpSec10 -eq $false)
+    {
+    New-Item -Path "C:\VulnReport\output\$OutFunc\" -ItemType Directory -Force
+    }
+    $qpath = "C:\VulnReport\output\$OutFunc\" + "$OutFunc.log"
  
     #Unquoted paths
     $vulnSvc = gwmi win32_service | foreach{$_} | 
-            where {($_.pathname -ne $null) -and ($_.pathname.trim() -ne "")} | 
-            where {-not $_.pathname.startswith("`"")} | 
-            where {($_.pathname.substring(0, $_.pathname.indexof(".exe") + 4 )) -match ".* .*" }
-            $fragUnQuoted=@()
-            foreach ($unQSvc in $vulnSvc)
-                {
-                $svc = $unQSvc.name
-                $SvcReg = Get-ItemProperty HKLM:\SYSTEM\CurrentControlSet\Services\$svc
-            
-                    if ($SvcReg.imagePath -like "*.exe*")
-                    {
-                        $SvcRegSp =  $SvcReg.imagePath -split ".exe"
-                        $SvcRegSp0 = $SvcRegSp[0]
-                        $SvcRegSp1 = $SvcRegSp[1]
-                        $image = "`"$SvcRegSp0" + ".exe`""+  " " + $SvcRegSp1
-                        $SvcReg |Select-Object PSChildName,ImagePath  | out-file $qpath -Append
+    where {($_.pathname -ne $null) -and ($_.pathname.trim() -ne "")} | 
+    where {-not $_.pathname.startswith("`"")} | 
+    where {($_.pathname.substring(0, $_.pathname.indexof(".exe") + 4 )) -match ".* .*" }
+    $fragUnQuoted=@()
+    foreach ($unQSvc in $vulnSvc)
+    {
+    $svc = $unQSvc.name
+    $SvcReg = Get-ItemProperty HKLM:\SYSTEM\CurrentControlSet\Services\$svc
+    if ($SvcReg.imagePath -like "*.exe*")
+    {
+    $SvcRegSp =  $SvcReg.imagePath -split ".exe"
+    $SvcRegSp0 = $SvcRegSp[0]
+    $SvcRegSp1 = $SvcRegSp[1]
+    $image = "`"$SvcRegSp0" + ".exe`""+  " " + $SvcRegSp1
+    $SvcReg |Select-Object PSChildName,ImagePath  | out-file $qpath -Append
                 
-                        $newObjSvc = New-Object psObject
-                        Add-Member -InputObject $newObjSvc -Type NoteProperty -Name ServiceName -Value $SvcReg.PSChildName
-                        Add-Member -InputObject $newObjSvc -Type NoteProperty -Name Path -Value $SvcReg.ImagePath 
-                        $fragUnQuoted += $newObjSvc
-                    }
-                    if ($SvcReg.imagePath -like "*.sys*")
-                    {
-                        $SvcRegSp =  $SvcReg.imagePath -split ".sys"
-                        $SvcRegSp0 = $SvcRegSp[0]
-                        $SvcRegSp1 = $SvcRegSp[1]
-                        $image = "`"$SvcRegSp0" + ".sys`""+   " $SvcRegSp1"
-                        $SvcReg |Select-Object PSChildName,ImagePath  | out-file $qpath -Append
-                        
-                        $newObjSvc = New-Object psObject
-                        Add-Member -InputObject $newObjSvc -Type NoteProperty -Name ServiceName -Value $SvcReg.PSChildName
-                        Add-Member -InputObject $newObjSvc -Type NoteProperty -Name Path -Value $SvcReg.ImagePath 
-                        $fragUnQuoted += $newObjSvc
-                    }
-                    if ($SvcReg.imagePath -like "*.exe") 
-                    {
-                        $image = $SvcReg.ImagePath
-                        $SvcReg |Select-Object PSChildName,ImagePath  | out-file $qpath -Append
-
-                        $newObjSvc = New-Object psObject
-                        Add-Member -InputObject $newObjSvc -Type NoteProperty -Name ServiceName -Value $SvcReg.PSChildName
-                        Add-Member -InputObject $newObjSvc -Type NoteProperty -Name Path -Value $SvcReg.ImagePath 
-                        $fragUnQuoted += $newObjSvc
-                    }
-                }
+    $newObjSvc = New-Object psObject
+    Add-Member -InputObject $newObjSvc -Type NoteProperty -Name ServiceName -Value $SvcReg.PSChildName
+    Add-Member -InputObject $newObjSvc -Type NoteProperty -Name Path -Value $SvcReg.ImagePath 
+    $fragUnQuoted += $newObjSvc
+    }
+    if ($SvcReg.imagePath -like "*.sys*")
+    {
+    $SvcRegSp =  $SvcReg.imagePath -split ".sys"
+    $SvcRegSp0 = $SvcRegSp[0]
+    $SvcRegSp1 = $SvcRegSp[1]
+    $image = "`"$SvcRegSp0" + ".sys`""+   " $SvcRegSp1"
+    $SvcReg |Select-Object PSChildName,ImagePath  | out-file $qpath -Append
+                       
+    $newObjSvc = New-Object psObject
+    Add-Member -InputObject $newObjSvc -Type NoteProperty -Name ServiceName -Value $SvcReg.PSChildName
+    Add-Member -InputObject $newObjSvc -Type NoteProperty -Name Path -Value $SvcReg.ImagePath 
+    $fragUnQuoted += $newObjSvc
+    }
+    if ($SvcReg.imagePath -like "*.exe") 
+    {
+    $image = $SvcReg.ImagePath
+    $SvcReg |Select-Object PSChildName,ImagePath  | out-file $qpath -Append
+    $newObjSvc = New-Object psObject
+    Add-Member -InputObject $newObjSvc -Type NoteProperty -Name ServiceName -Value $SvcReg.PSChildName
+    Add-Member -InputObject $newObjSvc -Type NoteProperty -Name Path -Value $SvcReg.ImagePath 
+    $fragUnQuoted += $newObjSvc
+    }
+    }
 
 ################################################
 ############  WRITEABLE FILES  #################
@@ -1293,7 +1291,6 @@ $fragLegNIC=@()
         }
     }
 
-
      
 ################################################
 ##########  HTML GENERATION  ###################
@@ -1305,9 +1302,11 @@ $fragLegNIC=@()
 #4682B4 = Blue dark pastel
 #FF4040 = Red pastel
 #DBDBDB = grey
+#766A6A = Dark Grey with hint of beige
+#A88F7E = mouse
 #<font color="red"> <font>
 
-#HTML GENERATOR
+#HTML GENERATOR CSS
  $style = @"
     <Style>
     body
@@ -1364,12 +1363,13 @@ $fragLegNIC=@()
         h4
     {
         background-color:#250F00; 
-        color:#B87333;
-        font-size:80%;
+        color:#766A6A ;
+        font-size:90%;
         font-family:helvetica;
         margin:0,0,10px,0; 
         word-break:normal; 
-        word-wrap:break-word
+        word-wrap:break-word;
+        font-weight: normal
     }
     th
     {
@@ -1408,15 +1408,70 @@ $fragLegNIC=@()
 
     $working = "C:\VulnReport\output\$OutFunc\"
     $Report = "C:\VulnReport\output\$OutFunc\" + "$OutFunc.html"
-    $FinalReport = "C:\VulnReport\" + "$OutFunc.html"
 
-    $Intro = "The results in this report are a guide and not a guarantee that the tested system is not without further defect or vulnerabilities. 
-    The tests focus on known and common issues with Windows that can be exploited by an attacker."
+################################################
+##########  HELPS AND DESCRIPTIONS  ############
+################################################
 
-    $Finish = "This script has been provided by Tenaka.net, its part of a larger piece of work to provide easy security validation of Windows. The script is free to use, if you do use it and benefit from its use, please provide feedback and any additional feature requests gratefully received. "
-    
-    #Host details
+$Intro = "Thanks for using the vulnerability report written by Tenaka.net, please show your support and visit my site, its non-profit and Ad free. Any issues with the reports accuracy please do let me know and I'll get it fixed asap. The results in this report are a guide and not a guarantee that the tested system is not without further defect or vulnerability. 
+The tests focus on known and common issues with Windows that can be exploited by an attacker. Each section contains a small snippet to provide some context, follow the links for furhter detail."
+
+$Intro2 = "The results in this report are a guide and not a guarantee that the tested system is not without further defect or vulnerability. 
+The tests focus on known and common issues with Windows that can be exploited by an attacker. Each section contains a small snippet to provide some context, follow the links for furhter detail."
+
+$Finish = "This script has been provided by Tenaka.net, if its beneficial, please provide feedback and any additional feature requests gratefully received. "
+
+$descripBitlocker = "TPM and Bitlocker protect against offline attack from usb and mounting the local Windows system then accessing the local data. 'TPM and Pin' enhances Bitlocker by preventing LPC Bus (Low Pin Count) bypasses of Bitlocker with TPM. Further reading can be found @ https://www.tenaka.net/bitlocker"
+
+$descripVirt = "Secure Boot is a security standard to ensure only trusted OEM software is allowed at boot. At startup the UEFi and boot software's digital signatures are validated preventing rootkits More on Secure Boot can be found here @ https://media.defense.gov/2020/Sep/15/2002497594/-1/-1/0/CTR-UEFI-SECURE-BOOT-CUSTOMIZATION-20200915.PDF/CTR-UEFI-SECURE-BOOT-CUSTOMIZATION-20200915.PDF"
+
+$descripVirt2 = "Virtualization-based security (VBS), isolates core system resources to create secure regions of memory. Enabling VBS allows for Hypervisor-Enforced Code Integrity (HVCI), Device Guard and Credential Guard. Further reading can be found @ https://docs.microsoft.com/en-us/windows-hardware/design/device-experiences/oem-vbs and https://www.tenaka.net/deviceguard-vs-rce and https://www.tenaka.net/pass-the-hash "
+
+$descripSecOptions = "Prevent credential relay with Impacket and Man in the Middle by Digitally Signing for SMB and LDAP connections enforcement. Further reading can be found @ https://www.tenaka.net/smb-relay-attack"
+
+$descripLSA = "Enabling RunAsPPL for LSA Protection allows only digitally signed binaries to load as a protected process preventing credential theft and access by code injection and memory access by processes that aren’t signed. Further reading can be found @ https://docs.microsoft.com/en-us/windows-server/security/credentials-protection-and-management/configuring-additional-lsa-protection"
+
+$descripDLL = "When applications do not fully qualify the DLL path and instead allow searching the default behaviour if for the ‘Current Working Directory’ called 2nd in the list of directories. This allows an easy route to calling malicious DLL’s. Setting ‘DLL Safe Search’ mitigates the risk by moving CWD to later in the search order. Further reading can be found @ https://docs.microsoft.com/en-us/windows/win32/dlls/dynamic-link-library-search-order"
+
+$descripHyper = "Hypervisor Enforced Code Integrity prevents the loading of unsigned kernel-mode drivers and system binaries from being loaded into system memory. Further reading can be found @  https://docs.microsoft.com/en-us/windows/security/threat-protection/device-guard/enable-virtualization-based-protection-of-code-integrity"
+
+$descripElev = "Auto Elevate User is a setting that elevates users allowing them to install software without being an administrator. "
+
+$descripFilePw = "Files that contain password or credentials"
+
+$descripAutoLogon = "MECM\SCCM\MDT could leave Autologon credentials including a clear text password in the Registry."
+
+$descripUnquoted = "The Unquoted paths vulnerability is when a Windows Service's 'Path to Executable' contains spaces and not wrapped in double quotes providing a route to System. Further reading can be found @ https://www.tenaka.net/unquotedpaths"
+
+$descripProcPw = "Processes that contain credentials to authenticate and access applications. Launching Task Manager, Details and add ‘Command line’ to the view."
+
+$descripLegacyNet = "LLMNR and other legacy network protocols can be used to steal password hashes. Further reading can be found @https://www.tenaka.net/responder"
+
+$descripRegPer ="Weak Registry permissions allowing users to change the path to launch malicious software @ https://www.tenaka.net/unquotedpaths"
+
+$descripSysFold = "System default folders. Weak folder permissions allowing users to swap out a file for a malicious file. Search does not include C:\Windows\ due to the time required. Further reading can be found @ https://www.tenaka.net/unquotedpaths"
+
+$descripNonFold = "A vulnerability exists when enterprise software has been installed on the root of C:\. The default permissions allow a user to replace approved software binaries with malicious binaries. Further reading can be found @ https://www.tenaka.net/unquotedpaths"
+
+$descripFile = "System files that allowing users to write can be swapped out for malicious software binaries. Further reading can be found @ https://www.tenaka.net/unquotedpaths"
+
+$descripFirewalls = "Firewalls should always block inbound and exceptions should be to a named IP and Port. Further reading can be found @ https://www.tenaka.net/whyhbfirewallsneeded" 
+
+
+
+################################################
+################  FRAGMENTS  ###################
+################################################
+  
+    #Top and Tail
     $FragDescrip1 =  $Descrip1 | ConvertTo-Html -as table -Fragment -PreContent "<h3><span style=font-family:helvetica;>$Intro</span></h3>" | Out-String
+    $FragDescrip2 =  $Descrip2 | ConvertTo-Html -as table -Fragment -PreContent "<h3><span style=font-family:helvetica;>$Intro2</span></h3>" | Out-String
+    $FragDescripFin =  $DescripFin | ConvertTo-Html -as table -Fragment -PreContent "<h3><span style=font-family:helvetica;>$Finish</span></h3>" | Out-String
+    
+    $Frag_descripVirt2 = ConvertTo-Html -as table -Fragment -PostContent "<h4>$descripVirt2</h4>" | Out-String
+    
+        
+    #Host details    
     $fragHost = $hn | ConvertTo-Html -As List -Property Name,Domain,Model -fragment -PreContent "<h2><span style='color:#4682B4'>Host Details</span></h2>"  | Out-String
     $fragOS = $OS | ConvertTo-Html -As List -property Caption,Version,OSArchitecture,InstallDate -fragment -PreContent "<h2><span style='color:#4682B4'>Windows Details</span></h2>" | Out-String
     $FragAccountDetails = $AccountDetails  | ConvertTo-Html -As Table -fragment -PreContent "<h2><span style='color:#4682B4'>Account Details</span></h2>" | Out-String
@@ -1426,27 +1481,31 @@ $fragLegNIC=@()
     $fragHotFix = $HotFix | ConvertTo-Html -As Table -property HotFixID,InstalledOn,Caption -fragment -PreContent "<h2><span style='color:#4682B4'>Installed Updates</span></h2>" | Out-String
     $fragBios = $bios | ConvertTo-Html -As List -property Name,Manufacturer,SerialNumber,SMBIOSBIOSVersion,ReleaseDate -fragment -PreContent "<h2><span style='color:#4682B4'>Bios Details</span></h2>" | Out-String
     $fragCpu = $cpu | ConvertTo-Html -As List -property Name,MaxClockSpeed,NumberOfCores,ThreadCount -fragment -PreContent "<h2><span style='color:#4682B4'>Processor Details</span></h2>" | Out-String
-    $frag_BitLocker = $fragBitLocker  | ConvertTo-Html -As List -fragment -PreContent "<h2><span style='color:#4682B4'>Bitlocker and TPM Details</span></h2>" | Out-String
-    $frag_Msinfo =  $MsinfoClixml | ConvertTo-Html -As Table -fragment -PreContent "<h2><span style='color:#4682B4'>Virtualization and Secure Boot Details</span></h2>" | Out-String
 
-    #Security Review   
-    $frag_LSAPPL = $fragLSAPPL  | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:#4682B4'>LSA Protection for Stored Credentials</span></h2>" | Out-String
-    $frag_DLLSafe  =  $fragDLLSafe   | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:#4682B4'>DLL Safe Search Order</span></h2>" | Out-String
-    $frag_Code  =  $fragCode   | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:#4682B4'>Hypervisor Enforced Code Integrity</span></h2>" | Out-String
-    $frag_PCElevate  =  $fragPCElevate   | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:#4682B4'>Automatically Elevates User Installing Software</span></h2>" | Out-String
-    $frag_FilePass  =  $fragFilePass   | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:#4682B4'>Files that Contain the word PASSWORD</span></h2>" | Out-String
-    $frag_AutoLogon  =  $fragAutoLogon   | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:#4682B4'>AutoLogon Credentials in Registry</span></h2>" | Out-String
-    $frag_UnQu = $fragUnQuoted  | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:#4682B4'>Vectors that Allow UnQuoted Paths Attack</span></h2>" | Out-String
-    $frag_LegNIC = $fragLegNIC | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:#4682B4'>Attacks Against Network Protocols</span></h2>" | Out-String
-    $frag_SysRegPerms = $fragReg | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:#4682B4'>Registry Permissions Allowing User Access - Security Risk if Exist</span></h2>" | Out-String
-    $frag_PSPass = $fragPSPass | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:#4682B4'>Processes where CommandLine contains a Password</span></h2>" | Out-String
-    $frag_SecOptions = $fragSecOptions | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:#4682B4'>Security Options</span></h2>" | Out-String
-    $frag_wFolders = $fragwFold | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:#4682B4'>Non System Folders that are Writeable - User Created Folders Off Root of C: are Fine</span></h2>" | Out-String
-    $frag_SysFolders = $fragsysFold | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:#4682B4'>System Default Folders that are Writeable - Security Risk if Exist</span></h2>" | Out-String
-    $frag_wFile =  $fragwFile | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:#4682B4'>System Files that are Writeable - Security Risk if Exist</span></h2>" | Out-String
-    $frag_FWProf =   $fragFWProfile | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:#4682B4'>Firewall Profile</span></h2>" | Out-String
+    #Security Review
+    $frag_BitLocker = $fragBitLocker  | ConvertTo-Html -As List -fragment -PreContent "<h2><span style='color:#4682B4'>Bitlocker and TPM Details</span></h2>" -PostContent "<h4>$descripBitlocker</h4>" | Out-String
+    $frag_Msinfo =  $MsinfoClixml | ConvertTo-Html -As Table -fragment -PreContent "<h2><span style='color:#4682B4'>Virtualization and Secure Boot Details</span></h2>" -PostContent "<h4>$descripVirt</h4>"  | Out-String
+    
+    $frag_LSAPPL = $fragLSAPPL  | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:#4682B4'>LSA Protection for Stored Credentials</span></h2>" -PostContent "<h4>$descripLSA</h4>" | Out-String
+    $frag_DLLSafe  =  $fragDLLSafe   | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:#4682B4'>DLL Safe Search Order</span></h2>"  -PostContent "<h4>$descripDLL</h4>"| Out-String
+    $frag_Code  =  $fragCode   | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:#4682B4'>Hypervisor Enforced Code Integrity</span></h2>" -PostContent "<h4>$descripHyper</h4>" | Out-String
+    $frag_PCElevate  =  $fragPCElevate   | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:#4682B4'>Automatically Elevates User Installing Software</span></h2>"  -PostContent "<h4>$descripElev</h4>"| Out-String
+    $frag_FilePass  =  $fragFilePass   | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:#4682B4'>Files that Contain the word PASSWORD</span></h2>" -PostContent "<h4>$descripFilePw</h4>" | Out-String
+    $frag_AutoLogon  =  $fragAutoLogon   | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:#4682B4'>AutoLogon Credentials in Registry</span></h2>"  -PostContent "<h4>$descripAutoLogon</h4>"| Out-String
+    $frag_UnQu = $fragUnQuoted  | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:#4682B4'>Vectors that Allow UnQuoted Paths Attack</span></h2>" -PostContent "<h4>$DescripUnquoted</h4>" | Out-String
+    $frag_LegNIC = $fragLegNIC | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:#4682B4'>Attacks Against Network Protocols</span></h2>" -PostContent "<h4>$DescripLegacyNet</h4>" | Out-String
+    $frag_SysRegPerms = $fragReg | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:#4682B4'>Registry Permissions Allowing User Access - Security Risk if Exist</span></h2>" -PostContent "<h4>$descripRegPer</h4>" | Out-String
+    $frag_PSPass = $fragPSPass | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:#4682B4'>Processes where CommandLine contains a Password</span></h2>" -PostContent "<h4>$Finish</h4>" | Out-String
+    $frag_SecOptions = $fragSecOptions | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:#4682B4'>Security Options</span></h2>" -PostContent "<h4>$descripSecOptions</h4>" | Out-String
+    $frag_wFolders = $fragwFold | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:#4682B4'>Non System Folders that are Writeable - User Created Folders Off Root of C: are Fine</span></h2>" -PostContent "<h4>$descripNonFold</h4>"| Out-String
+    $frag_SysFolders = $fragsysFold | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:#4682B4'>System Default Folders that are Writeable - Security Risk if Exist</span></h2>"  -PostContent "<h4>$descripSysFold</h4>"| Out-String
+    $frag_wFile =  $fragwFile | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:#4682B4'>System Files that are Writeable - Security Risk if Exist</span></h2>" -PostContent "<h4>$descripFile</h4>" | Out-String
+    $frag_FWProf =   $fragFWProfile | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:#4682B4'>Firewall Profile</span></h2>"  -PostContent "<h4>$DescripFirewalls</h4>"| Out-String
     $frag_FW =  $fragFW | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:#4682B4'>Enabled Firewall Rules</span></h2>" | Out-String
-    $FragDescripFin =  $DescripFin | ConvertTo-Html -as table -Fragment -PreContent "<h3><span style=font-family:helvetica;>$Finish</span></h3>" | Out-String
+    
+################################################
+############  CREATE HTML REPORT  ##############
+################################################
 
     ConvertTo-Html -Head $style -Body "<h1 align=center style='text-align:center'><span style='color:#4682B4;'>TENAKA.NET</span><h1>", 
     $fragDescrip1, 
@@ -1461,10 +1520,11 @@ $fragLegNIC=@()
     $fragcpu, 
     $frag_BitLocker, 
     $frag_Msinfo,
+    $Frag_descripVirt2,
+    $frag_Code,
     $frag_SecOptions,
     $frag_LSAPPL,
     $frag_DLLSafe,
-    $frag_Code,
     $frag_PCElevate,
     $frag_FilePass,
     $frag_AutoLogon,
@@ -1483,22 +1543,7 @@ $fragLegNIC=@()
     foreach {$_ -replace "<tr><th>*</th></tr>",""} | 
     foreach {$_ -replace "<tr><td> </td></tr>",""} |
     foreach {$_ -replace "<td>Warning","<td><font color=#FF4040>Warning"} | 
-    foreach {$_ -replace "Warning</td>","<font></td>"} | Set-Content $FinalReport -Force
-
-<#
-
-   <th>*</th>
-
-    $Rep.Replace("<tr><th>*</th></tr>","") | Out-File $Report
-    $Rep = Get-Content $Report
-    $Rep.Replace("<th>*</th>","") | Out-File $Report
-    $Rep = Get-Content $Report
-    $Rep.Replace("<tr><td> </td></tr>","") | Out-File $Report
-    $Rep = Get-Content $Report
-    $Rep.Replace("<tr><td></td><td></td></tr>","") | Out-File $Report
-#>
-
-    #Copy-Item $Report $VulnReport -Force
+    foreach {$_ -replace "Warning</td>","<font></td>"} | Set-Content C:\VulnReport\FinshedReport.htm -Force
    
     }
 }
@@ -1506,16 +1551,22 @@ $fragLegNIC=@()
 reports
 
 <#
+Stuff to Fix.....
 
 $ExecutionContext.SessionState.LanguageMode -eq "ConstrainedLanguage"
-
 uac? - too many keys 
 AutoPlay
-
 Password in Registry - slow to get back results
 Proxy password reg key
-
+Null message warning that security is missing
+Folder weakness of Windows is slow....
+Add date and time to report name
+Credential Guard
+set warning for secure boot
+Expand on explanations - currently of use to non-techies
 
 #>
+
+
 
 
