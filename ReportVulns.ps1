@@ -1274,8 +1274,8 @@ $fragLegNIC=@()
 
 #passwords embedded in files
 #findstrg /si password *.txt - alt
-    $getUserFolder = Get-ChildItem -Path "C:\Users\","C:\ProgramData\","C:\Windows\System32\Tasks\" -Recurse -Force -ErrorAction SilentlyContinue | 
-    where {$_.Extension -eq ".txt"  -or $_.Extension -eq ".ini"} #-or $_.Extension -eq ".xml" }  #xml increase output, breaks report
+    $getUserFolder = Get-ChildItem -Path "C:\Users\","C:\ProgramData\","C:\Windows\System32\Tasks\","C:\Windows\Panther\","C:\Windows\system32\","C:\Windows\system32\sysprep" -Recurse -Force -ErrorAction SilentlyContinue | 
+    where {$_.Extension -eq ".txt" -or $_.Extension -eq ".ini" -or $_.Extension -eq ".xml"}  #xml increase output, breaks report
 
     $passwordExcluded = $getUserFolder | where {$_.DirectoryName -notlike "*Packages*" -and $_.DirectoryName -notlike "*Containers\BaseImages*"}
     $fragFilePass=@()
@@ -1421,19 +1421,19 @@ The tests focus on known and common issues with Windows that can be exploited by
 
 $Finish = "This script has been provided by Tenaka.net, if its beneficial, please provide feedback and any additional feature requests gratefully received. "
 
-$descripBitlocker = "TPM and Bitlocker protect against offline attack from usb and mounting the local Windows system then accessing the local data. 'TPM and Pin' enhances Bitlocker by preventing LPC Bus (Low Pin Count) bypasses of Bitlocker with TPM. Further reading can be found @ https://www.tenaka.net/bitlocker"
+$descripBitlocker = "TPM and Bitlocker protect against offline attack from usb and mounting the local Windows system then accessing the local data. 'TPM and Pin' enhances Bitlocker by preventing LPC Bus (Low Pin Count) bypasses of Bitlocker with TPM. Further information can be found @ https://www.tenaka.net/bitlocker"
 
 $descripVirt = "Secure Boot is a security standard to ensure only trusted OEM software is allowed at boot. At startup the UEFi and boot software's digital signatures are validated preventing rootkits More on Secure Boot can be found here @ https://media.defense.gov/2020/Sep/15/2002497594/-1/-1/0/CTR-UEFI-SECURE-BOOT-CUSTOMIZATION-20200915.PDF/CTR-UEFI-SECURE-BOOT-CUSTOMIZATION-20200915.PDF"
 
-$descripVirt2 = "Virtualization-based security (VBS), isolates core system resources to create secure regions of memory. Enabling VBS allows for Hypervisor-Enforced Code Integrity (HVCI), Device Guard and Credential Guard. Further reading can be found @ https://docs.microsoft.com/en-us/windows-hardware/design/device-experiences/oem-vbs and https://www.tenaka.net/deviceguard-vs-rce and https://www.tenaka.net/pass-the-hash "
+$descripVirt2 = "Virtualization-based security (VBS), isolates core system resources to create secure regions of memory. Enabling VBS allows for Hypervisor-Enforced Code Integrity (HVCI), Device Guard and Credential Guard. Further information can be found @ https://docs.microsoft.com/en-us/windows-hardware/design/device-experiences/oem-vbs and https://www.tenaka.net/deviceguard-vs-rce and https://www.tenaka.net/pass-the-hash "
 
-$descripSecOptions = "Prevent credential relay with Impacket and Man in the Middle by Digitally Signing for SMB and LDAP connections enforcement. Further reading can be found @ https://www.tenaka.net/smb-relay-attack"
+$descripSecOptions = "Prevent credential relay with Impacket and Man in the Middle by Digitally Signing for SMB and LDAP connections enforcement. Further information can be found @ https://www.tenaka.net/smb-relay-attack"
 
-$descripLSA = "Enabling RunAsPPL for LSA Protection allows only digitally signed binaries to load as a protected process preventing credential theft and access by code injection and memory access by processes that aren’t signed. Further reading can be found @ https://docs.microsoft.com/en-us/windows-server/security/credentials-protection-and-management/configuring-additional-lsa-protection"
+$descripLSA = "Enabling RunAsPPL for LSA Protection allows only digitally signed binaries to load as a protected process preventing credential theft and access by code injection and memory access by processes that aren’t signed. Further information can be found @ https://docs.microsoft.com/en-us/windows-server/security/credentials-protection-and-management/configuring-additional-lsa-protection"
 
-$descripDLL = "When applications do not fully qualify the DLL path and instead allow searching the default behaviour if for the ‘Current Working Directory’ called 2nd in the list of directories. This allows an easy route to calling malicious DLL’s. Setting ‘DLL Safe Search’ mitigates the risk by moving CWD to later in the search order. Further reading can be found @ https://docs.microsoft.com/en-us/windows/win32/dlls/dynamic-link-library-search-order"
+$descripDLL = "When applications do not fully qualify the DLL path and instead allow searching the default behaviour if for the ‘Current Working Directory’ called 2nd in the list of directories. This allows an easy route to calling malicious DLL’s. Setting ‘DLL Safe Search’ mitigates the risk by moving CWD to later in the search order. Further information can be found @ https://docs.microsoft.com/en-us/windows/win32/dlls/dynamic-link-library-search-order"
 
-$descripHyper = "Hypervisor Enforced Code Integrity prevents the loading of unsigned kernel-mode drivers and system binaries from being loaded into system memory. Further reading can be found @  https://docs.microsoft.com/en-us/windows/security/threat-protection/device-guard/enable-virtualization-based-protection-of-code-integrity"
+$descripHyper = "Hypervisor Enforced Code Integrity prevents the loading of unsigned kernel-mode drivers and system binaries from being loaded into system memory. Further information can be found @  https://docs.microsoft.com/en-us/windows/security/threat-protection/device-guard/enable-virtualization-based-protection-of-code-integrity"
 
 $descripElev = "Auto Elevate User is a setting that elevates users allowing them to install software without being an administrator. "
 
@@ -1441,21 +1441,21 @@ $descripFilePw = "Files that contain password or credentials"
 
 $descripAutoLogon = "MECM\SCCM\MDT could leave Autologon credentials including a clear text password in the Registry."
 
-$descripUnquoted = "The Unquoted paths vulnerability is when a Windows Service's 'Path to Executable' contains spaces and not wrapped in double quotes providing a route to System. Further reading can be found @ https://www.tenaka.net/unquotedpaths"
+$descripUnquoted = "The Unquoted paths vulnerability is when a Windows Service's 'Path to Executable' contains spaces and not wrapped in double quotes providing a route to System. Further information can be found @ https://www.tenaka.net/unquotedpaths"
 
 $descripProcPw = "Processes that contain credentials to authenticate and access applications. Launching Task Manager, Details and add ‘Command line’ to the view."
 
-$descripLegacyNet = "LLMNR and other legacy network protocols can be used to steal password hashes. Further reading can be found @https://www.tenaka.net/responder"
+$descripLegacyNet = "LLMNR and other legacy network protocols can be used to steal password hashes. Further information can be found @https://www.tenaka.net/responder"
 
 $descripRegPer ="Weak Registry permissions allowing users to change the path to launch malicious software @ https://www.tenaka.net/unquotedpaths"
 
-$descripSysFold = "System default folders. Weak folder permissions allowing users to swap out a file for a malicious file. Search does not include C:\Windows\ due to the time required. Further reading can be found @ https://www.tenaka.net/unquotedpaths"
+$descripSysFold = "System default folders. Weak folder permissions allowing users to swap out a file for a malicious file. Search does not include C:\Windows\ due to the time required. Further information can be found @ https://www.tenaka.net/unquotedpaths"
 
-$descripNonFold = "A vulnerability exists when enterprise software has been installed on the root of C:\. The default permissions allow a user to replace approved software binaries with malicious binaries. Further reading can be found @ https://www.tenaka.net/unquotedpaths"
+$descripNonFold = "A vulnerability exists when enterprise software has been installed on the root of C:\. The default permissions allow a user to replace approved software binaries with malicious binaries. Further information can be found @ https://www.tenaka.net/unquotedpaths"
 
-$descripFile = "System files that allowing users to write can be swapped out for malicious software binaries. Further reading can be found @ https://www.tenaka.net/unquotedpaths"
+$descripFile = "System files that allowing users to write can be swapped out for malicious software binaries. Further information can be found @ https://www.tenaka.net/unquotedpaths"
 
-$descripFirewalls = "Firewalls should always block inbound and exceptions should be to a named IP and Port. Further reading can be found @ https://www.tenaka.net/whyhbfirewallsneeded" 
+$descripFirewalls = "Firewalls should always block inbound and exceptions should be to a named IP and Port. Further information can be found @ https://www.tenaka.net/whyhbfirewallsneeded" 
 
 
 
@@ -1566,7 +1566,4 @@ set warning for secure boot
 Expand on explanations - currently of use to non-techies
 
 #>
-
-
-
 
