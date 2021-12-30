@@ -49,6 +49,7 @@ function reports
 211229.1 - Added explanations and changed colour
 211229.2 - Added .xml in Password in file search added further excluded directories due to number of false positive being returned
 211230.1 - Restored search for folder weaknesses in C:\Windows
+211230.2 - Added CreateFiles Audit - hashed out until testing is complete
 
 #> 
 
@@ -1125,7 +1126,7 @@ $fragLegNIC=@()
          }
     }
   }
-    $regDetails = Get-Content  $rpath #|  where {$_ -ne ""} |select -skip 3
+    $regDetails = Get-Content  $rpath -ErrorAction SilentlyContinue    #|  where {$_ -ne ""} |select -skip 3
 
     $fragReg =@()
     foreach ($regItems in $regDetails)
@@ -1251,6 +1252,64 @@ $fragLegNIC=@()
             $fragsysFold += $newObjsysFold
             }
         }
+
+################################################
+#################  CREATEFILES  ################
+###############  SYSTEM FOLDERS  ###############
+################################################
+  
+    $VulnReport = "C:\VulnReport"
+    $OutFunc = "CreateSystemFolders"  
+
+    $tpSec10 = Test-Path "C:\VulnReport\output\$OutFunc\"
+    if ($tpSec10 -eq $false)
+    {
+        New-Item -Path "C:\VulnReport\output\$OutFunc\" -ItemType Directory -Force
+    }
+    $createSysPath = "C:\VulnReport\output\$OutFunc\" + "$OutFunc.log"
+    
+    $createSysfolders =  Get-ChildItem C:\  | where {$_.Name -eq "PerfLogs" -or ` 
+    $_.Name -eq "Program Files" -or `
+    $_.Name -eq "Program Files (x86)" -or `
+    $_.Name -eq "Windows"}
+    $createSysfoldhash=@()
+    foreach ($createSysfold in $createSysfolders.fullname)
+        {
+            $createSubsysfl = Get-ChildItem -Path $createSysfold -Directory -Recurse -Force
+            $createSysfoldhash+=$createSubsysfl
+        }
+    foreach ($createSyfold in $createSysfoldhash.fullname)
+        {
+            $createSyfoldAcl = Get-Acl $createSyfold -ErrorAction SilentlyContinue
+            if ($createSyfoldAcl | where {$_.accesstostring -like "*Users Allow  CreateFiles*"})
+            {
+                $createSyfold | Out-File $createSysPath -Append
+            }
+         if ($createSyfoldAcl | where {$_.accesstostring -like "*Everyone Allow  CreateFiles*"})
+            {
+                $createSyfold | Out-File $createSysPath -Append
+            }
+            if ($createSyfoldAcl | where {$_.accesstostring -like "*Authenticated Users Allow  CreateFiles*"})
+            {
+                $createSyfold | Out-File $createSysPath -Append
+            }
+
+        get-content $createSysPath | Sort-Object -Unique | set-Content $createSysPath 
+
+        #Get content and remove the first 3 lines
+        $createSysFolderDetails = Get-Content  $createSysPath #|  where {$_ -ne ""} |select -skip 3
+
+        #Declares correctly formated hash for OS Information 
+        $fragcreateSysFold=@()
+        foreach ($createSysFoldItems in $createSysFolderDetails)
+            {
+            $newObjcreateSysFold = New-Object -TypeName PSObject
+            Add-Member -InputObject $newObjcreateSysFold -Type NoteProperty -Name CreateFiles -Value $createSysFoldItems
+            $fragcreateSysFold += $newObjcreateSysFold
+            }
+        }
+
+
 
 ################################################
 ############  EMBEDDED PASSWORDS  ##############
@@ -1451,13 +1510,17 @@ $descripLegacyNet = "LLMNR and other legacy network protocols can be used to ste
 
 $descripRegPer ="Weak Registry permissions allowing users to change the path to launch malicious software @ https://www.tenaka.net/unquotedpaths"
 
-$descripSysFold = "System default folders. Weak folder permissions allowing users to swap out a file for a malicious file. Search does not include C:\Windows\ due to the time required. Further information can be found @ https://www.tenaka.net/unquotedpaths"
+$descripSysFold = "System default folders. Weak folder permissions allowing users to swap out a file for a malicious file. Further information can be found @ https://www.tenaka.net/unquotedpaths"
+
+$descripCreateSysFold = "System default Folders that allow a User the CreateFile permissions. These can be abused by creating content in some of the allowable default locations. Prevent by applying Execution controls eg Applocker Further information can be found @ https://www.tenaka.net/unquotedpaths"
+
 
 $descripNonFold = "A vulnerability exists when enterprise software has been installed on the root of C:\. The default permissions allow a user to replace approved software binaries with malicious binaries. Further information can be found @ https://www.tenaka.net/unquotedpaths"
 
 $descripFile = "System files that allowing users to write can be swapped out for malicious software binaries. Further information can be found @ https://www.tenaka.net/unquotedpaths"
 
 $descripFirewalls = "Firewalls should always block inbound and exceptions should be to a named IP and Port. Further information can be found @ https://www.tenaka.net/whyhbfirewallsneeded" 
+
 
 
 
@@ -1485,22 +1548,23 @@ $descripFirewalls = "Firewalls should always block inbound and exceptions should
     $fragCpu = $cpu | ConvertTo-Html -As List -property Name,MaxClockSpeed,NumberOfCores,ThreadCount -fragment -PreContent "<h2><span style='color:#4682B4'>Processor Details</span></h2>" | Out-String
 
     #Security Review
-    $frag_BitLocker = $fragBitLocker  | ConvertTo-Html -As List -fragment -PreContent "<h2><span style='color:#4682B4'>Bitlocker and TPM Details</span></h2>" -PostContent "<h4>$descripBitlocker</h4>" | Out-String
+    $frag_BitLocker = $fragBitLocker | ConvertTo-Html -As List -fragment -PreContent "<h2><span style='color:#4682B4'>Bitlocker and TPM Details</span></h2>" -PostContent "<h4>$descripBitlocker</h4>" | Out-String
     $frag_Msinfo =  $MsinfoClixml | ConvertTo-Html -As Table -fragment -PreContent "<h2><span style='color:#4682B4'>Virtualization and Secure Boot Details</span></h2>" -PostContent "<h4>$descripVirt</h4>"  | Out-String
     
-    $frag_LSAPPL = $fragLSAPPL  | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:#4682B4'>LSA Protection for Stored Credentials</span></h2>" -PostContent "<h4>$descripLSA</h4>" | Out-String
-    $frag_DLLSafe  =  $fragDLLSafe   | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:#4682B4'>DLL Safe Search Order</span></h2>"  -PostContent "<h4>$descripDLL</h4>"| Out-String
+    $frag_LSAPPL = $fragLSAPPL | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:#4682B4'>LSA Protection for Stored Credentials</span></h2>" -PostContent "<h4>$descripLSA</h4>" | Out-String
+    $frag_DLLSafe  =  $fragDLLSafe | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:#4682B4'>DLL Safe Search Order</span></h2>"  -PostContent "<h4>$descripDLL</h4>"| Out-String
     $frag_Code  =  $fragCode   | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:#4682B4'>Hypervisor Enforced Code Integrity</span></h2>" -PostContent "<h4>$descripHyper</h4>" | Out-String
-    $frag_PCElevate  =  $fragPCElevate   | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:#4682B4'>Automatically Elevates User Installing Software</span></h2>"  -PostContent "<h4>$descripElev</h4>"| Out-String
-    $frag_FilePass  =  $fragFilePass   | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:#4682B4'>Files that Contain the word PASSWORD</span></h2>" -PostContent "<h4>$descripFilePw</h4>" | Out-String
+    $frag_PCElevate  =  $fragPCElevate | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:#4682B4'>Automatically Elevates User Installing Software</span></h2>"  -PostContent "<h4>$descripElev</h4>"| Out-String
+    $frag_FilePass  =  $fragFilePass | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:#4682B4'>Files that Contain the word PASSWORD</span></h2>" -PostContent "<h4>$descripFilePw</h4>" | Out-String
     $frag_AutoLogon  =  $fragAutoLogon   | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:#4682B4'>AutoLogon Credentials in Registry</span></h2>"  -PostContent "<h4>$descripAutoLogon</h4>"| Out-String
-    $frag_UnQu = $fragUnQuoted  | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:#4682B4'>Vectors that Allow UnQuoted Paths Attack</span></h2>" -PostContent "<h4>$DescripUnquoted</h4>" | Out-String
+    $frag_UnQu = $fragUnQuoted | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:#4682B4'>Vectors that Allow UnQuoted Paths Attack</span></h2>" -PostContent "<h4>$DescripUnquoted</h4>" | Out-String
     $frag_LegNIC = $fragLegNIC | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:#4682B4'>Attacks Against Network Protocols</span></h2>" -PostContent "<h4>$DescripLegacyNet</h4>" | Out-String
     $frag_SysRegPerms = $fragReg | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:#4682B4'>Registry Permissions Allowing User Access - Security Risk if Exist</span></h2>" -PostContent "<h4>$descripRegPer</h4>" | Out-String
     $frag_PSPass = $fragPSPass | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:#4682B4'>Processes where CommandLine contains a Password</span></h2>" -PostContent "<h4>$Finish</h4>" | Out-String
     $frag_SecOptions = $fragSecOptions | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:#4682B4'>Security Options</span></h2>" -PostContent "<h4>$descripSecOptions</h4>" | Out-String
     $frag_wFolders = $fragwFold | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:#4682B4'>Non System Folders that are Writeable - User Created Folders Off Root of C: are Fine</span></h2>" -PostContent "<h4>$descripNonFold</h4>"| Out-String
     $frag_SysFolders = $fragsysFold | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:#4682B4'>System Default Folders that are Writeable - Security Risk if Exist</span></h2>"  -PostContent "<h4>$descripSysFold</h4>"| Out-String
+    $frag_createSysFold = $fragcreateSysFold | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:#4682B4'>System Default Folders that are allow Users to Create Files - Security Risk if Exist</span></h2>"  -PostContent "<h4>$descripCreateSysFold</h4>"| Out-String
     $frag_wFile =  $fragwFile | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:#4682B4'>System Files that are Writeable - Security Risk if Exist</span></h2>" -PostContent "<h4>$descripFile</h4>" | Out-String
     $frag_FWProf =   $fragFWProfile | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:#4682B4'>Firewall Profile</span></h2>"  -PostContent "<h4>$DescripFirewalls</h4>"| Out-String
     $frag_FW =  $fragFW | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:#4682B4'>Enabled Firewall Rules</span></h2>" | Out-String
@@ -1535,6 +1599,7 @@ $descripFirewalls = "Firewalls should always block inbound and exceptions should
     $frag_LegNIC,
     $frag_SysRegPerms,
     $frag_SysFolders,
+    $frag_createSysFold,
     $frag_wFolders,
     $frag_wFile,
     $frag_FWProf,
@@ -1566,7 +1631,7 @@ Add date and time to report name
 Credential Guard
 set warning for secure boot
 Expand on explanations - currently of use to non-techies
-Folders that users, Auth Users can CreateFiles
+
 
 #>
 
