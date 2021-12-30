@@ -46,7 +46,9 @@ function reports
 211222.2 - Added Warning to be RED with a replace and set-content
 211223.1 - Added -postContent with explanations
 211223.2 - Bitlocker fixed null response
-211229.1 - Added explanations and changed colour.
+211229.1 - Added explanations and changed colour
+211229.2 - Added .xml in Password in file search added further excluded directories due to number of false positive being returned
+211230.1 - Restored search for folder weaknesses in C:\Windows
 
 #> 
 
@@ -1211,8 +1213,8 @@ $fragLegNIC=@()
     
     $sysfolders =  Get-ChildItem C:\  | where {$_.Name -eq "PerfLogs" -or ` 
     $_.Name -eq "Program Files" -or `
-    $_.Name -eq "Program Files (x86)"} # -or `
-    #$_.Name -eq "Windows"}
+    $_.Name -eq "Program Files (x86)" -or `
+    $_.Name -eq "Windows"}
     $sysfoldhash = @()
     foreach ($sysfold in $sysfolders.fullname)
         {
@@ -1274,10 +1276,10 @@ $fragLegNIC=@()
 
 #passwords embedded in files
 #findstrg /si password *.txt - alt
-    $getUserFolder = Get-ChildItem -Path "C:\Users\","C:\ProgramData\","C:\Windows\System32\Tasks\","C:\Windows\Panther\","C:\Windows\system32\","C:\Windows\system32\sysprep" -Recurse -Force -ErrorAction SilentlyContinue | 
+$getUserFolder = Get-ChildItem -Path "C:\Users\","C:\ProgramData\","C:\Windows\System32\Tasks\","C:\Windows\Panther\","C:\Windows\system32\","C:\Windows\system32\sysprep" -Recurse -Depth 4 -Force -ErrorAction SilentlyContinue | 
     where {$_.Extension -eq ".txt" -or $_.Extension -eq ".ini" -or $_.Extension -eq ".xml"}  #xml increase output, breaks report
 
-    $passwordExcluded = $getUserFolder | where {$_.DirectoryName -notlike "*Packages*" -and $_.DirectoryName -notlike "*Containers\BaseImages*"}
+    $passwordExcluded = $getUserFolder | where {$_.DirectoryName -notlike "*Packages*" -and $_.DirectoryName -notlike "*Containers\BaseImages*" -and $_.DirectoryName -notlike  "*MicrosoftOffice*" -and $_.DirectoryName -notlike "*AppRepository*" -and $_.DirectoryName -notlike "*IdentityCRL*" -and $_.DirectoryName -notlike "*UEV*" -and $_.Name -notlike "*MicrosoftOffice201*" -and $_.DirectoryName -notlike "*DriverStore*" -and $_.DirectoryName -notlike "*spool*"}
     $fragFilePass=@()
     foreach ($PassFile in $passwordExcluded)
     {
