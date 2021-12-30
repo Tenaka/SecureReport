@@ -1566,6 +1566,7 @@ Add date and time to report name
 Credential Guard
 set warning for secure boot
 Expand on explanations - currently of use to non-techies
+Folders that users, Auth Users can CreateFiles
 
 #>
 
