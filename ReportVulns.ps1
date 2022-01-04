@@ -36,7 +36,10 @@ function reports
 .Synopsis
 
 .DESCRIPTION
-   
+ 
+.WARNING
+Do not make changes to your IT systems based on the output of this report without a backup or testing, 
+some of the suggestions are likely to prevent Linux or legacy services from connecting to the domain.
   
 .VERSION
 
