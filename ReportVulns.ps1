@@ -36,10 +36,7 @@ function reports
 .Synopsis
 
 .DESCRIPTION
- 
-.WARNING
-Do not make changes to your IT systems based on the output of this report without a backup or testing, 
-some of the suggestions are likely to prevent Linux or legacy services from connecting to the domain.
+   
   
 .VERSION
 
@@ -53,6 +50,7 @@ some of the suggestions are likely to prevent Linux or legacy services from conn
 211229.2 - Added .xml in Password in file search added further excluded directories due to number of false positive being returned
 211230.1 - Restored search for folder weaknesses in C:\Windows
 211230.2 - Added CreateFiles Audit - hashed out until testing is complete
+220107.1 - Corrected Legacy Network Netbios, incorrectly showing a warning despite being the correct setting. 
 
 #> 
 
@@ -523,7 +521,7 @@ $fragLegNIC=@()
             }
             else
             {
-            $legProt = "Warning - NetBios is set to $enNetBTReg, its incorrect and should be set to 2 Warning"
+            $legProt = "Warning - NetBios is set to $enNetBTReg, its incorrect and should be set to 0 Warning"
             $legReg = "HKLM:\SYSTEM\CurrentControlSet\services\NetBT\Parameters\Interfaces.$NetBiosPath"
             }
             $newObjLegNIC = New-Object psObject
@@ -1129,7 +1127,7 @@ $fragLegNIC=@()
          }
     }
   }
-    $regDetails = Get-Content  $rpath -ErrorAction SilentlyContinue    #|  where {$_ -ne ""} |select -skip 3
+    $regDetails = Get-Content $rpath -ErrorAction SilentlyContinue    #|  where {$_ -ne ""} |select -skip 3
 
     $fragReg =@()
     foreach ($regItems in $regDetails)
@@ -1341,7 +1339,7 @@ $fragLegNIC=@()
 $getUserFolder = Get-ChildItem -Path "C:\Users\","C:\ProgramData\","C:\Windows\System32\Tasks\","C:\Windows\Panther\","C:\Windows\system32\","C:\Windows\system32\sysprep" -Recurse -Depth 4 -Force -ErrorAction SilentlyContinue | 
     where {$_.Extension -eq ".txt" -or $_.Extension -eq ".ini" -or $_.Extension -eq ".xml"}  #xml increase output, breaks report
 
-    $passwordExcluded = $getUserFolder | where {$_.DirectoryName -notlike "*Packages*" -and $_.DirectoryName -notlike "*Containers\BaseImages*" -and $_.DirectoryName -notlike  "*MicrosoftOffice*" -and $_.DirectoryName -notlike "*AppRepository*" -and $_.DirectoryName -notlike "*IdentityCRL*" -and $_.DirectoryName -notlike "*UEV*" -and $_.Name -notlike "*MicrosoftOffice201*" -and $_.DirectoryName -notlike "*DriverStore*" -and $_.DirectoryName -notlike "*spool*"}
+    $passwordExcluded = $getUserFolder | where {$_.DirectoryName -notlike "*Packages*" -and $_.DirectoryName -notlike "*Containers\BaseImages*" -and $_.DirectoryName -notlike  "*MicrosoftOffice*" -and $_.DirectoryName -notlike "*AppRepository*" -and $_.DirectoryName -notlike "*IdentityCRL*" -and $_.DirectoryName -notlike "*UEV*" -and $_.Name -notlike "*MicrosoftOffice201*" -and $_.DirectoryName -notlike "*DriverStore*" -and $_.DirectoryName -notlike "*spool*" -and $_.DirectoryName -notlike "*icsxm*"  }
     $fragFilePass=@()
     foreach ($PassFile in $passwordExcluded)
     {
@@ -1478,7 +1476,7 @@ $getUserFolder = Get-ChildItem -Path "C:\Users\","C:\ProgramData\","C:\Windows\S
 ################################################
 
 $Intro = "Thanks for using the vulnerability report written by Tenaka.net, please show your support and visit my site, its non-profit and Ad free. Any issues with the reports accuracy please do let me know and I'll get it fixed asap. The results in this report are a guide and not a guarantee that the tested system is not without further defect or vulnerability. 
-The tests focus on known and common issues with Windows that can be exploited by an attacker. Each section contains a small snippet to provide some context, follow the links for furhter detail."
+The tests focus on known and common issues with Windows that can be exploited by an attacker. Each section contains a small snippet to provide some context, follow the links for further detail. Further support for the output can be found @ https://www.tenaka.net/windowsclient-vulnscanner"
 
 $Intro2 = "The results in this report are a guide and not a guarantee that the tested system is not without further defect or vulnerability. 
 The tests focus on known and common issues with Windows that can be exploited by an attacker. Each section contains a small snippet to provide some context, follow the links for furhter detail."
@@ -1513,10 +1511,9 @@ $descripLegacyNet = "LLMNR and other legacy network protocols can be used to ste
 
 $descripRegPer ="Weak Registry permissions allowing users to change the path to launch malicious software @ https://www.tenaka.net/unquotedpaths"
 
-$descripSysFold = "System default folders. Weak folder permissions allowing users to swap out a file for a malicious file. Further information can be found @ https://www.tenaka.net/unquotedpaths"
+$descripSysFold = "System default folders that allows a User the Write permissions. These can be abused by creating content in some of the allowable default locations. Prevent by applying Execution controls eg Applocker Further information can be found @ https://www.tenaka.net/unquotedpaths"
 
-$descripCreateSysFold = "System default Folders that allow a User the CreateFile permissions. These can be abused by creating content in some of the allowable default locations. Prevent by applying Execution controls eg Applocker Further information can be found @ https://www.tenaka.net/unquotedpaths"
-
+$descripCreateSysFold = "System default Folders that allows a User the CreateFile permissions. These can be abused by creating content in some of the allowable default locations. Prevent by applying Execution controls eg Applocker Further information can be found @ https://www.tenaka.net/unquotedpaths"
 
 $descripNonFold = "A vulnerability exists when enterprise software has been installed on the root of C:\. The default permissions allow a user to replace approved software binaries with malicious binaries. Further information can be found @ https://www.tenaka.net/unquotedpaths"
 
@@ -1535,10 +1532,8 @@ $descripFirewalls = "Firewalls should always block inbound and exceptions should
     $FragDescrip1 =  $Descrip1 | ConvertTo-Html -as table -Fragment -PreContent "<h3><span style=font-family:helvetica;>$Intro</span></h3>" | Out-String
     $FragDescrip2 =  $Descrip2 | ConvertTo-Html -as table -Fragment -PreContent "<h3><span style=font-family:helvetica;>$Intro2</span></h3>" | Out-String
     $FragDescripFin =  $DescripFin | ConvertTo-Html -as table -Fragment -PreContent "<h3><span style=font-family:helvetica;>$Finish</span></h3>" | Out-String
-    
     $Frag_descripVirt2 = ConvertTo-Html -as table -Fragment -PostContent "<h4>$descripVirt2</h4>" | Out-String
-    
-        
+            
     #Host details    
     $fragHost = $hn | ConvertTo-Html -As List -Property Name,Domain,Model -fragment -PreContent "<h2><span style='color:#4682B4'>Host Details</span></h2>"  | Out-String
     $fragOS = $OS | ConvertTo-Html -As List -property Caption,Version,OSArchitecture,InstallDate -fragment -PreContent "<h2><span style='color:#4682B4'>Windows Details</span></h2>" | Out-String
@@ -1553,7 +1548,6 @@ $descripFirewalls = "Firewalls should always block inbound and exceptions should
     #Security Review
     $frag_BitLocker = $fragBitLocker | ConvertTo-Html -As List -fragment -PreContent "<h2><span style='color:#4682B4'>Bitlocker and TPM Details</span></h2>" -PostContent "<h4>$descripBitlocker</h4>" | Out-String
     $frag_Msinfo =  $MsinfoClixml | ConvertTo-Html -As Table -fragment -PreContent "<h2><span style='color:#4682B4'>Virtualization and Secure Boot Details</span></h2>" -PostContent "<h4>$descripVirt</h4>"  | Out-String
-    
     $frag_LSAPPL = $fragLSAPPL | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:#4682B4'>LSA Protection for Stored Credentials</span></h2>" -PostContent "<h4>$descripLSA</h4>" | Out-String
     $frag_DLLSafe  =  $fragDLLSafe | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:#4682B4'>DLL Safe Search Order</span></h2>"  -PostContent "<h4>$descripDLL</h4>"| Out-String
     $frag_Code  =  $fragCode   | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:#4682B4'>Hypervisor Enforced Code Integrity</span></h2>" -PostContent "<h4>$descripHyper</h4>" | Out-String
