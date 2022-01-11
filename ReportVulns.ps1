@@ -1612,7 +1612,7 @@ $descripFirewalls = "Firewalls should always block inbound and exceptions should
     foreach {$_ -replace "<tr><th>*</th></tr>",""} | 
     foreach {$_ -replace "<tr><td> </td></tr>",""} |
     foreach {$_ -replace "<td>Warning","<td><font color=#FF4040>Warning"} | 
-    foreach {$_ -replace "Warning</td>","<font></td>"} | Set-Content "C:\VulnReport\$repDate-Report.htm" -Force
+    foreach {$_ -replace "Warning</td>","<font></td>"} | Set-Content "C:\VulnReport\FinishedReport.htm" -Force
    
     }
 }
@@ -1634,6 +1634,7 @@ set warning for secure boot
 Expand on explanations - currently of use to non-techies
 progress bars for slow to return results 
 Netbios Node type check reg path and value
+
 
 #>
 
