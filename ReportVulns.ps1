@@ -50,7 +50,8 @@ function reports
 211229.2 - Added .xml in Password in file search added further excluded directories due to number of false positive being returned
 211230.1 - Restored search for folder weaknesses in C:\Windows
 211230.2 - Added CreateFiles Audit - hashed out until testing is complete
-220107.1 - Corrected Legacy Network Netbios, incorrectly showing a warning despite being the correct setting. 
+220107.1 - Corrected Legacy Network Netbios, incorrectly showing a warning despite being the correct setting.
+220107.2 - Report file name is dated 
 
 #> 
 
@@ -263,7 +264,7 @@ function reports
         }
         else
         {
-        $lsaSet = "Warning - LSA is disabled  set RunAsPPL to 1 Warning" 
+        $lsaSet = "Warning - Secure LSA is disabled set RunAsPPL to 1 Warning" 
         $lsaReg = "HKLM:\SYSTEM\CurrentControlSet\Control\lsa\"
         $lsaCom = "Required for Win8.1 and below"
         }
@@ -271,7 +272,7 @@ function reports
     $newObjLSA = New-Object -TypeName PSObject
     Add-Member -InputObject $newObjLSA -Type NoteProperty -Name LSASetting -Value  $lsaSet
     Add-Member -InputObject $newObjLSA -Type NoteProperty -Name LSARegValue -Value $lsaReg 
-    Add-Member -InputObject $newObjLSA -Type NoteProperty -Name LSAComment -Value $lsaCom
+    #Add-Member -InputObject $newObjLSA -Type NoteProperty -Name LSAComment -Value $lsaCom
     $fragLSAPPL += $newObjLSA
         
 #DLL Safe Search
@@ -492,7 +493,7 @@ $fragLegNIC=@()
     $enNetBTReg = $getNetBtNodeReg.NodeType
        if ($enNetBTReg -eq "2")
         {
-        $legProt = "NetBios is set to $enLMHostsReg in the Registry" 
+        $legProt = "NetBios Node Type is set to 2 in the Registry" 
         $legReg = "HKLM:\System\CurrentControlSet\Services\NetBT\Parameters.NodeType"
         }
         else
@@ -508,20 +509,20 @@ $fragLegNIC=@()
     #disable netbios
     cd HKLM:
     $getNetBiosInt = Get-ChildItem "HKLM:\SYSTEM\CurrentControlSet\services\NetBT\Parameters\Interfaces" -ErrorAction SilentlyContinue
-    foreach ($inter in $getNetBiosInt )
+    foreach ($inter in $getNetBiosInt)
         {
-        $getNetNiosReg = Get-ItemProperty $inter.Name
-        $NetBiosValue = $getNetNiosReg.NetbiosOptions
-        $NetBiosPath = $getNetNiosReg.PSChildName
+        $getNetBiosReg = Get-ItemProperty $inter.Name
+        $NetBiosValue = $getNetBiosReg.NetbiosOptions
+        $NetBiosPath = $getNetBiosReg.PSChildName
         $NEtBiosPara = $NetBiosPath,$NetBiosValue
-            if ($enNetBTReg -eq "0")
+            if ($NetBiosValue -eq "0")
             {
-            $legProt = "NetBios is set to $enLMHostsReg in the Registry" 
+            $legProt = "NetBios is set to $NetBiosValue in the Registry" 
             $legReg = "HKLM:\SYSTEM\CurrentControlSet\services\NetBT\Parameters\Interfaces.$NetBiosPath"
             }
             else
             {
-            $legProt = "Warning - NetBios is set to $enNetBTReg, its incorrect and should be set to 0 Warning"
+            $legProt = "Warning - NetBios is set to $NetBiosValue, its incorrect and should be set to 0 Warning"
             $legReg = "HKLM:\SYSTEM\CurrentControlSet\services\NetBT\Parameters\Interfaces.$NetBiosPath"
             }
             $newObjLegNIC = New-Object psObject
@@ -531,6 +532,8 @@ $fragLegNIC=@()
           }
 
      cd HKLM:
+
+    #Peer Net
     $getPeer = Get-ItemProperty  "HKLM:\Software\policies\Microsoft\Peernet" -ErrorAction SilentlyContinue
     $getPeerDis = $getPeer.Disabled
        if ($getPeerDis -eq "0")
@@ -555,7 +558,7 @@ $fragLegNIC=@()
     $getFontPr = $getFont.EnableFontProviders
        if ( $getFontPr -eq "0")
         {
-        $legProt = "Enable Font Providers is set to  $getFontPr disabled" 
+        $legProt = "Enable Font Providers is set to $getFontPr and is disabled" 
         $legReg = "HKLM:\Software\Policies\Microsoft\Windows\System"
         }
         else
@@ -1603,11 +1606,13 @@ $descripFirewalls = "Firewalls should always block inbound and exceptions should
     $frag_FW,
     $FragDescripFin  | out-file $Report
 
+    $repDate = (date).Date.ToString("yy-MM-dd:hh:mm")
+
     Get-Content $Report | 
     foreach {$_ -replace "<tr><th>*</th></tr>",""} | 
     foreach {$_ -replace "<tr><td> </td></tr>",""} |
     foreach {$_ -replace "<td>Warning","<td><font color=#FF4040>Warning"} | 
-    foreach {$_ -replace "Warning</td>","<font></td>"} | Set-Content C:\VulnReport\FinshedReport.htm -Force
+    foreach {$_ -replace "Warning</td>","<font></td>"} | Set-Content "C:\VulnReport\$repDate-Report.htm" -Force
    
     }
 }
@@ -1620,15 +1625,15 @@ Stuff to Fix.....
 $ExecutionContext.SessionState.LanguageMode -eq "ConstrainedLanguage"
 uac? - too many keys 
 AutoPlay
-Password in Registry - slow to get back results
+Password in Registry - slow to get back results 
 Proxy password reg key
 Null message warning that security is missing
 Folder weakness of Windows is slow....
-Add date and time to report name
 Credential Guard
 set warning for secure boot
 Expand on explanations - currently of use to non-techies
-
+progress bars for slow to return results 
+Netbios Node type check reg path and value
 
 #>
 
