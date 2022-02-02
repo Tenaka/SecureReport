@@ -18,7 +18,8 @@ else
     if($psise -ne $null)
     {
         $ISEPath = $psise.CurrentFile.FullPath
-        $ISEWork = $ISEPath.TrimEnd(".ReportVulns.ps1")
+        $ISEDisp = $psise.CurrentFile.DisplayName.Replace("*","")
+        $ISEWork = $ISEPath.TrimEnd("$ISEDisp")
         New-Item -Path C:\VulnReport -ItemType Directory -Force
         $VulnReport = "C:\VulnReport"
     }
@@ -51,7 +52,10 @@ function reports
 211230.1 - Restored search for folder weaknesses in C:\Windows
 211230.2 - Added CreateFiles Audit - hashed out until testing is complete
 220107.1 - Corrected Legacy Network Netbios, incorrectly showing a warning despite being the correct setting.
-220107.2 - Report file name is dated 
+220107.2 - Report file name is dated
+220120.1 - Office 2016 and older plus updates that create keys in Uninstall hive. 
+           This is required to correctly report on legacy apps and to cover how MS are making reporting of installed updates really difficult.
+220202.1 - Fixed issue with hardcode name of script during id of PS or ISE
 
 #> 
 
@@ -197,9 +201,10 @@ function reports
     $getUnin = Get-ChildItem  "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\"
     $UninChild = $getUnin.Name.Replace("HKEY_LOCAL_MACHINE","HKLM:")
     $InstallApps =@()
-    foreach ( $uninItem in  $UninChild)
+    foreach ($uninItem in  $UninChild)
     {
-        $getUninItem = Get-ItemProperty $uninItem
+        $getUninItem = Get-ItemProperty $uninItem | where {$_.displayname -notlike "*kb*"}
+        Write-Host $getUninItem.DisplayName
         $UninDisN = $getUninItem.DisplayName -replace "$null",""
         $UninDisVer = $getUninItem.DisplayVersion -replace "$null",""
         $UninPub = $getUninItem.Publisher -replace "$null",""
@@ -211,6 +216,31 @@ function reports
         Add-Member -InputObject $newObjInstApps -Type NoteProperty -Name InstallDate -Value   $UninDate
         $InstallApps += $newObjInstApps
     }
+  
+################################################
+###########  INSTALLED UPDATES  ################
+################################################
+#MS are making a bit of a mess of udpates, get-hotfix only returns the latest 10 installed
+#Office 2019 onwards doesnt register installed KB's
+#But for Office 2016 and older installed KB's do create keys in the Uninstall 
+
+    $getUnin16 = Get-ChildItem  "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\"
+    $UninChild16 = $getUnin16.Name.Replace("HKEY_LOCAL_MACHINE","HKLM:")
+    $InstallApps16 =@()
+    foreach ($uninItem16 in  $UninChild16)
+    {
+        $getUninItem16 = Get-ItemProperty $uninItem16 | where {$_.displayname -like "*kb*"}
+        $UninDisN16 = $getUninItem16.DisplayName -replace "$null",""
+        $UninDisVer16 = $getUninItem16.DisplayVersion -replace "$null",""
+        $UninPub16 = $getUninItem16.Publisher -replace "$null",""
+        $UninDate16 = $getUninItem16.InstallDate -replace "$null",""
+        $newObjInstApps16 = New-Object -TypeName PSObject
+        Add-Member -InputObject $newObjInstApps16 -Type NoteProperty -Name Publisher -Value  $UninPub16 
+        Add-Member -InputObject $newObjInstApps16 -Type NoteProperty -Name DisplayName -Value  $UninDisN16
+        Add-Member -InputObject $newObjInstApps16 -Type NoteProperty -Name DisplayVersion -Value  $UninDisVer16
+        Add-Member -InputObject $newObjInstApps16 -Type NoteProperty -Name InstallDate -Value   $UninDate16
+        $InstallApps16 += $newObjInstApps16
+    }  
        
 ################################################
 ################  MSINFO32  #####################
@@ -1544,7 +1574,10 @@ $descripFirewalls = "Firewalls should always block inbound and exceptions should
     $FragGroupDetails =  $GroupDetails  | ConvertTo-Html -As Table -fragment -PreContent "<h2><span style='color:#4682B4'>Group Members</span></h2>" | Out-String
     $FragPassPol = $PassPol | Select-Object -SkipLast 3 | ConvertTo-Html -As Table -fragment -PreContent "<h2><span style='color:#4682B4'>Password Policy</span></h2>" | Out-String
     $fragInstaApps  =  $InstallApps | Sort-Object publisher,displayname -Unique  | ConvertTo-Html -As Table  -fragment -PreContent "<h2><span style='color:#4682B4'>Installed Applications</span></h2>" | Out-String
-    $fragHotFix = $HotFix | ConvertTo-Html -As Table -property HotFixID,InstalledOn,Caption -fragment -PreContent "<h2><span style='color:#4682B4'>Installed Updates</span></h2>" | Out-String
+    
+    $fragHotFix = $HotFix | ConvertTo-Html -As Table -property HotFixID,InstalledOn,Caption -fragment -PreContent "<h2><span style='color:#4682B4'>Latest 10 Installed Updates</span></h2>" | Out-String
+    $fragInstaApps16  =  $InstallApps16 | Sort-Object publisher,displayname -Unique  | ConvertTo-Html -As Table  -fragment -PreContent "<h2><span style='color:#4682B4'>Updates to Office 2016 and older or Updates that create KB's in the Registry</span></h2>" | Out-String
+       
     $fragBios = $bios | ConvertTo-Html -As List -property Name,Manufacturer,SerialNumber,SMBIOSBIOSVersion,ReleaseDate -fragment -PreContent "<h2><span style='color:#4682B4'>Bios Details</span></h2>" | Out-String
     $fragCpu = $cpu | ConvertTo-Html -As List -property Name,MaxClockSpeed,NumberOfCores,ThreadCount -fragment -PreContent "<h2><span style='color:#4682B4'>Processor Details</span></h2>" | Out-String
 
@@ -1564,7 +1597,7 @@ $descripFirewalls = "Firewalls should always block inbound and exceptions should
     $frag_SecOptions = $fragSecOptions | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:#4682B4'>Security Options</span></h2>" -PostContent "<h4>$descripSecOptions</h4>" | Out-String
     $frag_wFolders = $fragwFold | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:#4682B4'>Non System Folders that are Writeable - User Created Folders Off Root of C: are Fine</span></h2>" -PostContent "<h4>$descripNonFold</h4>"| Out-String
     $frag_SysFolders = $fragsysFold | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:#4682B4'>System Default Folders that are Writeable - Security Risk if Exist</span></h2>"  -PostContent "<h4>$descripSysFold</h4>"| Out-String
-    $frag_createSysFold = $fragcreateSysFold | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:#4682B4'>System Default Folders permitting Users to Create Files - Security Risk if Exist</span></h2>"  -PostContent "<h4>$descripCreateSysFold</h4>"| Out-String
+    $frag_createSysFold = $fragcreateSysFold | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:#4682B4'>System Default Folders that permitting Users to Create Files - Security Risk if Exist</span></h2>"  -PostContent "<h4>$descripCreateSysFold</h4>"| Out-String
     $frag_wFile =  $fragwFile | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:#4682B4'>System Files that are Writeable - Security Risk if Exist</span></h2>" -PostContent "<h4>$descripFile</h4>" | Out-String
     $frag_FWProf =   $fragFWProfile | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:#4682B4'>Firewall Profile</span></h2>"  -PostContent "<h4>$DescripFirewalls</h4>"| Out-String
     $frag_FW =  $fragFW | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:#4682B4'>Enabled Firewall Rules</span></h2>" | Out-String
@@ -1582,6 +1615,7 @@ $descripFirewalls = "Firewalls should always block inbound and exceptions should
     $FragPassPol,
     $fragInstaApps,
     $fragHotFix,
+    $fragInstaApps16,
     $fragbios, 
     $fragcpu, 
     $frag_BitLocker, 
@@ -1634,7 +1668,7 @@ set warning for secure boot
 Expand on explanations - currently of use to non-techies
 progress bars for slow to return results 
 Netbios Node type check reg path and value
-
-
+remove extra blanks when listing progs via registry 
+FLTMC.exe - mini driver altitude looking for 'stuff' thats at a lower altitude bypassing security or encryption
 #>
 
