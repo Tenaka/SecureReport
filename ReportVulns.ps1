@@ -1895,7 +1895,7 @@ reports
 <#
 Stuff to Fix.....
 
-Add warning no user account is avaiable 
+Add warning no user account is available 
 $ExecutionContext.SessionState.LanguageMode -eq "ConstrainedLanguage"
 uac? - too many keys 
 AutoPlay
@@ -1910,5 +1910,8 @@ progress bars for slow to return results or warning when its on a go slowwwww
 Netbios Node type check reg path and value
 remove extra blanks when listing progs via registry 
 FLTMC.exe - mini driver altitude looking for 'stuff' thats at an altitude to bypass security or encryption
+report on appX bypass and seriousSam
 #>
+
+
 
