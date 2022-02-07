@@ -14,19 +14,18 @@ else
 {
     #Enable detection of PowerShell or ISE, enable to run from both
     #Script name has been defined and must be saved as that name.
-    $VulnReport = "C:\VulnReport"
+    $VulnReport = "C:\SecureReport"
     if($psise -ne $null)
     {
         $ISEPath = $psise.CurrentFile.FullPath
         $ISEDisp = $psise.CurrentFile.DisplayName.Replace("*","")
         $ISEWork = $ISEPath.TrimEnd("$ISEDisp")
-        New-Item -Path C:\VulnReport -ItemType Directory -Force
-        $VulnReport = "C:\VulnReport"
+        New-Item -Path C:\SecureReport -ItemType Directory -Force
     }
     else
     {
         $PSWork = split-path -parent $MyInvocation.MyCommand.Path
-        New-Item -Path C:\VulnReport -ItemType Directory -Force
+        New-Item -Path C:\SecureReport -ItemType Directory -Force
     }
 
 
@@ -41,7 +40,6 @@ function reports
   
 .VERSION
 
-211219.1 - Released to Github
 211221.1 - Added Security Options
 211222.1 - Changed f$Rep.Replace  | Out-File $Report to Foreach {$_ -replace "",""}
 211222.2 - Added Warning to be RED with a replace and set-content
@@ -56,8 +54,20 @@ function reports
 220120.1 - Office 2016 and older plus updates that create keys in Uninstall hive. 
            This is required to correctly report on legacy apps and to cover how MS are making reporting of installed updates really difficult.
 220202.1 - Fixed issue with hardcode name of script during id of PS or ISE
+220203.1 - Added error actions
+220203.2 - Warning about errors generated during report run.
+220204.1 - Added Dark and Light colour themes.
+220207.1 - Fixed VBS and MSInfo32 formatting issues. 
 
 #> 
+
+#Start Message
+Write-Host " "
+Write-Host "The report requires about 30 minutes to run"  -BackgroundColor Red 
+Write-Host " "
+Write-Host "Ignore any errors or red messages its due to Administrator being denied access to parts of the file system." -BackgroundColor Red 
+Write-Host " "
+$Scheme = Read-Host "Type either Tenaka, Dark or Light for choice of colour scheme" 
 
 ################################################
 #################  BITLOCKER  ##################
@@ -179,7 +189,7 @@ function reports
 ##############  WINDOWS UPDATES  ###############
 ################################################
     $HotFix=@()
-    $getHF = Get-HotFix   | Select-Object HotFixID,InstalledOn,Caption 
+    $getHF = Get-HotFix -ErrorAction SilentlyContinue  | Select-Object HotFixID,InstalledOn,Caption 
 
     foreach ($hfitem in $getHF)
     {
@@ -198,12 +208,12 @@ function reports
 ##############  INSTALLED APPS  ################
 ################################################
 
-    $getUnin = Get-ChildItem  "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\"
+    $getUnin = Get-ChildItem  "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\" -ErrorAction SilentlyContinue
     $UninChild = $getUnin.Name.Replace("HKEY_LOCAL_MACHINE","HKLM:")
     $InstallApps =@()
     foreach ($uninItem in  $UninChild)
     {
-        $getUninItem = Get-ItemProperty $uninItem | where {$_.displayname -notlike "*kb*"}
+        $getUninItem = Get-ItemProperty $uninItem -ErrorAction SilentlyContinue | where {$_.displayname -notlike "*kb*"}
         Write-Host $getUninItem.DisplayName
         $UninDisN = $getUninItem.DisplayName -replace "$null",""
         $UninDisVer = $getUninItem.DisplayVersion -replace "$null",""
@@ -224,12 +234,12 @@ function reports
 #Office 2019 onwards doesnt register installed KB's
 #But for Office 2016 and older installed KB's do create keys in the Uninstall 
 
-    $getUnin16 = Get-ChildItem  "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\"
+    $getUnin16 = Get-ChildItem  "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\" -ErrorAction SilentlyContinue
     $UninChild16 = $getUnin16.Name.Replace("HKEY_LOCAL_MACHINE","HKLM:")
     $InstallApps16 =@()
     foreach ($uninItem16 in  $UninChild16)
     {
-        $getUninItem16 = Get-ItemProperty $uninItem16 | where {$_.displayname -like "*kb*"}
+        $getUninItem16 = Get-ItemProperty $uninItem16 -ErrorAction SilentlyContinue | where {$_.displayname -like "*kb*"}
         $UninDisN16 = $getUninItem16.DisplayName -replace "$null",""
         $UninDisVer16 = $getUninItem16.DisplayVersion -replace "$null",""
         $UninPub16 = $getUninItem16.Publisher -replace "$null",""
@@ -247,28 +257,38 @@ function reports
 ################################################
 
     #Virtualization - msinfo32
-    $VulnReport = "C:\VulnReport"
+    $VulnReport = "C:\SecureReport"
     $OutFunc = "MSInfo" 
                 
-    $tpSec10 = Test-Path "C:\VulnReport\output\$OutFunc\"
+    $tpSec10 = Test-Path "C:\SecureReport\output\$OutFunc\"
         if ($tpSec10 -eq $false)
         {
-        New-Item -Path "C:\VulnReport\output\$OutFunc\" -ItemType Directory -Force
+        New-Item -Path "C:\SecureReport\output\$OutFunc\" -ItemType Directory -Force
         }
-    $msinfoPath = "C:\VulnReport\output\$OutFunc\" + "$OutFunc.txt"
-    $msinfoPathcsv = "C:\VulnReport\output\$OutFunc\" + "$OutFunc.csv"
-    $msinfoPathXml = "C:\VulnReport\output\$OutFunc\" + "$OutFunc.xml"
+    $msinfoPath = "C:\SecureReport\output\$OutFunc\" + "$OutFunc.txt"
+    $msinfoPathcsv = "C:\SecureReport\output\$OutFunc\" + "$OutFunc.csv"
+    $msinfoPathXml = "C:\SecureReport\output\$OutFunc\" + "$OutFunc.xml"
 
-    & cmd /c msinfo32 /nfo "C:\VulnReport\output\$OutFunc\" /report $msinfoPath
+    & cmd /c msinfo32 /nfo "C:\SecureReport\output\$OutFunc\" /report $msinfoPath
     $getMsinfo = Get-Content $msinfoPath | select -First 50
 
+    <#
+    Device Guard Virtualization based security	Running	
+    Device Guard Required Security Properties	Base Virtualization Support, Secure Boot, DMA Protection	
+    Device Guard Available Security Properties	Base Virtualization Support, Secure Boot, DMA Protection, UEFI Code Readonly	
+    Device Guard Security Services Configured	Credential Guard, Hypervisor enforced Code Integrity	
+    Device Guard Security Services Running	Credential Guard, Hypervisor enforced Code Integrity
+    A hypervisor has been detected. Features required for Hyper-V will not be displayed.
+    #>
+
     Set-Content -Path $msinfoPathcsv -Value 'Virtualization;On\Off'
-    ($getMsinfo | Select-String "Secure Boot") -replace "off",";off" -replace "on",";on" |Out-File $msinfoPathcsv -Append
-    ($getMsinfo | Select-String "Kernel DMA Protection") -replace "off",";off" -replace "on",";on" -replace "i;on","ion" |Out-File $msinfoPathcsv -Append
+    ($getMsinfo | Select-String "Secure Boot State") -replace "off",";off" -replace "on",";on" |Out-File $msinfoPathcsv -Append
+    ($getMsinfo | Select-String "Kernel DMA Protection") -replace "off",";off" -replace "on",";on"  |Out-File $msinfoPathcsv -Append
+    ($getMsinfo | Select-String "Guard Virtualization based") -replace "security	Run","security;	Run" |Out-File $msinfoPathcsv -Append
     ($getMsinfo | Select-String "Required Security Properties") -replace "ies	Ba","ies;	Ba" |Out-File $msinfoPathcsv -Append
     ($getMsinfo | Select-String "Available Security Properties") -replace "ies	Ba","ies;	Ba" |Out-File $msinfoPathcsv -Append 
-    ($getMsinfo | Select-String "Services Configured") -replace "gured	Credenti","gured;	Credenti" |Out-File $msinfoPathcsv -Append
-    ($getMsinfo | Select-String "Services Running") -replace "gured	Credenti","gured;	Credenti" |Out-File $msinfoPathcsv -Append
+    ($getMsinfo | Select-String "Services Configured") -replace "gured	Credenti","gured;	Credenti" -replace "running	Credential","running;	Credential" |Out-File $msinfoPathcsv -Append
+    ($getMsinfo | Select-String "Services Running") -replace "gured	Credenti","gured;	Credenti" -replace "running	Credential","running;	Credential"  |Out-File $msinfoPathcsv -Append
     ($getMsinfo | Select-String "Device Encryption Support") -replace "pport	Meet","pport;	Meet" |Out-File $msinfoPathcsv -Append
 
     Import-Csv $msinfoPathcsv -Delimiter ";" | Export-Clixml $msinfoPathXml
@@ -281,7 +301,7 @@ function reports
 ################################################
 
 #LSA
-    $getLSA = Get-Item 'HKLM:\SYSTEM\CurrentControlSet\Control\lsa\' 
+    $getLSA = Get-Item 'HKLM:\SYSTEM\CurrentControlSet\Control\lsa\' -ErrorAction SilentlyContinue
     $getLSAPPL =  $getLSA.GetValue("RunAsPPL")
 
     $fragLSAPPL =@()
@@ -306,7 +326,7 @@ function reports
     $fragLSAPPL += $newObjLSA
         
 #DLL Safe Search
-    $getDLL = Get-Item 'HKLM:\System\CurrentControlSet\Control\Session Manager'
+    $getDLL = Get-Item 'HKLM:\System\CurrentControlSet\Control\Session Manager' -ErrorAction SilentlyContinue
     $getDLLSafe =  $getDLL.GetValue("SafeDLLSearchMode")
 
     $fragDLLSafe =@()
@@ -331,7 +351,7 @@ function reports
 
 
 #Code Integrity
-    $getCode = Get-Item 'HKLM:\SYSTEM\CurrentControlSet\Control\DeviceGuard\Scenarios\HypervisorEnforcedCodeIntegrity'
+    $getCode = Get-Item 'HKLM:\SYSTEM\CurrentControlSet\Control\DeviceGuard\Scenarios\HypervisorEnforcedCodeIntegrity' -ErrorAction SilentlyContinue
     $getCode =  $getCode.GetValue("Enabled")
 
     $fragCode =@()
@@ -394,7 +414,7 @@ function reports
     $fragPCElevate += $newObjElevate 
 
  #AutoLogon Details in REG inc password   
-    $getAutoLogon = Get-Item  "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon"
+    $getAutoLogon = Get-Item  "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon" -ErrorAction SilentlyContinue
     $AutoLogonDefUser =  $getAutoLogon.GetValue("DefaultUserName")
     $AutoLogonDefPass =  $getAutoLogon.GetValue("DefaultPassword ") 
 
@@ -423,14 +443,14 @@ function reports
 #########  LEGACY NETWORK PROTOCOLS  ##########
 ################################################
 #Legacy Network
-$VulnReport = "C:\VulnReport"
+$VulnReport = "C:\SecureReport"
 $OutFunc = "llmnr" 
-    $tpSec10 = Test-Path "C:\VulnReport\output\$OutFunc\"
+    $tpSec10 = Test-Path "C:\SecureReport\output\$OutFunc\"
     if ($tpSec10 -eq $false)
     {
-    New-Item -Path "C:\VulnReport\output\$OutFunc\" -ItemType Directory -Force
+    New-Item -Path "C:\SecureReport\output\$OutFunc\" -ItemType Directory -Force
     }
-    $llnmrpath = "C:\VulnReport\output\$OutFunc\" + "$OutFunc.log"
+    $llnmrpath = "C:\SecureReport\output\$OutFunc\" + "$OutFunc.log"
    
 $fragLegNIC=@()
     #llmnr = 0 is disabled
@@ -752,7 +772,7 @@ $fragLegNIC=@()
 ################################################ 
     $fragSecOptions=@()
     $secOpTitle1 = "Domain member: Digitally encrypt or sign secure channel data (always)" # = 1
-    $getSecOp1 = get-item 'HKLM:\SYSTEM\CurrentControlSet\Services\Netlogon\Parameters'
+    $getSecOp1 = get-item 'HKLM:\SYSTEM\CurrentControlSet\Services\Netlogon\Parameters' -ErrorAction SilentlyContinue
     $getSecOp1res = $getSecOp1.getvalue("RequireSignOrSeal")
 
         if ($getSecOp1res -eq "1")
@@ -767,9 +787,9 @@ $fragLegNIC=@()
         Add-Member -InputObject $newObjSecOptions -Type NoteProperty -Name SecurityOptions -Value $SecOptName
         $fragSecOptions +=  $newObjSecOptions 
 
-
+    
     $secOpTitle2 = "Microsoft network client: Digitally sign communications (always)" # = 1
-    $getSecOp2 = get-item 'HKLM:\SYSTEM\CurrentControlSet\Services\LanmanWorkstation\Parameters'
+    $getSecOp2 = get-item 'HKLM:\SYSTEM\CurrentControlSet\Services\LanmanWorkstation\Parameters' -ErrorAction SilentlyContinue
     $getSecOp2res = $getSecOp2.getvalue("RequireSecuritySignature")
 
         if ($getSecOp2res -eq "1")
@@ -786,7 +806,7 @@ $fragLegNIC=@()
 
 
     $secOpTitle3 = "Microsoft network server: Digitally sign communications (always)" # = 1
-    $getSecOp3 = get-item 'HKLM:\SYSTEM\CurrentControlSet\Services\LanmanServer\Parameters'
+    $getSecOp3 = get-item 'HKLM:\SYSTEM\CurrentControlSet\Services\LanmanServer\Parameters' -ErrorAction SilentlyContinue
     $getSecOp3res = $getSecOp3.getvalue("RequireSecuritySignature")
 
         if ($getSecOp3res -eq "1")
@@ -803,7 +823,7 @@ $fragLegNIC=@()
 
 
     $secOpTitle4 = "Microsoft network client: Send unencrypted password to connect to third-party SMB servers" #  = 0
-    $getSecOp4 = get-item 'HKLM:\SYSTEM\CurrentControlSet\Services\LanmanWorkstation\Parameters'
+    $getSecOp4 = get-item 'HKLM:\SYSTEM\CurrentControlSet\Services\LanmanWorkstation\Parameters' -ErrorAction SilentlyContinue
     $getSecOp4res = $getSecOp4.getvalue("EnablePlainTextPassword")
 
         if ($getSecOp4res -eq "0")
@@ -820,7 +840,7 @@ $fragLegNIC=@()
 
 
     $secOpTitle5 = "Network security: Do not store LAN Manager hash value on next password change" #  = 1
-    $getSecOp5 = get-item 'HKLM:\SYSTEM\CurrentControlSet\Control\Lsa\'
+    $getSecOp5 = get-item 'HKLM:\SYSTEM\CurrentControlSet\Control\Lsa\' -ErrorAction SilentlyContinue
     $getSecOp5res = $getSecOp5.getvalue("NoLmHash")
 
         if ($getSecOp5res -eq "1")
@@ -837,7 +857,7 @@ $fragLegNIC=@()
 
 
     $secOpTitle6 = "Network security: LAN Manager authentication level (Send NTLMv2 response only\refuse LM & NTLM)" #  = 5
-    $getSecOp6 = get-item 'HKLM:\SYSTEM\CurrentControlSet\Control\Lsa\'
+    $getSecOp6 = get-item 'HKLM:\SYSTEM\CurrentControlSet\Control\Lsa\' -ErrorAction SilentlyContinue
     $getSecOp6res = $getSecOp6.getvalue("lmcompatibilitylevel")
 
         if ($getSecOp6res -eq "5")
@@ -854,7 +874,7 @@ $fragLegNIC=@()
 
 
     $secOpTitle7 = "Network access: Do not allow anonymous enumeration of SAM accounts" #  = 1
-    $getSecOp7 = get-item 'HKLM:\SYSTEM\CurrentControlSet\Control\Lsa\'
+    $getSecOp7 = get-item 'HKLM:\SYSTEM\CurrentControlSet\Control\Lsa\' -ErrorAction SilentlyContinue
     $getSecOp7res = $getSecOp7.getvalue("restrictanonymoussam")
 
         if ($getSecOp7res -eq "1")
@@ -871,7 +891,7 @@ $fragLegNIC=@()
 
 
     $secOpTitle8 = "Network access: Do not allow anonymous enumeration of SAM accounts and shares" #  = 1
-    $getSecOp8 = get-item 'HKLM:\SYSTEM\CurrentControlSet\Control\Lsa\'
+    $getSecOp8 = get-item 'HKLM:\SYSTEM\CurrentControlSet\Control\Lsa\' -ErrorAction SilentlyContinue
     $getSecOp8res = $getSecOp8.getvalue("restrictanonymous")
 
         if ($getSecOp8res -eq "1")
@@ -887,7 +907,7 @@ $fragLegNIC=@()
         $fragSecOptions +=  $newObjSecOptions
 
     $secOpTitle9 = "Network access: Let Everyone permissions apply to anonymous users" # = 0
-    $getSecOp9 = get-item 'HKLM:\SYSTEM\CurrentControlSet\Control\Lsa\'
+    $getSecOp9 = get-item 'HKLM:\SYSTEM\CurrentControlSet\Control\Lsa\' -ErrorAction SilentlyContinue
     $getSecOp9res = $getSecOp9.getvalue("everyoneincludesanonymous")
 
         if ($getSecOp9res -eq "0")
@@ -903,7 +923,7 @@ $fragLegNIC=@()
         $fragSecOptions +=  $newObjSecOptions
 
     $secOpTitle10 = "Network security: LDAP client signing requirements" # = 2 Required
-    $getSecOp10 = get-item 'HKLM:\SYSTEM\CurrentControlSet\Services\NTDS\parameters'
+    $getSecOp10 = get-item 'HKLM:\SYSTEM\CurrentControlSet\Services\NTDS\parameters' -ErrorAction SilentlyContinue
     $getSecOp10res = $getSecOp10.getvalue("ldapserverintegrity")
 
         if ($getSecOp9res -eq "2")
@@ -928,7 +948,7 @@ $fragLegNIC=@()
 ################################################                
     #Firewall Enabled \ Disabled
 
-    $getFWProf = Get-NetFirewallProfile -PolicyStore activestore
+    $getFWProf = Get-NetFirewallProfile -PolicyStore activestore -ErrorAction SilentlyContinue
     $fragFWProfile=@()
     Foreach ( $fwRule in $getFWProf){
 
@@ -946,17 +966,17 @@ $fragLegNIC=@()
     }
 
     #Firewall Rules
-    $VulnReport = "C:\VulnReport"
+    $VulnReport = "C:\SecureReport"
     $OutFunc = "firewall" 
                 
-    $tpSec10 = Test-Path "C:\VulnReport\output\$OutFunc\"
+    $tpSec10 = Test-Path "C:\SecureReport\output\$OutFunc\"
     if ($tpSec10 -eq $false)
     {
-    New-Item -Path "C:\VulnReport\output\$OutFunc\" -ItemType Directory -Force
+    New-Item -Path "C:\SecureReport\output\$OutFunc\" -ItemType Directory -Force
     }
-    $fwpath = "C:\VulnReport\output\$OutFunc\" + "$OutFunc.log"
-    $fwpathcsv = "C:\VulnReport\output\$OutFunc\" + "$OutFunc.csv"
-    $fwpathxml = "C:\VulnReport\output\$OutFunc\" + "$OutFunc.xml"
+    $fwpath = "C:\SecureReport\output\$OutFunc\" + "$OutFunc.log"
+    $fwpathcsv = "C:\SecureReport\output\$OutFunc\" + "$OutFunc.csv"
+    $fwpathxml = "C:\SecureReport\output\$OutFunc\" + "$OutFunc.xml"
 
     [System.Text.StringBuilder]$fwtxt = New-Object System.Text.StringBuilder
 
@@ -989,9 +1009,9 @@ $fragLegNIC=@()
 
     Set-Content -Path $fwpath -Value 'DisplayName,Direction,Protocol,LocalIP,LocalPort,RemoteIP,RemotePort,Program'
     }
-    Add-Content -Path $fwpath -Value $fwtxt
+    Add-Content -Path $fwpath -Value $fwtxt -ErrorAction SilentlyContinue
     # $fwtxt = $null
-    Get-Content $fwpath | Out-File $fwpathcsv
+    Get-Content $fwpath | Out-File $fwpathcsv -ErrorAction SilentlyContinue
     $fwCSV = Import-Csv $fwpathcsv -Delimiter "," | Export-Clixml $fwpathxml
     $fragFW = Import-Clixml $fwpathxml
 
@@ -1000,15 +1020,15 @@ $fragLegNIC=@()
 ############  UNQUOTED PATHS  ##################
 ################################################
     #Unquoted paths   
-    $VulnReport = "C:\VulnReport"
+    $VulnReport = "C:\SecureReport"
     $OutFunc = "UnQuoted" 
                 
-    $tpSec10 = Test-Path "C:\VulnReport\output\$OutFunc\"
+    $tpSec10 = Test-Path "C:\SecureReport\output\$OutFunc\"
     if ($tpSec10 -eq $false)
     {
-    New-Item -Path "C:\VulnReport\output\$OutFunc\" -ItemType Directory -Force
+    New-Item -Path "C:\SecureReport\output\$OutFunc\" -ItemType Directory -Force
     }
-    $qpath = "C:\VulnReport\output\$OutFunc\" + "$OutFunc.log"
+    $qpath = "C:\SecureReport\output\$OutFunc\" + "$OutFunc.log"
  
     #Unquoted paths
     $vulnSvc = gwmi win32_service | foreach{$_} | 
@@ -1019,7 +1039,7 @@ $fragLegNIC=@()
     foreach ($unQSvc in $vulnSvc)
     {
     $svc = $unQSvc.name
-    $SvcReg = Get-ItemProperty HKLM:\SYSTEM\CurrentControlSet\Services\$svc
+    $SvcReg = Get-ItemProperty HKLM:\SYSTEM\CurrentControlSet\Services\$svc -ErrorAction SilentlyContinue
     if ($SvcReg.imagePath -like "*.exe*")
     {
     $SvcRegSp =  $SvcReg.imagePath -split ".exe"
@@ -1061,18 +1081,18 @@ $fragLegNIC=@()
 ############  WRITEABLE FILES  #################
 ################################################
 
-    $VulnReport = "C:\VulnReport"
+    $VulnReport = "C:\SecureReport"
     $OutFunc = "WriteableFiles"  
 
-    $tpSec10 = Test-Path "C:\VulnReport\output\$OutFunc\"
+    $tpSec10 = Test-Path "C:\SecureReport\output\$OutFunc\"
     if ($tpSec10 -eq $false)
     {
-    New-Item -Path "C:\VulnReport\output\$OutFunc\" -ItemType Directory -Force
+    New-Item -Path "C:\SecureReport\output\$OutFunc\" -ItemType Directory -Force
     }
 
-    $hpath = "C:\VulnReport\output\$OutFunc\" + "$OutFunc.log"
+    $hpath = "C:\SecureReport\output\$OutFunc\" + "$OutFunc.log"
 
-    $hfiles =  Get-ChildItem C:\  | where {$_.Name -eq "PerfLogs" -or ` 
+    $hfiles =  Get-ChildItem C:\ -ErrorAction SilentlyContinue | where {$_.Name -eq "PerfLogs" -or ` 
     $_.Name -eq "Program Files" -or `
     $_.Name -eq "Program Files (x86)"} # -or `
        # $_.Name -eq "Windows"}
@@ -1080,7 +1100,7 @@ $fragLegNIC=@()
     $filehash = @()
     foreach ($hfile in $hfiles.fullname)
         {
-            $subfl = Get-ChildItem -Path $hfile -force -Recurse -Include *.exe, *.dll
+            $subfl = Get-ChildItem -Path $hfile -force -Recurse -Include *.exe, *.dll -ErrorAction SilentlyContinue
             $filehash+=$subfl
             $filehash 
         }
@@ -1100,7 +1120,7 @@ $fragLegNIC=@()
                 $cfile | Out-File $hpath -Append
             }
         }
-        $wFileDetails = Get-Content  $hpath #|  where {$_ -ne ""} |select -skip 3
+        $wFileDetails = Get-Content  $hpath -ErrorAction SilentlyContinue #|  where {$_ -ne ""} |select -skip 3
 
         #Declares correctly formated hash for OS Information 
         $fragwFile =@()
@@ -1115,16 +1135,16 @@ $fragLegNIC=@()
 #########  WRITEABLE REGISTRY HIVES  ###########
 ################################################
 
-    $VulnReport = "C:\VulnReport"
+    $VulnReport = "C:\SecureReport"
     $OutFunc = "WriteableReg"  
 
-    $tpSec10 = Test-Path "C:\VulnReport\output\$OutFunc\"
+    $tpSec10 = Test-Path "C:\SecureReport\output\$OutFunc\"
     if ($tpSec10 -eq $false)
     {
-        New-Item -Path "C:\VulnReport\output\$OutFunc\" -ItemType Directory -Force
+        New-Item -Path "C:\SecureReport\output\$OutFunc\" -ItemType Directory -Force
     }
 
-    $rpath = "C:\VulnReport\output\$OutFunc\" + "$OutFunc.log"
+    $rpath = "C:\SecureReport\output\$OutFunc\" + "$OutFunc.log"
 
     #Registry Permissions
     $HKLMSvc = 'HKLM:\SYSTEM\CurrentControlSet\Services'
@@ -1135,12 +1155,12 @@ $fragLegNIC=@()
         {
             #Get a list of key names and make a variable
             cd hklm:
-            $SvcPath = Get-childItem $key -Recurse -Depth 1 | where {$_.Name -notlike "HKEY_LOCAL_MACHINE\SOFTWARE\Classes\*"}
+            $SvcPath = Get-childItem $key -Recurse -Depth 1 -ErrorAction SilentlyContinue | where {$_.Name -notlike "HKEY_LOCAL_MACHINE\SOFTWARE\Classes\*"}
             #Update HKEY_Local.... to HKLM:
             $RegList = $SvcPath.name.replace("HKEY_LOCAL_MACHINE","HKLM:")
             Foreach ($regPath in $RegList)
         {
-    $acl = Get-Acl $regPath
+    $acl = Get-Acl $regPath -ErrorAction SilentlyContinue
     $acc = $acl.AccessToString
     Write-Output  $regPath
     foreach ($ac in $acc)
@@ -1176,18 +1196,18 @@ $fragLegNIC=@()
 ############  NON SYSTEM FOLDERS  ##############
 ################################################
 
-    $VulnReport = "C:\VulnReport"
+    $VulnReport = "C:\SecureReport"
     $OutFunc = "WriteableFolders"  
 
-    $tpSec10 = Test-Path "C:\VulnReport\output\$OutFunc\"
+    $tpSec10 = Test-Path "C:\SecureReport\output\$OutFunc\"
     if ($tpSec10 -eq $false)
     {
-        New-Item -Path "C:\VulnReport\output\$OutFunc\" -ItemType Directory -Force
+        New-Item -Path "C:\SecureReport\output\$OutFunc\" -ItemType Directory -Force
     }
-    $fpath = "C:\VulnReport\output\$OutFunc\" + "$OutFunc.log"
+    $fpath = "C:\SecureReport\output\$OutFunc\" + "$OutFunc.log"
     
     #Additional Folders off the root of C: that are not system
-    $hfolders =  Get-ChildItem c:\  | where {$_.Name -ne "PerfLogs" -and ` 
+    $hfolders =  Get-ChildItem c:\ -ErrorAction SilentlyContinue  | where {$_.Name -ne "PerfLogs" -and ` 
     $_.Name -ne "Program Files" -and `
     $_.Name -ne "Program Files (x86)" -and `
     $_.Name -ne "Users" -and `
@@ -1196,7 +1216,7 @@ $fragLegNIC=@()
     $foldhash = @()
     foreach ($hfold in $hfolders.fullname)
         {
-            $subfl = Get-ChildItem -Path $hfold -Directory -Recurse -Force
+            $subfl = Get-ChildItem -Path $hfold -Directory -Recurse -Force -ErrorAction SilentlyContinue
             $foldhash+=$hfolders
             $foldhash+=$subfl
         }
@@ -1216,10 +1236,10 @@ $fragLegNIC=@()
             $cfold | Out-File $fpath -Append
         } 
 
-        get-content $fpath | Sort-Object -Unique | set-Content $fpath 
+        get-content $fpath | Sort-Object -Unique | set-Content $fpath -ErrorAction SilentlyContinue
 
         #Get content and remove the first 3 lines
-        $wFolderDetails = Get-Content  $fpath #|  where {$_ -ne ""} |select -skip 3
+        $wFolderDetails = Get-Content  $fpath  -ErrorAction SilentlyContinue   #|  where {$_ -ne ""} |select -skip 3
 
         #Declares correctly formated hash for OS Information 
         $fragwFold =@()
@@ -1236,24 +1256,24 @@ $fragLegNIC=@()
 ###############  SYSTEM FOLDERS  ###############
 ################################################
     
-    $VulnReport = "C:\VulnReport"
+    $VulnReport = "C:\SecureReport"
     $OutFunc = "SystemFolders"  
 
-    $tpSec10 = Test-Path "C:\VulnReport\output\$OutFunc\"
+    $tpSec10 = Test-Path "C:\SecureReport\output\$OutFunc\"
     if ($tpSec10 -eq $false)
     {
-        New-Item -Path "C:\VulnReport\output\$OutFunc\" -ItemType Directory -Force
+        New-Item -Path "C:\SecureReport\output\$OutFunc\" -ItemType Directory -Force
     }
-    $sysPath = "C:\VulnReport\output\$OutFunc\" + "$OutFunc.log"
+    $sysPath = "C:\SecureReport\output\$OutFunc\" + "$OutFunc.log"
     
-    $sysfolders =  Get-ChildItem C:\  | where {$_.Name -eq "PerfLogs" -or ` 
+    $sysfolders =  Get-ChildItem C:\ -ErrorAction SilentlyContinue | where {$_.Name -eq "PerfLogs" -or ` 
     $_.Name -eq "Program Files" -or `
     $_.Name -eq "Program Files (x86)" -or `
     $_.Name -eq "Windows"}
     $sysfoldhash = @()
     foreach ($sysfold in $sysfolders.fullname)
         {
-            $subsysfl = Get-ChildItem -Path $sysfold -Directory -Recurse -Force
+            $subsysfl = Get-ChildItem -Path $sysfold -Directory -Recurse -Force -ErrorAction SilentlyContinue
             $sysfoldhash+=$subsysfl
         }
     foreach ($syfold in $sysfoldhash.fullname)
@@ -1275,7 +1295,7 @@ $fragLegNIC=@()
         get-content $sysPath | Sort-Object -Unique | set-Content $sysPath 
 
         #Get content and remove the first 3 lines
-        $sysFolderDetails = Get-Content  $sysPath #|  where {$_ -ne ""} |select -skip 3
+        $sysFolderDetails = Get-Content $sysPath -ErrorAction SilentlyContinue #|  where {$_ -ne ""} |select -skip 3
 
         #Declares correctly formated hash for OS Information 
         $fragsysFold =@()
@@ -1292,24 +1312,24 @@ $fragLegNIC=@()
 ###############  SYSTEM FOLDERS  ###############
 ################################################
   
-    $VulnReport = "C:\VulnReport"
+    $VulnReport = "C:\SecureReport"
     $OutFunc = "CreateSystemFolders"  
 
-    $tpSec10 = Test-Path "C:\VulnReport\output\$OutFunc\"
+    $tpSec10 = Test-Path "C:\SecureReport\output\$OutFunc\"
     if ($tpSec10 -eq $false)
     {
-        New-Item -Path "C:\VulnReport\output\$OutFunc\" -ItemType Directory -Force
+        New-Item -Path "C:\SecureReport\output\$OutFunc\" -ItemType Directory -Force
     }
-    $createSysPath = "C:\VulnReport\output\$OutFunc\" + "$OutFunc.log"
+    $createSysPath = "C:\SecureReport\output\$OutFunc\" + "$OutFunc.log"
     
-    $createSysfolders =  Get-ChildItem C:\  | where {$_.Name -eq "PerfLogs" -or ` 
+    $createSysfolders =  Get-ChildItem C:\ -ErrorAction SilentlyContinue | where {$_.Name -eq "PerfLogs" -or ` 
     $_.Name -eq "Program Files" -or `
     $_.Name -eq "Program Files (x86)" -or `
     $_.Name -eq "Windows"}
     $createSysfoldhash=@()
     foreach ($createSysfold in $createSysfolders.fullname)
         {
-            $createSubsysfl = Get-ChildItem -Path $createSysfold -Directory -Recurse -Force
+            $createSubsysfl = Get-ChildItem -Path $createSysfold -Directory -Recurse -Force  -ErrorAction SilentlyContinue
             $createSysfoldhash+=$createSubsysfl
         }
     foreach ($createSyfold in $createSysfoldhash.fullname)
@@ -1331,7 +1351,7 @@ $fragLegNIC=@()
         get-content $createSysPath | Sort-Object -Unique | set-Content $createSysPath 
 
         #Get content and remove the first 3 lines
-        $createSysFolderDetails = Get-Content  $createSysPath #|  where {$_ -ne ""} |select -skip 3
+        $createSysFolderDetails = Get-Content  $createSysPath  -ErrorAction SilentlyContinue #|  where {$_ -ne ""} |select -skip 3
 
         #Declares correctly formated hash for OS Information 
         $fragcreateSysFold=@()
@@ -1350,7 +1370,7 @@ $fragLegNIC=@()
 ################################################  
 
 #Passwords in Processes
-    $getPSPass = gwmi win32_process | Select-Object Caption, Description,CommandLine | where {$_.commandline -like "*pass*" -or $_.commandline -like "*credential*" -or $_.commandline -like "*username*"  }
+    $getPSPass = gwmi win32_process -ErrorAction SilentlyContinue | Select-Object Caption, Description,CommandLine | where {$_.commandline -like "*pass*" -or $_.commandline -like "*credential*" -or $_.commandline -like "*username*"  }
 
     $fragPSPass =@()
         foreach ($PStems in $getPSPass)
@@ -1386,11 +1406,11 @@ $getUserFolder = Get-ChildItem -Path "C:\Users\","C:\ProgramData\","C:\Windows\S
         }
     }
 
-     
 ################################################
 ##########  HTML GENERATION  ###################
 ################################################
 
+#Tenaka and Default Colour scheme of dark brown and copper text
 #B87333 = copper
 #250F00 = root beer
 #181818 = alt background 
@@ -1401,8 +1421,35 @@ $getUserFolder = Get-ChildItem -Path "C:\Users\","C:\ProgramData\","C:\Windows\S
 #A88F7E = mouse
 #<font color="red"> <font>
 
+#Blue - dark
+#FFF9EC = copper
+#284425F = root beer
+#06273A = alt background 
+#FFEEE0 = Blue dark pastel
+#FF4040 = Red pastel
+#FFFEF8 = grey
+#766A6A = Dark Grey with hint of beige
+#A88F7E = mouse
+#<font color="red"> <font>
+
+#Light
+#79253D = copper
+#EBEAE7 = root beer
+#F4F2EC = alt background 
+#FFEEE0 = Blue dark pastel
+#FF4040 = Red pastel
+#D0D0D0 = grey
+#766A6A = Dark Grey with hint of beige
+#A88F7E = mouse
+#<font color="red"> <font>
+
+
+if ($Scheme -eq "Tenaka")
+{
+$titleCol = "#4682B4"
+
 #HTML GENERATOR CSS
- $style = @"
+$style = @"
     <Style>
     body
     {
@@ -1458,7 +1505,7 @@ $getUserFolder = Get-ChildItem -Path "C:\Users\","C:\ProgramData\","C:\Windows\S
         h4
     {
         background-color:#250F00; 
-        color:#766A6A ;
+        color:#766A6A;
         font-size:90%;
         font-family:helvetica;
         margin:0,0,10px,0; 
@@ -1492,17 +1539,212 @@ $getUserFolder = Get-ChildItem -Path "C:\Users\","C:\ProgramData\","C:\Windows\S
 
     </Style>
 "@
- 
-    $VulnReport = "C:\VulnReport"
-    $OutFunc = "SystemReport"  
-    $tpSec10 = Test-Path "C:\VulnReport\output\$OutFunc\"
-    if ($tpSec10 -eq $false)
+}
+
+if ($Scheme -eq "Dark")
+{
+$titleCol = "#4682B4"
+
+#HTML GENERATOR CSS
+$style = @"
+    <Style>
+    body
     {
-        New-Item -Path "C:\VulnReport\output\$OutFunc\" -ItemType Directory -Force
+        background-color:#06273A; 
+        color:#FFF9EC;
+        font-size:100%;
+        font-family:helvetica;
+        margin:0,0,10px,0; 
+        word-break:normal; 
+        word-wrap:break-word
+    }
+    table
+    {
+        border-width: 1px;
+        padding: 7px;
+        border-style: solid;
+        border-color:#FFF9EC;
+        border-collapse:collapse;
+        width:auto
+    }
+    h1
+    {
+        background-color:#06273A; 
+        color:#FFF9EC;
+        font-size:150%;
+        font-family:helvetica;
+        margin:0,0,10px,0;
+        word-break:normal; 
+        word-wrap:break-word
+    }
+    h2
+    {
+        background-color:#06273A; 
+        color:#FFF9EC;
+        font-size:120%;
+        font-family:helvetica;
+        margin:0,0,10px,0; 
+        word-break:normal; 
+        word-wrap:break-word
+    }
+    h3
+    {
+        background-color:#06273A; 
+        color:#FFF9EC;
+        font-size:100%;
+        font-family:helvetica;
+        margin:0,0,10px,0; 
+        word-break:normal; 
+        word-wrap:break-word;
+        font-weight: normal;
+        width:auto
+    }
+        h4
+    {
+        background-color:#06273A; 
+        color:#766A6A;
+        font-size:90%;
+        font-family:helvetica;
+        margin:0,0,10px,0; 
+        word-break:normal; 
+        word-wrap:break-word;
+        font-weight: normal
+    }
+    th
+    {
+        border-width: 1px;
+        padding: 7px;
+        border-style: solid;
+        border-color:#FFF9EC;
+        background-color:#06273A
+    }
+    td
+    {
+        border-width: 1px;
+        padding:7px;
+        border-style: solid; 
+        border-style: #FFF9EC
+    }
+    tr:nth-child(odd) 
+    {
+        background-color:#06273A;
+    }
+    tr:nth-child(even) 
+    {
+        background-color:#28425F;
     }
 
-    $working = "C:\VulnReport\output\$OutFunc\"
-    $Report = "C:\VulnReport\output\$OutFunc\" + "$OutFunc.html"
+    </Style>
+"@
+}
+
+if ($Scheme -eq "Light")
+{
+$titleCol = "#000000"
+
+#HTML GENERATOR CSS
+$style = @"
+    <Style>
+    body
+    {
+        background-color:#EBEAE7; 
+        color:#79253D;
+        font-size:100%;
+        font-family:helvetica;
+        margin:0,0,10px,0; 
+        word-break:normal; 
+        word-wrap:break-word
+    }
+    table
+    {
+        border-width: 1px;
+        padding: 7px;
+        border-style: solid;
+        border-color:#FFF9EC;
+        border-collapse:collapse;
+        width:auto
+    }
+    h1
+    {
+        background-color:#EBEAE7 
+        color:#79253D;
+        font-size:150%;
+        font-family:helvetica;
+        margin:0,0,10px,0;
+        word-break:normal; 
+        word-wrap:break-word
+    }
+    h2
+    {
+        background-color:#EBEAE7; 
+        color:#79253D;
+        font-size:120%;
+        font-family:helvetica;
+        margin:0,0,10px,0; 
+        word-break:normal; 
+        word-wrap:break-word
+    }
+    h3
+    {
+        background-color:#EBEAE7; 
+        color:#79253D;
+        font-size:100%;
+        font-family:helvetica;
+        margin:0,0,10px,0; 
+        word-break:normal; 
+        word-wrap:break-word;
+        font-weight: normal;
+        width:auto
+    }
+        h4
+    {
+        background-color:#EBEAE7; 
+        color:#877F7D;
+        font-size:90%;
+        font-family:helvetica;
+        margin:0,0,10px,0; 
+        word-break:normal; 
+        word-wrap:break-word;
+        font-weight: normal
+    }
+    th
+    {
+        border-width: 1px;
+        padding: 7px;
+        border-style: solid;
+        border-color:#79253D;
+        background-color:#EBEAE7
+    }
+    td
+    {
+        border-width: 1px;
+        padding:7px;
+        border-style: solid; 
+        border-style: #79253D
+    }
+    tr:nth-child(odd) 
+    {
+        background-color:#EBEAE7;
+    }
+    tr:nth-child(even) 
+    {
+        background-color:#F4F2EC;
+    }
+
+    </Style>
+"@
+}
+
+    $VulnReport = "C:\SecureReport"
+    $OutFunc = "SystemReport"  
+    $tpSec10 = Test-Path "C:\SecureReport\output\$OutFunc\"
+    if ($tpSec10 -eq $false)
+    {
+        New-Item -Path "C:\SecureReport\output\$OutFunc\" -ItemType Directory -Force
+    }
+
+    $working = "C:\SecureReport\output\$OutFunc\"
+    $Report = "C:\SecureReport\output\$OutFunc\" + "$OutFunc.html"
 
 ################################################
 ##########  HELPS AND DESCRIPTIONS  ############
@@ -1554,9 +1796,6 @@ $descripFile = "System files that allowing users to write can be swapped out for
 
 $descripFirewalls = "Firewalls should always block inbound and exceptions should be to a named IP and Port. Further information can be found @ https://www.tenaka.net/whyhbfirewallsneeded" 
 
-
-
-
 ################################################
 ################  FRAGMENTS  ###################
 ################################################
@@ -1568,45 +1807,45 @@ $descripFirewalls = "Firewalls should always block inbound and exceptions should
     $Frag_descripVirt2 = ConvertTo-Html -as table -Fragment -PostContent "<h4>$descripVirt2</h4>" | Out-String
             
     #Host details    
-    $fragHost = $hn | ConvertTo-Html -As List -Property Name,Domain,Model -fragment -PreContent "<h2><span style='color:#4682B4'>Host Details</span></h2>"  | Out-String
-    $fragOS = $OS | ConvertTo-Html -As List -property Caption,Version,OSArchitecture,InstallDate -fragment -PreContent "<h2><span style='color:#4682B4'>Windows Details</span></h2>" | Out-String
-    $FragAccountDetails = $AccountDetails  | ConvertTo-Html -As Table -fragment -PreContent "<h2><span style='color:#4682B4'>Account Details</span></h2>" | Out-String
-    $FragGroupDetails =  $GroupDetails  | ConvertTo-Html -As Table -fragment -PreContent "<h2><span style='color:#4682B4'>Group Members</span></h2>" | Out-String
-    $FragPassPol = $PassPol | Select-Object -SkipLast 3 | ConvertTo-Html -As Table -fragment -PreContent "<h2><span style='color:#4682B4'>Password Policy</span></h2>" | Out-String
-    $fragInstaApps  =  $InstallApps | Sort-Object publisher,displayname -Unique  | ConvertTo-Html -As Table  -fragment -PreContent "<h2><span style='color:#4682B4'>Installed Applications</span></h2>" | Out-String
+    $fragHost = $hn | ConvertTo-Html -As List -Property Name,Domain,Model -fragment -PreContent "<h2><span style='color:$titleCol'>Host Details</span></h2>"  | Out-String
+    $fragOS = $OS | ConvertTo-Html -As List -property Caption,Version,OSArchitecture,InstallDate -fragment -PreContent "<h2><span style='color:$titleCol'>Windows Details</span></h2>" | Out-String
+    $FragAccountDetails = $AccountDetails  | ConvertTo-Html -As Table -fragment -PreContent "<h2><span style='color:$titleCol'>Account Details</span></h2>" | Out-String
+    $FragGroupDetails =  $GroupDetails  | ConvertTo-Html -As Table -fragment -PreContent "<h2><span style='color:$titleCol'>Group Members</span></h2>" | Out-String
+    $FragPassPol = $PassPol | Select-Object -SkipLast 3 | ConvertTo-Html -As Table -fragment -PreContent "<h2><span style='color:$titleCol'>Password Policy</span></h2>" | Out-String
+    $fragInstaApps  =  $InstallApps | Sort-Object publisher,displayname -Unique  | ConvertTo-Html -As Table  -fragment -PreContent "<h2><span style='color:$titleCol'>Installed Applications</span></h2>" | Out-String
     
-    $fragHotFix = $HotFix | ConvertTo-Html -As Table -property HotFixID,InstalledOn,Caption -fragment -PreContent "<h2><span style='color:#4682B4'>Latest 10 Installed Updates</span></h2>" | Out-String
-    $fragInstaApps16  =  $InstallApps16 | Sort-Object publisher,displayname -Unique  | ConvertTo-Html -As Table  -fragment -PreContent "<h2><span style='color:#4682B4'>Updates to Office 2016 and older or Updates that create KB's in the Registry</span></h2>" | Out-String
+    $fragHotFix = $HotFix | ConvertTo-Html -As Table -property HotFixID,InstalledOn,Caption -fragment -PreContent "<h2><span style='color:$titleCol'>Latest 10 Installed Updates</span></h2>" | Out-String
+    $fragInstaApps16  =  $InstallApps16 | Sort-Object publisher,displayname -Unique  | ConvertTo-Html -As Table  -fragment -PreContent "<h2><span style='color:$titleCol'>Updates to Office 2016 and older or Updates that create KB's in the Registry</span></h2>" | Out-String
        
-    $fragBios = $bios | ConvertTo-Html -As List -property Name,Manufacturer,SerialNumber,SMBIOSBIOSVersion,ReleaseDate -fragment -PreContent "<h2><span style='color:#4682B4'>Bios Details</span></h2>" | Out-String
-    $fragCpu = $cpu | ConvertTo-Html -As List -property Name,MaxClockSpeed,NumberOfCores,ThreadCount -fragment -PreContent "<h2><span style='color:#4682B4'>Processor Details</span></h2>" | Out-String
+    $fragBios = $bios | ConvertTo-Html -As List -property Name,Manufacturer,SerialNumber,SMBIOSBIOSVersion,ReleaseDate -fragment -PreContent "<h2><span style='color:$titleCol'>Bios Details</span></h2>" | Out-String
+    $fragCpu = $cpu | ConvertTo-Html -As List -property Name,MaxClockSpeed,NumberOfCores,ThreadCount -fragment -PreContent "<h2><span style='color:$titleCol'>Processor Details</span></h2>" | Out-String
 
     #Security Review
-    $frag_BitLocker = $fragBitLocker | ConvertTo-Html -As List -fragment -PreContent "<h2><span style='color:#4682B4'>Bitlocker and TPM Details</span></h2>" -PostContent "<h4>$descripBitlocker</h4>" | Out-String
-    $frag_Msinfo =  $MsinfoClixml | ConvertTo-Html -As Table -fragment -PreContent "<h2><span style='color:#4682B4'>Virtualization and Secure Boot Details</span></h2>" -PostContent "<h4>$descripVirt</h4>"  | Out-String
-    $frag_LSAPPL = $fragLSAPPL | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:#4682B4'>LSA Protection for Stored Credentials</span></h2>" -PostContent "<h4>$descripLSA</h4>" | Out-String
-    $frag_DLLSafe  =  $fragDLLSafe | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:#4682B4'>DLL Safe Search Order</span></h2>"  -PostContent "<h4>$descripDLL</h4>"| Out-String
-    $frag_Code  =  $fragCode   | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:#4682B4'>Hypervisor Enforced Code Integrity</span></h2>" -PostContent "<h4>$descripHyper</h4>" | Out-String
-    $frag_PCElevate  =  $fragPCElevate | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:#4682B4'>Automatically Elevates User Installing Software</span></h2>"  -PostContent "<h4>$descripElev</h4>"| Out-String
-    $frag_FilePass  =  $fragFilePass | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:#4682B4'>Files that Contain the word PASSWORD</span></h2>" -PostContent "<h4>$descripFilePw</h4>" | Out-String
-    $frag_AutoLogon  =  $fragAutoLogon   | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:#4682B4'>AutoLogon Credentials in Registry</span></h2>"  -PostContent "<h4>$descripAutoLogon</h4>"| Out-String
-    $frag_UnQu = $fragUnQuoted | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:#4682B4'>Vectors that Allow UnQuoted Paths Attack</span></h2>" -PostContent "<h4>$DescripUnquoted</h4>" | Out-String
-    $frag_LegNIC = $fragLegNIC | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:#4682B4'>Attacks Against Network Protocols</span></h2>" -PostContent "<h4>$DescripLegacyNet</h4>" | Out-String
-    $frag_SysRegPerms = $fragReg | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:#4682B4'>Registry Permissions Allowing User Access - Security Risk if Exist</span></h2>" -PostContent "<h4>$descripRegPer</h4>" | Out-String
-    $frag_PSPass = $fragPSPass | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:#4682B4'>Processes where CommandLine contains a Password</span></h2>" -PostContent "<h4>$Finish</h4>" | Out-String
-    $frag_SecOptions = $fragSecOptions | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:#4682B4'>Security Options</span></h2>" -PostContent "<h4>$descripSecOptions</h4>" | Out-String
-    $frag_wFolders = $fragwFold | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:#4682B4'>Non System Folders that are Writeable - User Created Folders Off Root of C: are Fine</span></h2>" -PostContent "<h4>$descripNonFold</h4>"| Out-String
-    $frag_SysFolders = $fragsysFold | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:#4682B4'>System Default Folders that are Writeable - Security Risk if Exist</span></h2>"  -PostContent "<h4>$descripSysFold</h4>"| Out-String
-    $frag_createSysFold = $fragcreateSysFold | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:#4682B4'>System Default Folders that permitting Users to Create Files - Security Risk if Exist</span></h2>"  -PostContent "<h4>$descripCreateSysFold</h4>"| Out-String
-    $frag_wFile =  $fragwFile | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:#4682B4'>System Files that are Writeable - Security Risk if Exist</span></h2>" -PostContent "<h4>$descripFile</h4>" | Out-String
-    $frag_FWProf =   $fragFWProfile | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:#4682B4'>Firewall Profile</span></h2>"  -PostContent "<h4>$DescripFirewalls</h4>"| Out-String
-    $frag_FW =  $fragFW | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:#4682B4'>Enabled Firewall Rules</span></h2>" | Out-String
+    $frag_BitLocker = $fragBitLocker | ConvertTo-Html -As List -fragment -PreContent "<h2><span style='color:$titleCol'>Bitlocker and TPM Details</span></h2>" -PostContent "<h4>$descripBitlocker</h4>" | Out-String
+    $frag_Msinfo =  $MsinfoClixml | ConvertTo-Html -As Table -fragment -PreContent "<h2><span style='color:$titleCol'>Virtualization and Secure Boot Details</span></h2>" -PostContent "<h4>$descripVirt</h4>"  | Out-String
+    $frag_LSAPPL = $fragLSAPPL | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:$titleCol'>LSA Protection for Stored Credentials</span></h2>" -PostContent "<h4>$descripLSA</h4>" | Out-String
+    $frag_DLLSafe  =  $fragDLLSafe | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:$titleCol'>DLL Safe Search Order</span></h2>"  -PostContent "<h4>$descripDLL</h4>"| Out-String
+    $frag_Code  =  $fragCode   | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:$titleCol'>Hypervisor Enforced Code Integrity</span></h2>" -PostContent "<h4>$descripHyper</h4>" | Out-String
+    $frag_PCElevate  =  $fragPCElevate | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:$titleCol'>Automatically Elevates User Installing Software</span></h2>"  -PostContent "<h4>$descripElev</h4>"| Out-String
+    $frag_FilePass  =  $fragFilePass | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:$titleCol'>Files that Contain the word PASSWORD</span></h2>" -PostContent "<h4>$descripFilePw</h4>" | Out-String
+    $frag_AutoLogon  =  $fragAutoLogon   | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:$titleCol'>AutoLogon Credentials in Registry</span></h2>"  -PostContent "<h4>$descripAutoLogon</h4>"| Out-String
+    $frag_UnQu = $fragUnQuoted | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:$titleCol'>Vectors that Allow UnQuoted Paths Attack</span></h2>" -PostContent "<h4>$DescripUnquoted</h4>" | Out-String
+    $frag_LegNIC = $fragLegNIC | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:$titleCol'>Attacks Against Network Protocols</span></h2>" -PostContent "<h4>$DescripLegacyNet</h4>" | Out-String
+    $frag_SysRegPerms = $fragReg | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:$titleCol'>Registry Permissions Allowing User Access - Security Risk if Exist</span></h2>" -PostContent "<h4>$descripRegPer</h4>" | Out-String
+    $frag_PSPass = $fragPSPass | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:$titleCol'>Processes where CommandLine contains a Password</span></h2>" -PostContent "<h4>$Finish</h4>" | Out-String
+    $frag_SecOptions = $fragSecOptions | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:$titleCol'>Security Options</span></h2>" -PostContent "<h4>$descripSecOptions</h4>" | Out-String
+    $frag_wFolders = $fragwFold | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:$titleCol'>Non System Folders that are Writeable - User Created Folders Off Root of C: are Fine</span></h2>" -PostContent "<h4>$descripNonFold</h4>"| Out-String
+    $frag_SysFolders = $fragsysFold | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:$titleCol'>System Default Folders that are Writeable - Security Risk if Exist</span></h2>"  -PostContent "<h4>$descripSysFold</h4>"| Out-String
+    $frag_createSysFold = $fragcreateSysFold | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:$titleCol'>System Default Folders that permitting Users to Create Files - Security Risk if Exist</span></h2>"  -PostContent "<h4>$descripCreateSysFold</h4>"| Out-String
+    $frag_wFile =  $fragwFile | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:$titleCol'>System Files that are Writeable - Security Risk if Exist</span></h2>" -PostContent "<h4>$descripFile</h4>" | Out-String
+    $frag_FWProf =   $fragFWProfile | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:$titleCol'>Firewall Profile</span></h2>"  -PostContent "<h4>$DescripFirewalls</h4>"| Out-String
+    $frag_FW =  $fragFW | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:$titleCol'>Enabled Firewall Rules</span></h2>" | Out-String
     
 ################################################
 ############  CREATE HTML REPORT  ##############
 ################################################
 
-    ConvertTo-Html -Head $style -Body "<h1 align=center style='text-align:center'><span style='color:#4682B4;'>TENAKA.NET</span><h1>", 
+    ConvertTo-Html -Head $style -Body "<h1 align=center style='text-align:center'><span style='color:$titleCol;'>TENAKA.NET</span><h1>", 
     $fragDescrip1, 
     $fraghost, 
     $fragOS, 
@@ -1640,13 +1879,13 @@ $descripFirewalls = "Firewalls should always block inbound and exceptions should
     $frag_FW,
     $FragDescripFin  | out-file $Report
 
-    $repDate = (date).Date.ToString("yy-MM-dd:hh:mm")
+    $repDate = (date).Date.ToString("yy-MM-dd:hh:mm").Replace(":","_")
 
     Get-Content $Report | 
     foreach {$_ -replace "<tr><th>*</th></tr>",""} | 
     foreach {$_ -replace "<tr><td> </td></tr>",""} |
     foreach {$_ -replace "<td>Warning","<td><font color=#FF4040>Warning"} | 
-    foreach {$_ -replace "Warning</td>","<font></td>"} | Set-Content "C:\VulnReport\FinishedReport.htm" -Force
+    foreach {$_ -replace "Warning</td>","<font></td>"} | Set-Content "C:\SecureReport\FinishedReport.htm" -Force
    
     }
 }
@@ -1656,6 +1895,7 @@ reports
 <#
 Stuff to Fix.....
 
+Add warning no user account is avaiable 
 $ExecutionContext.SessionState.LanguageMode -eq "ConstrainedLanguage"
 uac? - too many keys 
 AutoPlay
@@ -1666,9 +1906,9 @@ Folder weakness of Windows is slow....
 Credential Guard
 set warning for secure boot
 Expand on explanations - currently of use to non-techies
-progress bars for slow to return results 
+progress bars for slow to return results or warning when its on a go slowwwww
 Netbios Node type check reg path and value
 remove extra blanks when listing progs via registry 
-FLTMC.exe - mini driver altitude looking for 'stuff' thats at a lower altitude bypassing security or encryption
+FLTMC.exe - mini driver altitude looking for 'stuff' thats at an altitude to bypass security or encryption
 #>
 
