@@ -63,7 +63,7 @@ function reports
 
 #Start Message
 Write-Host " "
-Write-Host "The report requires about 30 minutes to run"  -BackgroundColor Red 
+Write-Host "The report requires at least 30 minutes to run, depending on hardware and amount of data on the system, it could take much longer"  -BackgroundColor Red 
 Write-Host " "
 Write-Host "Ignore any errors or red messages its due to Administrator being denied access to parts of the file system." -BackgroundColor Red 
 Write-Host " "
@@ -283,13 +283,24 @@ $Scheme = Read-Host "Type either Tenaka, Dark or Light for choice of colour sche
 
     Set-Content -Path $msinfoPathcsv -Value 'Virtualization;On\Off'
     ($getMsinfo | Select-String "Secure Boot State") -replace "off",";off" -replace "on",";on" |Out-File $msinfoPathcsv -Append
-    ($getMsinfo | Select-String "Kernel DMA Protection") -replace "off",";off" -replace "on",";on"  |Out-File $msinfoPathcsv -Append
+
+    ($getMsinfo | Select-String "Kernel DMA Protection") -replace "off",";off" -replace " on",";on"  |Out-File $msinfoPathcsv -Append
+
     ($getMsinfo | Select-String "Guard Virtualization based") -replace "security	Run","security;	Run" |Out-File $msinfoPathcsv -Append
-    ($getMsinfo | Select-String "Required Security Properties") -replace "ies	Ba","ies;	Ba" |Out-File $msinfoPathcsv -Append
-    ($getMsinfo | Select-String "Available Security Properties") -replace "ies	Ba","ies;	Ba" |Out-File $msinfoPathcsv -Append 
-    ($getMsinfo | Select-String "Services Configured") -replace "gured	Credenti","gured;	Credenti" -replace "running	Credential","running;	Credential" |Out-File $msinfoPathcsv -Append
-    ($getMsinfo | Select-String "Services Running") -replace "gured	Credenti","gured;	Credenti" -replace "running	Credential","running;	Credential"  |Out-File $msinfoPathcsv -Append
-    ($getMsinfo | Select-String "Device Encryption Support") -replace "pport	Meet","pport;	Meet" |Out-File $msinfoPathcsv -Append
+
+    ($getMsinfo | Select-String "Required Security Properties") -replace "Required Security Properties","Required Security Properties;" |Out-File $msinfoPathcsv -Append
+   
+    ($getMsinfo | Select-String "Available Security Properties") -replace "Available Security Properties","Available Security Properties;" |Out-File $msinfoPathcsv -Append 
+   
+    ($getMsinfo | Select-String "based security services configured") -replace "based security services configured","based security services configured;"  |Out-File $msinfoPathcsv -Append
+   
+    ($getMsinfo | Select-String "based security services running") -replace "based security services running","based security services running;" |Out-File $msinfoPathcsv -Append
+    
+    ($getMsinfo | Select-String "Application Control Policy") -replace "policy	Enforced","policy;	Enforced" -replace "Policy  Audit","Policy;  Audit"|Out-File $msinfoPathcsv -Append 
+    
+    ($getMsinfo | Select-String "Application Control User") -replace "off",";off" -replace " on",";on" -replace "policy	Enforced","policy;	Enforced"  -replace "Policy  Audit","Policy;  Audit" |Out-File $msinfoPathcsv -Append 
+    
+    ($getMsinfo | Select-String "Device Encryption Support") -replace "Encryption Support","Encryption Support;" |Out-File $msinfoPathcsv -Append
 
     Import-Csv $msinfoPathcsv -Delimiter ";" | Export-Clixml $msinfoPathXml
     $MsinfoClixml = Import-Clixml $msinfoPathXml 
@@ -1912,6 +1923,4 @@ remove extra blanks when listing progs via registry
 FLTMC.exe - mini driver altitude looking for 'stuff' thats at an altitude to bypass security or encryption
 report on appX bypass and seriousSam
 #>
-
-
 
