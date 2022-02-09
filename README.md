@@ -1,5 +1,9 @@
 Vulnerability Scanner for Windows 10 and 11
 
+There are 2 versions of the script one with that displays the results during execution of the script, the other with out. SecureReport-ScreenOutput.ps1 does run much slower and takes ages to complete. Only use SecureReport-ScreenOutput.ps1 for testing.
+
+Download and execute SecureReport-NoOutput.ps1 but expect periods when there is no positive feedback to the screen, be patient and it will complete.
+
 The purpose of the script is to check for vulnerabilities and common misconfigurations with Windows and installed applications. These issues can be abused by hackers or disgruntled workers providing privilege escalation routes from user to system and ultimately Domain Admin.
 
 The vulnerability script has been tested on the latest versions of Windows 10 and 11 with PowerShell version 5.1 and outputs a html page.
@@ -10,7 +14,7 @@ Do not make changes to your IT systems based on the output of this report withou
 
 
 
-Report is saved to C:\Vulnreport\FinishedReport.htm
+Report is saved to C:\SecureReport\FinishedReport.htm
 
 ​
 
