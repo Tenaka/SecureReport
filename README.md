@@ -1,6 +1,6 @@
 Vulnerability Scanner for Windows 10 and 11
 
-There are 2 versions of the script one that displays results whilst its running, the other with minimal to output. SecureReport-ScreenOutput.ps1 does run much slower and takes ages to complete. 
+There are 2 versions of the script one that displays results whilst its running, the other with minimal screen output. SecureReport-ScreenOutput.ps1 does run much slower and takes ages to complete.  
 
 Only use SecureReport-ScreenOutput.ps1 for testing.
 
