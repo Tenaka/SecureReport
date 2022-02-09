@@ -8,7 +8,7 @@ if($drv.free -eq "0" -and $_.name -ne "C")
 #Confirm for elevated admin
     if (-not([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator))
     {
-    Write-Host "An elevated administrator account is required to run this script." -BackgroundColor Red
+    Write-Host "An elevated administrator account is required to run this script." -ForegroundColor Red
     }
 else
 {
@@ -58,20 +58,27 @@ function reports
 220203.2 - Warning about errors generated during report run.
 220204.1 - Added Dark and Light colour themes.
 220207.1 - Fixed VBS and MSInfo32 formatting issues. 
+220208.1 - Added start and finish warning for each section to provide some feedback
+220208.2 - Added a ton of screen output to some user that its progressing and not stuck
+220208.2 - Fixed the file\folder parsing loops, included processing that should have been completed after the loops had finished
+
 
 #> 
 
 #Start Message
 Write-Host " "
-Write-Host "The report requires at least 30 minutes to run, depending on hardware and amount of data on the system, it could take much longer"  -BackgroundColor Red 
+Write-Host "The report requires at least 30 minutes to run, depending on hardware and amount of data on the system, it could take much longer"  -ForegroundColor Red 
 Write-Host " "
-Write-Host "Ignore any errors or red messages its due to Administrator being denied access to parts of the file system." -BackgroundColor Red 
+Write-Host "Ignore any errors or red messages its due to Administrator being denied access to parts of the file system." -ForegroundColor Red 
 Write-Host " "
 $Scheme = Read-Host "Type either Tenaka, Dark or Light for choice of colour scheme" 
 
 ################################################
 #################  BITLOCKER  ##################
 ################################################
+Write-Host " "
+Write-Host "Auditing Bitlocker" -foregroundColor Green
+sleep 5
 
     #Bitlocker Details
     $fragBitLocker=@()
@@ -113,9 +120,14 @@ $Scheme = Read-Host "Type either Tenaka, Dark or Light for choice of colour sche
     $fragBitLocker += $newObjBit
     }
 
+Write-Host " "
+Write-Host "Completed Bitlocker Audit" -foregroundColor Green
 ################################################
 ################  OS DETAILS  ##################
 ################################################
+Write-Host " "
+Write-Host "Gathering Host and Account Details" -foregroundColor Green
+sleep 5
 
     #OS Details
     $hn = Get-CimInstance -ClassName win32_computersystem 
@@ -184,10 +196,16 @@ $Scheme = Read-Host "Type either Tenaka, Dark or Light for choice of colour sche
             $GroupDetails += $newObjGroup
             }
         }
+Write-Host " "
+Write-Host "Completed Gathering Host and Account Details" -foregroundColor Green
 
 ################################################
 ##############  WINDOWS UPDATES  ###############
 ################################################
+Write-Host " "
+Write-Host "Gathering Windows Update and Installed Application Information" -foregroundColor Green
+sleep 5
+
     $HotFix=@()
     $getHF = Get-HotFix -ErrorAction SilentlyContinue  | Select-Object HotFixID,InstalledOn,Caption 
 
@@ -251,10 +269,16 @@ $Scheme = Read-Host "Type either Tenaka, Dark or Light for choice of colour sche
         Add-Member -InputObject $newObjInstApps16 -Type NoteProperty -Name InstallDate -Value   $UninDate16
         $InstallApps16 += $newObjInstApps16
     }  
-       
+ 
+Write-Host " "
+Write-Host "Completed Gathering Windows Update and Installed Application Information" -foregroundColor Green
+        
 ################################################
 ################  MSINFO32  #####################
 ################################################
+Write-Host " "
+Write-Host "Starting MSInfo32 and Outputting to File" -foregroundColor Green
+sleep 5
 
     #Virtualization - msinfo32
     $VulnReport = "C:\SecureReport"
@@ -307,9 +331,15 @@ $Scheme = Read-Host "Type either Tenaka, Dark or Light for choice of colour sche
 
     Get-Content $msinfoPathXml 
 
+Write-Host " "
+Write-Host "Finished Collectiong MSInfo32 data for VBS" -foregroundColor Green
+
 ################################################
 #############  MISC REG SETTINGS  ##############
 ################################################
+Write-Host " "
+Write-Host "Auditing Various Registry Settings" -foregroundColor Green
+sleep 5
 
 #LSA
     $getLSA = Get-Item 'HKLM:\SYSTEM\CurrentControlSet\Control\lsa\' -ErrorAction SilentlyContinue
@@ -359,7 +389,6 @@ $Scheme = Read-Host "Type either Tenaka, Dark or Light for choice of colour sche
     Add-Member -InputObject $newObjDLLSafe -Type NoteProperty -Name DLLSafeValue -Value $dllReg 
     Add-Member -InputObject $newObjDLLSafe -Type NoteProperty -Name DLLSafeComment -Value $dllCom
     $fragDLLSafe += $newObjDLLSafe
-
 
 #Code Integrity
     $getCode = Get-Item 'HKLM:\SYSTEM\CurrentControlSet\Control\DeviceGuard\Scenarios\HypervisorEnforcedCodeIntegrity' -ErrorAction SilentlyContinue
@@ -463,7 +492,7 @@ $OutFunc = "llmnr"
     }
     $llnmrpath = "C:\SecureReport\output\$OutFunc\" + "$OutFunc.log"
    
-$fragLegNIC=@()
+    $fragLegNIC=@()
     #llmnr = 0 is disabled
     cd HKLM:
     $getllmnrGPO = Get-ItemProperty "HKLM:\SOFTWARE\Policies\Microsoft\Windows NT\DNSClient" -ErrorAction SilentlyContinue
@@ -483,7 +512,6 @@ $fragLegNIC=@()
         Add-Member -InputObject $newObjLegNIC -Type NoteProperty -Name LegacyProtocol -Value $legProt
         Add-Member -InputObject $newObjLegNIC -Type NoteProperty -Name LegacyPath -Value $legReg
         $fragLegNIC += $newObjLegNIC
-
 
     #NetBIOS over TCP/IP (NetBT) queries = 0 is disabled
     cd HKLM:
@@ -506,8 +534,7 @@ $fragLegNIC=@()
         Add-Member -InputObject $newObjLegNIC -Type NoteProperty -Name LegacyProtocol -Value $legProt
         Add-Member -InputObject $newObjLegNIC -Type NoteProperty -Name LegacyPath -Value $legReg
         $fragLegNIC += $newObjLegNIC
-    
-
+  
     #ipv6 0xff (255)
     cd HKLM:
     $getIpv6 = get-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Services\Tcpip6\Parameters" -ErrorAction SilentlyContinue
@@ -527,7 +554,6 @@ $fragLegNIC=@()
         Add-Member -InputObject $newObjLegNIC -Type NoteProperty -Name LegacyPath -Value $legReg
         $fragLegNIC += $newObjLegNIC
 
-
     #Report on LMHosts file = 1
     cd HKLM:
     $getLMHostsReg = Get-ItemProperty "HKLM:\System\CurrentControlSet\Services\NetBT\Parameters" -ErrorAction SilentlyContinue
@@ -546,7 +572,6 @@ $fragLegNIC=@()
         Add-Member -InputObject $newObjLegNIC -Type NoteProperty -Name LegacyProtocol -Value $legProt
         Add-Member -InputObject $newObjLegNIC -Type NoteProperty -Name LegacyPath -Value $legReg
         $fragLegNIC += $newObjLegNIC
-
 
     #NetBios Node Type set to 2 - Only Reg Setting
     cd HKLM:
@@ -612,7 +637,6 @@ $fragLegNIC=@()
         Add-Member -InputObject $newObjLegNIC -Type NoteProperty -Name LegacyPath -Value $legReg
         $fragLegNIC += $newObjLegNIC
 
-    
     #Enable Font Providers
      cd HKLM:
     $getFont = Get-ItemProperty  "HKLM:\Software\Policies\Microsoft\Windows\System" -ErrorAction SilentlyContinue
@@ -660,7 +684,6 @@ $fragLegNIC=@()
     Add-Member -InputObject $newObjLegNIC -Type NoteProperty -Name LegacyPath -Value $legReg
     $fragLegNIC += $newObjLegNIC
 
-
     #EnableRspndr
     if ($getRspndr -eq "0")
     {
@@ -677,7 +700,6 @@ $fragLegNIC=@()
     Add-Member -InputObject $newObjLegNIC -Type NoteProperty -Name LegacyPath -Value $legReg
     $fragLegNIC += $newObjLegNIC
 
-
     #AllowLLTDIOOnDomain
     if ($getOnDomain -eq "0")
     {
@@ -693,8 +715,7 @@ $fragLegNIC=@()
     Add-Member -InputObject $newObjLegNIC -Type NoteProperty -Name LegacyProtocol -Value $legProt
     Add-Member -InputObject $newObjLegNIC -Type NoteProperty -Name LegacyPath -Value $legReg
     $fragLegNIC += $newObjLegNIC
-    
-
+   
     #AllowLLTDIOOnPublicNet
     if ($getPublicNet -eq "0")
     {
@@ -710,7 +731,6 @@ $fragLegNIC=@()
     Add-Member -InputObject $newObjLegNIC -Type NoteProperty -Name LegacyProtocol -Value $legProt
     Add-Member -InputObject $newObjLegNIC -Type NoteProperty -Name LegacyPath -Value $legReg
     $fragLegNIC += $newObjLegNIC
-    
    
     #AllowRspndrOnDomain  
     if ($getRspOnDomain -eq "0")
@@ -744,7 +764,6 @@ $fragLegNIC=@()
     Add-Member -InputObject $newObjLegNIC -Type NoteProperty -Name LegacyPath -Value $legReg
     $fragLegNIC += $newObjLegNIC
    
-   
     #ProhibitLLTDIOOnPrivateNe
     if ($getLLnPrivateNet -eq "1")
     {
@@ -760,7 +779,6 @@ $fragLegNIC=@()
     Add-Member -InputObject $newObjLegNIC -Type NoteProperty -Name LegacyProtocol -Value $legProt
     Add-Member -InputObject $newObjLegNIC -Type NoteProperty -Name LegacyPath -Value $legReg
     $fragLegNIC += $newObjLegNIC
-
    
     #ProhibitRspndrOnPrivateNet      $getRspPrivateNet = $getNetLLTDInt.GetValue("ProhibitRspndrOnPrivateNet")
     if ($getRspPrivateNet -eq "1")
@@ -797,7 +815,6 @@ $fragLegNIC=@()
         $newObjSecOptions = New-Object psObject
         Add-Member -InputObject $newObjSecOptions -Type NoteProperty -Name SecurityOptions -Value $SecOptName
         $fragSecOptions +=  $newObjSecOptions 
-
     
     $secOpTitle2 = "Microsoft network client: Digitally sign communications (always)" # = 1
     $getSecOp2 = get-item 'HKLM:\SYSTEM\CurrentControlSet\Services\LanmanWorkstation\Parameters' -ErrorAction SilentlyContinue
@@ -815,7 +832,6 @@ $fragLegNIC=@()
         Add-Member -InputObject $newObjSecOptions -Type NoteProperty -Name SecurityOptions -Value $SecOptName
         $fragSecOptions +=  $newObjSecOptions 
 
-
     $secOpTitle3 = "Microsoft network server: Digitally sign communications (always)" # = 1
     $getSecOp3 = get-item 'HKLM:\SYSTEM\CurrentControlSet\Services\LanmanServer\Parameters' -ErrorAction SilentlyContinue
     $getSecOp3res = $getSecOp3.getvalue("RequireSecuritySignature")
@@ -831,7 +847,6 @@ $fragLegNIC=@()
         $newObjSecOptions = New-Object psObject
         Add-Member -InputObject $newObjSecOptions -Type NoteProperty -Name SecurityOptions -Value $SecOptName
         $fragSecOptions +=  $newObjSecOptions 
-
 
     $secOpTitle4 = "Microsoft network client: Send unencrypted password to connect to third-party SMB servers" #  = 0
     $getSecOp4 = get-item 'HKLM:\SYSTEM\CurrentControlSet\Services\LanmanWorkstation\Parameters' -ErrorAction SilentlyContinue
@@ -849,7 +864,6 @@ $fragLegNIC=@()
         Add-Member -InputObject $newObjSecOptions -Type NoteProperty -Name SecurityOptions -Value $SecOptName
         $fragSecOptions +=  $newObjSecOptions 
 
-
     $secOpTitle5 = "Network security: Do not store LAN Manager hash value on next password change" #  = 1
     $getSecOp5 = get-item 'HKLM:\SYSTEM\CurrentControlSet\Control\Lsa\' -ErrorAction SilentlyContinue
     $getSecOp5res = $getSecOp5.getvalue("NoLmHash")
@@ -865,7 +879,6 @@ $fragLegNIC=@()
         $newObjSecOptions = New-Object psObject
         Add-Member -InputObject $newObjSecOptions -Type NoteProperty -Name SecurityOptions -Value $SecOptName
         $fragSecOptions +=  $newObjSecOptions
-
 
     $secOpTitle6 = "Network security: LAN Manager authentication level (Send NTLMv2 response only\refuse LM & NTLM)" #  = 5
     $getSecOp6 = get-item 'HKLM:\SYSTEM\CurrentControlSet\Control\Lsa\' -ErrorAction SilentlyContinue
@@ -883,7 +896,6 @@ $fragLegNIC=@()
         Add-Member -InputObject $newObjSecOptions -Type NoteProperty -Name SecurityOptions -Value $SecOptName
         $fragSecOptions +=  $newObjSecOptions
 
-
     $secOpTitle7 = "Network access: Do not allow anonymous enumeration of SAM accounts" #  = 1
     $getSecOp7 = get-item 'HKLM:\SYSTEM\CurrentControlSet\Control\Lsa\' -ErrorAction SilentlyContinue
     $getSecOp7res = $getSecOp7.getvalue("restrictanonymoussam")
@@ -899,7 +911,6 @@ $fragLegNIC=@()
         $newObjSecOptions = New-Object psObject
         Add-Member -InputObject $newObjSecOptions -Type NoteProperty -Name SecurityOptions -Value $SecOptName
         $fragSecOptions +=  $newObjSecOptions
-
 
     $secOpTitle8 = "Network access: Do not allow anonymous enumeration of SAM accounts and shares" #  = 1
     $getSecOp8 = get-item 'HKLM:\SYSTEM\CurrentControlSet\Control\Lsa\' -ErrorAction SilentlyContinue
@@ -949,15 +960,18 @@ $fragLegNIC=@()
         Add-Member -InputObject $newObjSecOptions -Type NoteProperty -Name SecurityOptions -Value $SecOptName
         $fragSecOptions +=  $newObjSecOptions
 
-
 #Network access: Restrict anonymous access to Named Pipes and Shares
 #Network security: Do not store LAN Manager hash value on next password change
-
+Write-Host " "
+Write-Host "Finished Auditing Various Registry Settings" -foregroundColor Green
 
 ################################################
 ############  FIREWALL DETAILS  ################
 ################################################                
-    #Firewall Enabled \ Disabled
+#Firewall Enabled \ Disabled
+Write-Host " "
+Write-Host "Auditing Firewall Rules" -foregroundColor Green
+sleep 5
 
     $getFWProf = Get-NetFirewallProfile -PolicyStore activestore -ErrorAction SilentlyContinue
     $fragFWProfile=@()
@@ -1026,10 +1040,18 @@ $fragLegNIC=@()
     $fwCSV = Import-Csv $fwpathcsv -Delimiter "," | Export-Clixml $fwpathxml
     $fragFW = Import-Clixml $fwpathxml
 
+Write-Host " "
+Write-Host "Finished Auditing Firewall Rules" -foregroundColor Green
 
 ################################################
 ############  UNQUOTED PATHS  ##################
 ################################################
+Write-Host " "
+Write-Host "From this point onwards things will slow down, in some cases it may appear nothing is happening, be patient" -foregroundColor Green
+Write-Host " "
+Write-Host "Searching for UnQuoted Path Vulnerabilities" -foregroundColor Green
+sleep 7
+
     #Unquoted paths   
     $VulnReport = "C:\SecureReport"
     $OutFunc = "UnQuoted" 
@@ -1088,9 +1110,17 @@ $fragLegNIC=@()
     }
     }
 
+Write-Host " "
+Write-Host "Finished Searching for UnQuoted Path Vulnerabilities" -foregroundColor Green
+
 ################################################
 ############  WRITEABLE FILES  #################
 ################################################
+Write-Host " "
+Write-Host "Now progress will slow whilst the script enumerates all folders and their permissions, be patient" -foregroundColor Green
+Write-Host " "
+Write-Host "Searching for Writeable Files Vulnerabilities" -foregroundColor Green
+sleep 7
 
     $VulnReport = "C:\SecureReport"
     $OutFunc = "WriteableFiles"  
@@ -1121,14 +1151,17 @@ $fragLegNIC=@()
         if ($cfileAcl | where {$_.accesstostring -like "*Users Allow  Write*" -or $_.accesstostring -like "*Users Allow  Modify*" -or $_.accesstostring -like "*Users Allow  FullControl*"})
             {
                 $cfile | Out-File $hpath -Append
+                Write-Host $cfile -ForegroundColor Yellow
             }
             if ($cfileAcl | where {$_.accesstostring -like "*Everyone Allow  Write*" -or $_.accesstostring -like "*Everyone Allow  Modify*" -or $_.accesstostring -like "*Everyone Allow  FullControl*"})
             {
                 $cfile | Out-File $hpath -Append
+                Write-Host $cfile -ForegroundColor Yellow
             }
             if ($cfileAcl | where {$_.accesstostring -like "*Authenticated Users Allow  Write*" -or $_.accesstostring -like "*Authenticated Users Allow  Modify*" -or $_.accesstostring -like "*Authenticated Users Allow  FullControl*"})
             {
                 $cfile | Out-File $hpath -Append
+                Write-Host $cfile -ForegroundColor Yellow
             }
         }
         $wFileDetails = Get-Content  $hpath -ErrorAction SilentlyContinue #|  where {$_ -ne ""} |select -skip 3
@@ -1140,11 +1173,21 @@ $fragLegNIC=@()
             $newObjwFile = New-Object -TypeName PSObject
             Add-Member -InputObject $newObjwFile -Type NoteProperty -Name WriteableFiles -Value $wFileItems
             $fragwFile += $newObjwFile
+            Write-Host $wFileItems -ForegroundColor Yellow
+
             }
+
+Write-Host " "
+Write-Host "Finished Searching for Writeable Files Vulnerabilities" -foregroundColor Green
 
 ################################################
 #########  WRITEABLE REGISTRY HIVES  ###########
 ################################################
+Write-Host " "
+Write-Host "Now progress will slow whilst the script enumerates all Registry Hives and permissions, be patient" -foregroundColor Green
+Write-Host " "
+Write-Host "Searching for Writeable Registry Hive Vulnerabilities" -foregroundColor Green
+sleep 7
 
     $VulnReport = "C:\SecureReport"
     $OutFunc = "WriteableReg"  
@@ -1173,21 +1216,26 @@ $fragLegNIC=@()
         {
     $acl = Get-Acl $regPath -ErrorAction SilentlyContinue
     $acc = $acl.AccessToString
-    Write-Output  $regPath
+    Write-Output $regPath 
+    Write-Host $regPath  -ForegroundColor DarkCyan
+
     foreach ($ac in $acc)
     {
     if ($ac | Select-String -SimpleMatch "BUILTIN\Users Allow  FullControl")
         {
             $regPath | Out-File $rpath -Append
+            Write-Host $ac -ForegroundColor DarkCyan
         } 
 
     if ($ac | Select-String -SimpleMatch "NT AUTHORITY\Authenticated Users Allow  FullControl")
         {
             $regPath | Out-File $rpath -Append
+            Write-Host $ac -ForegroundColor DarkCyan
         }
     if ($ac | Select-String -SimpleMatch "Everyone Allow  FullControl")
          {
             $regPath | Out-File $rpath -Append
+            Write-Host $ac -ForegroundColor DarkCyan
          }
     }
   }
@@ -1196,16 +1244,25 @@ $fragLegNIC=@()
     $fragReg =@()
     foreach ($regItems in $regDetails)
         {
+        Write-Host $regItems -ForegroundColor DarkCyan
         $newObjReg = New-Object -TypeName PSObject
         Add-Member -InputObject $newObjReg -Type NoteProperty -Name RegWeakness -Value $regItems
         $fragReg += $newObjReg
         }
 }
 
+Write-Host " "
+Write-Host "Finished Searching for Writeable Registry Hive Vulnerabilities" -foregroundColor Green
+
 ################################################
 #############  WRITEABLE FOLDERS  ##############
 ############  NON SYSTEM FOLDERS  ##############
 ################################################
+Write-Host " "
+Write-Host "Now progress will slow whilst the script enumerates all folders and their permissions, be patient" -foregroundColor Green
+Write-Host " "
+Write-Host "Searching for Writeable Folder Vulnerabilities" -foregroundColor Green
+sleep 7
 
     $VulnReport = "C:\SecureReport"
     $OutFunc = "WriteableFolders"  
@@ -1230,23 +1287,30 @@ $fragLegNIC=@()
             $subfl = Get-ChildItem -Path $hfold -Directory -Recurse -Force -ErrorAction SilentlyContinue
             $foldhash+=$hfolders
             $foldhash+=$subfl
+            Write-Host $hfold -ForegroundColor Gray   
         }
     foreach ($cfold in $foldhash.fullname)
     {
+    Write-Host $cfold -ForegroundColor green
+
     $cfoldAcl = Get-Acl $cfold -ErrorAction SilentlyContinue
+
     if ($cfoldAcl | where {$_.accesstostring -like "*Users Allow  Write*" -or $_.accesstostring -like "*Users Allow  Modify*" -or $_.accesstostring -like "*Users Allow  FullControl*"})
         {
             $cfold | Out-File $fpath -Append
+            Write-Host $cfold -ForegroundColor red
        }
      if ($cfoldAcl | where {$_.accesstostring -like "*Everyone Allow  Write*" -or $_.accesstostring -like "*Everyone Allow  Modify*" -or $_.accesstostring -like "*Everyone Allow  FullControl*"})
         {
             $cfold | Out-File $fpath -Append
+            Write-Host $cfold -ForegroundColor red
         }
      if ($cfoldAcl | where {$_.accesstostring -like "*Authenticated Users Allow  Write*" -or $_.accesstostring -like "*Authenticated Users Allow  Modify*" -or $_.accesstostring -like "*Authenticated Users Allow  FullControl*"})
         {
             $cfold | Out-File $fpath -Append
+            Write-Host $cfold -ForegroundColor red
         } 
-
+    }
         get-content $fpath | Sort-Object -Unique | set-Content $fpath -ErrorAction SilentlyContinue
 
         #Get content and remove the first 3 lines
@@ -1259,13 +1323,21 @@ $fragLegNIC=@()
             $newObjwFold = New-Object -TypeName PSObject
             Add-Member -InputObject $newObjwFold -Type NoteProperty -Name FolderWeakness -Value $wFoldItems
             $fragwFold += $newObjwFold
+            Write-Host $wFoldItems -ForegroundColor Gray
             }
-    }  
+     
+Write-Host " "
+Write-Host "Finisehd Searching for Writeable Folder Vulnerabilities" -foregroundColor Green
  
 ################################################
 #############  WRITEABLE FOLDERS  ##############
 ###############  SYSTEM FOLDERS  ###############
 ################################################
+Write-Host " "
+Write-Host "Now progress will slow whilst the script enumerates all folders and their permissions, be patient" -foregroundColor Green
+Write-Host " "
+Write-Host "Searching for Writeable System Folder Vulnerabilities" -foregroundColor Green
+sleep 7
     
     $VulnReport = "C:\SecureReport"
     $OutFunc = "SystemFolders"  
@@ -1286,28 +1358,34 @@ $fragLegNIC=@()
         {
             $subsysfl = Get-ChildItem -Path $sysfold -Directory -Recurse -Force -ErrorAction SilentlyContinue
             $sysfoldhash+=$subsysfl
+            Write-Host $subsysfl -ForegroundColor White
         }
     foreach ($syfold in $sysfoldhash.fullname)
         {
             $syfoldAcl = Get-Acl $syfold -ErrorAction SilentlyContinue
+            Write-Host $sysfoldhash -ForegroundColor green
+
             if ($syfoldAcl | where {$_.accesstostring -like "*Users Allow  Write*" -or $_.accesstostring -like "*Users Allow  Modify*" -or $_.accesstostring -like "*Users Allow  FullControl*"})
             {
                 $syfold | Out-File $sysPath -Append
+                Write-Host $syfold -ForegroundColor red
             }
          if ($syfoldAcl | where {$_.accesstostring -like "*Everyone Allow  Write*" -or $_.accesstostring -like "*Everyone Allow  Modify*" -or $_.accesstostring -like "*Everyone Allow  FullControl*"})
             {
                 $syfold | Out-File $sysPath -Append
+                Write-Host $syfold -ForegroundColor red
             }
             if ($syfoldAcl | where {$_.accesstostring -like "*Authenticated Users Allow  Write*" -or $_.accesstostring -like "*Authenticated Users Allow  Modify*" -or $_.accesstostring -like "*Authenticated Users Allow  FullControl*"})
             {
                 $syfold | Out-File $sysPath -Append
+                Write-Host $syfold -ForegroundColor red
             }
-
+        }
         get-content $sysPath | Sort-Object -Unique | set-Content $sysPath 
 
         #Get content and remove the first 3 lines
         $sysFolderDetails = Get-Content $sysPath -ErrorAction SilentlyContinue #|  where {$_ -ne ""} |select -skip 3
-
+        
         #Declares correctly formated hash for OS Information 
         $fragsysFold =@()
         foreach ($sysFoldItems in $sysFolderDetails)
@@ -1315,13 +1393,21 @@ $fragLegNIC=@()
             $newObjsysFold = New-Object -TypeName PSObject
             Add-Member -InputObject $newObjsysFold -Type NoteProperty -Name FolderWeakness -Value $sysFoldItems
             $fragsysFold += $newObjsysFold
+            Write-Host $sysFoldItems -ForegroundColor White
             }
-        }
+     
+Write-Host " "
+Write-Host "Finished Searching for Writeable System Folder Vulnerabilities" -foregroundColor Green
 
 ################################################
 #################  CREATEFILES  ################
 ###############  SYSTEM FOLDERS  ###############
 ################################################
+Write-Host " "
+Write-Host "Now progress will slow whilst the script enumerates all folders and their permissions, be patient" -foregroundColor Green
+Write-Host " "
+Write-Host "Searching for CreateFile Permissions Vulnerabilities" -foregroundColor Green
+sleep 7
   
     $VulnReport = "C:\SecureReport"
     $OutFunc = "CreateSystemFolders"  
@@ -1338,31 +1424,40 @@ $fragLegNIC=@()
     $_.Name -eq "Program Files (x86)" -or `
     $_.Name -eq "Windows"}
     $createSysfoldhash=@()
+  
     foreach ($createSysfold in $createSysfolders.fullname)
         {
             $createSubsysfl = Get-ChildItem -Path $createSysfold -Directory -Recurse -Force  -ErrorAction SilentlyContinue
             $createSysfoldhash+=$createSubsysfl
+
+            write-host $createSubsysfl -ForegroundColor Green
+
         }
     foreach ($createSyfold in $createSysfoldhash.fullname)
         {
             $createSyfoldAcl = Get-Acl $createSyfold -ErrorAction SilentlyContinue
+            Write-Host $createSyfold -ForegroundColor green
+
             if ($createSyfoldAcl | where {$_.accesstostring -like "*Users Allow  CreateFiles*"})
             {
                 $createSyfold | Out-File $createSysPath -Append
+                Write-Host $createSyfold -ForegroundColor red
             }
-         if ($createSyfoldAcl | where {$_.accesstostring -like "*Everyone Allow  CreateFiles*"})
+            if ($createSyfoldAcl | where {$_.accesstostring -like "*Everyone Allow  CreateFiles*"})
             {
                 $createSyfold | Out-File $createSysPath -Append
+                Write-Host $createSyfold -ForegroundColor red
             }
             if ($createSyfoldAcl | where {$_.accesstostring -like "*Authenticated Users Allow  CreateFiles*"})
             {
                 $createSyfold | Out-File $createSysPath -Append
+                Write-Host $createSyfold -ForegroundColor red
             }
-
+        }
         get-content $createSysPath | Sort-Object -Unique | set-Content $createSysPath 
 
         #Get content and remove the first 3 lines
-        $createSysFolderDetails = Get-Content  $createSysPath  -ErrorAction SilentlyContinue #|  where {$_ -ne ""} |select -skip 3
+        $createSysFolderDetails = Get-Content $createSysPath -ErrorAction SilentlyContinue #|  where {$_ -ne ""} |select -skip 3
 
         #Declares correctly formated hash for OS Information 
         $fragcreateSysFold=@()
@@ -1371,21 +1466,29 @@ $fragLegNIC=@()
             $newObjcreateSysFold = New-Object -TypeName PSObject
             Add-Member -InputObject $newObjcreateSysFold -Type NoteProperty -Name CreateFiles -Value $createSysFoldItems
             $fragcreateSysFold += $newObjcreateSysFold
+            Write-Host $createSysFoldItems -ForegroundColor green
             }
-        }
-
-
+        
+Write-Host " "
+Write-Host "Finised Searching for CreateFile Permissions Vulnerabilities" -foregroundColor Green
 
 ################################################
 ############  EMBEDDED PASSWORDS  ##############
 ################################################  
 
+Write-Host " "
+Write-Host "Now progress will slow whilst the script enumerates all files for passwords, be patient" -foregroundColor Green
+Write-Host " "
+Write-Host "Searching for Embedded Password in Files" -foregroundColor Green
+sleep 7
+  
 #Passwords in Processes
     $getPSPass = gwmi win32_process -ErrorAction SilentlyContinue | Select-Object Caption, Description,CommandLine | where {$_.commandline -like "*pass*" -or $_.commandline -like "*credential*" -or $_.commandline -like "*username*"  }
 
     $fragPSPass =@()
         foreach ($PStems in $getPSPass)
         {
+
         $PSCap = $PStems.Caption
         $PSDes = $PStems.Description
         $PSCom = $PStems.CommandLine
@@ -1397,7 +1500,6 @@ $fragLegNIC=@()
         $fragPSPass += $newObjPSPass
         }
 
-
 #passwords embedded in files
 #findstrg /si password *.txt - alt
 $getUserFolder = Get-ChildItem -Path "C:\Users\","C:\ProgramData\","C:\Windows\System32\Tasks\","C:\Windows\Panther\","C:\Windows\system32\","C:\Windows\system32\sysprep" -Recurse -Depth 4 -Force -ErrorAction SilentlyContinue | 
@@ -1407,6 +1509,8 @@ $getUserFolder = Get-ChildItem -Path "C:\Users\","C:\ProgramData\","C:\Windows\S
     $fragFilePass=@()
     foreach ($PassFile in $passwordExcluded)
     {
+    Write-Host $PassFile.fullname -ForegroundColor Yellow
+
     $SelectPassword  = Get-Content $PassFile.FullName |  Select-String -Pattern password, credential
  
     if ($SelectPassword -like "*password*")
@@ -1417,6 +1521,9 @@ $getUserFolder = Get-ChildItem -Path "C:\Users\","C:\ProgramData\","C:\Windows\S
         }
     }
 
+Write-Host " "
+Write-Host "Finished Searching for Embedded Password in Files" -foregroundColor Green
+ 
 ################################################
 ##########  HTML GENERATION  ###################
 ################################################
@@ -1453,7 +1560,6 @@ $getUserFolder = Get-ChildItem -Path "C:\Users\","C:\ProgramData\","C:\Windows\S
 #766A6A = Dark Grey with hint of beige
 #A88F7E = mouse
 #<font color="red"> <font>
-
 
 if ($Scheme -eq "Tenaka")
 {
@@ -1513,7 +1619,7 @@ $style = @"
         font-weight: normal;
         width:auto
     }
-        h4
+    h4
     {
         background-color:#250F00; 
         color:#766A6A;
@@ -1610,7 +1716,7 @@ $style = @"
         font-weight: normal;
         width:auto
     }
-        h4
+    h4
     {
         background-color:#06273A; 
         color:#766A6A;
@@ -1707,7 +1813,7 @@ $style = @"
         font-weight: normal;
         width:auto
     }
-        h4
+    h4
     {
         background-color:#EBEAE7; 
         color:#877F7D;
@@ -1917,7 +2023,7 @@ Folder weakness of Windows is slow....
 Credential Guard
 set warning for secure boot
 Expand on explanations - currently of use to non-techies
-progress bars for slow to return results or warning when its on a go slowwwww
+Progress bars vs screen output - screen output slows the process but working out % and a progress bar.......
 Netbios Node type check reg path and value
 remove extra blanks when listing progs via registry 
 FLTMC.exe - mini driver altitude looking for 'stuff' thats at an altitude to bypass security or encryption
