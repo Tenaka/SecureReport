@@ -274,7 +274,7 @@ Write-Host " "
 Write-Host "Completed Gathering Windows Update and Installed Application Information" -foregroundColor Green
         
 ################################################
-################  MSINFO32  #####################
+################  MSINFO32  ####################
 ################################################
 Write-Host " "
 Write-Host "Starting MSInfo32 and Outputting to File" -foregroundColor Green
@@ -333,6 +333,43 @@ sleep 5
 
 Write-Host " "
 Write-Host "Finished Collectiong MSInfo32 data for VBS" -foregroundColor Green
+
+################################################
+################  DRIVERQRY  ###################
+################################################
+Write-Host " "
+Write-Host "Starting DriverQuery and Outputting to File" -foregroundColor Green
+sleep 5
+
+    $VulnReport = "C:\SecureReport"
+    $OutFunc = "DriverQuery" 
+                
+    $tpSec10 = Test-Path "C:\SecureReport\output\$OutFunc\"
+        if ($tpSec10 -eq $false)
+        {
+        New-Item -Path "C:\SecureReport\output\$OutFunc\" -ItemType Directory -Force
+        }
+    $devQryPathtxt = "C:\SecureReport\output\$OutFunc\" + "$OutFunc.txt"
+    $devQryPathcsv = "C:\SecureReport\output\$OutFunc\" + "$OutFunc.csv"
+    $devQryPathXml = "C:\SecureReport\output\$OutFunc\" + "$OutFunc.xml"
+
+    $drvSign = driverquery.exe /SI >>  $devQryPathtxt
+    $getdrvQry = Get-Content  $devQryPathtxt | Select-String "FALSE" 
+
+    $DriverQuery=@()
+
+    foreach($drvQryItem in $getdrvQry)
+    {
+    if ($drvQryItem -match "FALSE"){$drvQryItem = "Warning - $drvQryItem warning"}
+    
+    $newObjDriverQuery = New-Object PSObject
+    Add-Member -InputObject $newObjDriverQuery -Type NoteProperty -Name DriverName -Value $drvQryItem 
+    $DriverQuery += $newObjDriverQuery
+    }
+
+Write-Host " "
+Write-Host "Finished Collectiong DriverQuery data for VBS" -foregroundColor Green
+
 
 ################################################
 #############  MISC REG SETTINGS  ##############
@@ -1095,8 +1132,8 @@ sleep 5
 
                 $newObjSchedTaskPerms = New-Object -TypeName PSObject
                 Add-Member -InputObject $newObjSchedTaskPerms -Type NoteProperty -Name TaskName -Value $taskName
-                Add-Member -InputObject $newObjSchedTaskPerms -Type NoteProperty -Name TaskPath -Value $taskArgs 
-                Add-Member -InputObject $newObjSchedTaskPerms -Type NoteProperty -Name TaskContent -Value $getTaskCon
+                Add-Member -InputObject $newObjSchedTaskPerms -Type NoteProperty -Name TaskPath -Value $taskArgs | Select-Object -First 1
+                Add-Member -InputObject $newObjSchedTaskPerms -Type NoteProperty -Name TaskContent -Value $getTaskCon | Select-Object -First 1
                 Add-Member -InputObject $newObjSchedTaskPerms -Type NoteProperty -Name TaskPermissions -Value $taskUSerPers
 
                 #Add-Member -InputObject $newObjSchedTaskPerms -Type NoteProperty -Name TaskUser -Value $taskUser
@@ -1113,8 +1150,9 @@ sleep 5
     {
         $taskName = $shTask.TaskName
         $taskPath = $shTask.TaskPath
-        $taskArgs = $shTask.Actions.Arguments
-        $taskExe =  $shTask.Actions.execute
+        #Filter to select 1 argument or execute, or is rendered within the web output as system.objec[] - this is an issue
+        $taskArgs = $shTask.Actions.Arguments  | Select-Object -First 1
+        $taskExe =  $shTask.Actions.execute | Select-Object -First 1
         $taskSet =  $shTask.Settings
         $taskSour = $shTask.Source
         $taskTrig = $shTask.Triggers
@@ -1122,12 +1160,12 @@ sleep 5
  
         if ($taskExe -ne $null)
         {
-            if ($taskArgs -notmatch "^[a-zA-Z]:")
+            if ($taskArgs -notmatch "^[a-zA-Z]:" -or $taskArgs -match "^[a-zA-Z]:")
             {
-                if ($taskArgs -like "*encode*"){$taskName = "Warning - Potential Base64 encoded script for $taskName Warning"}
-                if ($taskArgs -like "*webclient*"){$taskName = "Warning - Schedule is making calls off box by $taskName Warning"}
-                if ($taskArgs -like "*IEX*"){$taskName = "Warning - Schedule is making calls off box by $taskName Warning"}
-                if ($taskArgs -like "*download*"){$taskName = "Warning - Schedule is making calls off box by $taskName Warning"}
+                #if ($taskArgs -like "*encode*"){$taskName = "Warning - Potential Base64 encoded script for $taskName Warning"}
+                #if ($taskArgs -like "*webclient*"){$taskName = "Warning - Schedule is making calls off box by $taskName Warning"}
+                #if ($taskArgs -like "*IEX*"){$taskName = "Warning - Schedule is making calls off box by $taskName Warning"}
+                #if ($taskArgs -like "*download*"){$taskName = "Warning - Schedule is making calls off box by $taskName Warning"}
 
                 $newObjSchedTaskEncode = New-Object -TypeName PSObject
                 Add-Member -InputObject $newObjSchedTaskEncode -Type NoteProperty -Name TaskName -Value $taskName
@@ -2035,8 +2073,12 @@ $descripFile = "System files that allowing users to write can be swapped out for
 $descripFirewalls = "Firewalls should always block inbound and exceptions should be to a named IP and Port. Further information can be found @ https://www.tenaka.net/whyhbfirewallsneeded" 
 
 $descripTaskSchPerms = "Checks for Scheduled Tasks excluding any that reference System32 as a directory. These potential user created tasks are checked for scripts and their directory permissionss are validated. No user should be allowed to access the script and make amendments, this is a privilege escaltion route." 
+
 $descripTaskSchEncode = "Checks for encoded scripts or powershell that make calls off box." 
 
+
+
+$descriptDriverQuery = "All Drivers are to be signed with a digital signature to verify the integrity of the packages. 64bit kernel Mode drivers must be signed without exception"
 
 ################################################
 ################  FRAGMENTS  ###################
@@ -2087,6 +2129,7 @@ $descripTaskSchEncode = "Checks for encoded scripts or powershell that make call
     $frag_TaskPerms =  $SchedTaskPerms | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:$titleCol'>Scheduled Tasks that call on Files on Storage</span></h2>"  -PostContent "<h4>$descripTaskSchPerms</h4>" | Out-String
     $frag_TaskEncode =  $SchedTaskEncode | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:$titleCol'>Scheduled Tasks that contain something Encoded</span></h2>"  -PostContent "<h4>$descripTaskSchEncode</h4>" | Out-String
 
+    $frag_DriverQuery =  $DriverQuery | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:$titleCol'>Drivers that aren't signed</span></h2>"  -PostContent "<h4>$descriptDriverQuery</h4>" | Out-String
  
  
     
@@ -2108,6 +2151,7 @@ $descripTaskSchEncode = "Checks for encoded scripts or powershell that make call
     $fragcpu, 
     $frag_BitLocker, 
     $frag_Msinfo,
+    $frag_DriverQuery,
     $Frag_descripVirt2,
     $frag_Code,
     $frag_SecOptions,
@@ -2163,5 +2207,9 @@ remove extra blanks when listing progs via registry
 FLTMC.exe - mini driver altitude looking for 'stuff' thats at an altitude to bypass security or encryption
 report on appX bypass and seriousSam
 DRIVERQUERY /SI - driver signing
+Remote desktop and permissions
+get-authenticodesignature
+report on shares
+Scheduled tasks - fix required for multi line web output resultsing in system.objec[]
 #>
 
