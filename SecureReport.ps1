@@ -62,6 +62,8 @@ function reports
 220208.2 - Fixed the file\folder parsing loops, included processing that should have been completed after the loops had finished
 220211.1 - Added Scheduled task audit looking for embedded code.
 220211.2 - Added < hash hash > to comment out the folder audits.
+220214.1 - Added Driver Query
+220214.1 - Temporary fix to scheduled task where multiple triggers or action breaks the html output
 
 #> 
 
@@ -2151,8 +2153,8 @@ $descriptDriverQuery = "All Drivers are to be signed with a digital signature to
     $fragcpu, 
     $frag_BitLocker, 
     $frag_Msinfo,
-    $frag_DriverQuery,
     $Frag_descripVirt2,
+    $frag_DriverQuery,
     $frag_Code,
     $frag_SecOptions,
     $frag_LSAPPL,
