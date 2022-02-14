@@ -1098,8 +1098,8 @@ sleep 5
     {
         $taskName = $shTask.TaskName
         $taskPath = $shTask.TaskPath
-        $taskArgs = $shTask.Actions.Arguments
-        $taskExe =  $shTask.Actions.execute
+        $taskArgs = $shTask.Actions.Arguments | Select-Object -First 1
+        $taskExe =  $shTask.Actions.execute | Select-Object -First 1
         $taskSet =  $shTask.Settings
         $taskSour = $shTask.Source
         $taskTrig = $shTask.Triggers
@@ -1134,8 +1134,8 @@ sleep 5
 
                 $newObjSchedTaskPerms = New-Object -TypeName PSObject
                 Add-Member -InputObject $newObjSchedTaskPerms -Type NoteProperty -Name TaskName -Value $taskName
-                Add-Member -InputObject $newObjSchedTaskPerms -Type NoteProperty -Name TaskPath -Value $taskArgs | Select-Object -First 1
-                Add-Member -InputObject $newObjSchedTaskPerms -Type NoteProperty -Name TaskContent -Value $getTaskCon | Select-Object -First 1
+                Add-Member -InputObject $newObjSchedTaskPerms -Type NoteProperty -Name TaskPath -Value $taskArgs
+                Add-Member -InputObject $newObjSchedTaskPerms -Type NoteProperty -Name TaskContent -Value $getTaskCon 
                 Add-Member -InputObject $newObjSchedTaskPerms -Type NoteProperty -Name TaskPermissions -Value $taskUSerPers
 
                 #Add-Member -InputObject $newObjSchedTaskPerms -Type NoteProperty -Name TaskUser -Value $taskUser
