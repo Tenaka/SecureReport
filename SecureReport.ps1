@@ -66,6 +66,7 @@ function reports
 220214.1 - Temporary fix to scheduled task where multiple triggers or action breaks the html output
 220215.1 - Report on shares and their permissions
 220216.1 - Fixed Schedule task reporting to show multiple arguments and actions 
+220218.1 - Added Autenticode Signature Hash Mis-Match (Long running process, will be optional)
 
 #> 
 
@@ -74,6 +75,8 @@ Write-Host " "
 Write-Host "The report requires at least 30 minutes to run, depending on hardware and amount of data on the system, it could take much longer"  -ForegroundColor Red 
 Write-Host " "
 Write-Host "Ignore any errors or red messages its due to Administrator being denied access to parts of the file system." -ForegroundColor Red 
+Write-Host " "
+Write-Host "Checking for Digital signature hash mis-match is disabled, unhash AUTHENTICODE SIGNATURE section" -ForegroundColor Red 
 Write-Host " "
 $Scheme = Read-Host "Type either Tenaka, Dark or Light for choice of colour scheme" 
 
@@ -342,7 +345,7 @@ Write-Host "Finished Collectiong MSInfo32 data for VBS" -foregroundColor Green
 ################  DRIVERQRY  ###################
 ################################################
 Write-Host " "
-Write-Host "Starting DriverQuery and Outputting to File" -foregroundColor Green
+Write-Host "Starting DriverQuery and Out putting to File" -foregroundColor Green
 sleep 5
 
     $VulnReport = "C:\SecureReport"
@@ -1192,44 +1195,6 @@ foreach ($shTask in $getScTask | where {$_.Actions.execute -notlike "*system32*"
         }
     }
 
-<#
-
-    $SchedTaskEncode=@()
-    #Find hidden code or Base 64 in NON System Directories
-    foreach ($shTask in $getScTask | where {$_.Actions.execute -notlike "*system32*" -and $_.Actions.execute -notlike "*%ProgramFiles%*"})
- 
-    {
-        $taskName = $shTask.TaskName
-        $taskPath = $shTask.TaskPath
-        #Filter to select 1 argument or execute, or is rendered within the web output as system.objec[] - this is an issue
-        $taskArgs = $shTask.Actions.Arguments  | Select-Object -First 1
-        $taskExe =  $shTask.Actions.execute | Select-Object -First 1
-        $taskSet =  $shTask.Settings
-        $taskSour = $shTask.Source
-        $taskTrig = $shTask.Triggers
-        $taskURI =  $shTask.URI
- 
-        if ($taskExe -ne $null)
-        {
-            if ($taskArgs -notmatch "^[a-zA-Z]:" -or $taskArgs -match "^[a-zA-Z]:")
-            {
-                if ($taskArgs -like "*encode*"){$taskName = "Warning - Potential Base64 encoded script for $taskName Warning"}
-                if ($taskArgs -like "*webclient*"){$taskName = "Warning - Schedule is making calls off box by $taskName Warning"}
-                if ($taskArgs -like "*IEX*"){$taskName = "Warning - Schedule is making calls off box by $taskName Warning"}
-                if ($taskArgs -like "*download*"){$taskName = "Warning - Schedule is making calls off box by $taskName Warning"}
-                else {}
-
-                $newObjSchedTaskEncode = New-Object -TypeName PSObject
-                Add-Member -InputObject $newObjSchedTaskEncode -Type NoteProperty -Name TaskName -Value $taskName
-                Add-Member -InputObject $newObjSchedTaskEncode -Type NoteProperty -Name TaskExecutable -Value $taskExe
-                Add-Member -InputObject $newObjSchedTaskEncode -Type NoteProperty -Name TaskArguments -Value $taskArgs
-                $SchedTaskEncode += $newObjSchedTaskEncode
-            }
-        }
-    }    
-
-#>
-
 Write-Host " "
 Write-Host "Completed Scheduled Tasks" -foregroundColor Green
 
@@ -1678,6 +1643,45 @@ Write-Host "Finised Searching for CreateFile Permissions Vulnerabilities" -foreg
 #REMOVE THE HASH AND > TO AUDIT FILE SYSTEMS
 '#>'
 
+<#
+################################################
+########  AUTHENTICODE SIGNATURE  ##############
+################################################
+#WARNING - Very long running process - enable only when required
+Write-Host " "
+Write-Host "Searching for authenticode signature hashmismatch" -foregroundColor Green
+
+$fragAuthCodeSig=@()
+$newObjAuthSig=@()
+$getAuthfiles = Get-ChildItem -Path 'C:\' -Recurse | where { ! $_.PSIsContainer -and $_.extension -ne ".log" -and $_.extension -ne ".hve" -and $_.extension -ne ".txt" -and $_.extension -ne ".evtx" -and $_.extension -ne ".elt"}
+#$ggfiles.extension
+foreach($file in $getAuthfiles)
+{
+ $getAuthCodeSig = get-authenticodesignature -FilePath $file.FullName | where {$_.Status -eq "hashmismatch"}
+
+ if ($getAuthCodeSig.path -eq $null){}
+ else 
+    {
+     $authPath = $getAuthCodeSig.path
+     $authStatus = $getAuthCodeSig.status
+
+     $newObjAuthSig = New-Object -TypeName PSObject
+     Add-Member -InputObject $newObjAuthSig -Type NoteProperty -Name PathAuthCodeSig -Value $authPath
+     Add-Member -InputObject $newObjAuthSig -Type NoteProperty -Name StatusAuthCodeSig -Value $authStatus
+     $fragAuthCodeSig += $newObjAuthSig
+    }
+}
+
+Write-Host " "
+Write-Host "Completed searching for authenticode signature hashmismatch" -foregroundColor Green
+#>
+###########################################################################################################################
+###########################################################################################################################
+###########################################################################################################################
+
+#REMOVE THE HASH AND > TO AUDIT FOR AUTHENTICODE SIGNATURE HASH MISMATCH
+
+
 ################################################
 ##############  SHARES AND PERMS  ##############
 ################################################ 
@@ -1743,7 +1747,9 @@ sleep 7
 
 #passwords embedded in files
 #findstrg /si password *.txt - alt
-$getUserFolder = Get-ChildItem -Path "C:\Users\","C:\ProgramData\","C:\Windows\System32\Tasks\","C:\Windows\Panther\","C:\Windows\system32\","C:\Windows\system32\sysprep" -Recurse -Depth 4 -Force -ErrorAction SilentlyContinue | 
+#$getUserFolder = Get-ChildItem -Path "C:\Users\","C:\ProgramData\","C:\Windows\System32\Tasks\","C:\Windows\Panther\","C:\Windows\system32\","C:\Windows\system32\sysprep" -Recurse -Depth 4 -Force -ErrorAction SilentlyContinue | 
+
+$getUserFolder = Get-ChildItem -Path "C:\" -Recurse -Depth 4 -Force -ErrorAction SilentlyContinue | 
     where {$_.Extension -eq ".txt" -or $_.Extension -eq ".ini" -or $_.Extension -eq ".xml"}  #xml increase output, breaks report
 
     $passwordExcluded = $getUserFolder | where {$_.DirectoryName -notlike "*Packages*" -and $_.DirectoryName -notlike "*Containers\BaseImages*" -and $_.DirectoryName -notlike  "*MicrosoftOffice*" -and $_.DirectoryName -notlike "*AppRepository*" -and $_.DirectoryName -notlike "*IdentityCRL*" -and $_.DirectoryName -notlike "*UEV*" -and $_.Name -notlike "*MicrosoftOffice201*" -and $_.DirectoryName -notlike "*DriverStore*" -and $_.DirectoryName -notlike "*spool*" -and $_.DirectoryName -notlike "*icsxm*"  }
@@ -2092,6 +2098,103 @@ $style = @"
     </Style>
 "@
 }
+else 
+{#Dark Theme
+
+$titleCol = "#4682B4"
+
+#HTML GENERATOR CSS
+$style = @"
+    <Style>
+    body
+    {
+        background-color:#06273A; 
+        color:#FFF9EC;
+        font-size:100%;
+        font-family:helvetica;
+        margin:0,0,10px,0; 
+        word-break:normal; 
+        word-wrap:break-word
+    }
+    table
+    {
+        border-width: 1px;
+        padding: 7px;
+        border-style: solid;
+        border-color:#FFF9EC;
+        border-collapse:collapse;
+        width:auto
+    }
+    h1
+    {
+        background-color:#06273A; 
+        color:#FFF9EC;
+        font-size:150%;
+        font-family:helvetica;
+        margin:0,0,10px,0;
+        word-break:normal; 
+        word-wrap:break-word
+    }
+    h2
+    {
+        background-color:#06273A; 
+        color:#FFF9EC;
+        font-size:120%;
+        font-family:helvetica;
+        margin:0,0,10px,0; 
+        word-break:normal; 
+        word-wrap:break-word
+    }
+    h3
+    {
+        background-color:#06273A; 
+        color:#FFF9EC;
+        font-size:100%;
+        font-family:helvetica;
+        margin:0,0,10px,0; 
+        word-break:normal; 
+        word-wrap:break-word;
+        font-weight: normal;
+        width:auto
+    }
+    h4
+    {
+        background-color:#06273A; 
+        color:#766A6A;
+        font-size:90%;
+        font-family:helvetica;
+        margin:0,0,10px,0; 
+        word-break:normal; 
+        word-wrap:break-word;
+        font-weight: normal
+    }
+    th
+    {
+        border-width: 1px;
+        padding: 7px;
+        border-style: solid;
+        border-color:#FFF9EC;
+        background-color:#06273A
+    }
+    td
+    {
+        border-width: 1px;
+        padding:7px;
+        border-style: solid; 
+        border-style: #FFF9EC
+    }
+    tr:nth-child(odd) 
+    {
+        background-color:#06273A;
+    }
+    tr:nth-child(even) 
+    {
+        background-color:#28425F;
+    }
+
+    </Style>
+"@
+}
 
     $VulnReport = "C:\SecureReport"
     $OutFunc = "SystemReport"  
@@ -2160,6 +2263,9 @@ $descripTaskSchEncode = "Checks for encoded scripts, powershell or exe's that ma
 
 $descriptDriverQuery = "All Drivers should be signed with a digital signature to verify the integrity of the packages. 64bit kernel Mode drivers must be signed without exception"
 
+$descriptAuthCodeSig = "Checks that digitally signed have a valid and trusted hash. If any Hash Mis-Matches then the file could have been altered"
+
+
 ################################################
 ################  FRAGMENTS  ###################
 ################################################
@@ -2207,6 +2313,9 @@ $descriptDriverQuery = "All Drivers should be signed with a digital signature to
     $frag_DriverQuery =  $DriverQuery | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:$titleCol'>Drivers that aren't signed</span></h2>" -PostContent "<h4>$descriptDriverQuery</h4>" | Out-String
     $frag_Share = $fragShare | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:$titleCol'>Shares and their Share Permissions</span></h2>"  | Out-String
  
+    $frag_AuthCodeSig = $fragAuthCodeSig | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:$titleCol'>Files with an Authenticode Signature HashMisMatch</span></h2>" -PostContent "<h4>$descriptAuthCodeSig</h4>"  | Out-String  
+ 
+
 ################################################
 ############  CREATE HTML REPORT  ##############
 ################################################
@@ -2245,6 +2354,7 @@ $descriptDriverQuery = "All Drivers should be signed with a digital signature to
     $frag_createSysFold,
     $frag_wFolders,
     $frag_wFile,
+    $frag_AuthCodeSig,
     $frag_FWProf,
     $frag_FW,
     $FragDescripFin  | out-file $Report
@@ -2282,7 +2392,7 @@ remove extra blanks when listing progs via registry
 FLTMC.exe - mini driver altitude looking for 'stuff' thats at an altitude to bypass security or encryption
 report on appX bypass and seriousSam
 Remote desktop and permissions
-get-authenticodesignature
+
 
 Scheduled tasks - fix required for multi line web output resultsing in system.objec[]
 #>
