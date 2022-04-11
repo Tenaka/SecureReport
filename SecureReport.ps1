@@ -187,6 +187,7 @@ Checks that digitally signed files have a valid and trusted hash. If any Hash Mi
 
   
 .VERSION
+YYMMDD
 211221.1 - Added Security Options
 211222.1 - Changed f$.Replace  | Out-File $Report to Foreach {$_ -replace "",""}
 211222.2 - Added Warning to be RED with a replace and set-content
@@ -216,6 +217,8 @@ Checks that digitally signed files have a valid and trusted hash. If any Hash Mi
 220218.1 - Added Autenticode Signature Hash Mis-Match (Long running process, will be optional, unhash section to enable )
 220222.1 - Embedded passwords reworked to be more efficient 
 220224.1 - General cleanup of spacing and formatting purely aesthetic
+220228.1 - Multi drive support for Folder and File permission and password audits
+220411.1 - Added "HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\" to list x86 install applications
 
 #>
 #Remove any DVD from client
@@ -413,7 +416,9 @@ sleep 5
 ##############  INSTALLED APPS  ################
 ################################################
 
-    $getUnin = Get-ChildItem  "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\" -ErrorAction SilentlyContinue
+    $getUninx64 = Get-ChildItem  "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\" -ErrorAction SilentlyContinue
+    $getUninx86 = Get-ChildItem  "HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\"  -ErrorAction SilentlyContinue
+    $getUnin = $getUninx64 + $getUninx86
     $UninChild = $getUnin.Name.Replace("HKEY_LOCAL_MACHINE","HKLM:")
     $InstallApps =@()
     
@@ -562,7 +567,6 @@ sleep 5
 
 Write-Host " "
 Write-Host "Finished Collectiong DriverQuery data for VBS" -foregroundColor Green
-
 
 ################################################
 #############  MISC REG SETTINGS  ##############
@@ -1358,7 +1362,7 @@ sleep 5
 
         if ($syfoldAcl | where {$_.accesstostring -like "*Authenticated Users Allow  Write*" -or $_.accesstostring -like "*Authenticated Users Allow  Modify*" -or $_.accesstostring -like "*Authenticated Users Allow  FullControl*"})
         {
-        $taskUSerPers = "Warning - Authenticated User are all0wed to WRITE or MODIFY $taskArgs Warning"
+        $taskUSerPers = "Warning - Authenticated User are allowed to WRITE or MODIFY $taskArgs Warning"
         }
 
         $newObjSchedTaskPerms = New-Object -TypeName PSObject
@@ -1523,54 +1527,59 @@ sleep 7
 
     $hpath = "C:\SecureReport\output\$OutFunc\" + "$OutFunc.log"
 
-    $hfiles =  Get-ChildItem C:\ -ErrorAction SilentlyContinue | where {$_.Name -eq "PerfLogs" -or ` 
-    $_.Name -eq "Program Files" -or `
-    $_.Name -eq "Program Files (x86)"} # -or `
-    # $_.Name -eq "Windows"}
+    $drv = (psdrive | where {$_.root -match "^[a-zA-Z]:"})
+    $drvRoot = $drv.root
 
-    $filehash = @()
-    foreach ($hfile in $hfiles.fullname)
+    foreach ($rt in $drvRoot)
     {
-    $subfl = Get-ChildItem -Path $hfile -force -Recurse -Include *.exe, *.dll -ErrorAction SilentlyContinue
-    $filehash+=$subfl
-    $filehash 
-    }
-    
-    foreach ($cfile in $filehash.fullname)
-    {
-    $cfileAcl = Get-Acl $cfile -ErrorAction SilentlyContinue
+        $hfiles =  Get-ChildItem $rt -ErrorAction SilentlyContinue | where {$_.Name -eq "PerfLogs" -or ` 
+        $_.Name -eq "Program Files" -or `
+        $_.Name -eq "Program Files (x86)"} # -or `
+        # $_.Name -eq "Windows"}
 
-    if ($cfileAcl | where {$_.accesstostring -like "*Users Allow  Write*" -or $_.accesstostring -like "*Users Allow  Modify*" -or $_.accesstostring -like "*Users Allow  FullControl*"})
-    {
-    $cfile | Out-File $hpath -Append
-    #Write-Host $cfile -ForegroundColor Yellow
-    }
+        $filehash = @()
+        foreach ($hfile in $hfiles.fullname)
+        {
+        $subfl = Get-ChildItem -Path $hfile -force -Recurse -Include *.exe, *.dll -ErrorAction SilentlyContinue
+        $filehash+=$subfl
+        $filehash 
+        }
+    
+        foreach ($cfile in $filehash.fullname)
+        {
+        $cfileAcl = Get-Acl $cfile -ErrorAction SilentlyContinue
 
-    if ($cfileAcl | where {$_.accesstostring -like "*Everyone Allow  Write*" -or $_.accesstostring -like "*Everyone Allow  Modify*" -or $_.accesstostring -like "*Everyone Allow  FullControl*"})
-    {
-    $cfile | Out-File $hpath -Append
-    #Write-Host $cfile -ForegroundColor Yellow
-    }
-    
-    if ($cfileAcl | where {$_.accesstostring -like "*Authenticated Users Allow  Write*" -or $_.accesstostring -like "*Authenticated Users Allow  Modify*" -or $_.accesstostring -like "*Authenticated Users Allow  FullControl*"})
-    {
-    $cfile | Out-File $hpath -Append
-    #Write-Host $cfile -ForegroundColor Yellow
-    }
-    }
-    
-    $wFileDetails = Get-Content  $hpath -ErrorAction SilentlyContinue #|  where {$_ -ne ""} |select -skip 3
-    #Declares correctly formated hash for OS Information 
-    $fragwFile =@()
-    
-    foreach ($wFileItems in $wFileDetails)
-    {
-    $newObjwFile = New-Object -TypeName PSObject
-    Add-Member -InputObject $newObjwFile -Type NoteProperty -Name WriteableFiles -Value $wFileItems
-    $fragwFile += $newObjwFile
-    #Write-Host $wFileItems -ForegroundColor Yellow
-    }
+        if ($cfileAcl | where {$_.accesstostring -like "*Users Allow  Write*" -or $_.accesstostring -like "*Users Allow  Modify*" -or $_.accesstostring -like "*Users Allow  FullControl*"})
+        {
+        $cfile | Out-File $hpath -Append
+        #Write-Host $cfile -ForegroundColor Yellow
+        }
 
+        if ($cfileAcl | where {$_.accesstostring -like "*Everyone Allow  Write*" -or $_.accesstostring -like "*Everyone Allow  Modify*" -or $_.accesstostring -like "*Everyone Allow  FullControl*"})
+        {
+        $cfile | Out-File $hpath -Append
+        #Write-Host $cfile -ForegroundColor Yellow
+        }
+    
+        if ($cfileAcl | where {$_.accesstostring -like "*Authenticated Users Allow  Write*" -or $_.accesstostring -like "*Authenticated Users Allow  Modify*" -or $_.accesstostring -like "*Authenticated Users Allow  FullControl*"})
+        {
+        $cfile | Out-File $hpath -Append
+        #Write-Host $cfile -ForegroundColor Yellow
+        }
+        }
+    
+        $wFileDetails = Get-Content  $hpath -ErrorAction SilentlyContinue #|  where {$_ -ne ""} |select -skip 3
+        #Declares correctly formated hash for OS Information 
+        $fragwFile =@()
+    
+        foreach ($wFileItems in $wFileDetails)
+        {
+        $newObjwFile = New-Object -TypeName PSObject
+        Add-Member -InputObject $newObjwFile -Type NoteProperty -Name WriteableFiles -Value $wFileItems
+        $fragwFile += $newObjwFile
+        #Write-Host $wFileItems -ForegroundColor Yellow
+        }
+    }
 Write-Host " "
 Write-Host "Finished Searching for Writeable Files Vulnerabilities" -foregroundColor Green
 
@@ -1672,57 +1681,64 @@ sleep 7
     
     $fpath = "C:\SecureReport\output\$OutFunc\" + "$OutFunc.log"
     #Additional Folders off the root of C: that are not system
-    $hfolders =  Get-ChildItem c:\ -ErrorAction SilentlyContinue  | where {$_.Name -ne "PerfLogs" -and ` 
-    $_.Name -ne "Program Files" -and `
-    $_.Name -ne "Program Files (x86)" -and `
-    $_.Name -ne "Users" -and `
-    $_.Name -ne "Windows"}
-
-    $foldhash = @()
-    foreach ($hfold in $hfolders.fullname)
-    {
-    $subfl = Get-ChildItem -Path $hfold -Directory -Recurse -Force -ErrorAction SilentlyContinue
-    $foldhash+=$hfolders
-    $foldhash+=$subfl
-    #Write-Host $hfold -ForegroundColor Gray   
-    }
     
-    foreach ($cfold in $foldhash.fullname)
-    {
-    #Write-Host $cfold -ForegroundColor green
-    $cfoldAcl = Get-Acl $cfold -ErrorAction SilentlyContinue
+    $drv = (psdrive | where {$_.root -match "^[a-zA-Z]:"})
+    $drvRoot = $drv.root
 
-        if ($cfoldAcl | where {$_.accesstostring -like "*Users Allow  Write*" -or $_.accesstostring -like "*Users Allow  Modify*" -or $_.accesstostring -like "*Users Allow  FullControl*"})
+    foreach ($rt in $drvRoot)
         {
-        $cfold | Out-File $fpath -Append
-        #Write-Host $cfold -ForegroundColor red
+        $hfolders =  Get-ChildItem $rt -ErrorAction SilentlyContinue  | where {$_.Name -ne "PerfLogs" -and ` 
+        $_.Name -ne "Program Files" -and `
+        $_.Name -ne "Program Files (x86)" -and `
+        $_.Name -ne "Users" -and `
+        $_.Name -ne "Windows"}
+
+        $foldhash = @()
+        foreach ($hfold in $hfolders.fullname)
+        {
+        $subfl = Get-ChildItem -Path $hfold -Directory -Recurse -Force -ErrorAction SilentlyContinue
+        $foldhash+=$hfolders
+        $foldhash+=$subfl
+        #Write-Host $hfold -ForegroundColor Gray   
         }
-
-        if ($cfoldAcl | where {$_.accesstostring -like "*Everyone Allow  Write*" -or $_.accesstostring -like "*Everyone Allow  Modify*" -or $_.accesstostring -like "*Everyone Allow  FullControl*"})
-        {
-        $cfold | Out-File $fpath -Append
-        #Write-Host $cfold -ForegroundColor red
-        }
-
-        if ($cfoldAcl | where {$_.accesstostring -like "*Authenticated Users Allow  Write*" -or $_.accesstostring -like "*Authenticated Users Allow  Modify*" -or $_.accesstostring -like "*Authenticated Users Allow  FullControl*"})
-        {
-        $cfold | Out-File $fpath -Append
-        #Write-Host $cfold -ForegroundColor red
-        } 
-    }
-    get-content $fpath | Sort-Object -Unique | set-Content $fpath -ErrorAction SilentlyContinue
-
-    #Get content and remove the first 3 lines
-    $wFolderDetails = Get-Content  $fpath  -ErrorAction SilentlyContinue   #|  where {$_ -ne ""} |select -skip 3
-    #Declares correctly formated hash for OS Information 
-    $fragwFold =@()
     
-    foreach ($wFoldItems in $wFolderDetails)
-    {
-    $newObjwFold = New-Object -TypeName PSObject
-    Add-Member -InputObject $newObjwFold -Type NoteProperty -Name FolderWeakness -Value $wFoldItems
-    $fragwFold += $newObjwFold
-    #Write-Host $wFoldItems -ForegroundColor Gray
+        foreach ($cfold in $foldhash.fullname)
+        {
+        #Write-Host $cfold -ForegroundColor green
+        $cfoldAcl = Get-Acl $cfold -ErrorAction SilentlyContinue
+
+            if ($cfoldAcl | where {$_.accesstostring -like "*Users Allow  Write*" -or $_.accesstostring -like "*Users Allow  Modify*" -or $_.accesstostring -like "*Users Allow  FullControl*"})
+            {
+            $cfold | Out-File $fpath -Append
+            #Write-Host $cfold -ForegroundColor red
+            }
+
+            if ($cfoldAcl | where {$_.accesstostring -like "*Everyone Allow  Write*" -or $_.accesstostring -like "*Everyone Allow  Modify*" -or $_.accesstostring -like "*Everyone Allow  FullControl*"})
+            {
+            $cfold | Out-File $fpath -Append
+            #Write-Host $cfold -ForegroundColor red
+            }
+
+            if ($cfoldAcl | where {$_.accesstostring -like "*Authenticated Users Allow  Write*" -or $_.accesstostring -like "*Authenticated Users Allow  Modify*" -or $_.accesstostring -like "*Authenticated Users Allow  FullControl*"})
+            {
+            $cfold | Out-File $fpath -Append
+            #Write-Host $cfold -ForegroundColor red
+            } 
+        }
+        get-content $fpath | Sort-Object -Unique | set-Content $fpath -ErrorAction SilentlyContinue
+
+        #Get content and remove the first 3 lines
+        $wFolderDetails = Get-Content  $fpath  -ErrorAction SilentlyContinue   #|  where {$_ -ne ""} |select -skip 3
+        #Declares correctly formated hash for OS Information 
+        $fragwFold =@()
+    
+        foreach ($wFoldItems in $wFolderDetails)
+        {
+        $newObjwFold = New-Object -TypeName PSObject
+        Add-Member -InputObject $newObjwFold -Type NoteProperty -Name FolderWeakness -Value $wFoldItems
+        $fragwFold += $newObjwFold
+        #Write-Host $wFoldItems -ForegroundColor Gray
+        }
     }
      
 Write-Host " "
@@ -1749,57 +1765,63 @@ sleep 7
     }
 
     $sysPath = "C:\SecureReport\output\$OutFunc\" + "$OutFunc.log"
-    
-    $sysfolders =  Get-ChildItem C:\ -ErrorAction SilentlyContinue | where {$_.Name -eq "PerfLogs" -or ` 
-    $_.Name -eq "Program Files" -or `
-    $_.Name -eq "Program Files (x86)" -or `
-    $_.Name -eq "Windows"}
-    $sysfoldhash = @()
-    
-    foreach ($sysfold in $sysfolders.fullname)
-    {
-    $subsysfl = Get-ChildItem -Path $sysfold -Directory -Recurse -Force -ErrorAction SilentlyContinue
-    $sysfoldhash+=$subsysfl
-    #Write-Host $subsysfl -ForegroundColor White
-    }
-    
-    foreach ($syfold in $sysfoldhash.fullname)
-    {
-    $syfoldAcl = Get-Acl $syfold -ErrorAction SilentlyContinue
-    #Write-Host $sysfoldhash -ForegroundColor green
-        if ($syfoldAcl | where {$_.accesstostring -like "*Users Allow  Write*" -or $_.accesstostring -like "*Users Allow  Modify*" -or $_.accesstostring -like "*Users Allow  FullControl*"})
-        {
-        $syfold | Out-File $sysPath -Append
-        #Write-Host $syfold -ForegroundColor red
-        }
 
-        if ($syfoldAcl | where {$_.accesstostring -like "*Everyone Allow  Write*" -or $_.accesstostring -like "*Everyone Allow  Modify*" -or $_.accesstostring -like "*Everyone Allow  FullControl*"})
-        {
-        $syfold | Out-File $sysPath -Append
-        #Write-Host $syfold -ForegroundColor red
-        }
+    $drv = (psdrive | where {$_.root -match "^[a-zA-Z]:"})
+    $drvRoot = $drv.root
 
-        if ($syfoldAcl | where {$_.accesstostring -like "*Authenticated Users Allow  Write*" -or $_.accesstostring -like "*Authenticated Users Allow  Modify*" -or $_.accesstostring -like "*Authenticated Users Allow  FullControl*"})
+    foreach ($rt in $drvRoot)
         {
-        $syfold | Out-File $sysPath -Append
-        #Write-Host $syfold -ForegroundColor red
-        }
-    }
+        $sysfolders =  Get-ChildItem $rt -ErrorAction SilentlyContinue | where {$_.Name -eq "PerfLogs" -or ` 
+        $_.Name -eq "Program Files" -or `
+        $_.Name -eq "Program Files (x86)" -or `
+        $_.Name -eq "Windows"}
+        $sysfoldhash = @()
     
-    get-content $sysPath | Sort-Object -Unique | set-Content $sysPath 
+        foreach ($sysfold in $sysfolders.fullname)
+        {
+        $subsysfl = Get-ChildItem -Path $sysfold -Directory -Recurse -Force -ErrorAction SilentlyContinue
+        $sysfoldhash+=$subsysfl
+        #Write-Host $subsysfl -ForegroundColor White
+        }
+    
+        foreach ($syfold in $sysfoldhash.fullname)
+        {
+        $syfoldAcl = Get-Acl $syfold -ErrorAction SilentlyContinue
+        #Write-Host $sysfoldhash -ForegroundColor green
+            if ($syfoldAcl | where {$_.accesstostring -like "*Users Allow  Write*" -or $_.accesstostring -like "*Users Allow  Modify*" -or $_.accesstostring -like "*Users Allow  FullControl*"})
+            {
+            $syfold | Out-File $sysPath -Append
+            #Write-Host $syfold -ForegroundColor red
+            }
 
-    #Get content and remove the first 3 lines
-    $sysFolderDetails = Get-Content $sysPath -ErrorAction SilentlyContinue #|  where {$_ -ne ""} |select -skip 3
+            if ($syfoldAcl | where {$_.accesstostring -like "*Everyone Allow  Write*" -or $_.accesstostring -like "*Everyone Allow  Modify*" -or $_.accesstostring -like "*Everyone Allow  FullControl*"})
+            {
+            $syfold | Out-File $sysPath -Append
+            #Write-Host $syfold -ForegroundColor red
+            }
+
+            if ($syfoldAcl | where {$_.accesstostring -like "*Authenticated Users Allow  Write*" -or $_.accesstostring -like "*Authenticated Users Allow  Modify*" -or $_.accesstostring -like "*Authenticated Users Allow  FullControl*"})
+            {
+            $syfold | Out-File $sysPath -Append
+            #Write-Host $syfold -ForegroundColor red
+            }
+        }
+    
+        get-content $sysPath | Sort-Object -Unique | set-Content $sysPath 
+
+        #Get content and remove the first 3 lines
+        $sysFolderDetails = Get-Content $sysPath -ErrorAction SilentlyContinue #|  where {$_ -ne ""} |select -skip 3
         
-    #Declares correctly formated hash for OS Information 
-    $fragsysFold =@()
+        #Declares correctly formated hash for OS Information 
+        $fragsysFold =@()
     
-    foreach ($sysFoldItems in $sysFolderDetails)
-    {
-    $newObjsysFold = New-Object -TypeName PSObject
-    Add-Member -InputObject $newObjsysFold -Type NoteProperty -Name FolderWeakness -Value $sysFoldItems
-    $fragsysFold += $newObjsysFold
-    #Write-Host $sysFoldItems -ForegroundColor White
+        foreach ($sysFoldItems in $sysFolderDetails)
+        {
+        $newObjsysFold = New-Object -TypeName PSObject
+        Add-Member -InputObject $newObjsysFold -Type NoteProperty -Name FolderWeakness -Value $sysFoldItems
+        $fragsysFold += $newObjsysFold
+        #Write-Host $sysFoldItems -ForegroundColor White
+        }
     }
      
 Write-Host " "
@@ -1826,58 +1848,64 @@ sleep 7
     }
     
     $createSysPath = "C:\SecureReport\output\$OutFunc\" + "$OutFunc.log"
-    
-    $createSysfolders =  Get-ChildItem C:\ -ErrorAction SilentlyContinue | where {$_.Name -eq "PerfLogs" -or ` 
-    $_.Name -eq "Program Files" -or `
-    $_.Name -eq "Program Files (x86)" -or `
-    $_.Name -eq "Windows"}
-    $createSysfoldhash=@()
+
+    $drv = (psdrive | where {$_.root -match "^[a-zA-Z]:"})
+    $drvRoot = $drv.root
+
+    foreach ($rt in $drvRoot)
+        {   
+        $createSysfolders =  Get-ChildItem $rt -ErrorAction SilentlyContinue | where {$_.Name -eq "PerfLogs" -or ` 
+        $_.Name -eq "Program Files" -or `
+        $_.Name -eq "Program Files (x86)" -or `
+        $_.Name -eq "Windows"}
+        $createSysfoldhash=@()
   
-    foreach ($createSysfold in $createSysfolders.fullname)
-    {
-    $createSubsysfl = Get-ChildItem -Path $createSysfold -Directory -Recurse -Force  -ErrorAction SilentlyContinue
-    $createSysfoldhash+=$createSubsysfl
-    #Write-Host $createSubsysfl -ForegroundColor Green
-    }
-
-    foreach ($createSyfold in $createSysfoldhash.fullname)
-    {
-    $createSyfoldAcl = Get-Acl $createSyfold -ErrorAction SilentlyContinue
-    #Write-Host $createSyfold -ForegroundColor green
-
-        if ($createSyfoldAcl | where {$_.accesstostring -like "*Users Allow  CreateFiles*"})
+        foreach ($createSysfold in $createSysfolders.fullname)
         {
-        $createSyfold | Out-File $createSysPath -Append
-        #Write-Host $createSyfold -ForegroundColor red
+        $createSubsysfl = Get-ChildItem -Path $createSysfold -Directory -Recurse -Force  -ErrorAction SilentlyContinue
+        $createSysfoldhash+=$createSubsysfl
+        #Write-Host $createSubsysfl -ForegroundColor Green
         }
 
-        if ($createSyfoldAcl | where {$_.accesstostring -like "*Everyone Allow  CreateFiles*"})
+        foreach ($createSyfold in $createSysfoldhash.fullname)
         {
-        $createSyfold | Out-File $createSysPath -Append
-        #Write-Host $createSyfold -ForegroundColor red
-        }
+        $createSyfoldAcl = Get-Acl $createSyfold -ErrorAction SilentlyContinue
+        #Write-Host $createSyfold -ForegroundColor green
 
-        if ($createSyfoldAcl | where {$_.accesstostring -like "*Authenticated Users Allow  CreateFiles*"})
-        {
-        $createSyfold | Out-File $createSysPath -Append
-        #Write-Host $createSyfold -ForegroundColor red
-        }
-        }
+            if ($createSyfoldAcl | where {$_.accesstostring -like "*Users Allow  CreateFiles*"})
+            {
+            $createSyfold | Out-File $createSysPath -Append
+            #Write-Host $createSyfold -ForegroundColor red
+            }
 
-        get-content $createSysPath | Sort-Object -Unique | set-Content $createSysPath 
+            if ($createSyfoldAcl | where {$_.accesstostring -like "*Everyone Allow  CreateFiles*"})
+            {
+            $createSyfold | Out-File $createSysPath -Append
+            #Write-Host $createSyfold -ForegroundColor red
+            }
 
-        #Get content and remove the first 3 lines
-        $createSysFolderDetails = Get-Content $createSysPath -ErrorAction SilentlyContinue #|  where {$_ -ne ""} |select -skip 3
+            if ($createSyfoldAcl | where {$_.accesstostring -like "*Authenticated Users Allow  CreateFiles*"})
+            {
+            $createSyfold | Out-File $createSysPath -Append
+            #Write-Host $createSyfold -ForegroundColor red
+            }
+            }
 
-        #Declares correctly formated hash for OS Information 
-        $fragcreateSysFold=@()
+            get-content $createSysPath | Sort-Object -Unique | set-Content $createSysPath 
+
+            #Get content and remove the first 3 lines
+            $createSysFolderDetails = Get-Content $createSysPath -ErrorAction SilentlyContinue #|  where {$_ -ne ""} |select -skip 3
+
+            #Declares correctly formated hash for OS Information 
+            $fragcreateSysFold=@()
         
-        foreach ($createSysFoldItems in $createSysFolderDetails)
-        {
-        $newObjcreateSysFold = New-Object -TypeName PSObject
-        Add-Member -InputObject $newObjcreateSysFold -Type NoteProperty -Name CreateFiles -Value $createSysFoldItems
-        $fragcreateSysFold += $newObjcreateSysFold
-        #Write-Host $createSysFoldItems -ForegroundColor green
+            foreach ($createSysFoldItems in $createSysFolderDetails)
+            {
+            $newObjcreateSysFold = New-Object -TypeName PSObject
+            Add-Member -InputObject $newObjcreateSysFold -Type NoteProperty -Name CreateFiles -Value $createSysFoldItems
+            $fragcreateSysFold += $newObjcreateSysFold
+            #Write-Host $createSysFoldItems -ForegroundColor green
+            }
         }
         
 Write-Host " "
@@ -1900,35 +1928,42 @@ Write-Host "Searching for authenticode signature hashmismatch" -foregroundColor 
 
     $fragAuthCodeSig=@()
     $newObjAuthSig=@()
-    $getAuthfiles = Get-ChildItem -Path 'C:\' -Recurse | where { ! $_.PSIsContainer -and $_.extension -ne ".log" -and $_.extension -ne ".hve" -and $_.extension -ne ".txt" -and $_.extension -ne ".evtx" -and $_.extension -ne ".elt"}
 
-    foreach($file in $getAuthfiles)
-    {
-    $getAuthCodeSig = get-authenticodesignature -FilePath $file.FullName | where {$_.Status -eq "hashmismatch"
-    }
+    $drv = (psdrive | where {$_.root -match "^[a-zA-Z]:"})
+    $drvRoot = $drv.root
 
-    if ($getAuthCodeSig.path -eq $null){}
-    else 
-    {
-    $authPath = $getAuthCodeSig.path
-    $authStatus = $getAuthCodeSig.status
+    foreach ($rt in $drvRoot)
+        {
+        $getAuthfiles = Get-ChildItem -Path $rt -Recurse | where { ! $_.PSIsContainer -and $_.extension -ne ".log" -and $_.extension -ne ".hve" -and $_.extension -ne ".txt" -and $_.extension -ne ".evtx" -and $_.extension -ne ".elt"}
 
-    $newObjAuthSig = New-Object -TypeName PSObject
-    Add-Member -InputObject $newObjAuthSig -Type NoteProperty -Name PathAuthCodeSig -Value $authPath
-    Add-Member -InputObject $newObjAuthSig -Type NoteProperty -Name StatusAuthCodeSig -Value $authStatus
-    $fragAuthCodeSig += $newObjAuthSig
-    }
+        foreach($file in $getAuthfiles)
+        {
+        $getAuthCodeSig = get-authenticodesignature -FilePath $file.FullName | where {$_.Status -eq "hashmismatch"
+        }
+
+        if ($getAuthCodeSig.path -eq $null){}
+        else 
+        {
+        $authPath = $getAuthCodeSig.path
+        $authStatus = $getAuthCodeSig.status
+
+        $newObjAuthSig = New-Object -TypeName PSObject
+        Add-Member -InputObject $newObjAuthSig -Type NoteProperty -Name PathAuthCodeSig -Value $authPath
+        Add-Member -InputObject $newObjAuthSig -Type NoteProperty -Name StatusAuthCodeSig -Value $authStatus
+        $fragAuthCodeSig += $newObjAuthSig
+        }
+        }
     }
 
 Write-Host " "
 Write-Host "Completed searching for authenticode signature hashmismatch" -foregroundColor Green
-#>
+
 ###########################################################################################################################
 ###########################################################################################################################
 ###########################################################################################################################
 
 #REMOVE THE HASH AND > TO AUDIT FOR AUTHENTICODE SIGNATURE HASH MISMATCH
-
+#>
 ################################################
 ##############  SHARES AND PERMS  ##############
 ################################################ 
@@ -1996,35 +2031,41 @@ sleep 7
 #passwords embedded in files
 #findstrg /si password *.txt - alt
 
-    $getUserFolder = Get-ChildItem -Path "C:\" -Recurse -Depth 4 -Force -ErrorAction SilentlyContinue |
-    where {$_.DirectoryName -notlike "*WinSXS*" `
-    -and $_.DirectoryName -notlike "*Packages*" `
-    -and $_.DirectoryName -notlike "*Containers\BaseImages*" `
-    -and $_.DirectoryName -notlike  "*MicrosoftOffice*" `
-    -and $_.DirectoryName -notlike "*AppRepository*" `
-    -and $_.DirectoryName -notlike "*IdentityCRL*" `
-    -and $_.DirectoryName -notlike "*UEV*" `
-    -and $_.Name -notlike "*MicrosoftOffice201*" `
-    -and $_.DirectoryName -notlike "*DriverStore*" `
-    -and $_.DirectoryName -notlike "*spool*" `
-    -and $_.DirectoryName -notlike "*icsxm*"  } |
-    where {$_.Extension -eq ".txt"`
-    -or $_.Extension -eq ".ini" `
-    -or $_.Extension -eq ".xml"}  #xml increase output, breaks report
+    $drv = (psdrive | where {$_.root -match "^[a-zA-Z]:"})
+    $drvRoot = $drv.root
 
-    $fragFilePass=@()
-    foreach ($PassFile in $getUserFolder)
-    {
-    #Write-Host $PassFile.fullname -ForegroundColor Yellow
+    foreach ($rt in $drvRoot)
+        {
+        $getUserFolder = Get-ChildItem -Path $rt -Recurse -Depth 4 -Force -ErrorAction SilentlyContinue |
+        where {$_.DirectoryName -notlike "*WinSXS*" `
+        -and $_.DirectoryName -notlike "*Packages*" `
+        -and $_.DirectoryName -notlike "*Containers\BaseImages*" `
+        -and $_.DirectoryName -notlike  "*MicrosoftOffice*" `
+        -and $_.DirectoryName -notlike "*AppRepository*" `
+        -and $_.DirectoryName -notlike "*IdentityCRL*" `
+        -and $_.DirectoryName -notlike "*UEV*" `
+        -and $_.Name -notlike "*MicrosoftOffice201*" `
+        -and $_.DirectoryName -notlike "*DriverStore*" `
+        -and $_.DirectoryName -notlike "*spool*" `
+        -and $_.DirectoryName -notlike "*icsxm*"  } |
+        where {$_.Extension -eq ".txt"`
+        -or $_.Extension -eq ".ini" `
+        -or $_.Extension -eq ".xml"}  #xml increase output, breaks report
 
-    $SelectPassword  = Get-Content $PassFile.FullName |  Select-String -Pattern password, credential
+        $fragFilePass=@()
+        foreach ($PassFile in $getUserFolder)
+        {
+        #Write-Host $PassFile.fullname -ForegroundColor Yellow
+
+        $SelectPassword  = Get-Content $PassFile.FullName |  Select-String -Pattern password, credential
  
-    if ($SelectPassword -like "*password*")
-    {
-    $newObjFilePass = New-Object -TypeName PSObject
-    Add-Member -InputObject $newObjFilePass -Type NoteProperty -Name FilesContainingPassword -Value  $PassFile.FullName 
-    $fragFilePass += $newObjFilePass
-    }
+        if ($SelectPassword -like "*password*")
+        {
+        $newObjFilePass = New-Object -TypeName PSObject
+        Add-Member -InputObject $newObjFilePass -Type NoteProperty -Name FilesContainingPassword -Value  $PassFile.FullName 
+        $fragFilePass += $newObjFilePass
+        }
+        }
     }
 
 Write-Host " "
@@ -2627,30 +2668,33 @@ $style = @"
    
     }
 }
-
 reports
 
 <#
 Stuff to Fix.....
-
-Add warning no user account is available 
 $ExecutionContext.SessionState.LanguageMode -eq "ConstrainedLanguage"
-uac? - too many keys 
-AutoPlay
 Password in Registry - slow to get back results 
-Proxy password reg key
 Null message warning that security is missing
-Credential Guard
 set warning for secure boot
 Expand on explanations - currently of use to non-techies
-Progress bars vs screen output - screen output slows the process but working out % and a progress bar.......
-Netbios Node type check reg path and value
+
 remove extra blanks when listing progs via registry 
+
+Stuff to Audit.....
+Add Server support
+    features and roles
+Add warning no user account is available 
+UAC 
+AutoPlay
+Proxy password reg key
+Credential Guard
 FLTMC.exe - mini driver altitude looking for 'stuff' thats at an altitude to bypass security or encryption
 report on appX bypass and seriousSam
 Remote desktop and permissions
+look for %COMSPEC%
 
+Stuff that wont get fixed.....
+Progress bars or screen output will remain limited, each time an output is written to screen the performance degrads
 
-Scheduled tasks - fix required for multi line web output resultsing in system.objec[]
 #>
 
