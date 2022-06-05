@@ -58,9 +58,15 @@ Enabling RunAsPPL for LSA Protection allows only digitally signed binaries to lo
 Further information can be found @ https://docs.microsoft.com/en-us/windows-server/security/credentials-protection-and-management/configuring-additional-lsa-protection
 
 #DLL Safe Search
-When applications do not fully qualify the DLL path and instead allow searching the default behaviour if for the ‘Current Working Directory’ called 2nd in the list of directories. This allows an easy route to calling malicious DLL’s. Setting ‘DLL Safe Search’ mitigates the risk by moving CWD to later in the search order.
+When applications do not fully qualify the DLL path and instead allow searching the default behaviour is for the ‘Current Working Directory’ to be called, then system paths. This allows an easy route to call malicious DLL’s. Setting ‘DLL Safe Search’ mitigates the risk by moving CWD to later in the search order.
 Further information can be found @
 https://docs.microsoft.com/en-us/windows/win32/dlls/dynamic-link-library-search-order
+
+#DLL Hijacking (Permissions)
+DLL Hijacking is when a malicious dll replaces a legitimate dll due to a path vulnerability. A program or service makes a call on that dll gaining the privileges of that program or service. Additionally missing dll’s present a risk where a malicious dll is dropped into a path where no current dll exists but the program or service is making a call to that non-existent dll.
+This audit is reliant on programs being launched so that DLL’s are loaded. Each process’s loaded dll’s are checked for permissions issues and whether they are signed.  
+The DLL hijacking audit does not currently check for missing dll’s being called. Process Monitor filtered for ‘NAME NOT FOUND’ and path ends with ‘DLL’ will.
+
 
 #Automatically Elevate User
 Auto Elevate User is a setting that elevates users allowing them to install software without being an administrator. 
@@ -184,7 +190,6 @@ All Drivers should be signed with a digital signature to verify the integrity of
 
 #Authenticode Hash Mis-Match
 Checks that digitally signed files have a valid and trusted hash. If any Hash Mis-Matches then the file could have been altered
-
   
 .VERSION
 YYMMDD
@@ -219,6 +224,10 @@ YYMMDD
 220224.1 - General cleanup of spacing and formatting purely aesthetic
 220228.1 - Multi drive support for Folder and File permission and password audits
 220411.1 - Added "HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\" to list x86 install applications
+220604.1 - Added Root of drive for permission check Non System Folders
+220604.2 - Added | where {$_.displayroot -notlike "*\\*"} to get drive letters and not mounted shares
+220605.1 - Added loaded dll hijacking vulnerability scanner
+220605.2 - Added READ-HOSTS to prompt to run slow processes.
 
 #>
 #Remove any DVD from client
@@ -258,13 +267,18 @@ function reports
 {
     #Start Message
     Write-Host " "
-    Write-Host "The report requires at least 30 minutes to run, depending on hardware and amount of data on the system, it could take much longer"  -ForegroundColor Red 
+    Write-Host "The report requires at least 30 minutes to run, depending on hardware and amount of data on the system, it could take much longer"  -ForegroundColor Yellow
     Write-Host " "
-    Write-Host "Ignore any errors or red messages its due to Administrator being denied access to parts of the file system." -ForegroundColor Red 
+    Write-Host "Ignore any errors or red messages its due to Administrator being denied access to parts of the file system." -ForegroundColor Yellow
     Write-Host " "
-    Write-Host "Checking for Digital signature hash mis-match is disabled, unhash AUTHENTICODE SIGNATURE section" -ForegroundColor Red 
+    Write-Host "Some audits take a long time to complete and do not output progress as this adds to the time taken." -ForegroundColor Yellow
     Write-Host " "
-    $Scheme = Read-Host "Type either Tenaka, Dark or Light for choice of colour scheme" 
+    Write-Host "READ ME - To audit for Dll Hijacking vulnerabilities applications and services must be active, launch programs before continuing." -ForegroundColor Yellow
+    Write-Host " "
+    $Scheme = Read-Host "Type either Tenaka, Dark or Light for choice of colour schemes" 
+    $folders = Read-Host "Long running audit - Do you want to audit Files, Folders and Registry for permissions issues....type `"Y`" to audit, any other key for no"
+    $authenticode = Read-Host "Long running audit - Do you want to check that digitally signed files are valid with a trusted hash....type `"Y`" to audit, any other key for no"
+
 
 ################################################
 #################  BITLOCKER  ##################
@@ -1498,14 +1512,14 @@ sleep 7
 Write-Host " "
 Write-Host "Finished Searching for UnQuoted Path Vulnerabilities" -foregroundColor Green
 
-#To improve audit and miss the file\folder permissions check comment out the code between to 2 sets of extended hashes
+################################################
+##########  FILES, FOLDERS, REG AUDITS  ########
+################################################
 
-'<#'
 
-#ADD OR REMOVE A < AND HASH ABOVE TO AUDIT FILE SYSTEM AND ADD\REMOVE THE SAME CHARS AT ABOUT LINE 1580
-###########################################################################################################################
-###########################################################################################################################
-###########################################################################################################################
+#START OF IF
+if ($folders -eq "y")
+{
 
 ################################################
 ############  WRITEABLE FILES  #################
@@ -1532,7 +1546,8 @@ sleep 7
 
     foreach ($rt in $drvRoot)
     {
-        $hfiles =  Get-ChildItem $rt -ErrorAction SilentlyContinue | where {$_.Name -eq "PerfLogs" -or ` 
+        $hfiles =  Get-ChildItem $rt -ErrorAction SilentlyContinue | 
+        where {$_.Name -eq "PerfLogs" -or ` 
         $_.Name -eq "Program Files" -or `
         $_.Name -eq "Program Files (x86)"} # -or `
         # $_.Name -eq "Windows"}
@@ -1547,25 +1562,25 @@ sleep 7
     
         foreach ($cfile in $filehash.fullname)
         {
-        $cfileAcl = Get-Acl $cfile -ErrorAction SilentlyContinue
+            $cfileAcl = Get-Acl $cfile -ErrorAction SilentlyContinue
 
-        if ($cfileAcl | where {$_.accesstostring -like "*Users Allow  Write*" -or $_.accesstostring -like "*Users Allow  Modify*" -or $_.accesstostring -like "*Users Allow  FullControl*"})
-        {
-        $cfile | Out-File $hpath -Append
-        #Write-Host $cfile -ForegroundColor Yellow
-        }
+            if ($cfileAcl | where {$_.accesstostring -like "*Users Allow  Write*" -or $_.accesstostring -like "*Users Allow  Modify*" -or $_.accesstostring -like "*Users Allow  FullControl*"})
+            {
+            $cfile | Out-File $hpath -Append
+            #Write-Host $cfile -ForegroundColor Yellow
+            }
 
-        if ($cfileAcl | where {$_.accesstostring -like "*Everyone Allow  Write*" -or $_.accesstostring -like "*Everyone Allow  Modify*" -or $_.accesstostring -like "*Everyone Allow  FullControl*"})
-        {
-        $cfile | Out-File $hpath -Append
-        #Write-Host $cfile -ForegroundColor Yellow
-        }
+            if ($cfileAcl | where {$_.accesstostring -like "*Everyone Allow  Write*" -or $_.accesstostring -like "*Everyone Allow  Modify*" -or $_.accesstostring -like "*Everyone Allow  FullControl*"})
+            {
+            $cfile | Out-File $hpath -Append
+            #Write-Host $cfile -ForegroundColor Yellow
+            }
     
-        if ($cfileAcl | where {$_.accesstostring -like "*Authenticated Users Allow  Write*" -or $_.accesstostring -like "*Authenticated Users Allow  Modify*" -or $_.accesstostring -like "*Authenticated Users Allow  FullControl*"})
-        {
-        $cfile | Out-File $hpath -Append
-        #Write-Host $cfile -ForegroundColor Yellow
-        }
+            if ($cfileAcl | where {$_.accesstostring -like "*Authenticated Users Allow  Write*" -or $_.accesstostring -like "*Authenticated Users Allow  Modify*" -or $_.accesstostring -like "*Authenticated Users Allow  FullControl*"})
+            {
+            $cfile | Out-File $hpath -Append
+            #Write-Host $cfile -ForegroundColor Yellow
+            }
         }
     
         $wFileDetails = Get-Content  $hpath -ErrorAction SilentlyContinue #|  where {$_ -ne ""} |select -skip 3
@@ -1579,6 +1594,7 @@ sleep 7
         $fragwFile += $newObjwFile
         #Write-Host $wFileItems -ForegroundColor Yellow
         }
+       
     }
 Write-Host " "
 Write-Host "Finished Searching for Writeable Files Vulnerabilities" -foregroundColor Green
@@ -1610,50 +1626,53 @@ sleep 7
 
     Foreach ($key in $HKLMCheck) 
     {
-    #Get a list of key names and make a variable
-    cd hklm:
-    $SvcPath = Get-childItem $key -Recurse -Depth 1 -ErrorAction SilentlyContinue | where {$_.Name -notlike "HKEY_LOCAL_MACHINE\SOFTWARE\Classes\*"}
-    #Update HKEY_Local.... to HKLM:
-    $RegList = $SvcPath.name.replace("HKEY_LOCAL_MACHINE","HKLM:")
+        #Get a list of key names and make a variable
+        cd hklm:
+        $SvcPath = Get-childItem $key -Recurse -Depth 1 -ErrorAction SilentlyContinue | where {$_.Name -notlike "HKEY_LOCAL_MACHINE\SOFTWARE\Classes\*"}
+        #Update HKEY_Local.... to HKLM:
+        $RegList = $SvcPath.name.replace("HKEY_LOCAL_MACHINE","HKLM:")
     
-    Foreach ($regPath in $RegList)
-    {
-    $acl = Get-Acl $regPath -ErrorAction SilentlyContinue
-    $acc = $acl.AccessToString
-    Write-Output $regPath 
-    #Write-Host $regPath  -ForegroundColor DarkCyan
-
-    foreach ($ac in $acc)
-    {
-        if ($ac | Select-String -SimpleMatch "BUILTIN\Users Allow  FullControl")
+        Foreach ($regPath in $RegList)
         {
-        $regPath | Out-File $rpath -Append
-        #Write-Host $ac -ForegroundColor DarkCyan
-        } 
+            $acl = Get-Acl $regPath -ErrorAction SilentlyContinue
+            $acc = $acl.AccessToString
+            Write-Output $regPath 
+            #Write-Host $regPath  -ForegroundColor DarkCyan
 
-        if ($ac | Select-String -SimpleMatch "NT AUTHORITY\Authenticated Users Allow  FullControl")
-        {
-        $regPath | Out-File $rpath -Append
-        #Write-Host $ac -ForegroundColor DarkCyan
+            foreach ($ac in $acc)
+                {
+                    if ($ac | Select-String -SimpleMatch "BUILTIN\Users Allow  FullControl")
+                    {
+                    $regPath | Out-File $rpath -Append
+                    #Write-Host $ac -ForegroundColor DarkCyan
+                    } 
+
+                    if ($ac | Select-String -SimpleMatch "NT AUTHORITY\Authenticated Users Allow  FullControl")
+                    {
+                    $regPath | Out-File $rpath -Append
+                    #Write-Host $ac -ForegroundColor DarkCyan
+                    }
+
+                    if ($ac | Select-String -SimpleMatch "Everyone Allow  FullControl")
+                    {
+                    $regPath | Out-File $rpath -Append
+                    #Write-Host $ac -ForegroundColor DarkCyan
+                    }
+                }
         }
-
-        if ($ac | Select-String -SimpleMatch "Everyone Allow  FullControl")
-        {
-        $regPath | Out-File $rpath -Append
-        #Write-Host $ac -ForegroundColor DarkCyan
-        }
-    }
-    }
-    $regDetails = Get-Content $rpath -ErrorAction SilentlyContinue    #|  where {$_ -ne ""} |select -skip 3
-    $fragReg =@()
+        
+        $regDetails = Get-Content $rpath -ErrorAction SilentlyContinue    #|  where {$_ -ne ""} |select -skip 3
+        $fragReg =@()
     
-    foreach ($regItems in $regDetails)
-    {
-    #Write-Host $regItems -ForegroundColor DarkCyan
-    $newObjReg = New-Object -TypeName PSObject
-    Add-Member -InputObject $newObjReg -Type NoteProperty -Name RegWeakness -Value $regItems
-    $fragReg += $newObjReg
-    }
+        foreach ($regItems in $regDetails)
+        {
+        #Write-Host $regItems -ForegroundColor DarkCyan
+        $newObjReg = New-Object -TypeName PSObject
+        Add-Member -InputObject $newObjReg -Type NoteProperty -Name RegWeakness -Value $regItems
+        $fragReg += $newObjReg
+    
+        }
+       
     }
 
 Write-Host " "
@@ -1682,23 +1701,26 @@ sleep 7
     $fpath = "C:\SecureReport\output\$OutFunc\" + "$OutFunc.log"
     #Additional Folders off the root of C: that are not system
     
-    $drv = (psdrive | where {$_.root -match "^[a-zA-Z]:"})
-    $drvRoot = $drv.root
+    $drv = (psdrive | where {$_.root -match "^[a-zA-Z]:"}) |  where {$_.displayroot -notlike "*\\*"}
+    $drvRoot = $drv.root 
+    $getRoot = Get-Item $rt
 
     foreach ($rt in $drvRoot)
-        {
-        $hfolders =  Get-ChildItem $rt -ErrorAction SilentlyContinue  | where {$_.Name -ne "PerfLogs" -and ` 
+    {
+        $hfolders =  Get-ChildItem $rt -ErrorAction SilentlyContinue  | 
+        where {$_.Name -ne "PerfLogs" -and ` 
         $_.Name -ne "Program Files" -and `
         $_.Name -ne "Program Files (x86)" -and `
         $_.Name -ne "Users" -and `
         $_.Name -ne "Windows"}
-
+    
         $foldhash = @()
         foreach ($hfold in $hfolders.fullname)
         {
         $subfl = Get-ChildItem -Path $hfold -Directory -Recurse -Force -ErrorAction SilentlyContinue
         $foldhash+=$hfolders
         $foldhash+=$subfl
+        $foldhash+=$getRoot
         #Write-Host $hfold -ForegroundColor Gray   
         }
     
@@ -1725,6 +1747,7 @@ sleep 7
             #Write-Host $cfold -ForegroundColor red
             } 
         }
+        
         get-content $fpath | Sort-Object -Unique | set-Content $fpath -ErrorAction SilentlyContinue
 
         #Get content and remove the first 3 lines
@@ -1739,6 +1762,7 @@ sleep 7
         $fragwFold += $newObjwFold
         #Write-Host $wFoldItems -ForegroundColor Gray
         }
+        
     }
      
 Write-Host " "
@@ -1766,16 +1790,18 @@ sleep 7
 
     $sysPath = "C:\SecureReport\output\$OutFunc\" + "$OutFunc.log"
 
-    $drv = (psdrive | where {$_.root -match "^[a-zA-Z]:"})
+    $drv = (psdrive | where {$_.root -match "^[a-zA-Z]:"}) |  where {$_.displayroot -notlike "*\\*"}
     $drvRoot = $drv.root
 
     foreach ($rt in $drvRoot)
-        {
-        $sysfolders =  Get-ChildItem $rt -ErrorAction SilentlyContinue | where {$_.Name -eq "PerfLogs" -or ` 
+    {
+        $sysfolders =  Get-ChildItem $rt -ErrorAction SilentlyContinue | 
+        where {$_.Name -eq "PerfLogs" -or ` 
         $_.Name -eq "Program Files" -or `
         $_.Name -eq "Program Files (x86)" -or `
         $_.Name -eq "Windows"}
         $sysfoldhash = @()
+        $sysfolders+=$getRoot
     
         foreach ($sysfold in $sysfolders.fullname)
         {
@@ -1823,6 +1849,7 @@ sleep 7
         #Write-Host $sysFoldItems -ForegroundColor White
         }
     }
+
      
 Write-Host " "
 Write-Host "Finished Searching for Writeable System Folder Vulnerabilities" -foregroundColor Green
@@ -1849,11 +1876,12 @@ sleep 7
     
     $createSysPath = "C:\SecureReport\output\$OutFunc\" + "$OutFunc.log"
 
-    $drv = (psdrive | where {$_.root -match "^[a-zA-Z]:"})
+    $drv = (psdrive | where {$_.root -match "^[a-zA-Z]:"}) | where {$_.displayroot -notlike "*\\*"}
     $drvRoot = $drv.root
+    $getRoot = Get-Item $rt
 
     foreach ($rt in $drvRoot)
-        {   
+    {   
         $createSysfolders =  Get-ChildItem $rt -ErrorAction SilentlyContinue | where {$_.Name -eq "PerfLogs" -or ` 
         $_.Name -eq "Program Files" -or `
         $_.Name -eq "Program Files (x86)" -or `
@@ -1889,7 +1917,7 @@ sleep 7
             $createSyfold | Out-File $createSysPath -Append
             #Write-Host $createSyfold -ForegroundColor red
             }
-            }
+         }
 
             get-content $createSysPath | Sort-Object -Unique | set-Content $createSysPath 
 
@@ -1915,21 +1943,25 @@ Write-Host "Finised Searching for CreateFile Permissions Vulnerabilities" -foreg
 ###########################################################################################################################
 ###########################################################################################################################
 
-#REMOVE THE HASH AND > TO AUDIT FILE SYSTEMS
-'#>'
+#END OF IF
+}
 
-<#
+
 ################################################
 ########  AUTHENTICODE SIGNATURE  ##############
 ################################################
 #WARNING - Very long running process - enable only when required
+#START OF IF
+if ($authenticode -eq "y")
+{
+
 Write-Host " "
 Write-Host "Searching for authenticode signature hashmismatch" -foregroundColor Green
 
     $fragAuthCodeSig=@()
     $newObjAuthSig=@()
 
-    $drv = (psdrive | where {$_.root -match "^[a-zA-Z]:"})
+    $drv = (psdrive | where {$_.root -match "^[a-zA-Z]:"}) | where {$_.displayroot -notlike "*\\*"}
     $drvRoot = $drv.root
 
     foreach ($rt in $drvRoot)
@@ -1957,13 +1989,9 @@ Write-Host "Searching for authenticode signature hashmismatch" -foregroundColor 
 
 Write-Host " "
 Write-Host "Completed searching for authenticode signature hashmismatch" -foregroundColor Green
+#END OF IF
+}
 
-###########################################################################################################################
-###########################################################################################################################
-###########################################################################################################################
-
-#REMOVE THE HASH AND > TO AUDIT FOR AUTHENTICODE SIGNATURE HASH MISMATCH
-#>
 ################################################
 ##############  SHARES AND PERMS  ##############
 ################################################ 
@@ -2031,7 +2059,7 @@ sleep 7
 #passwords embedded in files
 #findstrg /si password *.txt - alt
 
-    $drv = (psdrive | where {$_.root -match "^[a-zA-Z]:"})
+    $drv = (psdrive | where {$_.root -match "^[a-zA-Z]:"}) | where {$_.displayroot -notlike "*\\*"}
     $drvRoot = $drv.root
 
     foreach ($rt in $drvRoot)
@@ -2070,6 +2098,43 @@ sleep 7
 
 Write-Host " "
 Write-Host "Finished Searching for Embedded Password in Files" -foregroundColor Green
+
+################################################
+###############  DLL HIJACKING  ################
+################################################
+
+Write-Host " "
+Write-Host "Searching for active processes that are vulnerable to dll hijacking" -foregroundColor Green
+sleep 2
+
+$getDll = Get-Process
+$fragDLLHijack=@()
+foreach ($dll in $getDll)
+{
+    $procName = $dll.Name
+    Write-Host $procName -ForegroundColor Green
+    $dllMods = $dll | Select-Object -ExpandProperty modules 
+    $dllFilename = $dllMods.filename
+
+    foreach ($dllPath in $dllFilename)
+    {
+            $dllFileAcl = Get-Acl $dllPath -ErrorAction SilentlyContinue
+
+            if ($dllFileAcl | where {$_.accesstostring -like "*Users Allow  Write*" -or $_.accesstostring -like "*Users Allow  Modify*" -or $_.accesstostring -like "*Users Allow  FullControl*" -or $_.accesstostring -like "*Everyone Allow  Write*" -or $_.accesstostring -like "*Everyone Allow  Modify*" -or $_.accesstostring -like "*Everyone Allow  FullControl*" -or $_.accesstostring -like "*Authenticated Users Allow  Write*" -or $_.accesstostring -like "*Authenticated Users Allow  Modify*" -or $_.accesstostring -like "*Authenticated Users Allow  FullControl*"})
+            {
+                $getAuthCodeSig = get-authenticodesignature -FilePath $dllPath 
+                $dllStatus = $getAuthCodeSig.Status
+
+                $newObjDLLHijack = New-Object psObject
+                Add-Member -InputObject $newObjDLLHijack -Type NoteProperty -Name DLLProcess -Value $procName
+                Add-Member -InputObject $newObjDLLHijack -Type NoteProperty -Name DLLPath -Value $dllPath
+                Add-Member -InputObject $newObjDLLHijack -Type NoteProperty -Name DLLSigStatus -Value $dllStatus
+                $fragDLLHijack += $newObjDLLHijack
+                #Write-Host $dllPath -ForegroundColor Yellow
+            }              
+     }
+}
+
  
 ################################################
 ##########  HTML GENERATION  ###################
@@ -2530,7 +2595,7 @@ $style = @"
 
     $descripLSA = "Enabling RunAsPPL for LSA Protection allows only digitally signed binaries to load as a protected process preventing credential theft and access by code injection and memory access by processes that aren’t signed. Further information can be found @ https://docs.microsoft.com/en-us/windows-server/security/credentials-protection-and-management/configuring-additional-lsa-protection"
 
-    $descripDLL = "When applications do not fully qualify the DLL path and instead allow searching the default behaviour if for the ‘Current Working Directory’ called 2nd in the list of directories. This allows an easy route to calling malicious DLL’s. Setting ‘DLL Safe Search’ mitigates the risk by moving CWD to later in the search order. Further information can be found @ https://docs.microsoft.com/en-us/windows/win32/dlls/dynamic-link-library-search-order"
+    $descripDLL = "Loading DLL's default behaviour is to call the dll from the current working directory of the applicaiton, then the directories listed in the environmental variable. Setting ‘DLL Safe Search’ mitigates the risk by moving CWD to later in the search order. Further information can be found @ https://docs.microsoft.com/en-us/windows/win32/dlls/dynamic-link-library-search-order"
 
     $descripHyper = "Hypervisor Enforced Code Integrity prevents the loading of unsigned kernel-mode drivers and system binaries from being loaded into system memory. Further information can be found @  https://docs.microsoft.com/en-us/windows/security/threat-protection/device-guard/enable-virtualization-based-protection-of-code-integrity"
 
@@ -2566,6 +2631,8 @@ $style = @"
 
     $descriptAuthCodeSig = "Checks that digitally signed files have a valid and trusted hash. If any Hash Mis-Matches then the file could have been altered"
 
+    $descriptDLLHijack = "DLL Hijacking is when a malicious dll replaces a legitimate dll due to a path vulnerability. A program or service makes a call on that dll gaining the privileges of that program or service. Additionally missing dll’s present a risk where a malicious dll is dropped into a path where no current dll exists but the program or service is making a call to that non-existent dll. This audit is reliant on programs being launched so that DLL’s are loaded. Each process’s loaded dll’s are checked for permissions issues and whether they are signed. The DLL hijacking audit does not currently check for missing dll’s being called. Process Monitor filtered for ‘NAME NOT FOUND’ and path ends with ‘DLL’ will."
+
 ################################################
 ################  FRAGMENTS  ###################
 ################################################
@@ -2593,6 +2660,7 @@ $style = @"
     $frag_Msinfo =  $MsinfoClixml | ConvertTo-Html -As Table -fragment -PreContent "<h2><span style='color:$titleCol'>Virtualization and Secure Boot Details</span></h2>" -PostContent "<h4>$descripVirt</h4>"  | Out-String
     $frag_LSAPPL = $fragLSAPPL | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:$titleCol'>LSA Protection for Stored Credentials</span></h2>" -PostContent "<h4>$descripLSA</h4>" | Out-String
     $frag_DLLSafe  =  $fragDLLSafe | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:$titleCol'>DLL Safe Search Order</span></h2>"  -PostContent "<h4>$descripDLL</h4>"| Out-String
+    $frag_DLLHijack = $fragDLLHijack | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:$titleCol'>Hijacking Vulnerable DLL's</span></h2>"  -PostContent "<h4>$descriptDLLHijack</h4>"| Out-String
     $frag_Code  =  $fragCode   | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:$titleCol'>Hypervisor Enforced Code Integrity</span></h2>" -PostContent "<h4>$descripHyper</h4>" | Out-String
     $frag_PCElevate  =  $fragPCElevate | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:$titleCol'>Automatically Elevates User Installing Software</span></h2>"  -PostContent "<h4>$descripElev</h4>"| Out-String
     $frag_FilePass  =  $fragFilePass | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:$titleCol'>Files that Contain the word PASSWORD</span></h2>" -PostContent "<h4>$descripFilePw</h4>" | Out-String
@@ -2639,6 +2707,7 @@ $style = @"
     $frag_SecOptions,
     $frag_LSAPPL,
     $frag_DLLSafe,
+    $frag_DLLHijack,
     $frag_PCElevate,
     $frag_FilePass,
     $frag_AutoLogon,
@@ -2677,6 +2746,7 @@ Password in Registry - slow to get back results
 Null message warning that security is missing
 set warning for secure boot
 Expand on explanations - currently of use to non-techies
+add filter to report only displaying when items are reported on.
 
 remove extra blanks when listing progs via registry 
 
@@ -2692,6 +2762,7 @@ FLTMC.exe - mini driver altitude looking for 'stuff' thats at an altitude to byp
 report on appX bypass and seriousSam
 Remote desktop and permissions
 look for %COMSPEC%
+Check for impersonation - aimed at servers
 
 Stuff that wont get fixed.....
 Progress bars or screen output will remain limited, each time an output is written to screen the performance degrads
