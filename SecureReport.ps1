@@ -228,6 +228,7 @@ YYMMDD
 220604.2 - Added | where {$_.displayroot -notlike "*\\*"} to get drive letters and not mounted shares
 220605.1 - Added loaded dll hijacking vulnerability scanner
 220605.2 - Added READ-HOSTS to prompt to run slow processes.
+220606.1 - Found issue with parsing root folders - fixed with update to correct var name
 
 #>
 #Remove any DVD from client
@@ -337,7 +338,7 @@ sleep 5
 
     #OS Details
     $hn = Get-CimInstance -ClassName win32_computersystem 
-    $OS = Get-CimInstance -ClassName win32_operatingsystem
+    $OS = Get-CimInstance -ClassName win32_operatingsystem 
     $bios = Get-CimInstance -ClassName win32_bios
     $cpu = Get-CimInstance -ClassName win32_processor
 
@@ -1703,7 +1704,7 @@ sleep 7
     
     $drv = (psdrive | where {$_.root -match "^[a-zA-Z]:"}) |  where {$_.displayroot -notlike "*\\*"}
     $drvRoot = $drv.root 
-    $getRoot = Get-Item $rt
+    $getRoot = Get-Item $drvRoot
 
     foreach ($rt in $drvRoot)
     {
@@ -1792,6 +1793,7 @@ sleep 7
 
     $drv = (psdrive | where {$_.root -match "^[a-zA-Z]:"}) |  where {$_.displayroot -notlike "*\\*"}
     $drvRoot = $drv.root
+    $getRoot = Get-Item $drvRoot
 
     foreach ($rt in $drvRoot)
     {
@@ -1878,7 +1880,7 @@ sleep 7
 
     $drv = (psdrive | where {$_.root -match "^[a-zA-Z]:"}) | where {$_.displayroot -notlike "*\\*"}
     $drvRoot = $drv.root
-    $getRoot = Get-Item $rt
+    $getRoot = Get-Item $drvRoot
 
     foreach ($rt in $drvRoot)
     {   
@@ -1963,27 +1965,27 @@ Write-Host "Searching for authenticode signature hashmismatch" -foregroundColor 
 
     $drv = (psdrive | where {$_.root -match "^[a-zA-Z]:"}) | where {$_.displayroot -notlike "*\\*"}
     $drvRoot = $drv.root
-
+ 
     foreach ($rt in $drvRoot)
         {
         $getAuthfiles = Get-ChildItem -Path $rt -Recurse | where { ! $_.PSIsContainer -and $_.extension -ne ".log" -and $_.extension -ne ".hve" -and $_.extension -ne ".txt" -and $_.extension -ne ".evtx" -and $_.extension -ne ".elt"}
 
-        foreach($file in $getAuthfiles)
-        {
-        $getAuthCodeSig = get-authenticodesignature -FilePath $file.FullName | where {$_.Status -eq "hashmismatch"
-        }
+            foreach($file in $getAuthfiles)
+            {
+            $getAuthCodeSig = get-authenticodesignature -FilePath $file.FullName | where {$_.Status -eq "hashmismatch"
+            }
 
         if ($getAuthCodeSig.path -eq $null){}
         else 
-        {
-        $authPath = $getAuthCodeSig.path
-        $authStatus = $getAuthCodeSig.status
+            {
+            $authPath = $getAuthCodeSig.path
+            $authStatus = $getAuthCodeSig.status
 
-        $newObjAuthSig = New-Object -TypeName PSObject
-        Add-Member -InputObject $newObjAuthSig -Type NoteProperty -Name PathAuthCodeSig -Value $authPath
-        Add-Member -InputObject $newObjAuthSig -Type NoteProperty -Name StatusAuthCodeSig -Value $authStatus
-        $fragAuthCodeSig += $newObjAuthSig
-        }
+            $newObjAuthSig = New-Object -TypeName PSObject
+            Add-Member -InputObject $newObjAuthSig -Type NoteProperty -Name PathAuthCodeSig -Value $authPath
+            Add-Member -InputObject $newObjAuthSig -Type NoteProperty -Name StatusAuthCodeSig -Value $authStatus
+            $fragAuthCodeSig += $newObjAuthSig
+            }
         }
     }
 
@@ -2757,12 +2759,16 @@ Add warning no user account is available
 UAC 
 AutoPlay
 Proxy password reg key
-Credential Guard
+Credential Guard HKLM:\SYSTEM\CurrentControlSet\Control\LSA LsaCfgFlags
 FLTMC.exe - mini driver altitude looking for 'stuff' thats at an altitude to bypass security or encryption
 report on appX bypass and seriousSam
 Remote desktop and permissions
 look for %COMSPEC%
 Check for impersonation - aimed at servers
+laps HKLM:\Software\Policies\Microsoft Services\AdmPwd AdmPwdEnabled
+snmp
+powershell history, stored creds 
+
 
 Stuff that wont get fixed.....
 Progress bars or screen output will remain limited, each time an output is written to screen the performance degrads
