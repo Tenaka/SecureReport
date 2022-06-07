@@ -228,7 +228,9 @@ YYMMDD
 220604.2 - Added | where {$_.displayroot -notlike "*\\*"} to get drive letters and not mounted shares
 220605.1 - Added loaded dll hijacking vulnerability scanner
 220605.2 - Added READ-HOSTS to prompt to run slow processes.
-220606.1 - Found issue with parsing root folders - fixed with update to correct var name
+220606.1 - Added DLL hijacking for dlls not signed and where the user can write.
+220606.2 - Tidy up and formating of script
+220607.1 - Password within file search $fragFilePass=@() moved to outside loop as it was dropping previous drives and data
 
 #>
 #Remove any DVD from client
@@ -236,13 +238,13 @@ $drv = (psdrive | where{$_.Free -eq 0})
 
 if($drv.free -eq "0" -and $_.name -ne "C")
     {
-    Write-Host "Eject DVD and try again"
+        Write-Host "Eject DVD and try again"
     }
  
 #Confirm for elevated admin
     if (-not([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator))
     {
-    Write-Host "An elevated administrator account is required to run this script." -ForegroundColor Red
+        Write-Host "An elevated administrator account is required to run this script." -ForegroundColor Red
     }
 else
 {
@@ -252,15 +254,15 @@ else
     
     if($psise -ne $null)
     {
-    $ISEPath = $psise.CurrentFile.FullPath
-    $ISEDisp = $psise.CurrentFile.DisplayName.Replace("*","")
-    $ISEWork = $ISEPath.TrimEnd("$ISEDisp")
-    New-Item -Path C:\SecureReport -ItemType Directory -Force
+        $ISEPath = $psise.CurrentFile.FullPath
+        $ISEDisp = $psise.CurrentFile.DisplayName.Replace("*","")
+        $ISEWork = $ISEPath.TrimEnd("$ISEDisp")
+        New-Item -Path C:\SecureReport -ItemType Directory -Force
     }
     else
     {
-    $PSWork = split-path -parent $MyInvocation.MyCommand.Path
-    New-Item -Path C:\SecureReport -ItemType Directory -Force
+        $PSWork = split-path -parent $MyInvocation.MyCommand.Path
+        New-Item -Path C:\SecureReport -ItemType Directory -Force
     }
 
 
@@ -307,24 +309,25 @@ sleep 5
     $TPMSpec = wmic /namespace:\\root\cimv2\security\microsofttpm path win32_tpm get specversion 
     $TPMSpecVer = $TPMSpec[2]
 
-    if ($bitVS -eq "FullyEncrypted"){
-    $newObjBit = New-Object psObject
-    Add-Member -InputObject $newObjBit -Type NoteProperty -Name MountPoint -Value $BitMP
-    Add-Member -InputObject $newObjBit -Type NoteProperty -Name EncryptionMethod -Value $BitEM
-    Add-Member -InputObject $newObjBit -Type NoteProperty -Name KeyProtector  -Value $BitKPJ
-    Add-Member -InputObject $newObjBit -Type NoteProperty -Name VolumeStatus -Value $bitVS
-    Add-Member -InputObject $newObjBit -Type NoteProperty -Name TPMPresent -Value $TPMPres
-    Add-Member -InputObject $newObjBit -Type NoteProperty -Name TPMEnabled  -Value $TPMEn
-    Add-Member -InputObject $newObjBit -Type NoteProperty -Name TPMManufacVersion -Value $TPMVer
-    Add-Member -InputObject $newObjBit -Type NoteProperty -Name TPMSpecVersion -Value $TPMSpecVer
-    $fragBitLocker += $newObjBit
+    if ($bitVS -eq "FullyEncrypted")
+    {
+        $newObjBit = New-Object psObject
+        Add-Member -InputObject $newObjBit -Type NoteProperty -Name MountPoint -Value $BitMP
+        Add-Member -InputObject $newObjBit -Type NoteProperty -Name EncryptionMethod -Value $BitEM
+        Add-Member -InputObject $newObjBit -Type NoteProperty -Name KeyProtector  -Value $BitKPJ
+        Add-Member -InputObject $newObjBit -Type NoteProperty -Name VolumeStatus -Value $bitVS
+        Add-Member -InputObject $newObjBit -Type NoteProperty -Name TPMPresent -Value $TPMPres
+        Add-Member -InputObject $newObjBit -Type NoteProperty -Name TPMEnabled  -Value $TPMEn
+        Add-Member -InputObject $newObjBit -Type NoteProperty -Name TPMManufacVersion -Value $TPMVer
+        Add-Member -InputObject $newObjBit -Type NoteProperty -Name TPMSpecVersion -Value $TPMSpecVer
+        $fragBitLocker += $newObjBit
     }
     Else
     { 
-    $BitDisabled = "Warning - Bitlocker is disabled Warning"
-    $newObjBit = New-Object psObject
-    Add-Member -InputObject $newObjBit -Type NoteProperty -Name BitLockerDisabled -Value $BitDisabled
-    $fragBitLocker += $newObjBit
+        $BitDisabled = "Warning - Bitlocker is disabled Warning"
+        $newObjBit = New-Object psObject
+        Add-Member -InputObject $newObjBit -Type NoteProperty -Name BitLockerDisabled -Value $BitDisabled
+        $fragBitLocker += $newObjBit
     }
 
 Write-Host " "
@@ -346,41 +349,41 @@ sleep 5
 ##############  ACCOUNT DETAILS  ###############
 ################################################
     #Pasword Policy
-    cd c:\
+    cd C:\
     $getPWPol = & net accounts
     $PassPol=@()
     foreach ($PWPol in $getPWPol)
     {
-    $PWName = $PWPol.split(":")[0]
-    $PWSet = $PWPol.split(":")[1]
+        $PWName = $PWPol.split(":")[0]
+        $PWSet = $PWPol.split(":")[1]
 
-    $newObjPassPol = New-Object -TypeName PSObject
-    Add-Member -InputObject $newObjPassPol -Type NoteProperty -Name PasswordPolicy -Value $PWName
-    Add-Member -InputObject $newObjPassPol -Type NoteProperty -Name Value -Value $PWSet
-    $PassPol += $newObjPassPol
+        $newObjPassPol = New-Object -TypeName PSObject
+        Add-Member -InputObject $newObjPassPol -Type NoteProperty -Name PasswordPolicy -Value $PWName
+        Add-Member -InputObject $newObjPassPol -Type NoteProperty -Name Value -Value $PWSet
+        $PassPol += $newObjPassPol
     }
     #Accounts
     $getAcc = Get-LocalUser
     $AccountDetails=@()
+    
     foreach ($AccName in $getAcc.name)
     {
-    $accounts = Get-LocalUser $AccName
- 
-    $accName = $accounts.name
-    $accEnabled = $accounts.Enabled
-    $accLastLogon = $accounts.LastLogon
-    $accLastPass = $accounts.PasswordLastSet
-    $accPassExpired = $accounts.PasswordExpires
-    $accSource = $accounts.PrincipalSource
+        $accounts = Get-LocalUser $AccName
+        $accName = $accounts.name
+        $accEnabled = $accounts.Enabled
+        $accLastLogon = $accounts.LastLogon
+        $accLastPass = $accounts.PasswordLastSet
+        $accPassExpired = $accounts.PasswordExpires
+        $accSource = $accounts.PrincipalSource
 
-    $newObjAccount = New-Object -TypeName PSObject
-    Add-Member -InputObject $newObjAccount -Type NoteProperty -Name AccountName -Value $accName
-    Add-Member -InputObject $newObjAccount -Type NoteProperty -Name IsAccountEnabled -Value $accEnabled
-    Add-Member -InputObject $newObjAccount -Type NoteProperty -Name AccountLastLogon -Value $accLastLogon
-    Add-Member -InputObject $newObjAccount -Type NoteProperty -Name AccountLastPassChange -Value $accLastPass
-    Add-Member -InputObject $newObjAccount -Type NoteProperty -Name AccountExpiresOn -Value $accPassExpired
-    Add-Member -InputObject $newObjAccount -Type NoteProperty -Name AccountSource -Value $accSource
-    $AccountDetails += $newObjAccount
+        $newObjAccount = New-Object -TypeName PSObject
+        Add-Member -InputObject $newObjAccount -Type NoteProperty -Name AccountName -Value $accName
+        Add-Member -InputObject $newObjAccount -Type NoteProperty -Name IsAccountEnabled -Value $accEnabled
+        Add-Member -InputObject $newObjAccount -Type NoteProperty -Name AccountLastLogon -Value $accLastLogon
+        Add-Member -InputObject $newObjAccount -Type NoteProperty -Name AccountLastPassChange -Value $accLastPass
+        Add-Member -InputObject $newObjAccount -Type NoteProperty -Name AccountExpiresOn -Value $accPassExpired
+        Add-Member -InputObject $newObjAccount -Type NoteProperty -Name AccountSource -Value $accSource
+        $AccountDetails += $newObjAccount
     }
 
 #Group Members
@@ -389,17 +392,17 @@ sleep 5
     $GroupDetails=@()
     foreach ($LGpItem in $getLGrp)
     {
-    $grpName = $LGpItem.Name 
-    $grpMember = Get-LocalGroupMember -Group $LGpItem.ToString()
-    $grpMemSplit = $grpMember -split(",") -replace("{","") -replace("}","")
-    $grpMemAdd = $grpMemSplit[0] +","+ $grpMemSplit[1]  +","+ $grpMemSplit[2]+","+ $grpMemSplit[3]+","+ $grpMemSplit[4]
-    if ($grpMember -ne $null)
-        {
-        $newObjGroup = New-Object -TypeName PSObject
-        Add-Member -InputObject $newObjGroup -Type NoteProperty -Name GroupName -Value $grpName
-        Add-Member -InputObject $newObjGroup -Type NoteProperty -Name GroupMembers -Value  $grpMemAdd
-        $GroupDetails += $newObjGroup
-        }
+        $grpName = $LGpItem.Name 
+        $grpMember = Get-LocalGroupMember -Group $LGpItem.ToString()
+        $grpMemSplit = $grpMember -split(",") -replace("{","") -replace("}","")
+        $grpMemAdd = $grpMemSplit[0] +","+ $grpMemSplit[1]  +","+ $grpMemSplit[2]+","+ $grpMemSplit[3]+","+ $grpMemSplit[4]
+        if ($grpMember -ne $null)
+            {
+                $newObjGroup = New-Object -TypeName PSObject
+                Add-Member -InputObject $newObjGroup -Type NoteProperty -Name GroupName -Value $grpName
+                Add-Member -InputObject $newObjGroup -Type NoteProperty -Name GroupMembers -Value  $grpMemAdd
+                $GroupDetails += $newObjGroup
+            }
    }
 Write-Host " "
 Write-Host "Completed Gathering Host and Account Details" -foregroundColor Green
@@ -416,15 +419,15 @@ sleep 5
 
     foreach ($hfitem in $getHF)
     {
-    $hfid = $hfitem.hotfixid
-    $hfdate = $hfitem.installedon
-    $hfurl = $hfitem.caption
+        $hfid = $hfitem.hotfixid
+        $hfdate = $hfitem.installedon
+        $hfurl = $hfitem.caption
 
-    $newObjHF = New-Object psObject
-    Add-Member -InputObject $newObjHF -Type NoteProperty -Name HotFixID -Value $hfid
-    Add-Member -InputObject $newObjHF -Type NoteProperty -Name InstalledOn -Value ($hfdate).Date.ToString("dd-MM-yyyy")
-    Add-Member -InputObject $newObjHF -Type NoteProperty -Name Caption -Value $hfurl 
-    $HotFix += $newObjHF
+        $newObjHF = New-Object psObject
+        Add-Member -InputObject $newObjHF -Type NoteProperty -Name HotFixID -Value $hfid
+        Add-Member -InputObject $newObjHF -Type NoteProperty -Name InstalledOn -Value ($hfdate).Date.ToString("dd-MM-yyyy")
+        Add-Member -InputObject $newObjHF -Type NoteProperty -Name Caption -Value $hfurl 
+        $HotFix += $newObjHF
     }
 
 ################################################
@@ -439,20 +442,20 @@ sleep 5
     
     foreach ($uninItem in  $UninChild)
     {
-    $getUninItem = Get-ItemProperty $uninItem -ErrorAction SilentlyContinue | where {$_.displayname -notlike "*kb*"}
+        $getUninItem = Get-ItemProperty $uninItem -ErrorAction SilentlyContinue | where {$_.displayname -notlike "*kb*"}
     
-    #Write-Host $getUninItem.DisplayName
-    $UninDisN = $getUninItem.DisplayName -replace "$null",""
-    $UninDisVer = $getUninItem.DisplayVersion -replace "$null",""
-    $UninPub = $getUninItem.Publisher -replace "$null",""
-    $UninDate = $getUninItem.InstallDate -replace "$null",""
+        #Write-Host $getUninItem.DisplayName
+        $UninDisN = $getUninItem.DisplayName -replace "$null",""
+        $UninDisVer = $getUninItem.DisplayVersion -replace "$null",""
+        $UninPub = $getUninItem.Publisher -replace "$null",""
+        $UninDate = $getUninItem.InstallDate -replace "$null",""
     
-    $newObjInstApps = New-Object -TypeName PSObject
-    Add-Member -InputObject $newObjInstApps -Type NoteProperty -Name Publisher -Value  $UninPub 
-    Add-Member -InputObject $newObjInstApps -Type NoteProperty -Name DisplayName -Value  $UninDisN
-    Add-Member -InputObject $newObjInstApps -Type NoteProperty -Name DisplayVersion -Value  $UninDisVer
-    Add-Member -InputObject $newObjInstApps -Type NoteProperty -Name InstallDate -Value   $UninDate
-    $InstallApps += $newObjInstApps
+        $newObjInstApps = New-Object -TypeName PSObject
+        Add-Member -InputObject $newObjInstApps -Type NoteProperty -Name Publisher -Value  $UninPub 
+        Add-Member -InputObject $newObjInstApps -Type NoteProperty -Name DisplayName -Value  $UninDisN
+        Add-Member -InputObject $newObjInstApps -Type NoteProperty -Name DisplayVersion -Value  $UninDisVer
+        Add-Member -InputObject $newObjInstApps -Type NoteProperty -Name InstallDate -Value   $UninDate
+        $InstallApps += $newObjInstApps
     }
   
 ################################################
@@ -468,18 +471,18 @@ sleep 5
     
     foreach ($uninItem16 in  $UninChild16)
     {
-    $getUninItem16 = Get-ItemProperty $uninItem16 -ErrorAction SilentlyContinue | where {$_.displayname -like "*kb*"}
-    $UninDisN16 = $getUninItem16.DisplayName -replace "$null",""
-    $UninDisVer16 = $getUninItem16.DisplayVersion -replace "$null",""
-    $UninPub16 = $getUninItem16.Publisher -replace "$null",""
-    $UninDate16 = $getUninItem16.InstallDate -replace "$null",""
+        $getUninItem16 = Get-ItemProperty $uninItem16 -ErrorAction SilentlyContinue | where {$_.displayname -like "*kb*"}
+        $UninDisN16 = $getUninItem16.DisplayName -replace "$null",""
+        $UninDisVer16 = $getUninItem16.DisplayVersion -replace "$null",""
+        $UninPub16 = $getUninItem16.Publisher -replace "$null",""
+        $UninDate16 = $getUninItem16.InstallDate -replace "$null",""
     
-    $newObjInstApps16 = New-Object -TypeName PSObject
-    Add-Member -InputObject $newObjInstApps16 -Type NoteProperty -Name Publisher -Value  $UninPub16 
-    Add-Member -InputObject $newObjInstApps16 -Type NoteProperty -Name DisplayName -Value  $UninDisN16
-    Add-Member -InputObject $newObjInstApps16 -Type NoteProperty -Name DisplayVersion -Value  $UninDisVer16
-    Add-Member -InputObject $newObjInstApps16 -Type NoteProperty -Name InstallDate -Value   $UninDate16
-    $InstallApps16 += $newObjInstApps16
+        $newObjInstApps16 = New-Object -TypeName PSObject
+        Add-Member -InputObject $newObjInstApps16 -Type NoteProperty -Name Publisher -Value  $UninPub16 
+        Add-Member -InputObject $newObjInstApps16 -Type NoteProperty -Name DisplayName -Value  $UninDisN16
+        Add-Member -InputObject $newObjInstApps16 -Type NoteProperty -Name DisplayVersion -Value  $UninDisVer16
+        Add-Member -InputObject $newObjInstApps16 -Type NoteProperty -Name InstallDate -Value   $UninDate16
+        $InstallApps16 += $newObjInstApps16
     }  
  
 Write-Host " "
@@ -500,8 +503,9 @@ sleep 5
     
     if ($tpSec10 -eq $false)
     {
-    New-Item -Path "C:\SecureReport\output\$OutFunc\" -ItemType Directory -Force
+        New-Item -Path "C:\SecureReport\output\$OutFunc\" -ItemType Directory -Force
     }
+
     $msinfoPath = "C:\SecureReport\output\$OutFunc\" + "$OutFunc.txt"
     $msinfoPathcsv = "C:\SecureReport\output\$OutFunc\" + "$OutFunc.csv"
     $msinfoPathXml = "C:\SecureReport\output\$OutFunc\" + "$OutFunc.xml"
@@ -560,8 +564,9 @@ sleep 5
     $tpSec10 = Test-Path "C:\SecureReport\output\$OutFunc\"
     if ($tpSec10 -eq $false)
     {
-    New-Item -Path "C:\SecureReport\output\$OutFunc\" -ItemType Directory -Force
+        New-Item -Path "C:\SecureReport\output\$OutFunc\" -ItemType Directory -Force
     }
+
     $devQryPathtxt = "C:\SecureReport\output\$OutFunc\" + "$OutFunc.txt"
     $devQryPathcsv = "C:\SecureReport\output\$OutFunc\" + "$OutFunc.csv"
     $devQryPathXml = "C:\SecureReport\output\$OutFunc\" + "$OutFunc.xml"
@@ -573,11 +578,14 @@ sleep 5
 
     foreach($drvQryItem in $getdrvQry)
     {
-    if ($drvQryItem -match "FALSE"){$drvQryItem = "Warning - $drvQryItem warning"}
+        if ($drvQryItem -match "FALSE")
+        {
+            $drvQryItem = "Warning - $drvQryItem warning"
+        }
     
-    $newObjDriverQuery = New-Object PSObject
-    Add-Member -InputObject $newObjDriverQuery -Type NoteProperty -Name DriverName -Value $drvQryItem 
-    $DriverQuery += $newObjDriverQuery
+        $newObjDriverQuery = New-Object PSObject
+        Add-Member -InputObject $newObjDriverQuery -Type NoteProperty -Name DriverName -Value $drvQryItem 
+        $DriverQuery += $newObjDriverQuery
     }
 
 Write-Host " "
@@ -593,20 +601,19 @@ sleep 5
     #LSA
     $getLSA = Get-Item 'HKLM:\SYSTEM\CurrentControlSet\Control\lsa\' -ErrorAction SilentlyContinue
     $getLSAPPL =  $getLSA.GetValue("RunAsPPL")
-
     $fragLSAPPL =@()
 
     if ($getLSAPPL -eq "1")
     {
-    $lsaSet = "LSA is enabled the RunAsPPL is set to $getLSAPPL" 
-    $lsaReg = "HKLM:\SYSTEM\CurrentControlSet\Control\lsa\"
-    $lsaCom = "Win10 and above Credential Guard should be used for Domain joined clients"
+        $lsaSet = "LSA is enabled the RunAsPPL is set to $getLSAPPL" 
+        $lsaReg = "HKLM:\SYSTEM\CurrentControlSet\Control\lsa\"
+        $lsaCom = "Win10 and above Credential Guard should be used for Domain joined clients"
     }
     else
     {
-    $lsaSet = "Warning - Secure LSA is disabled set RunAsPPL to 1 Warning" 
-    $lsaReg = "HKLM:\SYSTEM\CurrentControlSet\Control\lsa\"
-    $lsaCom = "Required for Win8.1 and below"
+        $lsaSet = "Warning - Secure LSA is disabled set RunAsPPL to 1 Warning" 
+        $lsaReg = "HKLM:\SYSTEM\CurrentControlSet\Control\lsa\"
+        $lsaCom = "Required for Win8.1 and below"
     }
 
     $newObjLSA = New-Object -TypeName PSObject
@@ -622,15 +629,15 @@ sleep 5
     $fragDLLSafe =@()
     if ($getDLLSafe -eq "1")
     {
-    $dllSet = " DLLSafeSearch is enabled the SafeDLLSearchMode is set to $getDLLSafe" 
-    $dllReg = "HKLM:\System\CurrentControlSet\Control\Session Manager"
-    $dllCom = "Protects against DLL search order hijacking"
+        $dllSet = " DLLSafeSearch is enabled the SafeDLLSearchMode is set to $getDLLSafe" 
+        $dllReg = "HKLM:\System\CurrentControlSet\Control\Session Manager"
+        $dllCom = "Protects against DLL search order hijacking"
     }
     else
     {
-    $dllSet = "Warning - DLLSafeSearch is disabled set SafeDLLSearchMode to 1 Warning" 
-    $dllReg = "HKLM:\System\CurrentControlSet\Control\Session Manager"
-    $dllCom = "Protects against DLL search order hijacking"
+        $dllSet = "Warning - DLLSafeSearch is disabled set SafeDLLSearchMode to 1 Warning" 
+        $dllReg = "HKLM:\System\CurrentControlSet\Control\Session Manager"
+        $dllCom = "Protects against DLL search order hijacking"
     }
 
     $newObjDLLSafe = New-Object -TypeName PSObject
@@ -646,15 +653,15 @@ sleep 5
     $fragCode =@()
     if ($getCode -eq "1")
     {
-    $CodeSet = "Hypervisor Enforced Code Integrity is enabled" 
-    $CodeReg = "HKLM:\SYSTEM\CurrentControlSet\Control\DeviceGuard\Scenarios\HypervisorEnforcedCodeIntegrity"
-    $CodeCom = "Protects against credential theft"
+        $CodeSet = "Hypervisor Enforced Code Integrity is enabled" 
+        $CodeReg = "HKLM:\SYSTEM\CurrentControlSet\Control\DeviceGuard\Scenarios\HypervisorEnforcedCodeIntegrity"
+        $CodeCom = "Protects against credential theft"
     }
     else
     {
-    $CodeSet = "Warning - Hypervisor Enforced Code Integrity is disabled set Enabled to 1 Warning" 
-    $CodeReg = "HKLM:\SYSTEM\CurrentControlSet\Control\DeviceGuard\Scenarios\HypervisorEnforcedCodeIntegrity"
-    #$CodeCom = "Protects against credential theft"
+        $CodeSet = "Warning - Hypervisor Enforced Code Integrity is disabled set Enabled to 1 Warning" 
+        $CodeReg = "HKLM:\SYSTEM\CurrentControlSet\Control\DeviceGuard\Scenarios\HypervisorEnforcedCodeIntegrity"
+        #$CodeCom = "Protects against credential theft"
     }
 
     $newObjCode = New-Object -TypeName PSObject
@@ -672,13 +679,13 @@ sleep 5
     $fragPCElevate =@()
     if ($PCElevate -eq "1")
     {
-    $ElevateSet = "Warning - Client setting Always Install Elevate is enabled Warning" 
-    $ElevateReg = "HKLM:\SOFTWARE\Policies\Microsoft\Windows\Installer"
+        $ElevateSet = "Warning - Client setting Always Install Elevate is enabled Warning" 
+        $ElevateReg = "HKLM:\SOFTWARE\Policies\Microsoft\Windows\Installer"
     }
     else
     {
-    $ElevateSet = "Client setting  Always Install Elevate is disabled" 
-    $ElevateReg = "HKLM:\SOFTWARE\Policies\Microsoft\Windows\Installer"
+        $ElevateSet = "Client setting  Always Install Elevate is disabled" 
+        $ElevateReg = "HKLM:\SOFTWARE\Policies\Microsoft\Windows\Installer"
     }
 
     $newObjElevate = New-Object -TypeName PSObject
@@ -688,13 +695,13 @@ sleep 5
 
     if ($UserElevate -eq "1")
     {
-    $ElevateSet = "Warning - User setting Always Install Elevate is enabled Warning" 
-    $ElevateReg = "HKCU:\SOFTWARE\Policies\Microsoft\Windows\Installer"
+        $ElevateSet = "Warning - User setting Always Install Elevate is enabled Warning" 
+        $ElevateReg = "HKCU:\SOFTWARE\Policies\Microsoft\Windows\Installer"
     }
     else
     {
-    $ElevateSet = "User setting Always Install Elevate is disabled" 
-    $ElevateReg = "HKCU:\SOFTWARE\Policies\Microsoft\Windows\Installer"
+        $ElevateSet = "User setting Always Install Elevate is disabled" 
+        $ElevateReg = "HKCU:\SOFTWARE\Policies\Microsoft\Windows\Installer"
     }
        
     $newObjElevate = New-Object -TypeName PSObject
@@ -711,15 +718,15 @@ sleep 5
 
     if ($AutoLogonDefPass  -ne "$null")
     {
-    $AutoLPass = "There is no Default Password set for AutoLogon" 
-    $AutoLUser = "There is no Default User set for AutoLogon" 
-    $AutoLReg = "HKLM:\SOFTWARE\Microsoft\Windows NT\Currentversion\Winlogon"
+        $AutoLPass = "There is no Default Password set for AutoLogon" 
+        $AutoLUser = "There is no Default User set for AutoLogon" 
+        $AutoLReg = "HKLM:\SOFTWARE\Microsoft\Windows NT\Currentversion\Winlogon"
     }
     else
     {
-    $AutoLPass = "Warning - AutoLogon default password is set with a vaule of $AutoLogonDefPass Warning" 
-    $AutoLUser = "Warning - AutoLogon Default User is set with a vaule of $AutoLogonDefUser Warning" 
-    $AutoLReg = "HKLM:\SOFTWARE\Microsoft\Windows NT\Currentversion\Winlogon"
+        $AutoLPass = "Warning - AutoLogon default password is set with a vaule of $AutoLogonDefPass Warning" 
+        $AutoLUser = "Warning - AutoLogon Default User is set with a vaule of $AutoLogonDefUser Warning" 
+        $AutoLReg = "HKLM:\SOFTWARE\Microsoft\Windows NT\Currentversion\Winlogon"
     }
 
     $newObjAutoLogon = New-Object -TypeName PSObject
@@ -738,7 +745,7 @@ sleep 5
     
     if ($tpSec10 -eq $false)
     {
-    New-Item -Path "C:\SecureReport\output\$OutFunc\" -ItemType Directory -Force
+        New-Item -Path "C:\SecureReport\output\$OutFunc\" -ItemType Directory -Force
     }
     $llnmrpath = "C:\SecureReport\output\$OutFunc\" + "$OutFunc.log"
    
@@ -750,13 +757,13 @@ sleep 5
 
     if ($enllmnrGpo -eq "0" -or $enllmnrReg -eq "0")
     {
-    $legProt = "LLMNR (Responder) is disabled GPO = $enllmnrGpo" 
-    $legReg = "HKLM:\SOFTWARE\Policies\Microsoft\Windows NT\DNSClient.EnableMulticast"
+        $legProt = "LLMNR (Responder) is disabled GPO = $enllmnrGpo" 
+        $legReg = "HKLM:\SOFTWARE\Policies\Microsoft\Windows NT\DNSClient.EnableMulticast"
     }
     else
     {
-    $legProt = "Warning - LLMNR (Responder) is Enabled Warning" 
-    $legReg = "HKLM:\SOFTWARE\Policies\Microsoft\Windows NT\DNSClient.EnableMulticast"
+        $legProt = "Warning - LLMNR (Responder) is Enabled Warning" 
+        $legReg = "HKLM:\SOFTWARE\Policies\Microsoft\Windows NT\DNSClient.EnableMulticast"
     }
     
     $newObjLegNIC = New-Object psObject
@@ -771,15 +778,15 @@ sleep 5
 
     if ($enNetBTGPO -eq "0")
     {
-    $legProt = "NetBios is disabled the Registry = $enNetBTGPO" 
-    $legReg = "HKLM:\SOFTWARE\Policies\Microsoft\Windows NT\DNSClient.QueryNetBTFQDN"
+        $legProt = "NetBios is disabled the Registry = $enNetBTGPO" 
+        $legReg = "HKLM:\SOFTWARE\Policies\Microsoft\Windows NT\DNSClient.QueryNetBTFQDN"
     }
     else
     {
-    $legProt = "Warning - NetBios is enabled Warning" 
-    $legReg = "HKLM:\SOFTWARE\Policies\Microsoft\Windows NT\DNSClient.QueryNetBTFQDN"
-    $legValue = $enNetBTGPO
-    $legWarn = "Incorrect"
+        $legProt = "Warning - NetBios is enabled Warning" 
+        $legReg = "HKLM:\SOFTWARE\Policies\Microsoft\Windows NT\DNSClient.QueryNetBTFQDN"
+        $legValue = $enNetBTGPO
+        $legWarn = "Incorrect"
     }
     
     $newObjLegNIC = New-Object psObject
@@ -794,13 +801,13 @@ sleep 5
     
     if ($getIpv6Int -eq "255")
     {
-    $legProt = "IPv6 is disabled the Registry = $getIpv6Int" 
-    $legReg = "HKLM:\SYSTEM\CurrentControlSet\Services\Tcpip6\Parameters.DisabledComponents"
+        $legProt = "IPv6 is disabled the Registry = $getIpv6Int" 
+        $legReg = "HKLM:\SYSTEM\CurrentControlSet\Services\Tcpip6\Parameters.DisabledComponents"
     }
     else
     {
-    $legProt = "Warning - IPv6 is enabled Warning" 
-    $legReg = "HKLM:\SYSTEM\CurrentControlSet\Services\Tcpip6\Parameters.DisabledComponents"
+        $legProt = "Warning - IPv6 is enabled Warning" 
+        $legReg = "HKLM:\SYSTEM\CurrentControlSet\Services\Tcpip6\Parameters.DisabledComponents"
     }
     
     $newObjLegNIC = New-Object psObject
@@ -815,13 +822,13 @@ sleep 5
     
     if ($enLMHostsReg -eq "1")
     {
-    $legProt = "LMHosts is disabled the Registry = $enLMHostsReg" 
-    $legReg = "HKLM:\System\CurrentControlSet\Services\NetBT\Parameters.EnableLMHosts"
+        $legProt = "LMHosts is disabled the Registry = $enLMHostsReg" 
+        $legReg = "HKLM:\System\CurrentControlSet\Services\NetBT\Parameters.EnableLMHosts"
     }
     else
     {
-    $legProt = "Warning - Disable LMHosts Warning" 
-    $legReg = "HKLM:\System\CurrentControlSet\Services\NetBT\Parameters.EnableLMHosts"
+        $legProt = "Warning - Disable LMHosts Warning" 
+        $legReg = "HKLM:\System\CurrentControlSet\Services\NetBT\Parameters.EnableLMHosts"
     }
     
     $newObjLegNIC = New-Object psObject
@@ -836,13 +843,13 @@ sleep 5
     
     if ($enNetBTReg -eq "2")
     {
-    $legProt = "NetBios Node Type is set to 2 in the Registry" 
-    $legReg = "HKLM:\System\CurrentControlSet\Services\NetBT\Parameters.NodeType"
+        $legProt = "NetBios Node Type is set to 2 in the Registry" 
+        $legReg = "HKLM:\System\CurrentControlSet\Services\NetBT\Parameters.NodeType"
     }
     else
     {
-    $legProt = "Warning - NetBios Node Type is set to $enNetBTReg, its incorrect and should be set to 2 Warning"
-    $legReg = "HKLM:\System\CurrentControlSet\Services\NetBT\Parameters.NodeType"
+        $legProt = "Warning - NetBios Node Type is set to $enNetBTReg, its incorrect and should be set to 2 Warning"
+        $legReg = "HKLM:\System\CurrentControlSet\Services\NetBT\Parameters.NodeType"
     }
     
     $newObjLegNIC = New-Object psObject
@@ -856,26 +863,26 @@ sleep 5
     
     foreach ($inter in $getNetBiosInt)
     {
-    $getNetBiosReg = Get-ItemProperty $inter.Name
-    $NetBiosValue = $getNetBiosReg.NetbiosOptions
-    $NetBiosPath = $getNetBiosReg.PSChildName
-    $NEtBiosPara = $NetBiosPath,$NetBiosValue
+        $getNetBiosReg = Get-ItemProperty $inter.Name
+        $NetBiosValue = $getNetBiosReg.NetbiosOptions
+        $NetBiosPath = $getNetBiosReg.PSChildName
+        $NEtBiosPara = $NetBiosPath,$NetBiosValue
     
-    if ($NetBiosValue -eq "0")
-    {
-    $legProt = "NetBios is set to $NetBiosValue in the Registry" 
-    $legReg = "HKLM:\SYSTEM\CurrentControlSet\services\NetBT\Parameters\Interfaces.$NetBiosPath"
-    }
-    else
-    {
-    $legProt = "Warning - NetBios is set to $NetBiosValue, its incorrect and should be set to 0 Warning"
-    $legReg = "HKLM:\SYSTEM\CurrentControlSet\services\NetBT\Parameters\Interfaces.$NetBiosPath"
-    }
+        if ($NetBiosValue -eq "0")
+        {
+            $legProt = "NetBios is set to $NetBiosValue in the Registry" 
+            $legReg = "HKLM:\SYSTEM\CurrentControlSet\services\NetBT\Parameters\Interfaces.$NetBiosPath"
+        }
+        else
+        {
+            $legProt = "Warning - NetBios is set to $NetBiosValue, its incorrect and should be set to 0 Warning"
+            $legReg = "HKLM:\SYSTEM\CurrentControlSet\services\NetBT\Parameters\Interfaces.$NetBiosPath"
+        }
     
-    $newObjLegNIC = New-Object psObject
-    Add-Member -InputObject $newObjLegNIC -Type NoteProperty -Name LegacyProtocol -Value $legProt
-    Add-Member -InputObject $newObjLegNIC -Type NoteProperty -Name LegacyPath -Value $legReg
-    $fragLegNIC += $newObjLegNIC
+        $newObjLegNIC = New-Object psObject
+        Add-Member -InputObject $newObjLegNIC -Type NoteProperty -Name LegacyProtocol -Value $legProt
+        Add-Member -InputObject $newObjLegNIC -Type NoteProperty -Name LegacyPath -Value $legReg
+        $fragLegNIC += $newObjLegNIC
     }
 
     cd HKLM:
@@ -886,13 +893,13 @@ sleep 5
     
     if ($getPeerDis -eq "0")
     {
-    $legProt = "Peer to Peer is set to $getPeerDis and disabled" 
-    $legReg = "HKLM:\Software\policies\Microsoft\Peernet"
+        $legProt = "Peer to Peer is set to $getPeerDis and disabled" 
+        $legReg = "HKLM:\Software\policies\Microsoft\Peernet"
     }
     else
     {
-    $legProt = "Warning - Peer to Peer is enabled Warning"
-    $legReg = "HKLM:\Software\policies\Microsoft\Peernet"
+        $legProt = "Warning - Peer to Peer is enabled Warning"
+        $legReg = "HKLM:\Software\policies\Microsoft\Peernet"
     }
     
     $newObjLegNIC = New-Object psObject
@@ -907,13 +914,13 @@ sleep 5
     
     if ( $getFontPr -eq "0")
     {
-    $legProt = "Enable Font Providers is set to $getFontPr and is disabled" 
-    $legReg = "HKLM:\Software\Policies\Microsoft\Windows\System"
+        $legProt = "Enable Font Providers is set to $getFontPr and is disabled" 
+        $legReg = "HKLM:\Software\Policies\Microsoft\Windows\System"
     }
     else
     {
-    $legProt = "Warning - Enable Font Providers is enabled Warning"
-    $legReg = "HKLM:\Software\Policies\Microsoft\Windows\System"
+        $legProt = "Warning - Enable Font Providers is enabled Warning"
+        $legReg = "HKLM:\Software\Policies\Microsoft\Windows\System"
     }
     
     $newObjLegNIC = New-Object psObject
@@ -936,13 +943,13 @@ sleep 5
     #EnableLLTDIO
     if ($getLTDIO -eq "0")
     {
-    $legProt = "EnableLLTDIO is set to $getLTDIO in the Registry" 
-    $legReg = "HKLM:\SOFTWARE\Policies\Microsoft\Windows\LLTD"
+        $legProt = "EnableLLTDIO is set to $getLTDIO in the Registry" 
+        $legReg = "HKLM:\SOFTWARE\Policies\Microsoft\Windows\LLTD"
     }
     else
     {
-    $legProt = "Warning - EnableLLTDIO is enabled Warning"
-    $legReg = "HKLM:\SOFTWARE\Policies\Microsoft\Windows\LLTD"
+        $legProt = "Warning - EnableLLTDIO is enabled Warning"
+        $legReg = "HKLM:\SOFTWARE\Policies\Microsoft\Windows\LLTD"
     }
     
     $newObjLegNIC = New-Object psObject
@@ -953,13 +960,13 @@ sleep 5
     #EnableRspndr
     if ($getRspndr -eq "0")
     {
-    $legProt = "EnableRspndr is set to $getRspndr in the Registry" 
-    $legReg = "HKLM:\SOFTWARE\Policies\Microsoft\Windows\LLTD"
+        $legProt = "EnableRspndr is set to $getRspndr in the Registry" 
+        $legReg = "HKLM:\SOFTWARE\Policies\Microsoft\Windows\LLTD"
     }
     else
     {
-    $legProt = "Warning - EnableRspndr is enabled Warning"
-    $legReg = "HKLM:\SOFTWARE\Policies\Microsoft\Windows\LLTD"
+        $legProt = "Warning - EnableRspndr is enabled Warning"
+        $legReg = "HKLM:\SOFTWARE\Policies\Microsoft\Windows\LLTD"
     }
     
     $newObjLegNIC = New-Object psObject
@@ -970,13 +977,13 @@ sleep 5
     #AllowLLTDIOOnDomain
     if ($getOnDomain -eq "0")
     {
-    $legProt = "AllowLLTDIOOnDomain is set to $getOnDomain in the Registry" 
-    $legReg = "HKLM:\SOFTWARE\Policies\Microsoft\Windows\LLTD"
+        $legProt = "AllowLLTDIOOnDomain is set to $getOnDomain in the Registry" 
+        $legReg = "HKLM:\SOFTWARE\Policies\Microsoft\Windows\LLTD"
     }
     else
     {
-    $legProt = "Warning - AllowLLTDIOOnDomain is enabled Warning"
-    $legReg = "HKLM:\SOFTWARE\Policies\Microsoft\Windows\LLTD"
+        $legProt = "Warning - AllowLLTDIOOnDomain is enabled Warning"
+        $legReg = "HKLM:\SOFTWARE\Policies\Microsoft\Windows\LLTD"
     }
     
     $newObjLegNIC = New-Object psObject
@@ -987,13 +994,13 @@ sleep 5
     #AllowLLTDIOOnPublicNet
     if ($getPublicNet -eq "0")
     {
-    $legProt = "AllowLLTDIOOnPublicNet is set to $getPublicNet in the Registry" 
-    $legReg = "HKLM:\SOFTWARE\Policies\Microsoft\Windows\LLTD"
+        $legProt = "AllowLLTDIOOnPublicNet is set to $getPublicNet in the Registry" 
+        $legReg = "HKLM:\SOFTWARE\Policies\Microsoft\Windows\LLTD"
     }
     else
     {
-    $legProt = "Warning - AllowLLTDIOOnPublicNet is enabled Warning"
-    $legReg = "HKLM:\SOFTWARE\Policies\Microsoft\Windows\LLTD"
+        $legProt = "Warning - AllowLLTDIOOnPublicNet is enabled Warning"
+        $legReg = "HKLM:\SOFTWARE\Policies\Microsoft\Windows\LLTD"
     }
     
     $newObjLegNIC = New-Object psObject
@@ -1004,13 +1011,13 @@ sleep 5
     #AllowRspndrOnDomain  
     if ($getRspOnDomain -eq "0")
     {
-    $legProt = "AllowRspndrOnDomain is set to $getRspOnDomain in the Registry" 
-    $legReg = "HKLM:\SOFTWARE\Policies\Microsoft\Windows\LLTD"
+        $legProt = "AllowRspndrOnDomain is set to $getRspOnDomain in the Registry" 
+        $legReg = "HKLM:\SOFTWARE\Policies\Microsoft\Windows\LLTD"
     }
     else
     {
-    $legProt = "Warning - AllowRspndrOnDomain is enabled Warning"
-    $legReg = "HKLM:\SOFTWARE\Policies\Microsoft\Windows\LLTD"
+        $legProt = "Warning - AllowRspndrOnDomain is enabled Warning"
+        $legReg = "HKLM:\SOFTWARE\Policies\Microsoft\Windows\LLTD"
     }
     
     $newObjLegNIC = New-Object psObject
@@ -1021,13 +1028,13 @@ sleep 5
     #AllowRspndrOnPublicNet    
     if ($getRspPublicNet -eq "0")
     {
-    $legProt = "AllowRspndrOnPublicNet is set to $getRspPublicNet in the Registry" 
-    $legReg = "HKLM:\SOFTWARE\Policies\Microsoft\Windows\LLTD"
+        $legProt = "AllowRspndrOnPublicNet is set to $getRspPublicNet in the Registry" 
+        $legReg = "HKLM:\SOFTWARE\Policies\Microsoft\Windows\LLTD"
     }
     else
     {
-    $legProt = "Warning - AllowRspndrOnPublicNet is enabled Warning"
-    $legReg = "HKLM:\SOFTWARE\Policies\Microsoft\Windows\LLTD"
+        $legProt = "Warning - AllowRspndrOnPublicNet is enabled Warning"
+        $legReg = "HKLM:\SOFTWARE\Policies\Microsoft\Windows\LLTD"
     }
     
     $newObjLegNIC = New-Object psObject
@@ -1038,13 +1045,13 @@ sleep 5
     #ProhibitLLTDIOOnPrivateNe
     if ($getLLnPrivateNet -eq "1")
     {
-    $legProt = "ProhibitLLTDIOOnPrivateNet is set to $getLLnPrivateNet in the Registry" 
-    $legReg = "HKLM:\SOFTWARE\Policies\Microsoft\Windows\LLTD"
+        $legProt = "ProhibitLLTDIOOnPrivateNet is set to $getLLnPrivateNet in the Registry" 
+        $legReg = "HKLM:\SOFTWARE\Policies\Microsoft\Windows\LLTD"
     }
     else
     {
-    $legProt = "Warning - ProhibitLLTDIOOnPrivateNet is enabled Warning"
-    $legReg = "HKLM:\SOFTWARE\Policies\Microsoft\Windows\LLTD"
+        $legProt = "Warning - ProhibitLLTDIOOnPrivateNet is enabled Warning"
+        $legReg = "HKLM:\SOFTWARE\Policies\Microsoft\Windows\LLTD"
     }
     
     $newObjLegNIC = New-Object psObject
@@ -1055,13 +1062,13 @@ sleep 5
     #ProhibitRspndrOnPrivateNet      $getRspPrivateNet = $getNetLLTDInt.GetValue("ProhibitRspndrOnPrivateNet")
     if ($getRspPrivateNet -eq "1")
     {
-    $legProt = "ProhibitLLTDIOOnPrivateNet is set to $getRspPrivateNet in the Registry" 
-    $legReg = "HKLM:\SOFTWARE\Policies\Microsoft\Windows\LLTD"
+        $legProt = "ProhibitLLTDIOOnPrivateNet is set to $getRspPrivateNet in the Registry" 
+        $legReg = "HKLM:\SOFTWARE\Policies\Microsoft\Windows\LLTD"
     }
     else
     {
-    $legProt = "Warning - ProhibitLLTDIOOnPrivateNet is enabled Warning"
-    $legReg = "HKLM:\SOFTWARE\Policies\Microsoft\Windows\LLTD"
+        $legProt = "Warning - ProhibitLLTDIOOnPrivateNet is enabled Warning"
+        $legReg = "HKLM:\SOFTWARE\Policies\Microsoft\Windows\LLTD"
     }
     
     $newObjLegNIC = New-Object psObject
@@ -1079,11 +1086,11 @@ sleep 5
 
     if ($getSecOp1res -eq "1")
     {
-    $SecOptName = "$secOpTitle1 - Enabled"
+        $SecOptName = "$secOpTitle1 - Enabled"
     }
     else
     {
-    $SecOptName = "Warning - $secOpTitle1 - Disabled Warning"
+        $SecOptName = "Warning - $secOpTitle1 - Disabled Warning"
     }
     
     $newObjSecOptions = New-Object psObject
@@ -1096,11 +1103,11 @@ sleep 5
 
     if ($getSecOp2res -eq "1")
     {
-    $SecOptName = "$secOpTitle2 - Enabled"
+        $SecOptName = "$secOpTitle2 - Enabled"
     }
     else
     {
-    $SecOptName = "Warning - $secOpTitle2 - Disabled Warning"
+        $SecOptName = "Warning - $secOpTitle2 - Disabled Warning"
     }
     
     $newObjSecOptions = New-Object psObject
@@ -1113,11 +1120,11 @@ sleep 5
 
     if ($getSecOp3res -eq "1")
     {
-    $SecOptName = "$secOpTitle3 - Enabled"
+        $SecOptName = "$secOpTitle3 - Enabled"
     }
     else
     {
-    $SecOptName = "Warning - $secOpTitle3 - Disabled Warning"
+        $SecOptName = "Warning - $secOpTitle3 - Disabled Warning"
     }
     
     $newObjSecOptions = New-Object psObject
@@ -1130,11 +1137,11 @@ sleep 5
 
     if ($getSecOp4res -eq "0")
     {
-    $SecOptName = "$secOpTitle4 - Enabled"
+        $SecOptName = "$secOpTitle4 - Enabled"
     }
     else
     {
-    $SecOptName = "Warning - $secOpTitle4 - Disabled Warning"
+        $SecOptName = "Warning - $secOpTitle4 - Disabled Warning"
     }
     
     $newObjSecOptions = New-Object psObject
@@ -1147,11 +1154,11 @@ sleep 5
 
     if ($getSecOp5res -eq "1")
     {
-    $SecOptName = "$secOpTitle5 - Enabled"
+        $SecOptName = "$secOpTitle5 - Enabled"
     }
     else
     {
-    $SecOptName = "Warning - $secOpTitle5 - Disabled Warning"
+        $SecOptName = "Warning - $secOpTitle5 - Disabled Warning"
     }
     
     $newObjSecOptions = New-Object psObject
@@ -1164,11 +1171,11 @@ sleep 5
 
     if ($getSecOp6res -eq "5")
     {
-    $SecOptName = "$secOpTitle6 - Enabled"
+        $SecOptName = "$secOpTitle6 - Enabled"
     }
     else
     {
-    $SecOptName = "Warning - $secOpTitle6 - Disabled Warning"
+        $SecOptName = "Warning - $secOpTitle6 - Disabled Warning"
     }
     
     $newObjSecOptions = New-Object psObject
@@ -1181,11 +1188,11 @@ sleep 5
 
     if ($getSecOp7res -eq "1")
     {
-    $SecOptName = "$secOpTitle7 - Enabled"
+        $SecOptName = "$secOpTitle7 - Enabled"
     }
     else
     {
-    $SecOptName = "Warning - $secOpTitle7 - Disabled Warning"
+        $SecOptName = "Warning - $secOpTitle7 - Disabled Warning"
     }
     
     $newObjSecOptions = New-Object psObject
@@ -1198,11 +1205,11 @@ sleep 5
 
     if ($getSecOp8res -eq "1")
     {
-    $SecOptName = "$secOpTitle8 - Enabled"
+        $SecOptName = "$secOpTitle8 - Enabled"
     }
     else
     {
-    $SecOptName = "Warning - $secOpTitle8 - Disabled Warning"
+        $SecOptName = "Warning - $secOpTitle8 - Disabled Warning"
     }
     
     $newObjSecOptions = New-Object psObject
@@ -1215,11 +1222,11 @@ sleep 5
 
     if ($getSecOp9res -eq "0")
     {
-    $SecOptName = "$secOpTitle9 - Enabled"
+        $SecOptName = "$secOpTitle9 - Enabled"
     }
     else
     {
-    $SecOptName = "Warning - $secOpTitle9 - Disabled Warning"
+        $SecOptName = "Warning - $secOpTitle9 - Disabled Warning"
     }
     
     $newObjSecOptions = New-Object psObject
@@ -1232,11 +1239,11 @@ sleep 5
 
     if ($getSecOp9res -eq "2")
     {
-    $SecOptName = "$secOpTitle10 - Enabled"
+        $SecOptName = "$secOpTitle10 - Enabled"
     }
     else
     {
-    $SecOptName = "Warning - $secOpTitle10 - Disabled Warning"
+        $SecOptName = "Warning - $secOpTitle10 - Disabled Warning"
     }
     
     $newObjSecOptions = New-Object psObject
@@ -1259,19 +1266,19 @@ sleep 5
     $getFWProf = Get-NetFirewallProfile -PolicyStore activestore -ErrorAction SilentlyContinue
     $fragFWProfile=@()
     
-    Foreach ( $fwRule in $getFWProf)
+    Foreach ($fwRule in $getFWProf)
     {
-    $fwProfileNa = $fwRule.Name
-    $fwProfileEn = $fwRule.Enabled
-    $fwProfileIn = $fwRule.DefaultInboundAction 
-    $fwProfileOut = $fwRule.DefaultOutboundAction 
+        $fwProfileNa = $fwRule.Name
+        $fwProfileEn = $fwRule.Enabled
+        $fwProfileIn = $fwRule.DefaultInboundAction 
+        $fwProfileOut = $fwRule.DefaultOutboundAction 
      
-    $newObjFWProf = New-Object psObject
-    Add-Member -InputObject $newObjFWProf  -Type NoteProperty -Name Name -Value $fwProfileNa
-    Add-Member -InputObject $newObjFWProf  -Type NoteProperty -Name Enabled -Value $fwProfileEn
-    Add-Member -InputObject $newObjFWProf  -Type NoteProperty -Name Inbound -Value $fwProfileIn
-    Add-Member -InputObject $newObjFWProf  -Type NoteProperty -Name Outbound -Value $fwProfileOut
-    $fragFWProfile += $newObjFWProf 
+        $newObjFWProf = New-Object psObject
+        Add-Member -InputObject $newObjFWProf  -Type NoteProperty -Name Name -Value $fwProfileNa
+        Add-Member -InputObject $newObjFWProf  -Type NoteProperty -Name Enabled -Value $fwProfileEn
+        Add-Member -InputObject $newObjFWProf  -Type NoteProperty -Name Inbound -Value $fwProfileIn
+        Add-Member -InputObject $newObjFWProf  -Type NoteProperty -Name Outbound -Value $fwProfileOut
+        $fragFWProfile += $newObjFWProf 
     }
 
     #Firewall Rules
@@ -1281,7 +1288,7 @@ sleep 5
     $tpSec10 = Test-Path "C:\SecureReport\output\$OutFunc\"
     if ($tpSec10 -eq $false)
     {
-    New-Item -Path "C:\SecureReport\output\$OutFunc\" -ItemType Directory -Force
+        New-Item -Path "C:\SecureReport\output\$OutFunc\" -ItemType Directory -Force
     }
 
     $fwpath = "C:\SecureReport\output\$OutFunc\" + "$OutFunc.log"
@@ -1297,28 +1304,28 @@ sleep 5
     
     foreach($fw in $getFw)
     {
-    $fwID = $fw.ID
-    $fwAddFilter = Get-NetFirewallAddressFilter | where {$_.InstanceID -eq $fwID}
-    $fwPrtFilter = Get-NetFirewallPortFilter | where {$_.InstanceID -eq $fwID}
-    $fwAppFilter = Get-NetFirewallApplicationFilter | where {$_.InstanceID -eq $fwID}
-    $fwtxt.Append($fw.DisplayName)
-    $fwtxt.Append(", ")
-    $fwtxt.Append($fw.Direction)
-    $fwtxt.Append(", ")
-    $fwtxt.Append($fwPrtFilter.Protocol)
-    $fwtxt.Append(", ")
-    $fwtxt.Append($fwAddFilter.LocalIP)
-    $fwtxt.Append(", ")
-    $fwtxt.Append($fwID.RemoteIP)
-    $fwtxt.Append(", ")
-    $fwtxt.Append($fwPrtFilter.LocalPort)
-    $fwtxt.Append(", ")
-    $fwtxt.Append($fwPrtFilter.RemotePort)
-    $fwtxt.Append(", ")
-    $fwtxt.Append($fwAppFilter.Program)
-    $fwtxt.AppendLine()
+        $fwID = $fw.ID
+        $fwAddFilter = Get-NetFirewallAddressFilter | where {$_.InstanceID -eq $fwID}
+        $fwPrtFilter = Get-NetFirewallPortFilter | where {$_.InstanceID -eq $fwID}
+        $fwAppFilter = Get-NetFirewallApplicationFilter | where {$_.InstanceID -eq $fwID}
+        $fwtxt.Append($fw.DisplayName)
+        $fwtxt.Append(", ")
+        $fwtxt.Append($fw.Direction)
+        $fwtxt.Append(", ")
+        $fwtxt.Append($fwPrtFilter.Protocol)
+        $fwtxt.Append(", ")
+        $fwtxt.Append($fwAddFilter.LocalIP)
+        $fwtxt.Append(", ")
+        $fwtxt.Append($fwID.RemoteIP)
+        $fwtxt.Append(", ")
+        $fwtxt.Append($fwPrtFilter.LocalPort)
+        $fwtxt.Append(", ")
+        $fwtxt.Append($fwPrtFilter.RemotePort)
+        $fwtxt.Append(", ")
+        $fwtxt.Append($fwAppFilter.Program)
+        $fwtxt.AppendLine()
 
-    Set-Content -Path $fwpath -Value 'DisplayName,Direction,Protocol,LocalIP,LocalPort,RemoteIP,RemotePort,Program'
+        Set-Content -Path $fwpath -Value 'DisplayName,Direction,Protocol,LocalIP,LocalPort,RemoteIP,RemotePort,Program'
     }
 
     Add-Content -Path $fwpath -Value $fwtxt -ErrorAction SilentlyContinue
@@ -1342,52 +1349,57 @@ sleep 5
 
     foreach ($shTask in $getScTask | where {$_.Actions.execute -notlike "*system32*"})
     {
-    $taskName = $shTask.TaskName
-    $taskPath = $shTask.TaskPath
-    $taskArgs = $shTask.Actions.Arguments | Select-Object -First 1
-    $taskExe =  $shTask.Actions.execute | Select-Object -First 1
-    $taskSet =  $shTask.Settings
-    $taskSour = $shTask.Source
-    $taskTrig = $shTask.Triggers
-    $taskURI =  $shTask.URI
+        $taskName = $shTask.TaskName
+        $taskPath = $shTask.TaskPath
+        $taskArgs = $shTask.Actions.Arguments | Select-Object -First 1
+        $taskExe =  $shTask.Actions.execute | Select-Object -First 1
+        $taskSet =  $shTask.Settings
+        $taskSour = $shTask.Source
+        $taskTrig = $shTask.Triggers
+        $taskURI =  $shTask.URI
  
-    #find file paths to check for permissions restricted to Admins Only
-    if ($taskExe -ne $null)
-    {
-    #find file paths to check for permissions restricted to Admins Only
-        if ($taskArgs -match "^[a-zA-Z]:")
+        #find file paths to check for permissions restricted to Admins Only
+        if ($taskExe -ne $null)
         {
-        $getAclArgs = Get-Acl $taskArgs 
-        $getAclArgs.Path.Replace("Microsoft.PowerShell.Core\FileSystem::","")
-        $taskUser = $getAclArgs.Access.IdentityReference
-        $taskPerms = $getAclArgs.Access.FileSystemRights
+        #find file paths to check for permissions restricted to Admins Only
+            if ($taskArgs -match "^[a-zA-Z]:")
+            {
+                $getAclArgs = Get-Acl $taskArgs 
+                $getAclArgs.Path.Replace("Microsoft.PowerShell.Core\FileSystem::","")
+                $taskUser = $getAclArgs.Access.IdentityReference
+                $taskPerms = $getAclArgs.Access.FileSystemRights
         
-        $getTaskCon = Get-Content $taskArgs 
-        $syfoldAcl = Get-Acl $taskArgs -ErrorAction SilentlyContinue
+                $getTaskCon = Get-Content $taskArgs 
+                $syfoldAcl = Get-Acl $taskArgs -ErrorAction SilentlyContinue
             
-        if ($syfoldAcl | where {$_.accesstostring -like "*Users Allow  Write*" -or $_.accesstostring -like "*Users Allow  Modify*" -or $_.accesstostring -like "*Users Allow  FullControl*"})
-        {
-        $taskUSerPers = "Warning - User are allowed to WRITE or MODIFY $taskArgs Warning"
-        }
+            if ($syfoldAcl | where {$_.accesstostring -like "*Users Allow  Write*" `
+                -or $_.accesstostring -like "*Users Allow  Modify*" `
+                -or $_.accesstostring -like "*Users Allow  FullControl*"})
+            {
+                $taskUSerPers = "Warning - User are allowed to WRITE or MODIFY $taskArgs Warning"
+            }
 
-        if ($syfoldAcl | where {$_.accesstostring -like "*Everyone Allow  Write*" -or $_.accesstostring -like "*Everyone Allow  Modify*" -or $_.accesstostring -like "*Everyone Allow  FullControl*"})
-        {
-        $taskUSerPers = "Warning - Everyone are allowed to WRITE or MODIFY $taskArgs Warning"
-        }
+            if ($syfoldAcl | where {$_.accesstostring -like "*Everyone Allow  Write*" `
+                -or $_.accesstostring -like "*Everyone Allow  Modify*" `
+                -or $_.accesstostring -like "*Everyone Allow  FullControl*"})
+            {
+                $taskUSerPers = "Warning - Everyone are allowed to WRITE or MODIFY $taskArgs Warning"
+            }
 
-        if ($syfoldAcl | where {$_.accesstostring -like "*Authenticated Users Allow  Write*" -or $_.accesstostring -like "*Authenticated Users Allow  Modify*" -or $_.accesstostring -like "*Authenticated Users Allow  FullControl*"})
-        {
-        $taskUSerPers = "Warning - Authenticated User are allowed to WRITE or MODIFY $taskArgs Warning"
-        }
-
-        $newObjSchedTaskPerms = New-Object -TypeName PSObject
-        Add-Member -InputObject $newObjSchedTaskPerms -Type NoteProperty -Name TaskName -Value $taskName
-        Add-Member -InputObject $newObjSchedTaskPerms -Type NoteProperty -Name TaskPath -Value $taskArgs
-        Add-Member -InputObject $newObjSchedTaskPerms -Type NoteProperty -Name TaskContent -Value $getTaskCon 
-        Add-Member -InputObject $newObjSchedTaskPerms -Type NoteProperty -Name TaskPermissions -Value $taskUSerPers
-        $SchedTaskPerms += $newObjSchedTaskPerms
-        }
-    }  
+            if ($syfoldAcl | where {$_.accesstostring -like "*Authenticated Users Allow  Write*" `
+                -or $_.accesstostring -like "*Authenticated Users Allow  Modify*" `
+                -or $_.accesstostring -like "*Authenticated Users Allow  FullControl*"})
+            {
+                $taskUSerPers = "Warning - Authenticated User are allowed to WRITE or MODIFY $taskArgs Warning"
+            }
+                $newObjSchedTaskPerms = New-Object -TypeName PSObject
+                Add-Member -InputObject $newObjSchedTaskPerms -Type NoteProperty -Name TaskName -Value $taskName
+                Add-Member -InputObject $newObjSchedTaskPerms -Type NoteProperty -Name TaskPath -Value $taskArgs
+                Add-Member -InputObject $newObjSchedTaskPerms -Type NoteProperty -Name TaskContent -Value $getTaskCon 
+                Add-Member -InputObject $newObjSchedTaskPerms -Type NoteProperty -Name TaskPermissions -Value $taskUSerPers
+                $SchedTaskPerms += $newObjSchedTaskPerms
+            }
+        }  
     }
 
  $getScTask = Get-ScheduledTask 
@@ -1395,45 +1407,45 @@ sleep 5
 
 foreach ($shTask in $getScTask | where {$_.Actions.execute -notlike "*system32*" -and $_.Actions.execute -notlike "*MpCmdRun.exe*"})
     {
-    $arrayTaskArgs=@()
-    $arrayTaskExe=@()
-    $TaskHash=@()
-    $getTaskCon=@()
+        $arrayTaskArgs=@()
+        $arrayTaskExe=@()
+        $TaskHash=@()
+        $getTaskCon=@()
 
-    $taskName = $shTask.TaskName
-    $taskPath = $shTask.TaskPath
-    $taskArgs = $shTask.Actions.Arguments 
-    $taskExe =  $shTask.Actions.execute 
-    $taskSet =  $shTask.Settings
-    $taskSour = $shTask.Source
-    $taskTrig = $shTask.Triggers
-    $taskURI =  $shTask.URI
+        $taskName = $shTask.TaskName
+        $taskPath = $shTask.TaskPath
+        $taskArgs = $shTask.Actions.Arguments 
+        $taskExe =  $shTask.Actions.execute 
+        $taskSet =  $shTask.Settings
+        $taskSour = $shTask.Source
+        $taskTrig = $shTask.Triggers
+        $taskURI =  $shTask.URI
 
-    if ($taskExe -ne $null)
-    {
-        if ($taskArgs -notmatch "^[a-zA-Z]:" -or $taskArgs -match "^[a-zA-Z]:")
+        if ($taskExe -ne $null)
         {
-        foreach($Args in $taskArgs)
-        {
-        $arrayTaskArgs += $Args
-        }
-        $arrayjoinArgs = $arrayTaskArgs -join ", "
+            if ($taskArgs -notmatch "^[a-zA-Z]:" -or $taskArgs -match "^[a-zA-Z]:")
+            {
+                foreach($Args in $taskArgs)
+                {
+                    $arrayTaskArgs += $Args
+                }
+                    $arrayjoinArgs = $arrayTaskArgs -join ", "
     
-        foreach($Exes in $taskExe)
-        {
-        $arrayTaskExe += $Exes
-        }
+                foreach($Exes in $taskExe)
+                {
+                    $arrayTaskExe += $Exes
+                }
         
-        $arrayjoinExe = $arrayTaskExe -join ", "
-        $newObjSchedTaskListings = New-Object -TypeName PSObject
-        Add-Member -InputObject $newObjSchedTaskListings -Type NoteProperty -Name TaskName -Value $taskName
-        Add-Member -InputObject $newObjSchedTaskListings -Type NoteProperty -Name TaskExe -Value $arrayjoinExe
-        Add-Member -InputObject $newObjSchedTaskListings -Type NoteProperty -Name TaskArguments -Value $arrayjoinArgs
-        #Add-Member -InputObject $newObjSchedTaskListings -Type NoteProperty -Name TaskContent -Value $getTaskCon 
-        #Add-Member -InputObject $newObjSchedTaskListings -Type NoteProperty -Name TaskPermissions -Value $taskUserPers
-        $SchedTaskListings += $newObjSchedTaskListings
+                $arrayjoinExe = $arrayTaskExe -join ", "
+                $newObjSchedTaskListings = New-Object -TypeName PSObject
+                Add-Member -InputObject $newObjSchedTaskListings -Type NoteProperty -Name TaskName -Value $taskName
+                Add-Member -InputObject $newObjSchedTaskListings -Type NoteProperty -Name TaskExe -Value $arrayjoinExe
+                Add-Member -InputObject $newObjSchedTaskListings -Type NoteProperty -Name TaskArguments -Value $arrayjoinArgs
+                #Add-Member -InputObject $newObjSchedTaskListings -Type NoteProperty -Name TaskContent -Value $getTaskCon 
+                #Add-Member -InputObject $newObjSchedTaskListings -Type NoteProperty -Name TaskPermissions -Value $taskUserPers
+                $SchedTaskListings += $newObjSchedTaskListings
+            }
         }
-    }
     }
 
 Write-Host " "
@@ -1455,8 +1467,9 @@ sleep 7
     $tpSec10 = Test-Path "C:\SecureReport\output\$OutFunc\"
     if ($tpSec10 -eq $false)
     {
-    New-Item -Path "C:\SecureReport\output\$OutFunc\" -ItemType Directory -Force
+        New-Item -Path "C:\SecureReport\output\$OutFunc\" -ItemType Directory -Force
     }
+
     $qpath = "C:\SecureReport\output\$OutFunc\" + "$OutFunc.log"
  
     #Unquoted paths
@@ -1471,43 +1484,43 @@ sleep 7
     $svc = $unQSvc.name
     $SvcReg = Get-ItemProperty HKLM:\SYSTEM\CurrentControlSet\Services\$svc -ErrorAction SilentlyContinue
     
-    if ($SvcReg.imagePath -like "*.exe*")
-    {
-    $SvcRegSp =  $SvcReg.imagePath -split ".exe"
-    $SvcRegSp0 = $SvcRegSp[0]
-    $SvcRegSp1 = $SvcRegSp[1]
-    $image = "`"$SvcRegSp0" + ".exe`""+  " " + $SvcRegSp1
-    $SvcReg |Select-Object PSChildName,ImagePath  | out-file $qpath -Append
+        if ($SvcReg.imagePath -like "*.exe*")
+        {
+            $SvcRegSp =  $SvcReg.imagePath -split ".exe"
+            $SvcRegSp0 = $SvcRegSp[0]
+            $SvcRegSp1 = $SvcRegSp[1]
+            $image = "`"$SvcRegSp0" + ".exe`""+  " " + $SvcRegSp1
+            $SvcReg |Select-Object PSChildName,ImagePath  | out-file $qpath -Append
                 
-    $newObjSvc = New-Object psObject
-    Add-Member -InputObject $newObjSvc -Type NoteProperty -Name ServiceName -Value $SvcReg.PSChildName
-    Add-Member -InputObject $newObjSvc -Type NoteProperty -Name Path -Value $SvcReg.ImagePath 
-    $fragUnQuoted += $newObjSvc
-    }
+            $newObjSvc = New-Object psObject
+            Add-Member -InputObject $newObjSvc -Type NoteProperty -Name ServiceName -Value $SvcReg.PSChildName
+            Add-Member -InputObject $newObjSvc -Type NoteProperty -Name Path -Value $SvcReg.ImagePath 
+            $fragUnQuoted += $newObjSvc
+        }
     
-    if ($SvcReg.imagePath -like "*.sys*")
-    {
-    $SvcRegSp =  $SvcReg.imagePath -split ".sys"
-    $SvcRegSp0 = $SvcRegSp[0]
-    $SvcRegSp1 = $SvcRegSp[1]
-    $image = "`"$SvcRegSp0" + ".sys`""+   " $SvcRegSp1"
-    $SvcReg |Select-Object PSChildName,ImagePath  | out-file $qpath -Append
+        if ($SvcReg.imagePath -like "*.sys*")
+        {
+            $SvcRegSp =  $SvcReg.imagePath -split ".sys"
+            $SvcRegSp0 = $SvcRegSp[0]
+            $SvcRegSp1 = $SvcRegSp[1]
+            $image = "`"$SvcRegSp0" + ".sys`""+   " $SvcRegSp1"
+            $SvcReg |Select-Object PSChildName,ImagePath  | out-file $qpath -Append
                        
-    $newObjSvc = New-Object psObject
-    Add-Member -InputObject $newObjSvc -Type NoteProperty -Name ServiceName -Value $SvcReg.PSChildName
-    Add-Member -InputObject $newObjSvc -Type NoteProperty -Name Path -Value $SvcReg.ImagePath 
-    $fragUnQuoted += $newObjSvc
-    }
+            $newObjSvc = New-Object psObject
+            Add-Member -InputObject $newObjSvc -Type NoteProperty -Name ServiceName -Value $SvcReg.PSChildName
+            Add-Member -InputObject $newObjSvc -Type NoteProperty -Name Path -Value $SvcReg.ImagePath 
+            $fragUnQuoted += $newObjSvc
+        }
     
-    if ($SvcReg.imagePath -like "*.exe") 
-    {
-    $image = $SvcReg.ImagePath
-    $SvcReg |Select-Object PSChildName,ImagePath  | out-file $qpath -Append
-    $newObjSvc = New-Object psObject
-    Add-Member -InputObject $newObjSvc -Type NoteProperty -Name ServiceName -Value $SvcReg.PSChildName
-    Add-Member -InputObject $newObjSvc -Type NoteProperty -Name Path -Value $SvcReg.ImagePath 
-    $fragUnQuoted += $newObjSvc
-    }
+        if ($SvcReg.imagePath -like "*.exe") 
+        {
+            $image = $SvcReg.ImagePath
+            $SvcReg |Select-Object PSChildName,ImagePath  | out-file $qpath -Append
+            $newObjSvc = New-Object psObject
+            Add-Member -InputObject $newObjSvc -Type NoteProperty -Name ServiceName -Value $SvcReg.PSChildName
+            Add-Member -InputObject $newObjSvc -Type NoteProperty -Name Path -Value $SvcReg.ImagePath 
+            $fragUnQuoted += $newObjSvc
+        }
     }
 
 Write-Host " "
@@ -1537,7 +1550,7 @@ sleep 7
     $tpSec10 = Test-Path "C:\SecureReport\output\$OutFunc\"
     if ($tpSec10 -eq $false)
     {
-    New-Item -Path "C:\SecureReport\output\$OutFunc\" -ItemType Directory -Force
+        New-Item -Path "C:\SecureReport\output\$OutFunc\" -ItemType Directory -Force
     }
 
     $hpath = "C:\SecureReport\output\$OutFunc\" + "$OutFunc.log"
@@ -1550,50 +1563,58 @@ sleep 7
         $hfiles =  Get-ChildItem $rt -ErrorAction SilentlyContinue | 
         where {$_.Name -eq "PerfLogs" -or ` 
         $_.Name -eq "Program Files" -or `
-        $_.Name -eq "Program Files (x86)"} # -or `
+        $_.Name -eq "Program Files (x86)"
+    } # -or `
         # $_.Name -eq "Windows"}
 
         $filehash = @()
         foreach ($hfile in $hfiles.fullname)
         {
-        $subfl = Get-ChildItem -Path $hfile -force -Recurse -Include *.exe, *.dll -ErrorAction SilentlyContinue
-        $filehash+=$subfl
-        $filehash 
+            $subfl = Get-ChildItem -Path $hfile -force -Recurse -Include *.exe, *.dll -ErrorAction SilentlyContinue
+            $filehash+=$subfl
+            $filehash 
         }
     
         foreach ($cfile in $filehash.fullname)
         {
             $cfileAcl = Get-Acl $cfile -ErrorAction SilentlyContinue
 
-            if ($cfileAcl | where {$_.accesstostring -like "*Users Allow  Write*" -or $_.accesstostring -like "*Users Allow  Modify*" -or $_.accesstostring -like "*Users Allow  FullControl*"})
+            if ($cfileAcl | 
+            where {$_.accesstostring -like "*Users Allow  Write*" `
+                -or $_.accesstostring -like "*Users Allow  Modify*" `
+                -or $_.accesstostring -like "*Users Allow  FullControl*"})
+            
             {
-            $cfile | Out-File $hpath -Append
-            #Write-Host $cfile -ForegroundColor Yellow
+                $cfile | Out-File $hpath -Append
+                #Write-Host $cfile -ForegroundColor Yellow
             }
 
-            if ($cfileAcl | where {$_.accesstostring -like "*Everyone Allow  Write*" -or $_.accesstostring -like "*Everyone Allow  Modify*" -or $_.accesstostring -like "*Everyone Allow  FullControl*"})
+            if ($cfileAcl | where {$_.accesstostring -like "*Everyone Allow  Write*" `
+                -or $_.accesstostring -like "*Everyone Allow  Modify*" `
+                -or $_.accesstostring -like "*Everyone Allow  FullControl*"})
             {
-            $cfile | Out-File $hpath -Append
-            #Write-Host $cfile -ForegroundColor Yellow
+                $cfile | Out-File $hpath -Append
+                #Write-Host $cfile -ForegroundColor Yellow
             }
     
-            if ($cfileAcl | where {$_.accesstostring -like "*Authenticated Users Allow  Write*" -or $_.accesstostring -like "*Authenticated Users Allow  Modify*" -or $_.accesstostring -like "*Authenticated Users Allow  FullControl*"})
+            if ($cfileAcl | where {$_.accesstostring -like "*Authenticated Users Allow  Write*" `
+                -or $_.accesstostring -like "*Authenticated Users Allow  Modify*" `
+                -or $_.accesstostring -like "*Authenticated Users Allow  FullControl*"})
             {
-            $cfile | Out-File $hpath -Append
-            #Write-Host $cfile -ForegroundColor Yellow
+                $cfile | Out-File $hpath -Append
+                #Write-Host $cfile -ForegroundColor Yellow
             }
         }
     
         $wFileDetails = Get-Content  $hpath -ErrorAction SilentlyContinue #|  where {$_ -ne ""} |select -skip 3
-        #Declares correctly formated hash for OS Information 
         $fragwFile =@()
     
         foreach ($wFileItems in $wFileDetails)
         {
-        $newObjwFile = New-Object -TypeName PSObject
-        Add-Member -InputObject $newObjwFile -Type NoteProperty -Name WriteableFiles -Value $wFileItems
-        $fragwFile += $newObjwFile
-        #Write-Host $wFileItems -ForegroundColor Yellow
+            $newObjwFile = New-Object -TypeName PSObject
+            Add-Member -InputObject $newObjwFile -Type NoteProperty -Name WriteableFiles -Value $wFileItems
+            $fragwFile += $newObjwFile
+            #Write-Host $wFileItems -ForegroundColor Yellow
         }
        
     }
@@ -1615,7 +1636,7 @@ sleep 7
     $tpSec10 = Test-Path "C:\SecureReport\output\$OutFunc\"
     if ($tpSec10 -eq $false)
     {
-    New-Item -Path "C:\SecureReport\output\$OutFunc\" -ItemType Directory -Force
+        New-Item -Path "C:\SecureReport\output\$OutFunc\" -ItemType Directory -Force
     }
 
     $rpath = "C:\SecureReport\output\$OutFunc\" + "$OutFunc.log"
@@ -1644,20 +1665,20 @@ sleep 7
                 {
                     if ($ac | Select-String -SimpleMatch "BUILTIN\Users Allow  FullControl")
                     {
-                    $regPath | Out-File $rpath -Append
-                    #Write-Host $ac -ForegroundColor DarkCyan
+                        $regPath | Out-File $rpath -Append
+                        #Write-Host $ac -ForegroundColor DarkCyan
                     } 
 
                     if ($ac | Select-String -SimpleMatch "NT AUTHORITY\Authenticated Users Allow  FullControl")
                     {
-                    $regPath | Out-File $rpath -Append
-                    #Write-Host $ac -ForegroundColor DarkCyan
+                        $regPath | Out-File $rpath -Append
+                        #Write-Host $ac -ForegroundColor DarkCyan
                     }
 
                     if ($ac | Select-String -SimpleMatch "Everyone Allow  FullControl")
                     {
-                    $regPath | Out-File $rpath -Append
-                    #Write-Host $ac -ForegroundColor DarkCyan
+                        $regPath | Out-File $rpath -Append
+                        #Write-Host $ac -ForegroundColor DarkCyan
                     }
                 }
         }
@@ -1667,14 +1688,12 @@ sleep 7
     
         foreach ($regItems in $regDetails)
         {
-        #Write-Host $regItems -ForegroundColor DarkCyan
-        $newObjReg = New-Object -TypeName PSObject
-        Add-Member -InputObject $newObjReg -Type NoteProperty -Name RegWeakness -Value $regItems
-        $fragReg += $newObjReg
-    
+            #Write-Host $regItems -ForegroundColor DarkCyan
+            $newObjReg = New-Object -TypeName PSObject
+            Add-Member -InputObject $newObjReg -Type NoteProperty -Name RegWeakness -Value $regItems
+            $fragReg += $newObjReg    
         }
-       
-    }
+   }
 
 Write-Host " "
 Write-Host "Finished Searching for Writeable Registry Hive Vulnerabilities" -foregroundColor Green
@@ -1696,7 +1715,7 @@ sleep 7
     
     if ($tpSec10 -eq $false)
     {
-    New-Item -Path "C:\SecureReport\output\$OutFunc\" -ItemType Directory -Force
+        New-Item -Path "C:\SecureReport\output\$OutFunc\" -ItemType Directory -Force
     }
     
     $fpath = "C:\SecureReport\output\$OutFunc\" + "$OutFunc.log"
@@ -1718,11 +1737,11 @@ sleep 7
         $foldhash = @()
         foreach ($hfold in $hfolders.fullname)
         {
-        $subfl = Get-ChildItem -Path $hfold -Directory -Recurse -Force -ErrorAction SilentlyContinue
-        $foldhash+=$hfolders
-        $foldhash+=$subfl
-        $foldhash+=$getRoot
-        #Write-Host $hfold -ForegroundColor Gray   
+            $subfl = Get-ChildItem -Path $hfold -Directory -Recurse -Force -ErrorAction SilentlyContinue
+            $foldhash+=$hfolders
+            $foldhash+=$subfl
+            $foldhash+=$getRoot
+            #Write-Host $hfold -ForegroundColor Gray   
         }
     
         foreach ($cfold in $foldhash.fullname)
@@ -1730,22 +1749,28 @@ sleep 7
         #Write-Host $cfold -ForegroundColor green
         $cfoldAcl = Get-Acl $cfold -ErrorAction SilentlyContinue
 
-            if ($cfoldAcl | where {$_.accesstostring -like "*Users Allow  Write*" -or $_.accesstostring -like "*Users Allow  Modify*" -or $_.accesstostring -like "*Users Allow  FullControl*"})
+            if ($cfoldAcl | where {$_.accesstostring -like "*Users Allow  Write*" `
+                -or $_.accesstostring -like "*Users Allow  Modify*" `
+                -or $_.accesstostring -like "*Users Allow  FullControl*"})
             {
-            $cfold | Out-File $fpath -Append
-            #Write-Host $cfold -ForegroundColor red
+                $cfold | Out-File $fpath -Append
+                #Write-Host $cfold -ForegroundColor red
             }
 
-            if ($cfoldAcl | where {$_.accesstostring -like "*Everyone Allow  Write*" -or $_.accesstostring -like "*Everyone Allow  Modify*" -or $_.accesstostring -like "*Everyone Allow  FullControl*"})
+            if ($cfoldAcl | where {$_.accesstostring -like "*Everyone Allow  Write*" `
+                -or $_.accesstostring -like "*Everyone Allow  Modify*" `
+                -or $_.accesstostring -like "*Everyone Allow  FullControl*"})
             {
-            $cfold | Out-File $fpath -Append
-            #Write-Host $cfold -ForegroundColor red
+                $cfold | Out-File $fpath -Append
+                #Write-Host $cfold -ForegroundColor red
             }
 
-            if ($cfoldAcl | where {$_.accesstostring -like "*Authenticated Users Allow  Write*" -or $_.accesstostring -like "*Authenticated Users Allow  Modify*" -or $_.accesstostring -like "*Authenticated Users Allow  FullControl*"})
+            if ($cfoldAcl | where {$_.accesstostring -like "*Authenticated Users Allow  Write*" `
+                -or $_.accesstostring -like "*Authenticated Users Allow  Modify*" `
+                -or $_.accesstostring -like "*Authenticated Users Allow  FullControl*"})
             {
-            $cfold | Out-File $fpath -Append
-            #Write-Host $cfold -ForegroundColor red
+                $cfold | Out-File $fpath -Append
+                #Write-Host $cfold -ForegroundColor red
             } 
         }
         
@@ -1753,15 +1778,14 @@ sleep 7
 
         #Get content and remove the first 3 lines
         $wFolderDetails = Get-Content  $fpath  -ErrorAction SilentlyContinue   #|  where {$_ -ne ""} |select -skip 3
-        #Declares correctly formated hash for OS Information 
         $fragwFold =@()
     
         foreach ($wFoldItems in $wFolderDetails)
         {
-        $newObjwFold = New-Object -TypeName PSObject
-        Add-Member -InputObject $newObjwFold -Type NoteProperty -Name FolderWeakness -Value $wFoldItems
-        $fragwFold += $newObjwFold
-        #Write-Host $wFoldItems -ForegroundColor Gray
+            $newObjwFold = New-Object -TypeName PSObject
+            Add-Member -InputObject $newObjwFold -Type NoteProperty -Name FolderWeakness -Value $wFoldItems
+            $fragwFold += $newObjwFold
+            #Write-Host $wFoldItems -ForegroundColor Gray
         }
         
     }
@@ -1786,7 +1810,7 @@ sleep 7
     
     if ($tpSec10 -eq $false)
     {
-    New-Item -Path "C:\SecureReport\output\$OutFunc\" -ItemType Directory -Force
+        New-Item -Path "C:\SecureReport\output\$OutFunc\" -ItemType Directory -Force
     }
 
     $sysPath = "C:\SecureReport\output\$OutFunc\" + "$OutFunc.log"
@@ -1807,31 +1831,38 @@ sleep 7
     
         foreach ($sysfold in $sysfolders.fullname)
         {
-        $subsysfl = Get-ChildItem -Path $sysfold -Directory -Recurse -Force -ErrorAction SilentlyContinue
-        $sysfoldhash+=$subsysfl
-        #Write-Host $subsysfl -ForegroundColor White
+            $subsysfl = Get-ChildItem -Path $sysfold -Directory -Recurse -Force -ErrorAction SilentlyContinue
+            $sysfoldhash+=$subsysfl
+            #Write-Host $subsysfl -ForegroundColor White
         }
     
         foreach ($syfold in $sysfoldhash.fullname)
         {
-        $syfoldAcl = Get-Acl $syfold -ErrorAction SilentlyContinue
-        #Write-Host $sysfoldhash -ForegroundColor green
-            if ($syfoldAcl | where {$_.accesstostring -like "*Users Allow  Write*" -or $_.accesstostring -like "*Users Allow  Modify*" -or $_.accesstostring -like "*Users Allow  FullControl*"})
+            $syfoldAcl = Get-Acl $syfold -ErrorAction SilentlyContinue
+            #Write-Host $sysfoldhash -ForegroundColor green
+            if ($syfoldAcl | where {$_.accesstostring -like "*Users Allow  Write*" `
+                -or $_.accesstostring -like "*Users Allow  Modify*" `
+                -or $_.accesstostring -like "*Users Allow  FullControl*"})
             {
-            $syfold | Out-File $sysPath -Append
-            #Write-Host $syfold -ForegroundColor red
+                $syfold | Out-File $sysPath -Append
+                #Write-Host $syfold -ForegroundColor red
             }
 
-            if ($syfoldAcl | where {$_.accesstostring -like "*Everyone Allow  Write*" -or $_.accesstostring -like "*Everyone Allow  Modify*" -or $_.accesstostring -like "*Everyone Allow  FullControl*"})
+            if ($syfoldAcl | where {$_.accesstostring -like "*Everyone Allow  Write*" `
+                -or $_.accesstostring -like "*Everyone Allow  Modify*" `
+                -or $_.accesstostring -like "*Everyone Allow  FullControl*"})
             {
-            $syfold | Out-File $sysPath -Append
-            #Write-Host $syfold -ForegroundColor red
+                $syfold | Out-File $sysPath -Append
+                #Write-Host $syfold -ForegroundColor red
             }
 
-            if ($syfoldAcl | where {$_.accesstostring -like "*Authenticated Users Allow  Write*" -or $_.accesstostring -like "*Authenticated Users Allow  Modify*" -or $_.accesstostring -like "*Authenticated Users Allow  FullControl*"})
+            if ($syfoldAcl | where {$_.accesstostring -like "*Authenticated Users Allow  Write*" `
+                -or $_.accesstostring -like "*Authenticated Users Allow  Modify*" `
+                -or $_.accesstostring -like "*Authenticated Users Allow  FullControl*"})
+
             {
-            $syfold | Out-File $sysPath -Append
-            #Write-Host $syfold -ForegroundColor red
+                $syfold | Out-File $sysPath -Append
+                #Write-Host $syfold -ForegroundColor red
             }
         }
     
@@ -1839,20 +1870,17 @@ sleep 7
 
         #Get content and remove the first 3 lines
         $sysFolderDetails = Get-Content $sysPath -ErrorAction SilentlyContinue #|  where {$_ -ne ""} |select -skip 3
-        
-        #Declares correctly formated hash for OS Information 
         $fragsysFold =@()
     
         foreach ($sysFoldItems in $sysFolderDetails)
         {
-        $newObjsysFold = New-Object -TypeName PSObject
-        Add-Member -InputObject $newObjsysFold -Type NoteProperty -Name FolderWeakness -Value $sysFoldItems
-        $fragsysFold += $newObjsysFold
-        #Write-Host $sysFoldItems -ForegroundColor White
+            $newObjsysFold = New-Object -TypeName PSObject
+            Add-Member -InputObject $newObjsysFold -Type NoteProperty -Name FolderWeakness -Value $sysFoldItems
+            $fragsysFold += $newObjsysFold
+            #Write-Host $sysFoldItems -ForegroundColor White
         }
     }
-
-     
+  
 Write-Host " "
 Write-Host "Finished Searching for Writeable System Folder Vulnerabilities" -foregroundColor Green
 
@@ -1873,7 +1901,7 @@ sleep 7
     
     if ($tpSec10 -eq $false)
     {
-    New-Item -Path "C:\SecureReport\output\$OutFunc\" -ItemType Directory -Force
+        New-Item -Path "C:\SecureReport\output\$OutFunc\" -ItemType Directory -Force
     }
     
     $createSysPath = "C:\SecureReport\output\$OutFunc\" + "$OutFunc.log"
@@ -1884,7 +1912,8 @@ sleep 7
 
     foreach ($rt in $drvRoot)
     {   
-        $createSysfolders =  Get-ChildItem $rt -ErrorAction SilentlyContinue | where {$_.Name -eq "PerfLogs" -or ` 
+        $createSysfolders =  Get-ChildItem $rt -ErrorAction SilentlyContinue | 
+        where {$_.Name -eq "PerfLogs" -or ` 
         $_.Name -eq "Program Files" -or `
         $_.Name -eq "Program Files (x86)" -or `
         $_.Name -eq "Windows"}
@@ -1892,32 +1921,32 @@ sleep 7
   
         foreach ($createSysfold in $createSysfolders.fullname)
         {
-        $createSubsysfl = Get-ChildItem -Path $createSysfold -Directory -Recurse -Force  -ErrorAction SilentlyContinue
-        $createSysfoldhash+=$createSubsysfl
-        #Write-Host $createSubsysfl -ForegroundColor Green
+            $createSubsysfl = Get-ChildItem -Path $createSysfold -Directory -Recurse -Force  -ErrorAction SilentlyContinue
+            $createSysfoldhash+=$createSubsysfl
+            #Write-Host $createSubsysfl -ForegroundColor Green
         }
 
         foreach ($createSyfold in $createSysfoldhash.fullname)
         {
-        $createSyfoldAcl = Get-Acl $createSyfold -ErrorAction SilentlyContinue
-        #Write-Host $createSyfold -ForegroundColor green
+            $createSyfoldAcl = Get-Acl $createSyfold -ErrorAction SilentlyContinue
+            #Write-Host $createSyfold -ForegroundColor green
 
             if ($createSyfoldAcl | where {$_.accesstostring -like "*Users Allow  CreateFiles*"})
             {
-            $createSyfold | Out-File $createSysPath -Append
-            #Write-Host $createSyfold -ForegroundColor red
+                $createSyfold | Out-File $createSysPath -Append
+                #Write-Host $createSyfold -ForegroundColor red
             }
 
             if ($createSyfoldAcl | where {$_.accesstostring -like "*Everyone Allow  CreateFiles*"})
             {
-            $createSyfold | Out-File $createSysPath -Append
-            #Write-Host $createSyfold -ForegroundColor red
+                $createSyfold | Out-File $createSysPath -Append
+                #Write-Host $createSyfold -ForegroundColor red
             }
 
             if ($createSyfoldAcl | where {$_.accesstostring -like "*Authenticated Users Allow  CreateFiles*"})
             {
-            $createSyfold | Out-File $createSysPath -Append
-            #Write-Host $createSyfold -ForegroundColor red
+                $createSyfold | Out-File $createSysPath -Append
+                #Write-Host $createSyfold -ForegroundColor red
             }
          }
 
@@ -1925,16 +1954,14 @@ sleep 7
 
             #Get content and remove the first 3 lines
             $createSysFolderDetails = Get-Content $createSysPath -ErrorAction SilentlyContinue #|  where {$_ -ne ""} |select -skip 3
-
-            #Declares correctly formated hash for OS Information 
             $fragcreateSysFold=@()
         
             foreach ($createSysFoldItems in $createSysFolderDetails)
             {
-            $newObjcreateSysFold = New-Object -TypeName PSObject
-            Add-Member -InputObject $newObjcreateSysFold -Type NoteProperty -Name CreateFiles -Value $createSysFoldItems
-            $fragcreateSysFold += $newObjcreateSysFold
-            #Write-Host $createSysFoldItems -ForegroundColor green
+                $newObjcreateSysFold = New-Object -TypeName PSObject
+                Add-Member -InputObject $newObjcreateSysFold -Type NoteProperty -Name CreateFiles -Value $createSysFoldItems
+                $fragcreateSysFold += $newObjcreateSysFold
+                #Write-Host $createSysFoldItems -ForegroundColor green
             }
         }
         
@@ -1968,23 +1995,29 @@ Write-Host "Searching for authenticode signature hashmismatch" -foregroundColor 
  
     foreach ($rt in $drvRoot)
         {
-        $getAuthfiles = Get-ChildItem -Path $rt -Recurse | where { ! $_.PSIsContainer -and $_.extension -ne ".log" -and $_.extension -ne ".hve" -and $_.extension -ne ".txt" -and $_.extension -ne ".evtx" -and $_.extension -ne ".elt"}
+            $getAuthfiles = Get-ChildItem -Path $rt -Recurse | 
+            where { ! $_.PSIsContainer `
+            -and $_.extension -ne ".log" `
+            -and $_.extension -ne ".hve" `
+            -and $_.extension -ne ".txt" `
+            -and $_.extension -ne ".evtx" `
+            -and $_.extension -ne ".elt"}
 
             foreach($file in $getAuthfiles)
             {
-            $getAuthCodeSig = get-authenticodesignature -FilePath $file.FullName | where {$_.Status -eq "hashmismatch"
+                $getAuthCodeSig = get-authenticodesignature -FilePath $file.FullName | where {$_.Status -eq "hashmismatch"
             }
 
         if ($getAuthCodeSig.path -eq $null){}
         else 
             {
-            $authPath = $getAuthCodeSig.path
-            $authStatus = $getAuthCodeSig.status
+                $authPath = $getAuthCodeSig.path
+                $authStatus = $getAuthCodeSig.status
 
-            $newObjAuthSig = New-Object -TypeName PSObject
-            Add-Member -InputObject $newObjAuthSig -Type NoteProperty -Name PathAuthCodeSig -Value $authPath
-            Add-Member -InputObject $newObjAuthSig -Type NoteProperty -Name StatusAuthCodeSig -Value $authStatus
-            $fragAuthCodeSig += $newObjAuthSig
+                $newObjAuthSig = New-Object -TypeName PSObject
+                Add-Member -InputObject $newObjAuthSig -Type NoteProperty -Name PathAuthCodeSig -Value $authPath
+                Add-Member -InputObject $newObjAuthSig -Type NoteProperty -Name StatusAuthCodeSig -Value $authStatus
+                $fragAuthCodeSig += $newObjAuthSig
             }
         }
     }
@@ -2008,25 +2041,26 @@ sleep 3
 
     foreach($shr in $getShr)
     {
-    $Permarray=@()
-    $shrName = $Shr.name
-    $shrPath = $Shr.path
-    $shrDes = $Shr.description
+        $Permarray=@()
+        $shrName = $Shr.name
+        $shrPath = $Shr.path
+        $shrDes = $Shr.description
 
-    $getShrPerms = Get-FileShareAccessControlEntry -Name $shr.Name
-    foreach($perms in $getShrPerms)
-    {
-    $Permarray += $perms.AccountName
-    }
+        $getShrPerms = Get-FileShareAccessControlEntry -Name $shr.Name
     
-    $arrayjoin = $Permarray -join ",  "
+        foreach($perms in $getShrPerms)
+        {
+            $Permarray += $perms.AccountName
+        }
     
-    $newObjShare = New-Object -TypeName PSObject
-    Add-Member -InputObject $newObjShare -Type NoteProperty -Name Name -Value $shrName
-    Add-Member -InputObject $newObjShare -Type NoteProperty -Name Path -Value $shrPath
-    Add-Member -InputObject $newObjShare -Type NoteProperty -Name Perms -Value $arrayjoin
-    $fragShare += $newObjShare
-    }
+            $arrayjoin = $Permarray -join ",  "
+    
+            $newObjShare = New-Object -TypeName PSObject
+            Add-Member -InputObject $newObjShare -Type NoteProperty -Name Name -Value $shrName
+            Add-Member -InputObject $newObjShare -Type NoteProperty -Name Path -Value $shrPath
+            Add-Member -InputObject $newObjShare -Type NoteProperty -Name Perms -Value $arrayjoin
+            $fragShare += $newObjShare
+        }
 
 Write-Host " "
 Write-Host "Finised Auditing Shares and permissions" -foregroundColor Green
@@ -2042,20 +2076,22 @@ Write-Host "Searching for Embedded Password in Files" -foregroundColor Green
 sleep 7
   
 #Passwords in Processes
-    $getPSPass = gwmi win32_process -ErrorAction SilentlyContinue | Select-Object Caption, Description,CommandLine | where {$_.commandline -like "*pass*" -or $_.commandline -like "*credential*" -or $_.commandline -like "*username*"  }
+    $getPSPass = gwmi win32_process -ErrorAction SilentlyContinue | 
+    Select-Object Caption, Description,CommandLine | 
+    where {$_.commandline -like "*pass*" -or $_.commandline -like "*credential*" -or $_.commandline -like "*username*"  }
 
     $fragPSPass=@()
     foreach ($PStems in $getPSPass)
     {
-    $PSCap = $PStems.Caption
-    $PSDes = $PStems.Description
-    $PSCom = $PStems.CommandLine
+        $PSCap = $PStems.Caption
+        $PSDes = $PStems.Description
+        $PSCom = $PStems.CommandLine
 
-    $newObjPSPass = New-Object -TypeName PSObject
-    Add-Member -InputObject $newObjPSPass -Type NoteProperty -Name ProcessCaption -Value  $PSCap
-    Add-Member -InputObject $newObjPSPass -Type NoteProperty -Name ProcessDescription -Value  $PSDes
-    Add-Member -InputObject $newObjPSPass -Type NoteProperty -Name ProcessCommandLine -Value  $PSCom
-    $fragPSPass += $newObjPSPass
+        $newObjPSPass = New-Object -TypeName PSObject
+        Add-Member -InputObject $newObjPSPass -Type NoteProperty -Name ProcessCaption -Value  $PSCap
+        Add-Member -InputObject $newObjPSPass -Type NoteProperty -Name ProcessDescription -Value  $PSDes
+        Add-Member -InputObject $newObjPSPass -Type NoteProperty -Name ProcessCommandLine -Value  $PSCom
+        $fragPSPass += $newObjPSPass
     }
 
 #passwords embedded in files
@@ -2063,38 +2099,36 @@ sleep 7
 
     $drv = (psdrive | where {$_.root -match "^[a-zA-Z]:"}) | where {$_.displayroot -notlike "*\\*"}
     $drvRoot = $drv.root
-
+    $fragFilePass=@()
     foreach ($rt in $drvRoot)
         {
-        $getUserFolder = Get-ChildItem -Path $rt -Recurse -Depth 4 -Force -ErrorAction SilentlyContinue |
-        where {$_.DirectoryName -notlike "*WinSXS*" `
-        -and $_.DirectoryName -notlike "*Packages*" `
-        -and $_.DirectoryName -notlike "*Containers\BaseImages*" `
-        -and $_.DirectoryName -notlike  "*MicrosoftOffice*" `
-        -and $_.DirectoryName -notlike "*AppRepository*" `
-        -and $_.DirectoryName -notlike "*IdentityCRL*" `
-        -and $_.DirectoryName -notlike "*UEV*" `
-        -and $_.Name -notlike "*MicrosoftOffice201*" `
-        -and $_.DirectoryName -notlike "*DriverStore*" `
-        -and $_.DirectoryName -notlike "*spool*" `
-        -and $_.DirectoryName -notlike "*icsxm*"  } |
-        where {$_.Extension -eq ".txt"`
-        -or $_.Extension -eq ".ini" `
-        -or $_.Extension -eq ".xml"}  #xml increase output, breaks report
+            $getUserFolder = Get-ChildItem -Path $rt -Recurse -Depth 4 -Force -ErrorAction SilentlyContinue |
+            where {$_.DirectoryName -notlike "*WinSXS*" `
+            -and $_.DirectoryName -notlike "*Packages*" `
+            -and $_.DirectoryName -notlike "*Containers\BaseImages*" `
+            -and $_.DirectoryName -notlike  "*MicrosoftOffice*" `
+            -and $_.DirectoryName -notlike "*AppRepository*" `
+            -and $_.DirectoryName -notlike "*IdentityCRL*" `
+            -and $_.DirectoryName -notlike "*UEV*" `
+            -and $_.Name -notlike "*MicrosoftOffice201*" `
+            -and $_.DirectoryName -notlike "*DriverStore*" `
+            -and $_.DirectoryName -notlike "*spool*" `
+            -and $_.DirectoryName -notlike "*icsxm*"  } |
+            where {$_.Extension -eq ".txt"`
+            -or $_.Extension -eq ".ini" `
+            -or $_.Extension -eq ".xml"}  #xml increase output, breaks report
 
-        $fragFilePass=@()
-        foreach ($PassFile in $getUserFolder)
-        {
-        #Write-Host $PassFile.fullname -ForegroundColor Yellow
-
-        $SelectPassword  = Get-Content $PassFile.FullName |  Select-String -Pattern password, credential
+            foreach ($PassFile in $getUserFolder)
+            {
+                #Write-Host $PassFile.fullname -ForegroundColor Yellow
+                $SelectPassword  = Get-Content $PassFile.FullName |  Select-String -Pattern password, credential
  
-        if ($SelectPassword -like "*password*")
-        {
-        $newObjFilePass = New-Object -TypeName PSObject
-        Add-Member -InputObject $newObjFilePass -Type NoteProperty -Name FilesContainingPassword -Value  $PassFile.FullName 
-        $fragFilePass += $newObjFilePass
-        }
+            if ($SelectPassword -like "*password*")
+            {
+                $newObjFilePass = New-Object -TypeName PSObject
+                Add-Member -InputObject $newObjFilePass -Type NoteProperty -Name FilesContainingPassword -Value  $PassFile.FullName 
+                $fragFilePass += $newObjFilePass
+            }
         }
     }
 
@@ -2104,6 +2138,7 @@ Write-Host "Finished Searching for Embedded Password in Files" -foregroundColor 
 ################################################
 ###############  DLL HIJACKING  ################
 ################################################
+#Loaded  dll's that are vulnerable to dll hijacking - users permissions allow write
 
 Write-Host " "
 Write-Host "Searching for active processes that are vulnerable to dll hijacking" -foregroundColor Green
@@ -2114,15 +2149,23 @@ $fragDLLHijack=@()
 foreach ($dll in $getDll)
 {
     $procName = $dll.Name
-    Write-Host $procName -ForegroundColor Green
+    #Write-Host $procName -ForegroundColor Green
     $dllMods = $dll | Select-Object -ExpandProperty modules 
     $dllFilename = $dllMods.filename
 
     foreach ($dllPath in $dllFilename)
     {
-            $dllFileAcl = Get-Acl $dllPath -ErrorAction SilentlyContinue
+        $dllFileAcl = Get-Acl $dllPath -ErrorAction SilentlyContinue
 
-            if ($dllFileAcl | where {$_.accesstostring -like "*Users Allow  Write*" -or $_.accesstostring -like "*Users Allow  Modify*" -or $_.accesstostring -like "*Users Allow  FullControl*" -or $_.accesstostring -like "*Everyone Allow  Write*" -or $_.accesstostring -like "*Everyone Allow  Modify*" -or $_.accesstostring -like "*Everyone Allow  FullControl*" -or $_.accesstostring -like "*Authenticated Users Allow  Write*" -or $_.accesstostring -like "*Authenticated Users Allow  Modify*" -or $_.accesstostring -like "*Authenticated Users Allow  FullControl*"})
+        if ($dllFileAcl | where {$_.accesstostring -like "*Users Allow  Write*" -or `
+        $_.accesstostring -like "*Users Allow  Modify*" -or `
+        $_.accesstostring -like "*Users Allow  FullControl*" -or `
+        $_.accesstostring -like "*Everyone Allow  Write*" -or `
+        $_.accesstostring -like "*Everyone Allow  Modify*" -or `
+        $_.accesstostring -like "*Everyone Allow  FullControl*" -or `
+        $_.accesstostring -like "*Authenticated Users Allow  Write*" -or `
+        $_.accesstostring -like "*Authenticated Users Allow  Modify*" -or `
+        $_.accesstostring -like "*Authenticated Users Allow  FullControl*"})
             {
                 $getAuthCodeSig = get-authenticodesignature -FilePath $dllPath 
                 $dllStatus = $getAuthCodeSig.Status
@@ -2136,6 +2179,71 @@ foreach ($dll in $getDll)
             }              
      }
 }
+
+################################################
+###############  DLL HIJACKING  ################
+################################################
+#All dlls' that are NOT signed and user permissions allow write  
+    $VulnReport = "C:\SecureReport"
+    $OutFunc = "DLLNotSigned"  
+
+    $tpSec10 = Test-Path "C:\SecureReport\output\$OutFunc\"
+    
+    if ($tpSec10 -eq $false)
+    {
+        New-Item -Path "C:\SecureReport\output\$OutFunc\" -ItemType Directory -Force
+    }
+    
+    $dllLogPath = "C:\SecureReport\output\$OutFunc\" + "$OutFunc.log"
+    $dllLogPathtxt = "C:\SecureReport\output\$OutFunc\" + "$OutFunc.txt"
+
+    $drv = (psdrive | where {$_.root -match "^[a-zA-Z]:"}) |  where {$_.displayroot -notlike "*\\*"}
+    $drvRoot = $drv.root 
+    $getRoot = Get-Item $drvRoot
+
+    foreach ($rt in $drvRoot)
+    {
+        $dllFolders =  Get-ChildItem $rt -ErrorAction SilentlyContinue  |
+        where {$_.fullName -notlike "C:\Program Files*" -and `
+        $_.fullName -notlike "C:\Program Files (x86)*" -and `
+        $_.fullName -notlike "C:\Windows*"}
+        $newObj=@()
+        foreach ($dllFold in $dllFolders.fullname)
+        {
+             $dllSigned =  Get-ChildItem -Path $dllFold -Recurse | 
+              where {$_.Extension -eq ".dll"} | get-authenticodesignature | 
+              where {$_.status -eq "valid"} | get-acl | 
+              where {$_.accesstostring -like "*Users Allow  Write*" `
+              -or $_.accesstostring -like "*Users Allow  Modify*" `
+              -or $_.accesstostring -like "*Users Allow  FullControl*" `
+              -or $_.accesstostring -like "*Everyone Allow  Write*" `
+              -or $_.accesstostring -like "*Everyone Allow  Modify*" `
+              -or $_.accesstostring -like "*Everyone Allow  FullControl*" `
+              -or $_.accesstostring -like "*Authenticated Users Allow  Write*" `
+              -or $_.accesstostring -like "*Authenticated Users Allow  Modify*" `
+              -or $_.accesstostring -like "*Authenticated Users Allow  FullControl*"} 
+             
+             $dllSigned.path | out-file $dllLogPath -Append
+         }
+
+   }
+
+Get-Content $dllLogPath  | 
+foreach {$_ -replace "Microsoft.PowerShell.Core",""} |
+foreach {$_ -replace 'FileSystem::',""} |
+foreach {$_.substring(1)} |
+Set-Content $dllLogPathtxt -Force
+
+$fragcreateSysFold=@()
+$getDllPath = get-content $dllLogPathtxt
+$fragDllNotSigned=@()        
+foreach ($dllNotSigned in $getDllPath)
+{
+    $newObjDllNotSigned = New-Object -TypeName PSObject
+    Add-Member -InputObject $newObjDllNotSigned -Type NoteProperty -Name CreateFiles -Value $dllNotSigned
+    $fragDllNotSigned += $newObjDllNotSigned
+ }  
+
 
  
 ################################################
@@ -2569,7 +2677,7 @@ $style = @"
     
     if ($tpSec10 -eq $false)
     {
-    New-Item -Path "C:\SecureReport\output\$OutFunc\" -ItemType Directory -Force
+        New-Item -Path "C:\SecureReport\output\$OutFunc\" -ItemType Directory -Force
     }
 
     $working = "C:\SecureReport\output\$OutFunc\"
@@ -2662,25 +2770,26 @@ $style = @"
     $frag_Msinfo =  $MsinfoClixml | ConvertTo-Html -As Table -fragment -PreContent "<h2><span style='color:$titleCol'>Virtualization and Secure Boot Details</span></h2>" -PostContent "<h4>$descripVirt</h4>"  | Out-String
     $frag_LSAPPL = $fragLSAPPL | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:$titleCol'>LSA Protection for Stored Credentials</span></h2>" -PostContent "<h4>$descripLSA</h4>" | Out-String
     $frag_DLLSafe  =  $fragDLLSafe | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:$titleCol'>DLL Safe Search Order</span></h2>"  -PostContent "<h4>$descripDLL</h4>"| Out-String
-    $frag_DLLHijack = $fragDLLHijack | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:$titleCol'>Hijacking Vulnerable DLL's</span></h2>"  -PostContent "<h4>$descriptDLLHijack</h4>"| Out-String
+    $frag_DLLHijack = $fragDLLHijack | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:$titleCol'>Loaded DLL's that are vulnerable to DLL Hijacking</span></h2>" | Out-String
+    $frag_DllNotSigned = $fragDllNotSigned | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:$titleCol'>All DLL's that aren't signed and user permissions allow write</span></h2>"  -PostContent "<h4>$descriptDLLHijack</h4>"| Out-String
     $frag_Code  =  $fragCode   | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:$titleCol'>Hypervisor Enforced Code Integrity</span></h2>" -PostContent "<h4>$descripHyper</h4>" | Out-String
     $frag_PCElevate  =  $fragPCElevate | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:$titleCol'>Automatically Elevates User Installing Software</span></h2>"  -PostContent "<h4>$descripElev</h4>"| Out-String
-    $frag_FilePass  =  $fragFilePass | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:$titleCol'>Files that Contain the word PASSWORD</span></h2>" -PostContent "<h4>$descripFilePw</h4>" | Out-String
+    $frag_FilePass  =  $fragFilePass | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:$titleCol'>Files that Contain the Word PASSWORD</span></h2>" -PostContent "<h4>$descripFilePw</h4>" | Out-String
     $frag_AutoLogon  =  $fragAutoLogon   | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:$titleCol'>AutoLogon Credentials in Registry</span></h2>"  -PostContent "<h4>$descripAutoLogon</h4>"| Out-String
     $frag_UnQu = $fragUnQuoted | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:$titleCol'>Vectors that Allow UnQuoted Paths Attack</span></h2>" -PostContent "<h4>$DescripUnquoted</h4>" | Out-String
-    $frag_LegNIC = $fragLegNIC | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:$titleCol'>Attacks Against Network Protocols</span></h2>" -PostContent "<h4>$DescripLegacyNet</h4>" | Out-String
+    $frag_LegNIC = $fragLegNIC | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:$titleCol'>Legacy and Vulnerable Network Protocols</span></h2>" -PostContent "<h4>$DescripLegacyNet</h4>" | Out-String
     $frag_SysRegPerms = $fragReg | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:$titleCol'>Registry Permissions Allowing User Access - Security Risk if Exist</span></h2>" -PostContent "<h4>$descripRegPer</h4>" | Out-String
-    $frag_PSPass = $fragPSPass | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:$titleCol'>Processes where CommandLine contains a Password</span></h2>" -PostContent "<h4>$Finish</h4>" | Out-String
+    $frag_PSPass = $fragPSPass | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:$titleCol'>Processes where CommandLine Contains a Password</span></h2>" -PostContent "<h4>$Finish</h4>" | Out-String
     $frag_SecOptions = $fragSecOptions | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:$titleCol'>Security Options</span></h2>" -PostContent "<h4>$descripSecOptions</h4>" | Out-String
-    $frag_wFolders = $fragwFold | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:$titleCol'>Non System Folders that are Writeable - User Created Folders Off Root of C: are Fine</span></h2>" -PostContent "<h4>$descripNonFold</h4>"| Out-String
+    $frag_wFolders = $fragwFold | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:$titleCol'>Non System Folders that are Writeable - Security Risk when Executable</span></h2>" -PostContent "<h4>$descripNonFold</h4>"| Out-String
     $frag_SysFolders = $fragsysFold | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:$titleCol'>System Default Folders that are Writeable - Security Risk if Exist</span></h2>"  -PostContent "<h4>$descripSysFold</h4>"| Out-String
-    $frag_createSysFold = $fragcreateSysFold | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:$titleCol'>System Default Folders that permitting Users to Create Files - Security Risk if Exist</span></h2>"  -PostContent "<h4>$descripCreateSysFold</h4>"| Out-String
+    $frag_createSysFold = $fragcreateSysFold | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:$titleCol'>System Default Folders that Permitting Users to Create Files - Security Risk if Exist</span></h2>"  -PostContent "<h4>$descripCreateSysFold</h4>"| Out-String
     $frag_wFile =  $fragwFile | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:$titleCol'>System Files that are Writeable - Security Risk if Exist</span></h2>" -PostContent "<h4>$descripFile</h4>" | Out-String
     $frag_FWProf =   $fragFWProfile | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:$titleCol'>Firewall Profile</span></h2>"  -PostContent "<h4>$DescripFirewalls</h4>"| Out-String
     $frag_FW =  $fragFW | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:$titleCol'>Enabled Firewall Rules</span></h2>" | Out-String
     $frag_TaskPerms =  $SchedTaskPerms | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:$titleCol'>Scheduled Tasks that call on Files on Storage</span></h2>"  -PostContent "<h4>$descripTaskSchPerms</h4>" | Out-String
-    $frag_TaskListings =  $SchedTaskListings | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:$titleCol'>Scheduled Tasks that contain something Encoded</span></h2>"  -PostContent "<h4>$descripTaskSchEncode</h4>" | Out-String
-    $frag_DriverQuery =  $DriverQuery | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:$titleCol'>Drivers that aren't signed</span></h2>" -PostContent "<h4>$descriptDriverQuery</h4>" | Out-String
+    $frag_TaskListings =  $SchedTaskListings | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:$titleCol'>Scheduled Tasks that Contain something Encoded</span></h2>"  -PostContent "<h4>$descripTaskSchEncode</h4>" | Out-String
+    $frag_DriverQuery =  $DriverQuery | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:$titleCol'>Drivers that aren't Signed</span></h2>" -PostContent "<h4>$descriptDriverQuery</h4>" | Out-String
     $frag_Share = $fragShare | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:$titleCol'>Shares and their Share Permissions</span></h2>"  | Out-String
  
     $frag_AuthCodeSig = $fragAuthCodeSig | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:$titleCol'>Files with an Authenticode Signature HashMisMatch</span></h2>" -PostContent "<h4>$descriptAuthCodeSig</h4>"  | Out-String  
@@ -2710,6 +2819,7 @@ $style = @"
     $frag_LSAPPL,
     $frag_DLLSafe,
     $frag_DLLHijack,
+    $frag_DllNotSigned,
     $frag_PCElevate,
     $frag_FilePass,
     $frag_AutoLogon,
