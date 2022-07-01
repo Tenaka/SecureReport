@@ -1,12 +1,12 @@
 <#
 .Synopsis
-Check for common and known security vulnerabilities and create a html report based on the findings
+Check for common and known security vulnerabilities and create an html report based on the findings
 
 .DESCRIPTION
 
-Report is saved to C:\Securereport\FinishedReport.htm
+The report is saved to C:\Securereport\FinishedReport.htm
 
-Before everyone gets critical regarding the script formatting, some is due to how ConvertTo-HTML expects the data, most is to help those that aren’t familiar with scripting. There is a conscience decision not to use aliases or abbreviations and where possible to create variables. 
+Before everyone gets critical regarding the script formatting, some are due to how ConvertTo-HTML expects the data, most are to help those that aren’t familiar with scripting. There is a conscious decision not to use aliases or abbreviations and where possible to create variables. 
 
 #List of checks and balances:
 Host Details, CPU, Bios, Windows Version
@@ -22,7 +22,7 @@ Registry Keys with weak Permissions
 System Folders with weak Permissions
 Firewall settings and rules
 Schedules Tasks
-Files with hash mis-match
+Files with hash mismatch
 Driver Query for unsigned drivers
 Shares and permissions
 
@@ -32,7 +32,7 @@ Further information can be found @
 https://www.tenaka.net/bitlocker
 
 #Secure Boot
-Secure Boot is a security standard to ensure only trusted OEM software is allowed at boot. At startup the UEFi and boot software's digital signatures are validated preventing rootkits
+Secure Boot is a security standard to ensure only trusted OEM software is allowed at boot. At startup, the UEFi and boot software's digital signatures are validated preventing rootkits
 More on Secure Boot can be found @
 https://media.defense.gov/2020/Sep/15/2002497594/-1/-1/0/CTR-UEFI-SECURE-BOOT-CUSTOMIZATION-20200915.PDF/CTR-UEFI-SECURE-BOOT-CUSTOMIZATION-20200915.PDF
 
@@ -63,7 +63,7 @@ Further information can be found @
 https://docs.microsoft.com/en-us/windows/win32/dlls/dynamic-link-library-search-order
 
 #DLL Hijacking (Permissions)
-DLL Hijacking is when a malicious dll replaces a legitimate dll due to a path vulnerability. A program or service makes a call on that dll gaining the privileges of that program or service. Additionally missing dll’s present a risk where a malicious dll is dropped into a path where no current dll exists but the program or service is making a call to that non-existent dll.
+DLL Hijacking is when a malicious dll replaces a legitimate dll due to a path vulnerability. A program or service makes a call on that dll gaining the privileges of that program or service. Additionally missing dll’s presents a risk where a malicious dll is dropped into a path where no current dll exists but the program or service is making a call to that non-existent dll.
 This audit is reliant on programs being launched so that DLL’s are loaded. Each process’s loaded dll’s are checked for permissions issues and whether they are signed.  
 The DLL hijacking audit does not currently check for missing dll’s being called. Process Monitor filtered for ‘NAME NOT FOUND’ and path ends with ‘DLL’ will.
 
@@ -101,7 +101,7 @@ Processes that contain credentials to authenticate and access applications. Laun
 Checks "HKLM:\SOFTWARE\Microsoft\Windows NT\Currentversion\Winlogon" for any clear text credentials remaining from a MECM\SCCM\MDT deployment.
 
 #Unquoted
-The Unquoted paths vulnerability is when a Windows Service's 'Path to Executable' contains spaces and not wrapped in double quotes providing a route to System.
+The Unquoted Path vulnerability is when a Windows Service's 'Path to Executable' contains spaces and is not wrapped in double-quotes providing a route to System.
 Further information can be found @
 https://www.tenaka.net/unquotedpaths
 
@@ -110,7 +110,7 @@ LLMNR and other legacy network protocols can be used to steal password hashes.
 Further information can be found @
 https://www.tenaka.net/responder
 
-#Permissions Weakness's in Default System Directories - Write
+#Permissions Weakness in Default System Directories - Write
 System default Folders that allow a User the Write permissions. These can be abused by creating content in some of the allowable default locations. Prevent by applying Execution controls eg Applocker.
 
 Searches:
@@ -132,11 +132,12 @@ Further information can be found @
 https://www.tenaka.net/unquotedpaths
 https://www.tenaka.net/applockergpo
 
-#Permissions Weakness's in Default System Directories - Create Files
+#Permissions Weakness in Default System Directories - Create Files
 System default Folders that allow a User the CreateFile permissions. These can be abused by creating content in some of the allowable default locations. Prevent by applying Execution controls eg Applocker.
 
 Expected folders that a user can CreateFiles to:
-C:\Windows\PLA\ReportsC:\Windows\PLA\Reports\en-GB
+C:\Windows\PLA\Reports
+C:\Windows\PLA\Reports\en-GB
 C:\Windows\PLA\Reports\en-US
 C:\Windows\PLA\RulesC:\Windows\PLA\Rules\en-GB
 C:\Windows\PLA\Rules\en-US
@@ -157,13 +158,13 @@ Further information can be found @
 https://www.tenaka.net/unquotedpaths
 https://www.tenaka.net/applockergpo
 
-#Permissions Weakness's in Non-Default Directories
+#Permissions weaknesses in Non-Default Directories
 A vulnerability exists when enterprise software has been installed on the root of C:\. The default permissions allow a user to replace approved software binaries with malicious binaries.
 Further information can be found @
 https://www.tenaka.net/unquotedpaths
 
 #Files that are Writeable
-System files that allowing users to write can be swapped out for malicious software binaries.
+System files that allow users to write can be swapped out for malicious software binaries.
 
 Further information can be found @
 https://www.tenaka.net/unquotedpaths
@@ -176,10 +177,10 @@ https://www.tenaka.net/whyhbfirewallsneeded
 
 #Scheduled Tasks
 Checks for Scheduled Tasks excluding any that reference System32 as a directory. 
-These potential user created tasks are checked for scripts and their directory permissionss are validated. 
-No user should be allowed to access the script and make amendments, this is a privilege escaltion route.
+These potential user-created tasks are checked for scripts and their directory permissions are validated. 
+No user should be allowed to access the script and make amendments, this is a privilege escalation route.
 
-Checks for encoded scripts, powershell or exe's that make calls off box or run within Task Scheduler.
+Checks for encoded scripts, PowerShell or exe's that make calls off box or run within Task Scheduler.
 
 #Shares
 Finds all shares and reports on share permissions
@@ -199,20 +200,20 @@ YYMMDD
 211223.1 - Added -postContent with explanations
 211223.2 - Bitlocker fixed null response
 211229.1 - Added explanations and changed colour
-211229.2 - Added .xml in Password in file search added further excluded directories due to number of false positive being returned
+211229.2 - Added .xml in Password in file search added further excluded directories due to the number of false-positive being returned
 211230.1 - Restored search for folder weaknesses in C:\Windows
 211230.2 - Added CreateFiles Audit - hashed out until testing is complete
 220107.1 - Corrected Legacy Network Netbios, incorrectly showing a warning despite being the correct setting.
-220107.2 - Report file name is dated
+220107.2 - The report file name is dated
 220120.1 - Office 2016 and older plus updates that create keys in Uninstall hive. 
-           This is required to correctly report on legacy apps and to cover how MS are making reporting of installed updates really difficult.
-220202.1 - Fixed issue with hardcode name of script during id of PS or ISE
+           This is required to correctly report on legacy apps and to cover how MS is making reporting of installed updates really difficult.
+220202.1 - Fixed issue with hardcode the name of the script during id of PS or ISE
 220203.1 - Added error actions
-220203.2 - Warning about errors generated during report run.
+220203.2 - Warning about errors generated during the report run.
 220204.1 - Added Dark and Light colour themes.
 220207.1 - Fixed VBS and MSInfo32 formatting issues. 
 220208.1 - Added start and finish warning for each section to provide some feedback
-220208.2 - Fixed the file\folder parsing loops, included processing that should have been completed after the loops had finished
+220208.2 - Fixed the file\folder parsing loops, including processing that should have been completed after the loops had finished
 220211.1 - Added Scheduled task audit looking for embedded code.
 220211.2 - Added < hash hash > to comment out the folder audits.
 220214.1 - Added Driver Query
@@ -229,10 +230,11 @@ YYMMDD
 220605.1 - Added loaded dll hijacking vulnerability scanner
 220605.2 - Added READ-HOSTS to prompt to run slow processes.
 220606.1 - Added DLL hijacking for dlls not signed and where the user can write.
-220606.2 - Tidy up and formating of script
+220606.2 - Tidy up and formatting of script
 220607.1 - Password within file search $fragFilePass=@() moved to outside loop as it was dropping previous drives and data
 
 #>
+
 #Remove any DVD from client
 $drv = (psdrive | where{$_.Free -eq 0})
 
@@ -2687,13 +2689,13 @@ $style = @"
 ##########  HELPS AND DESCRIPTIONS  ############
 ################################################
 
-    $Intro = "Thanks for using the vulnerability report written by Tenaka.net, please show your support and visit my site, its non-profit and Ad free. Any issues with the reports accuracy please do let me know and I'll get it fixed asap. The results in this report are a guide and not a guarantee that the tested system is not without further defect or vulnerability. 
+    $Intro = "Thanks for using the vulnerability report written by Tenaka.net, please show your support and visit my site, it's non-profit and Ad-free. Any issues with the report's accuracy please do let me know and I'll get it fixed asap. The results in this report are a guide and not a guarantee that the tested system is not without further defects or vulnerability. 
     The tests focus on known and common issues with Windows that can be exploited by an attacker. Each section contains a small snippet to provide some context, follow the links for further detail. Further support for the output can be found @ https://www.tenaka.net/windowsclient-vulnscanner"
 
     $Intro2 = "The results in this report are a guide and not a guarantee that the tested system is not without further defect or vulnerability. 
-    The tests focus on known and common issues with Windows that can be exploited by an attacker. Each section contains a small snippet to provide some context, follow the links for furhter detail."
+    The tests focus on known and common issues with Windows that can be exploited by an attacker. Each section contains a small snippet to provide some context, follow the links for further detail."
 
-    $Finish = "This script has been provided by Tenaka.net, if its beneficial, please provide feedback and any additional feature requests gratefully received. "
+    $Finish = "This script has been provided by Tenaka.net, if it's beneficial, please provide feedback and any additional feature requests gratefully received. "
 
     $descripBitlocker = "TPM and Bitlocker protect against offline attack from usb and mounting the local Windows system then accessing the local data. 'TPM and Pin' enhances Bitlocker by preventing LPC Bus (Low Pin Count) bypasses of Bitlocker with TPM. Further information can be found @ https://www.tenaka.net/bitlocker"
 
@@ -2705,7 +2707,7 @@ $style = @"
 
     $descripLSA = "Enabling RunAsPPL for LSA Protection allows only digitally signed binaries to load as a protected process preventing credential theft and access by code injection and memory access by processes that aren’t signed. Further information can be found @ https://docs.microsoft.com/en-us/windows-server/security/credentials-protection-and-management/configuring-additional-lsa-protection"
 
-    $descripDLL = "Loading DLL's default behaviour is to call the dll from the current working directory of the applicaiton, then the directories listed in the environmental variable. Setting ‘DLL Safe Search’ mitigates the risk by moving CWD to later in the search order. Further information can be found @ https://docs.microsoft.com/en-us/windows/win32/dlls/dynamic-link-library-search-order"
+    $descripDLL = "Loading DLL's default behaviour is to call the dll from the current working directory of the application, then the directories listed in the environmental variable. Setting ‘DLL Safe Search’ mitigates the risk by moving CWD to later in the search order. Further information can be found @ https://docs.microsoft.com/en-us/windows/win32/dlls/dynamic-link-library-search-order"
 
     $descripHyper = "Hypervisor Enforced Code Integrity prevents the loading of unsigned kernel-mode drivers and system binaries from being loaded into system memory. Further information can be found @  https://docs.microsoft.com/en-us/windows/security/threat-protection/device-guard/enable-virtualization-based-protection-of-code-integrity"
 
@@ -2715,7 +2717,7 @@ $style = @"
 
     $descripAutoLogon = "MECM\SCCM\MDT could leave Autologon credentials including a clear text password in the Registry."
 
-    $descripUnquoted = "The Unquoted paths vulnerability is when a Windows Service's 'Path to Executable' contains spaces and not wrapped in double quotes providing a route to System. Further information can be found @ https://www.tenaka.net/unquotedpaths"
+    $descripUnquoted = "The Unquoted paths vulnerability is when a Windows Service's 'Path to Executable' contains spaces and not wrapped in double-quotes providing a route to System. Further information can be found @ https://www.tenaka.net/unquotedpaths"
 
     $descripProcPw = "Processes that contain credentials to authenticate and access applications. Launching Task Manager, Details and add ‘Command line’ to the view."
 
@@ -2723,25 +2725,26 @@ $style = @"
 
     $descripRegPer ="Weak Registry permissions allowing users to change the path to launch malicious software @ https://www.tenaka.net/unquotedpaths"
 
-    $descripSysFold = "System default folders that allows a User the Write permissions. These can be abused by creating content in some of the allowable default locations. Prevent by applying Execution controls eg Applocker Further information can be found @ https://www.tenaka.net/unquotedpaths"
+    $descripSysFold = "System default folders that allow a User the Write permissions. These can be abused by creating content in some of the allowable default locations. Prevent by applying Execution controls eg Applocker Further information can be found @ https://www.tenaka.net/unquotedpaths"
 
     $descripCreateSysFold = "System default Folders that allows a User the CreateFile permissions. These can be abused by creating content in some of the allowable default locations. Prevent by applying Execution controls eg Applocker Further information can be found @ https://www.tenaka.net/unquotedpaths"
 
     $descripNonFold = "A vulnerability exists when enterprise software has been installed on the root of C:\. The default permissions allow a user to replace approved software binaries with malicious binaries. Further information can be found @ https://www.tenaka.net/unquotedpaths"
 
-    $descripFile = "System files that allowing users to write can be swapped out for malicious software binaries. Further information can be found @ https://www.tenaka.net/unquotedpaths"
+    $descripFile = "System files that allow users to write can be swapped out for malicious software binaries. Further information can be found @ https://www.tenaka.net/unquotedpaths"
 
     $descripFirewalls = "Firewalls should always block inbound and exceptions should be to a named IP and Port. Further information can be found @ https://www.tenaka.net/whyhbfirewallsneeded" 
 
-    $descripTaskSchPerms = "Checks for Scheduled Tasks excluding any that reference System32 as a directory. These potential user created tasks are checked for scripts and their directory permissionss are validated. No user should be allowed to access the script and make amendments, this is a privilege escaltion route." 
+    $descripTaskSchPerms = "Checks for Scheduled Tasks excluding any that reference System32 as a directory. These potential user-created tasks are checked for scripts and their directory permissions are validated. No user should be allowed to access the script and make amendments, this is a privilege escalation route." 
 
-    $descripTaskSchEncode = "Checks for encoded scripts, powershell or exe's that make calls off box or run within Task Scheduler" 
+    $descripTaskSchEncode = "Checks for encoded scripts, PowerShell or exe's that make calls off box or run within Task Scheduler" 
 
     $descriptDriverQuery = "All Drivers should be signed with a digital signature to verify the integrity of the packages. 64bit kernel Mode drivers must be signed without exception"
 
     $descriptAuthCodeSig = "Checks that digitally signed files have a valid and trusted hash. If any Hash Mis-Matches then the file could have been altered"
 
-    $descriptDLLHijack = "DLL Hijacking is when a malicious dll replaces a legitimate dll due to a path vulnerability. A program or service makes a call on that dll gaining the privileges of that program or service. Additionally missing dll’s present a risk where a malicious dll is dropped into a path where no current dll exists but the program or service is making a call to that non-existent dll. This audit is reliant on programs being launched so that DLL’s are loaded. Each process’s loaded dll’s are checked for permissions issues and whether they are signed. The DLL hijacking audit does not currently check for missing dll’s being called. Process Monitor filtered for ‘NAME NOT FOUND’ and path ends with ‘DLL’ will."
+    $descriptDLLHijack = "DLL Hijacking is when a malicious dll replaces a legitimate dll due to a path vulnerability. A program or service makes a call on that dll gaining the privileges of that program or service. Additionally missing dll’s presents a risk where a malicious dll is dropped into a path where no current dll exists but the program or service is making a call to that non-existent dll. This audit is reliant on programs being launched so that DLL’s are loaded. Each process’s loaded dll’s are checked for permissions issues and whether they are signed. The DLL hijacking audit does not currently check for missing dll’s being called. Process Monitor filtered for ‘NAME NOT FOUND’ and path ends with ‘DLL’ will."
+
 
 ################################################
 ################  FRAGMENTS  ###################
