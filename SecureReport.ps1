@@ -2097,7 +2097,7 @@ sleep 7
     }
 
 #passwords embedded in files
-#findstrg /si password *.txt - alt
+#findstr /si password *.txt - alt
 
     $drv = (psdrive | where {$_.root -match "^[a-zA-Z]:"}) | where {$_.displayroot -notlike "*\\*"}
     $drvRoot = $drv.root
