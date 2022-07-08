@@ -234,10 +234,13 @@ YYMMDD
 220607.1 - Password within file search $fragFilePass=@() moved to outside loop as it was dropping previous drives and data
 220708.1 - Added depth to Folder and File search to give option to speed up search
 220708.2 - Moved DLL not signed and user access, update to Folder search, not an option to run or not
-220708.3 - Added filters to Folder and File search to skip winSXS and LCU folders, time consuming and pointless
+220708.3 - Added filters to Folder and File search to skip winSXS and LCU folders, time consuming and pointless  - Improves preformance 
 220708.4 - DLL not signed and user access, wrong setting on filter and excluded the files I'm looking for.
-220708.5 - Changed where clause for excluding folder to $_.fullName -match
-
+220708.5 - Changed 'where' clause for excluding folder to $_.fullName -match
+220708.6 - Added ProgramData to folder checks as performance will allow it
+220708.7 - Added Windows directory to check for writeable files. 
+220708.8 - Updated Authenticode to exclude winSxS and LCU directories - Improves preformance 
+220708.9 - Default System Folder check was returning wrong data, updated the directory listing where statement
 
 #>
 
@@ -1570,17 +1573,17 @@ sleep 7
     foreach ($rt in $drvRoot)
     {
         $hfiles =  Get-ChildItem $rt -ErrorAction SilentlyContinue |
-        Where {$_.FullName -notMatch "winsxs" -and $_.FullName -notmatch "LCU"} | 
         where {$_.Name -eq "PerfLogs" -or ` 
+        $_.Name -eq "ProgramData" -or `
         $_.Name -eq "Program Files" -or `
-        $_.Name -eq "Program Files (x86)"
-    } # -or `
-        # $_.Name -eq "Windows"}
+        $_.Name -eq "Program Files (x86)" -or `
+        $_.Name -eq "Windows"}
 
         $filehash = @()
         foreach ($hfile in $hfiles.fullname)
         {
-            $subfl = Get-ChildItem -Path $hfile -force -Recurse -Include *.exe, *.dll -ErrorAction SilentlyContinue
+            $subfl = Get-ChildItem -Path $hfile -force -Recurse -Include *.exe, *.dll -ErrorAction SilentlyContinue | 
+            Where {$_.FullName -notMatch "winsxs" -and $_.FullName -notmatch "LCU"} 
             $filehash+=$subfl
             $filehash 
         }
@@ -1833,6 +1836,7 @@ sleep 7
     {
         $sysfolders =  Get-ChildItem $rt -ErrorAction SilentlyContinue | 
         where {$_.Name -eq "PerfLogs" -or ` 
+        $_.Name -eq "ProgramData" -or `
         $_.Name -eq "Program Files" -or `
         $_.Name -eq "Program Files (x86)" -or `
         $_.Name -eq "Windows"}
@@ -1842,7 +1846,7 @@ sleep 7
         foreach ($sysfold in $sysfolders.fullname)
         {
             #Write-Host $sysfold
-            $subsysfl = Get-ChildItem -Path $sysfold -Depth 2 -Directory -Recurse -Force -ErrorAction SilentlyContinue | 
+            $subsysfl = Get-ChildItem -Path $sysfold -Depth $depth -Directory -Recurse -Force -ErrorAction SilentlyContinue | 
             Where {$_.FullName -notMatch "winsxs" -and $_.FullName -notmatch "LCU"}
 
             $sysfoldhash+=$subsysfl
@@ -1927,6 +1931,7 @@ sleep 7
     {   
         $createSysfolders =  Get-ChildItem $rt  -ErrorAction SilentlyContinue | 
         where {$_.Name -eq "PerfLogs" -or ` 
+        $_.Name -eq "ProgramData" -or `
         $_.Name -eq "Program Files" -or `
         $_.Name -eq "Program Files (x86)" -or `
         $_.Name -eq "Windows"}
