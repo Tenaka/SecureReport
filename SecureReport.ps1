@@ -237,7 +237,7 @@ YYMMDD
 220708.3 - Added filters to Folder and File search to skip winSXS and LCU folders, time consuming and pointless
 220708.4 - DLL not signed and user access, wrong setting on filter and excluded the files I'm looking for.
 220708.5 - Changed where clause for excluding folder to $_.fullName -match
-220708.6 - oops, stopped auditing folders that allowed users to create folder, fixed by removing the @() that was copied by mistake.
+
 
 #>
 
@@ -1837,15 +1837,16 @@ sleep 7
         $_.Name -eq "Program Files (x86)" -or `
         $_.Name -eq "Windows"}
         $sysfoldhash = @()
-        $sysfolders+=$getRoot
+        $sysfolders  #+=$getRoot
     
         foreach ($sysfold in $sysfolders.fullname)
         {
-            $subsysfl = Get-ChildItem -Path $sysfold  -Depth $depth -Directory -Recurse -Force -ErrorAction SilentlyContinue | 
+            #Write-Host $sysfold
+            $subsysfl = Get-ChildItem -Path $sysfold -Depth 2 -Directory -Recurse -Force -ErrorAction SilentlyContinue | 
             Where {$_.FullName -notMatch "winsxs" -and $_.FullName -notmatch "LCU"}
 
             $sysfoldhash+=$subsysfl
-            #Write-Host $subsysfl -ForegroundColor White
+            Write-Host $subsysfl -ForegroundColor White
         }
     
         foreach ($syfold in $sysfoldhash.fullname)
@@ -2742,9 +2743,9 @@ $style = @"
 
     $descripRegPer ="Weak Registry permissions allowing users to change the path to launch malicious software @ https://www.tenaka.net/unquotedpaths"
 
-    $descripSysFold = "System default folders that allow a User the Write permissions. These can be abused by creating content in some of the allowable default locations. Prevent by applying Execution controls eg Applocker Further information can be found @ https://www.tenaka.net/unquotedpaths"
+    $descripSysFold = "Default System Folders that allow a User the Write permissions. These can be abused by creating content in some of the allowable default locations. Prevent by applying Execution controls eg Applocker Further information can be found @ https://www.tenaka.net/unquotedpaths"
 
-    $descripCreateSysFold = "System default Folders that allows a User the CreateFile permissions. These can be abused by creating content in some of the allowable default locations. Prevent by applying Execution controls eg Applocker Further information can be found @ https://www.tenaka.net/unquotedpaths"
+    $descripCreateSysFold = "Default System Folders that allows a User the CreateFile permissions. These can be abused by creating content in some of the allowable default locations. Prevent by applying Execution controls eg Applocker Further information can be found @ https://www.tenaka.net/unquotedpaths"
 
     $descripNonFold = "A vulnerability exists when enterprise software has been installed on the root of C:\. The default permissions allow a user to replace approved software binaries with malicious binaries. Further information can be found @ https://www.tenaka.net/unquotedpaths"
 
@@ -2802,8 +2803,8 @@ $style = @"
     $frag_PSPass = $fragPSPass | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:$titleCol'>Processes where CommandLine Contains a Password</span></h2>" -PostContent "<h4>$Finish</h4>" | Out-String
     $frag_SecOptions = $fragSecOptions | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:$titleCol'>Security Options</span></h2>" -PostContent "<h4>$descripSecOptions</h4>" | Out-String
     $frag_wFolders = $fragwFold | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:$titleCol'>Non System Folders that are Writeable - Security Risk when Executable</span></h2>" -PostContent "<h4>$descripNonFold</h4>"| Out-String
-    $frag_SysFolders = $fragsysFold | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:$titleCol'>System Default Folders that are Writeable - Security Risk if Exist</span></h2>"  -PostContent "<h4>$descripSysFold</h4>"| Out-String
-    $frag_CreateSysFold = $fragCreateSysFold | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:$titleCol'>System Default Folders that Permit Users to Create Files - Security Risk if Exist</span></h2>"  -PostContent "<h4>$descripCreateSysFold</h4>"| Out-String
+    $frag_SysFolders = $fragsysFold | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:$titleCol'>Default System Folders that are Writeable - Security Risk if Exist</span></h2>"  -PostContent "<h4>$descripSysFold</h4>"| Out-String
+    $frag_CreateSysFold = $fragCreateSysFold | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:$titleCol'>Default System Folders that Permit Users to Create Files - Security Risk if Exist</span></h2>"  -PostContent "<h4>$descripCreateSysFold</h4>"| Out-String
     $frag_wFile =  $fragwFile | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:$titleCol'>System Files that are Writeable - Security Risk if Exist</span></h2>" -PostContent "<h4>$descripFile</h4>" | Out-String
     $frag_FWProf =   $fragFWProfile | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:$titleCol'>Firewall Profile</span></h2>"  -PostContent "<h4>$DescripFirewalls</h4>"| Out-String
     $frag_FW =  $fragFW | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:$titleCol'>Enabled Firewall Rules</span></h2>" | Out-String
