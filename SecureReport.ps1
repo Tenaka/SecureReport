@@ -189,7 +189,7 @@ Does not show IPC$ and permissions due to access issues.
 #Driver Query Signing
 All Drivers should be signed with a digital signature to verify the integrity of the packages. 64bit kernel Mode drivers must be signed without exception
 
-#Authenticode Hash Mis-Match
+#Authenticode Hash Mismatch
 Checks that digitally signed files have a valid and trusted hash. If any Hash Mis-Matches then the file could have been altered
   
 .VERSION
@@ -232,6 +232,12 @@ YYMMDD
 220606.1 - Added DLL hijacking for dlls not signed and where the user can write.
 220606.2 - Tidy up and formatting of script
 220607.1 - Password within file search $fragFilePass=@() moved to outside loop as it was dropping previous drives and data
+220708.1 - Added depth to Folder and File search to give option to speed up search
+220708.2 - Moved DLL not signed and user access, update to Folder search, not an option to run or not
+220708.3 - Added filters to Folder and File search to skip winSXS and LCU folders, time consuming and pointless
+220708.4 - DLL not signed and user access, wrong setting on filter and excluded the files I'm looking for.
+220708.5 - Changed where clause for excluding folder to $_.fullName -match
+220708.6 - oops, stopped auditing folders that allowed users to create folder, fixed by removing the @() that was copied by mistake.
 
 #>
 
@@ -282,6 +288,7 @@ function reports
     Write-Host " "
     $Scheme = Read-Host "Type either Tenaka, Dark or Light for choice of colour schemes" 
     $folders = Read-Host "Long running audit - Do you want to audit Files, Folders and Registry for permissions issues....type `"Y`" to audit, any other key for no"
+    if ($folders -eq "Y") {$depth = Read-Host "What depth do you wish the folders to be auditied, the higher the number the slower the audit, recommended is 2"}
     $authenticode = Read-Host "Long running audit - Do you want to check that digitally signed files are valid with a trusted hash....type `"Y`" to audit, any other key for no"
 
 
@@ -1562,7 +1569,8 @@ sleep 7
 
     foreach ($rt in $drvRoot)
     {
-        $hfiles =  Get-ChildItem $rt -ErrorAction SilentlyContinue | 
+        $hfiles =  Get-ChildItem $rt -ErrorAction SilentlyContinue |
+        Where {$_.FullName -notMatch "winsxs" -and $_.FullName -notmatch "LCU"} | 
         where {$_.Name -eq "PerfLogs" -or ` 
         $_.Name -eq "Program Files" -or `
         $_.Name -eq "Program Files (x86)"
@@ -1739,7 +1747,7 @@ sleep 7
         $foldhash = @()
         foreach ($hfold in $hfolders.fullname)
         {
-            $subfl = Get-ChildItem -Path $hfold -Directory -Recurse -Force -ErrorAction SilentlyContinue
+            $subfl = Get-ChildItem -Path $hfold -Depth $depth -Directory -Recurse -Force -ErrorAction SilentlyContinue
             $foldhash+=$hfolders
             $foldhash+=$subfl
             $foldhash+=$getRoot
@@ -1833,7 +1841,9 @@ sleep 7
     
         foreach ($sysfold in $sysfolders.fullname)
         {
-            $subsysfl = Get-ChildItem -Path $sysfold -Directory -Recurse -Force -ErrorAction SilentlyContinue
+            $subsysfl = Get-ChildItem -Path $sysfold  -Depth $depth -Directory -Recurse -Force -ErrorAction SilentlyContinue | 
+            Where {$_.FullName -notMatch "winsxs" -and $_.FullName -notmatch "LCU"}
+
             $sysfoldhash+=$subsysfl
             #Write-Host $subsysfl -ForegroundColor White
         }
@@ -1914,7 +1924,7 @@ sleep 7
 
     foreach ($rt in $drvRoot)
     {   
-        $createSysfolders =  Get-ChildItem $rt -ErrorAction SilentlyContinue | 
+        $createSysfolders =  Get-ChildItem $rt  -ErrorAction SilentlyContinue | 
         where {$_.Name -eq "PerfLogs" -or ` 
         $_.Name -eq "Program Files" -or `
         $_.Name -eq "Program Files (x86)" -or `
@@ -1923,7 +1933,9 @@ sleep 7
   
         foreach ($createSysfold in $createSysfolders.fullname)
         {
-            $createSubsysfl = Get-ChildItem -Path $createSysfold -Directory -Recurse -Force  -ErrorAction SilentlyContinue
+            $createSubsysfl = Get-ChildItem -Path $createSysfold -Depth $depth -Directory -Recurse -Force  -ErrorAction SilentlyContinue | 
+            Where {$_.FullName -notMatch "winsxs" -and $_.FullName -notmatch "LCU"}
+            
             $createSysfoldhash+=$createSubsysfl
             #Write-Host $createSubsysfl -ForegroundColor Green
         }
@@ -1970,6 +1982,72 @@ sleep 7
 Write-Host " "
 Write-Host "Finised Searching for CreateFile Permissions Vulnerabilities" -foregroundColor Green
 
+################################################
+###############  DLL HIJACKING  ################
+################################################
+#All dlls' that are NOT signed and user permissions allow write  
+    $VulnReport = "C:\SecureReport"
+    $OutFunc = "DLLNotSigned"  
+
+    $tpSec10 = Test-Path "C:\SecureReport\output\$OutFunc\"
+    
+    if ($tpSec10 -eq $false)
+    {
+        New-Item -Path "C:\SecureReport\output\$OutFunc\" -ItemType Directory -Force
+    }
+    
+    $dllLogPath = "C:\SecureReport\output\$OutFunc\" + "$OutFunc.log"
+    $dllLogPathtxt = "C:\SecureReport\output\$OutFunc\" + "$OutFunc.txt"
+
+    $drv = (psdrive | where {$_.root -match "^[a-zA-Z]:"}) |  where {$_.displayroot -notlike "*\\*"}
+    $drvRoot = $drv.root 
+    $getRoot = Get-Item $drvRoot
+
+    foreach ($rt in $drvRoot)
+    {
+        $dllFolders =  Get-ChildItem $rt -ErrorAction SilentlyContinue  |
+        where {$_.fullName -match "Program Files" -or `
+        $_.fullName -match "(x86)" -or `
+        $_.fullName -match "Windows"}
+      
+        foreach ($dllFold in $dllFolders.fullname)
+        {$dllSigned =  Get-ChildItem -Path $dllFold -Recurse -depth $depth -force | 
+              where {$_.FullName -notMatch "winsxs" -and $_.FullName -notmatch "LCU"} |
+              where {$_.Extension -eq ".dll"} | get-authenticodesignature | 
+              where {$_.status -ne "valid"} | get-acl | 
+              where {$_.accesstostring -like "*Users Allow  Write*" `
+              -or $_.accesstostring -like "*Users Allow  Modify*" `
+              -or $_.accesstostring -like "*Users Allow  FullControl*" `
+              -or $_.accesstostring -like "*Everyone Allow  Write*" `
+              -or $_.accesstostring -like "*Everyone Allow  Modify*" `
+              -or $_.accesstostring -like "*Everyone Allow  FullControl*" `
+              -or $_.accesstostring -like "*Authenticated Users Allow  Write*" `
+              -or $_.accesstostring -like "*Authenticated Users Allow  Modify*" `
+              -or $_.accesstostring -like "*Authenticated Users Allow  FullControl*"} 
+             #write-host $dllSigned
+             $dllSigned.path | out-file $dllLogPath -Append
+         }
+    }
+
+    Get-Content $dllLogPath  | 
+    foreach {$_ -replace "Microsoft.PowerShell.Core",""} |
+    foreach {$_ -replace 'FileSystem::',""} |
+    foreach {$_.substring(1)} |
+    Set-Content $dllLogPathtxt -Force
+
+    $fragDllNotSigned=@()
+    $getDllPath = get-content $dllLogPathtxt
+
+    foreach ($dllNotSigned in $getDllPath)
+    {
+        $newObjDllNotSigned = New-Object -TypeName PSObject
+        Add-Member -InputObject $newObjDllNotSigned -Type NoteProperty -Name CreateFiles -Value $dllNotSigned
+        $fragDllNotSigned += $newObjDllNotSigned
+    }  
+
+
+
+
 ###########################################################################################################################
 ###########################################################################################################################
 ###########################################################################################################################
@@ -1997,7 +2075,8 @@ Write-Host "Searching for authenticode signature hashmismatch" -foregroundColor 
  
     foreach ($rt in $drvRoot)
         {
-            $getAuthfiles = Get-ChildItem -Path $rt -Recurse | 
+            $getAuthfiles = Get-ChildItem -Path $rt -Recurse -depth $depth -force | 
+            where {$_.FullName -notMatch "winsxs" -and $_.FullName -notmatch "LCU"} |
             where { ! $_.PSIsContainer `
             -and $_.extension -ne ".log" `
             -and $_.extension -ne ".hve" `
@@ -2102,20 +2181,21 @@ sleep 7
     $drv = (psdrive | where {$_.root -match "^[a-zA-Z]:"}) | where {$_.displayroot -notlike "*\\*"}
     $drvRoot = $drv.root
     $fragFilePass=@()
+    $depthExtra = [int]$depth + 2
     foreach ($rt in $drvRoot)
         {
-            $getUserFolder = Get-ChildItem -Path $rt -Recurse -Depth 4 -Force -ErrorAction SilentlyContinue |
-            where {$_.DirectoryName -notlike "*WinSXS*" `
-            -and $_.DirectoryName -notlike "*Packages*" `
-            -and $_.DirectoryName -notlike "*Containers\BaseImages*" `
-            -and $_.DirectoryName -notlike  "*MicrosoftOffice*" `
-            -and $_.DirectoryName -notlike "*AppRepository*" `
-            -and $_.DirectoryName -notlike "*IdentityCRL*" `
-            -and $_.DirectoryName -notlike "*UEV*" `
-            -and $_.Name -notlike "*MicrosoftOffice201*" `
-            -and $_.DirectoryName -notlike "*DriverStore*" `
-            -and $_.DirectoryName -notlike "*spool*" `
-            -and $_.DirectoryName -notlike "*icsxm*"  } |
+            $getUserFolder = Get-ChildItem -Path $rt -Recurse -Depth $depthExtra -Force -ErrorAction SilentlyContinue |
+            where {$_.FullName -notmatch "WinSXS" `
+            -and $_.FullName -notmatch "Packages" `
+            -and $_.FullName -notmatch "Containers\BaseImages" `
+            -and $_.FullName -notmatch  "MicrosoftOffice" `
+            -and $_.FullName -notmatch "AppRepository" `
+            -and $_.FullName -notmatch "IdentityCRL" `
+            -and $_.FullName -notmatch "UEV" `
+            -and $_.FullName -notlike "MicrosoftOffice201" `
+            -and $_.FullName -notmatch "DriverStore" `
+            -and $_.FullName -notmatch "spool" `
+            -and $_.FullName -notmatch "icsxm"  } |
             where {$_.Extension -eq ".txt"`
             -or $_.Extension -eq ".ini" `
             -or $_.Extension -eq ".xml"}  #xml increase output, breaks report
@@ -2182,69 +2262,6 @@ foreach ($dll in $getDll)
      }
 }
 
-################################################
-###############  DLL HIJACKING  ################
-################################################
-#All dlls' that are NOT signed and user permissions allow write  
-    $VulnReport = "C:\SecureReport"
-    $OutFunc = "DLLNotSigned"  
-
-    $tpSec10 = Test-Path "C:\SecureReport\output\$OutFunc\"
-    
-    if ($tpSec10 -eq $false)
-    {
-        New-Item -Path "C:\SecureReport\output\$OutFunc\" -ItemType Directory -Force
-    }
-    
-    $dllLogPath = "C:\SecureReport\output\$OutFunc\" + "$OutFunc.log"
-    $dllLogPathtxt = "C:\SecureReport\output\$OutFunc\" + "$OutFunc.txt"
-
-    $drv = (psdrive | where {$_.root -match "^[a-zA-Z]:"}) |  where {$_.displayroot -notlike "*\\*"}
-    $drvRoot = $drv.root 
-    $getRoot = Get-Item $drvRoot
-
-    foreach ($rt in $drvRoot)
-    {
-        $dllFolders =  Get-ChildItem $rt -ErrorAction SilentlyContinue  |
-        where {$_.fullName -notlike "C:\Program Files*" -and `
-        $_.fullName -notlike "C:\Program Files (x86)*" -and `
-        $_.fullName -notlike "C:\Windows*"}
-        $newObj=@()
-        foreach ($dllFold in $dllFolders.fullname)
-        {
-             $dllSigned =  Get-ChildItem -Path $dllFold -Recurse | 
-              where {$_.Extension -eq ".dll"} | get-authenticodesignature | 
-              where {$_.status -eq "valid"} | get-acl | 
-              where {$_.accesstostring -like "*Users Allow  Write*" `
-              -or $_.accesstostring -like "*Users Allow  Modify*" `
-              -or $_.accesstostring -like "*Users Allow  FullControl*" `
-              -or $_.accesstostring -like "*Everyone Allow  Write*" `
-              -or $_.accesstostring -like "*Everyone Allow  Modify*" `
-              -or $_.accesstostring -like "*Everyone Allow  FullControl*" `
-              -or $_.accesstostring -like "*Authenticated Users Allow  Write*" `
-              -or $_.accesstostring -like "*Authenticated Users Allow  Modify*" `
-              -or $_.accesstostring -like "*Authenticated Users Allow  FullControl*"} 
-             
-             $dllSigned.path | out-file $dllLogPath -Append
-         }
-
-   }
-
-Get-Content $dllLogPath  | 
-foreach {$_ -replace "Microsoft.PowerShell.Core",""} |
-foreach {$_ -replace 'FileSystem::',""} |
-foreach {$_.substring(1)} |
-Set-Content $dllLogPathtxt -Force
-
-$fragcreateSysFold=@()
-$getDllPath = get-content $dllLogPathtxt
-$fragDllNotSigned=@()        
-foreach ($dllNotSigned in $getDllPath)
-{
-    $newObjDllNotSigned = New-Object -TypeName PSObject
-    Add-Member -InputObject $newObjDllNotSigned -Type NoteProperty -Name CreateFiles -Value $dllNotSigned
-    $fragDllNotSigned += $newObjDllNotSigned
- }  
 
 
  
@@ -2786,7 +2803,7 @@ $style = @"
     $frag_SecOptions = $fragSecOptions | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:$titleCol'>Security Options</span></h2>" -PostContent "<h4>$descripSecOptions</h4>" | Out-String
     $frag_wFolders = $fragwFold | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:$titleCol'>Non System Folders that are Writeable - Security Risk when Executable</span></h2>" -PostContent "<h4>$descripNonFold</h4>"| Out-String
     $frag_SysFolders = $fragsysFold | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:$titleCol'>System Default Folders that are Writeable - Security Risk if Exist</span></h2>"  -PostContent "<h4>$descripSysFold</h4>"| Out-String
-    $frag_createSysFold = $fragcreateSysFold | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:$titleCol'>System Default Folders that Permitting Users to Create Files - Security Risk if Exist</span></h2>"  -PostContent "<h4>$descripCreateSysFold</h4>"| Out-String
+    $frag_CreateSysFold = $fragCreateSysFold | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:$titleCol'>System Default Folders that Permit Users to Create Files - Security Risk if Exist</span></h2>"  -PostContent "<h4>$descripCreateSysFold</h4>"| Out-String
     $frag_wFile =  $fragwFile | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:$titleCol'>System Files that are Writeable - Security Risk if Exist</span></h2>" -PostContent "<h4>$descripFile</h4>" | Out-String
     $frag_FWProf =   $fragFWProfile | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:$titleCol'>Firewall Profile</span></h2>"  -PostContent "<h4>$DescripFirewalls</h4>"| Out-String
     $frag_FW =  $fragFW | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:$titleCol'>Enabled Firewall Rules</span></h2>" | Out-String
@@ -2834,7 +2851,7 @@ $style = @"
     $frag_Share,
     $frag_SysRegPerms,
     $frag_SysFolders,
-    $frag_createSysFold,
+    $frag_CreateSysFold,
     $frag_wFolders,
     $frag_wFile,
     $frag_AuthCodeSig,
