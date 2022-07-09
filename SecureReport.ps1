@@ -241,7 +241,8 @@ YYMMDD
 220708.7 - Added Windows directory to check for writeable files. 
 220708.8 - Updated Authenticode to exclude winSxS and LCU directories - Improves preformance 
 220708.9 - Default System Folder check was returning wrong data, updated the directory listing where statement
-
+220709.1 - Added Credential Guard support
+220709.2 - Added LAPS support
 #>
 
 #Remove any DVD from client
@@ -633,6 +634,83 @@ sleep 5
     Add-Member -InputObject $newObjLSA -Type NoteProperty -Name LSARegValue -Value $lsaReg 
     #Add-Member -InputObject $newObjLSA -Type NoteProperty -Name LSAComment -Value $lsaCom
     $fragLSAPPL += $newObjLSA
+ 
+ 
+    #Credential Guard
+    $getCredGu = Get-Item 'HKLM:\SYSTEM\CurrentControlSet\Control\LSA\' -ErrorAction SilentlyContinue
+    $getCredGuCFG =  $getCredGu.GetValue("LsaCfgFlags")
+    $fragCredGuCFG =@()
+
+    if ($getCredGuCFG -eq "1")
+    {
+        $CredGuSet = "Credential Guard is enabled, the LsaCfgFlags value is set to $getCredGuCFG" 
+        $CredGuReg = "HKLM:\SYSTEM\CurrentControlSet\Control\LSA\"
+        $CredGuCom = "Credential Guard is enabled with UEFI persistance."
+    }
+    if ($getCredGuCFG -eq "2")
+    {
+        $CredGuSet = "Credential Guard is enabled, the LsaCfgFlags value is set to $getCredGuCFG" 
+        $CredGuReg = "HKLM:\SYSTEM\CurrentControlSet\Control\LSA\"
+        $CredGuCom = "Credential Guard is enable without UEFI persistence."
+    }
+    else
+    {
+        $CredGuSet = "Warning - Secure Credential Guard is disabled, LsaCfgFlags is set to 0 Warning" 
+        $CredGuReg = "HKLM:\SYSTEM\CurrentControlSet\Control\LSA\"
+        $CredGuCom = "Credential Guard requires the client to be Domain joined"
+    }
+
+    $newObjCredGu = New-Object -TypeName PSObject
+    Add-Member -InputObject $newObjCredGu -Type NoteProperty -Name CredentialGuardSetting -Value  $CredGuSet
+    Add-Member -InputObject $newObjCredGu -Type NoteProperty -Name CredentialGuardRegValue -Value $CredGuReg 
+    #Add-Member -InputObject $newObjCredGu -Type NoteProperty -Name CredGuComment -Value $CredGuCom
+    $fragCredGuCFG += $newObjCredGu
+  
+
+    #LAPS is installed
+    $getLapsPw = Get-Item "HKLM:\Software\Policies\Microsoft Services\AdmPwd\" -ErrorAction SilentlyContinue
+    $getLapsPwEna =  $getLapsPw.GetValue("AdmPwdEnabled")
+    $getLapsPwCom =  $getLapsPw.GetValue("PasswordComplexity")
+    $getLapsPwLen =  $getLapsPw.GetValue("PasswordLength")
+    $getLapsPwDay =  $getLapsPw.GetValue("PasswordAgeDays")
+    $fragLapsPwEna =@()
+
+    if ($getLapsPwEna -eq "1")
+    {
+        $LapsPwSetena = "LAPS is installed and enabled, the AdmPwdEnabled value is set to $getLapsPwEna" 
+        $LapsPwSetcom = "LAPS password complexity value is set to $getLapsPwCom" 
+        $LapsPwSetlen = "LAPS password length value is set to $getLapsPwLen" 
+        $LapsPwSetday = "LAPS password age value is to $getLapsPwDay" 
+        $LapsPwReg = "HKLM:\Software\Policies\Microsoft Services\AdmPwd\" 
+
+    }
+    else
+    {
+        $LapsPwSet = "LAPS is not installed or the value is set to 0 Warning" 
+        $LapsPwReg = "HKLM:\Software\Policies\Microsoft Services\AdmPwd\" 
+        $LapsPwCom = "LAPS is not installed or configured - Ignore if not Domain Joined"
+    }
+ 
+    if ($getLapsPwEna -eq "1")
+    {
+        $newObjLapsPw = New-Object -TypeName PSObject
+        Add-Member -InputObject $newObjLapsPw -Type NoteProperty -Name LAPSPasswordEnabled -Value $LapsPwSetena
+        Add-Member -InputObject $newObjLapsPw -Type NoteProperty -Name LAPSPasswordComplexity -Value $LapsPwSetcom 
+        Add-Member -InputObject $newObjLapsPw -Type NoteProperty -Name LAPSPasswordLength -Value $LapsPwSetlen
+        Add-Member -InputObject $newObjLapsPw -Type NoteProperty -Name LAPSPasswordDay -Value $LapsPwSetday 
+        Add-Member -InputObject $newObjLapsPw -Type NoteProperty -Name LAPSPasswordReg -Value $LapsPwReg
+        $fragLapsPwEna += $newObjLapsPw
+    }
+    else 
+    {
+        $newObjLapsPw = New-Object -TypeName PSObject
+        Add-Member -InputObject $newObjLapsPw -Type NoteProperty -Name LAPSPasswordEnabled -Value  $LapsPwSet
+        Add-Member -InputObject $newObjLapsPw -Type NoteProperty -Name LAPSPasswordReg -Value $LapsPwReg 
+        #Add-Member -InputObject $newObjLapsPw -Type NoteProperty -Name LapsPwComment -Value $LapsPwCom
+        $fragLapsPwEna += $newObjLapsPw
+    }
+
+
         
     #DLL Safe Search
     $getDLL = Get-Item 'HKLM:\System\CurrentControlSet\Control\Session Manager' -ErrorAction SilentlyContinue
@@ -1671,7 +1749,7 @@ sleep 7
         {
             $acl = Get-Acl $regPath -ErrorAction SilentlyContinue
             $acc = $acl.AccessToString
-            Write-Output $regPath 
+            #Write-Output $regPath 
             #Write-Host $regPath  -ForegroundColor DarkCyan
 
             foreach ($ac in $acc)
@@ -1850,7 +1928,7 @@ sleep 7
             Where {$_.FullName -notMatch "winsxs" -and $_.FullName -notmatch "LCU"}
 
             $sysfoldhash+=$subsysfl
-            Write-Host $subsysfl -ForegroundColor White
+            #Write-Host $subsysfl -ForegroundColor White
         }
     
         foreach ($syfold in $sysfoldhash.fullname)
@@ -2768,6 +2846,9 @@ $style = @"
 
     $descriptDLLHijack = "DLL Hijacking is when a malicious dll replaces a legitimate dll due to a path vulnerability. A program or service makes a call on that dll gaining the privileges of that program or service. Additionally missing dll’s presents a risk where a malicious dll is dropped into a path where no current dll exists but the program or service is making a call to that non-existent dll. This audit is reliant on programs being launched so that DLL’s are loaded. Each process’s loaded dll’s are checked for permissions issues and whether they are signed. The DLL hijacking audit does not currently check for missing dll’s being called. Process Monitor filtered for ‘NAME NOT FOUND’ and path ends with ‘DLL’ will."
 
+    $descripCredGu = "Credential Guard securely isolating the LSA process preventing the recovery of domain hashes from memory. Credential Guard only works for Domain joined clients and servers. Further information can be found @ https://www.tenaka.net/pass-the-hash"
+
+    $descripLAPS = "Local Administrator Password Solution (LAPS) is a small program with some GPO settings that randomly sets the local administrator password for clients and servers across the estate. Only Domain Admins by default permission to view the local administrator password via DSA.MSC Access to the LAPS passwords may be delegated unintentionally. This could lead to a serious security breach, leaking all local admin accounts passwords for all computer objects to those that shouldn't have access. Installation guide can be found @ https://www.tenaka.net/post/local-admin-passwords. Security related issue details can be found @ https://www.tenaka.net/post/laps-leaks-local-admin-passwords"
 
 ################################################
 ################  FRAGMENTS  ###################
@@ -2817,8 +2898,12 @@ $style = @"
     $frag_TaskListings =  $SchedTaskListings | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:$titleCol'>Scheduled Tasks that Contain something Encoded</span></h2>"  -PostContent "<h4>$descripTaskSchEncode</h4>" | Out-String
     $frag_DriverQuery =  $DriverQuery | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:$titleCol'>Drivers that aren't Signed</span></h2>" -PostContent "<h4>$descriptDriverQuery</h4>" | Out-String
     $frag_Share = $fragShare | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:$titleCol'>Shares and their Share Permissions</span></h2>"  | Out-String
- 
     $frag_AuthCodeSig = $fragAuthCodeSig | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:$titleCol'>Files with an Authenticode Signature HashMisMatch</span></h2>" -PostContent "<h4>$descriptAuthCodeSig</h4>"  | Out-String  
+    
+    $frag_CredGuCFG = $fragCredGuCFG | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:$titleCol'>Credential Guard</span></h2>" -PostContent "<h4>$descripCredGu</h4>" | Out-String
+   
+    $frag_LapsPwEna = $fragLapsPwEna | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:$titleCol'>LAPS - Local Administrator Password Solution</span></h2>" -PostContent "<h4>$descripLAPS</h4>" | Out-String
+  
 
 ################################################
 ############  CREATE HTML REPORT  ##############
@@ -2843,6 +2928,8 @@ $style = @"
     $frag_Code,
     $frag_SecOptions,
     $frag_LSAPPL,
+    $frag_CredGuCFG,
+    $frag_LapsPwEna,
     $frag_DLLSafe,
     $frag_DLLHijack,
     $frag_DllNotSigned,
@@ -2895,13 +2982,12 @@ Add warning no user account is available
 UAC 
 AutoPlay
 Proxy password reg key
-Credential Guard HKLM:\SYSTEM\CurrentControlSet\Control\LSA LsaCfgFlags
+
 FLTMC.exe - mini driver altitude looking for 'stuff' thats at an altitude to bypass security or encryption
 report on appX bypass and seriousSam
 Remote desktop and permissions
 look for %COMSPEC%
 Check for impersonation - aimed at servers
-laps HKLM:\Software\Policies\Microsoft Services\AdmPwd AdmPwdEnabled
 snmp
 powershell history, stored creds 
 
@@ -2910,4 +2996,3 @@ Stuff that wont get fixed.....
 Progress bars or screen output will remain limited, each time an output is written to screen the performance degrads
 
 #>
-
