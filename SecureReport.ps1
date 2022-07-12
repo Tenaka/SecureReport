@@ -243,10 +243,10 @@ YYMMDD
 220708.9 - Default System Folder check was returning wrong data, updated the directory listing where statement
 220709.1 - Added Credential Guard support
 220709.2 - Added LAPS support
-220710.1 - Added URA Support - uses SecEdit, extracts Rights Assignments and then maps GUID's to User or Group Name
-220710.2 - Updated the description tags and added line separators <br>.
-220711.1 - Updated the out-file format for the URA
-220711.2 - Created if based on Folder audit, if not then the following vars wont be passed to the report, part of the prettification of the output
+220711.1 - Added URA Support - uses SecEdit, extracts Rights Assignments and then maps GUID's to User or Group Name
+220711.2 - Updated the description tags and added line separators <br>.
+220712.1 - Updated the out-file format for the URA
+220712.2 - Created if based on Folder audit, if not then the following vars wont be passed to the report, part of the prettification of the output
            $fragwFile           $frag_wFile           
            $fragReg             $frag_SysRegPerms     
            $fragwFold           $frag_wFolders        
@@ -254,7 +254,7 @@ YYMMDD
            $fragcreateSysFold   $frag_CreateSysFold   
            $fragDllNotSigned    $frag_DllNotSigned    
            $fragAuthCodeSig     $frag_AuthCodeSig  
-           
+220712.3 - Added Grey Theme           
               
 #>
 
@@ -302,7 +302,7 @@ function reports
     Write-Host " "
     Write-Host "READ ME - To audit for Dll Hijacking vulnerabilities applications and services must be active, launch programs before continuing." -ForegroundColor Yellow
     Write-Host " "
-    $Scheme = Read-Host "Type either Tenaka, Dark or Light for choice of colour schemes" 
+    $Scheme = Read-Host "Type either Tenaka, Dark, Grey or Light for choice of colour schemes" 
     $folders = Read-Host "Long running audit - Do you want to audit Files, Folders and Registry for permissions issues....type `"Y`" to audit, any other key for no"
     if ($folders -eq "Y") {$depth = Read-Host "What depth do you wish the folders to be auditied, the higher the number the slower the audit, recommended is 2"}
     $authenticode = Read-Host "Long running audit - Do you want to check that digitally signed files are valid with a trusted hash....type `"Y`" to audit, any other key for no"
@@ -2805,6 +2805,107 @@ $style = @"
     </Style>
 "@
 }
+
+if ($Scheme -eq "Grey")
+{
+$titleCol = "#D3BAA9"
+
+#HTML GENERATOR CSS
+$style = @"
+    <Style>
+    
+    body
+    {
+        background-color:#454545; 
+        color:#D3BAA9;
+        font-size:100%;
+        font-family:helvetica;
+        margin:0,0,10px,0; 
+        word-break:normal; 
+        word-wrap:break-word
+    }
+    table
+    {
+        border-width: 1px;
+        padding: 7px;
+        border-style: solid;
+        border-color:#D3BAA9;
+        border-collapse:collapse;
+        width:auto
+    }
+    h1
+    {
+        background-color:#454545; 
+        color:#D3BAA9;
+        font-size:150%;
+        font-family:helvetica;
+        margin:0,0,10px,0;
+        word-break:normal; 
+        word-wrap:break-word
+    }
+    h2
+    {
+        background-color:#454545; 
+        color:#D3BAA9;
+        font-size:120%;
+        font-family:helvetica;
+        margin:0,0,10px,0; 
+        word-break:normal; 
+        word-wrap:break-word
+    }
+    h3
+    {
+        background-color:#454545; 
+        color:#A88F7E;
+        font-size:100%;
+        font-family:helvetica;
+        margin:0,0,10px,0; 
+        word-break:normal; 
+        word-wrap:break-word;
+        font-weight: normal;
+        width:auto
+    }
+        h4
+    {
+        background-color:#454545; 
+        color:#D3BAA9;
+        font-size:90%;
+        font-family:helvetica;
+        margin:0,0,10px,0; 
+        word-break:normal; 
+        word-wrap:break-word;
+        font-weight: normal
+    }
+    th
+    {
+        border-width: 1px;
+        padding: 7px;
+        border-style: solid;
+        border-color:#D3BAA9;
+        background-color:#454545
+    }
+    td
+    {
+        border-width: 1px;
+        padding:7px;
+        border-style: solid; 
+        border-style: #D3BAA9
+    }
+    tr:nth-child(odd) 
+    {
+        background-color:#404040;
+    }
+    tr:nth-child(even) 
+    {
+        background-color:#4d4d4d;
+    }
+
+    
+
+    </Style>
+"@
+}
+
 else 
 {#Dark Theme
 
