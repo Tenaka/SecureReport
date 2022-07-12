@@ -243,6 +243,19 @@ YYMMDD
 220708.9 - Default System Folder check was returning wrong data, updated the directory listing where statement
 220709.1 - Added Credential Guard support
 220709.2 - Added LAPS support
+220710.1 - Added URA Support - uses SecEdit, extracts Rights Assignments and then maps GUID's to User or Group Name
+220710.2 - Updated the description tags and added line separators <br>.
+220711.1 - Updated the out-file format for the URA
+220711.2 - Created if based on Folder audit, if not then the following vars wont be passed to the report, part of the prettification of the output
+           $fragwFile           $frag_wFile           
+           $fragReg             $frag_SysRegPerms     
+           $fragwFold           $frag_wFolders        
+           $fragsysFold         $frag_SysFolders      
+           $fragcreateSysFold   $frag_CreateSysFold   
+           $fragDllNotSigned    $frag_DllNotSigned    
+           $fragAuthCodeSig     $frag_AuthCodeSig  
+           
+              
 #>
 
 #Remove any DVD from client
@@ -277,7 +290,6 @@ else
         New-Item -Path C:\SecureReport -ItemType Directory -Force
     }
 
-
 function reports
 {
     #Start Message
@@ -294,7 +306,6 @@ function reports
     $folders = Read-Host "Long running audit - Do you want to audit Files, Folders and Registry for permissions issues....type `"Y`" to audit, any other key for no"
     if ($folders -eq "Y") {$depth = Read-Host "What depth do you wish the folders to be auditied, the higher the number the slower the audit, recommended is 2"}
     $authenticode = Read-Host "Long running audit - Do you want to check that digitally signed files are valid with a trusted hash....type `"Y`" to audit, any other key for no"
-
 
 ################################################
 #################  BITLOCKER  ##################
@@ -419,6 +430,124 @@ sleep 5
    }
 Write-Host " "
 Write-Host "Completed Gathering Host and Account Details" -foregroundColor Green
+
+################################################
+#########  USER RIGHTS ASSIGNMENTS  ############
+################################################
+Write-Host " "
+Write-Host "Starting User Rights Assignments" -foregroundColor Green
+sleep 5
+
+    $VulnReport = "C:\SecureReport"
+    $OutFunc = "URA" 
+                
+    $tpSec10 = Test-Path "C:\SecureReport\output\$OutFunc\"
+    
+    if ($tpSec10 -eq $false)
+    {
+        New-Item -Path "C:\SecureReport\output\$OutFunc\" -ItemType Directory -Force
+    }
+
+    $secEditPath = "C:\SecureReport\output\$OutFunc\" + "$OutFunc.Inf"
+    $secEditOutPath = "C:\SecureReport\output\$OutFunc\" + "URAOut.txt"
+    $secEditImpPath = "C:\SecureReport\output\$OutFunc\" + "URAImport.txt"
+    Set-Content -Path $secEditOutPath -Value " "
+    Set-Content -Path $secEditImpPath -Value " "
+    
+    $hn = hostname
+
+    $URALookup =[ordered]@{
+        "Access this computer from the network" = "SeNetworkLogonRight","Access this computer from the network"
+        "Add workstations to domain" = "SeMachineAccountPrivilege","Add workstations to domain"
+        "Back up files and directories" = "SeBackupPrivilege", "Back up files and directories"
+        "Bypass traverse checking" = "SeChangeNotifyPrivilege", "Bypass traverse checking"
+        "Change the system time" = "SeSystemtimePrivilege", "Change the system time"
+        "Create a pagefile" = "SeCreatePagefilePrivilege", "Create a pagefile"
+        "Force shutdown from a remote system" = "SeRemoteShutdownPrivilege", "Force shutdown from a remote system"
+        "Generate security audits" = "SeAuditPrivilege", "Generate security audits" 
+        "Adjust memory quotas for a process" = "SeIncreaseQuotaPrivilege", "Adjust memory quotas for a process"
+        "Increase scheduling priority" = "SeIncreaseBasePriorityPrivilege","Increase scheduling priority"
+        "Load and unload device drivers" = "SeLoadDriverPrivilege", "Load and unload device drivers"
+        "Log on as a batch job" = "SeBatchLogonRight", "Log on as a batch job"
+        "Log on as a service" = "SeServiceLogonRight", "Log on as a service" 
+        "Allow log on locally" = "SeInteractiveLogonRight", "Allow log on locally" 
+        "Manage auditing and security log" = "SeSecurityPrivilege", "Manage auditing and security log"
+        "Modify firmware environment values" = "SeSystemEnvironmentPrivilege","Modify firmware environment values"  
+        "Profile single process" = "SeProfileSingleProcessPrivilege", "Profile single process" 
+        "Profile system performance" = "SeSystemProfilePrivilege", "Profile system performance"
+        "Replace a process level token" = "SeAssignPrimaryTokenPrivilege", "Replace a process level token" 
+        "Restore files and directories" = "SeRestorePrivilege","Restore files and directories" 
+        "Shut down the system" = "SeShutdownPrivilege", "Shut down the system"
+        "Take ownership of files or other objects" = "SeTakeOwnershipPrivilege", "Take ownership of files or other objects"
+        "Deny access to this computer from the network"   = "SeDenyNetworkLogonRight", "Deny access to this computer from the network" 
+        "Deny log on as a batch job" = "SeDenyBatchLogonRight", "Deny log on as a batch job"
+        "Deny log on as a service" = "SeDenyServiceLogonRight", "Deny log on as a service" 
+        "Deny log on locally" = "SeDenyInteractiveLogonRight", "Deny log on locally" 
+        "Remove computer from docking station" = "SeUndockPrivilege","Remove computer from docking station" 
+        "Perform volume maintenance tasks" = "SeManageVolumePrivilege", "Perform volume maintenance tasks"
+        "Deny log on through Remote Desktop Services" = "SeRemoteInteractiveLogonRight","Deny log on through Remote Desktop Services" 
+        "Impersonate a client after authentication" = "SeImpersonatePrivilege", "Impersonate a client after authentication" 
+        "Create global objects" = "SeCreateGlobalPrivilege", "Create global objects"
+        "Increase a process working set" = "SeIncreaseWorkingSetPrivilege","Increase a process working set" 
+        "Change the time zone" = "SeTimeZonePrivilege", "Change the time zone" 
+        "Create symbolic links" = "SeCreateSymbolicLinkPrivilege","Create symbolic links" 
+        "Obtain an impersonation token for another user in the same session"  = "SeDelegateSessionUserImpersonatePrivilege","Obtain an impersonation token for another user in the same session" 
+        }
+
+    #Export Security Settings inc User Rights Assignments with secedit.exe
+    secEdit.exe /export /cfg $secEditPath
+   
+   $URA = get-content -path  $secEditPath |  Select-String  -Pattern 'S-1'
+   $fragURA=@()
+   foreach ($uraLine in $URA)
+   {
+   $uraItem = $uraLine.ToString().split("*").split("=") #.replace(",","")
+   #write-host $uraItem -ForegroundColor Yellow
+ 
+        foreach ($uralookupName in $URALookup.Values)
+        {
+        $uraItemTrim = $uraItem[0].trim()
+        $uralookupTrim = $uralookupName.trim()[0]
+
+            if ($uralookuptrim -eq $uraItemTrim)
+                {
+                   $uraDescripName = $uralookupName.trim()[1]
+                   Write-Host $uraDescripName -ForegroundColor Cyan
+
+                   #$uraDescripName | Out-File $secEditOutPath -Append
+                   Add-Content $secEditOutPath -Value " "  -encoding UTF8
+                   $uraDescripName + " " + "`(" +$uraItem.trim()[0] +"`)" | Out-File $secEditOutPath -Append -encoding UTF8
+                }
+        }
+       
+       $uraItemTrimStart = ($uraItem | where {$_ -like "S-1*"}).replace(",","")
+
+       $objSid=@()
+     
+       set-content -Path $secEditImpPath -Value " "
+       $NameURA=@()
+       foreach($uraSidItems in $uraItemTrimStart)
+       {
+       $objSid = New-Object System.Security.Principal.SecurityIdentifier("$uraSidItems")
+       $objUserName = $objSID.Translate( [System.Security.Principal.NTAccount])
+       Write-Host $objUserName.Value -ForegroundColor Magenta
+       
+       #$objUserName.Value  | Out-File $secEditOutPath -Append
+       "   " + $objUserName.Value  | Out-File $secEditOutPath -Append  -encoding UTF8
+
+       [string]$NameURA += $objUserName.Value + ", "
+
+       }
+            
+       $newObjURA = New-Object -TypeName PSObject
+       Add-Member -InputObject $newObjURA -Type NoteProperty -Name UserRightAssignment-Name -Value $uraDescripName
+       Add-Member -InputObject $newObjURA -Type NoteProperty -Name UserRightAssignment-Priv -Value $uraItemTrim
+       Add-Member -InputObject $newObjURA -Type NoteProperty -Name URA-GroupName -Value $NameURA
+       $fragURA += $newObjURA
+   }
+    
+Write-Host " "
+Write-Host "Completed User Rights Assignments" -foregroundColor Green    
 
 ################################################
 ##############  WINDOWS UPDATES  ###############
@@ -2790,27 +2919,26 @@ $style = @"
 ##########  HELPS AND DESCRIPTIONS  ############
 ################################################
 
-    $Intro = "Thanks for using the vulnerability report written by Tenaka.net, please show your support and visit my site, it's non-profit and Ad-free. Any issues with the report's accuracy please do let me know and I'll get it fixed asap. The results in this report are a guide and not a guarantee that the tested system is not without further defects or vulnerability. 
-    The tests focus on known and common issues with Windows that can be exploited by an attacker. Each section contains a small snippet to provide some context, follow the links for further detail. Further support for the output can be found @ https://www.tenaka.net/windowsclient-vulnscanner"
+    $Intro = "Thanks for using the vulnerability report written by Tenaka.net, please show your support and visit my site, it's non-profit and Ad-free. <br> <br>Any issues with the report's accuracy please do let me know and I'll get it fixed asap. The results in this report are a guide and not a guarantee that the tested system is not without further defects or vulnerability. <br>
+    <br>The tests focus on known and common issues with Windows that can be exploited by an attacker. Each section contains a small snippet to provide some context, follow the links for further detail. <br> <br>Further support for the output can be found @ https://www.tenaka.net/windowsclient-vulnscanner<br>"
 
-    $Intro2 = "The results in this report are a guide and not a guarantee that the tested system is not without further defect or vulnerability. 
-    The tests focus on known and common issues with Windows that can be exploited by an attacker. Each section contains a small snippet to provide some context, follow the links for further detail."
+    $Intro2 = "The results in this report are a guide and not a guarantee that the tested system is not without further defect or vulnerability. <br>The tests focus on known and common issues with Windows that can be exploited by an attacker. Each section contains a small snippet to provide some context, follow the links for further detail.<br>"
 
     $Finish = "This script has been provided by Tenaka.net, if it's beneficial, please provide feedback and any additional feature requests gratefully received. "
 
-    $descripBitlocker = "TPM and Bitlocker protect against offline attack from usb and mounting the local Windows system then accessing the local data. 'TPM and Pin' enhances Bitlocker by preventing LPC Bus (Low Pin Count) bypasses of Bitlocker with TPM. Further information can be found @ https://www.tenaka.net/bitlocker"
+    $descripBitlocker = "TPM and Bitlocker protect against offline attack from usb and mounting the local Windows system then accessing the local data. 'TPM and Pin' enhances Bitlocker by preventing LPC Bus (Low Pin Count) bypasses of Bitlocker with TPM. <br> <br>Further information can be found @ https://www.tenaka.net/bitlocker<br>"
 
-    $descripVirt = "Secure Boot is a security standard to ensure only trusted OEM software is allowed at boot. At startup the UEFi and boot software's digital signatures are validated preventing rootkits More on Secure Boot can be found here @ https://media.defense.gov/2020/Sep/15/2002497594/-1/-1/0/CTR-UEFI-SECURE-BOOT-CUSTOMIZATION-20200915.PDF/CTR-UEFI-SECURE-BOOT-CUSTOMIZATION-20200915.PDF"
+    $descripVirt = "Secure Boot is a security standard to ensure only trusted OEM software is allowed at boot. At startup the UEFi and boot software's digital signatures are validated preventing rootkits. <br> <br>More on Secure Boot can be found here @ https://media.defense.gov/2020/Sep/15/2002497594/-1/-1/0/CTR-UEFI-SECURE-BOOT-CUSTOMIZATION-20200915.PDF/CTR-UEFI-SECURE-BOOT-CUSTOMIZATION-20200915.PDF<br>"
 
-    $descripVirt2 = "Virtualization-based security (VBS), isolates core system resources to create secure regions of memory. Enabling VBS allows for Hypervisor-Enforced Code Integrity (HVCI), Device Guard and Credential Guard. Further information can be found @ https://docs.microsoft.com/en-us/windows-hardware/design/device-experiences/oem-vbs and https://www.tenaka.net/deviceguard-vs-rce and https://www.tenaka.net/pass-the-hash "
+    $descripVirt2 = "Virtualization-based security (VBS), isolates core system resources to create secure regions of memory. Enabling VBS allows for Hypervisor-Enforced Code Integrity (HVCI), Device Guard and Credential Guard. <br> <br>Further information can be found @ https://docs.microsoft.com/en-us/windows-hardware/design/device-experiences/oem-vbs<br> <br>https://www.tenaka.net/deviceguard-vs-rce and https://www.tenaka.net/pass-the-hash <br>"
 
-    $descripSecOptions = "Prevent credential relay with Impacket and Man in the Middle by Digitally Signing for SMB and LDAP connections enforcement. Further information can be found @ https://www.tenaka.net/smb-relay-attack"
+    $descripSecOptions = "Prevent credential relay with Impacket and Man in the Middle by Digitally Signing for SMB and LDAP connections enforcement. <br> <br>Further information can be found @ https://www.tenaka.net/smb-relay-attack<br>"
 
-    $descripLSA = "Enabling RunAsPPL for LSA Protection allows only digitally signed binaries to load as a protected process preventing credential theft and access by code injection and memory access by processes that aren’t signed. Further information can be found @ https://docs.microsoft.com/en-us/windows-server/security/credentials-protection-and-management/configuring-additional-lsa-protection"
+    $descripLSA = "Enabling RunAsPPL for LSA Protection allows only digitally signed binaries to load as a protected process preventing credential theft and access by code injection and memory access by processes that aren’t signed. <br> <br>Further information can be found @ https://docs.microsoft.com/en-us/windows-server/security/credentials-protection-and-management/configuring-additional-lsa-protection<br>"
 
-    $descripDLL = "Loading DLL's default behaviour is to call the dll from the current working directory of the application, then the directories listed in the environmental variable. Setting ‘DLL Safe Search’ mitigates the risk by moving CWD to later in the search order. Further information can be found @ https://docs.microsoft.com/en-us/windows/win32/dlls/dynamic-link-library-search-order"
+    $descripDLL = "Loading DLL's default behaviour is to call the dll from the current working directory of the application, then the directories listed in the environmental variable. Setting ‘DLL Safe Search’ mitigates the risk by moving CWD to later in the search order. <br> <br>Further information can be found @ https://docs.microsoft.com/en-us/windows/win32/dlls/dynamic-link-library-search-order<br>"
 
-    $descripHyper = "Hypervisor Enforced Code Integrity prevents the loading of unsigned kernel-mode drivers and system binaries from being loaded into system memory. Further information can be found @  https://docs.microsoft.com/en-us/windows/security/threat-protection/device-guard/enable-virtualization-based-protection-of-code-integrity"
+    $descripHyper = "Hypervisor Enforced Code Integrity prevents the loading of unsigned kernel-mode drivers and system binaries from being loaded into system memory. <br> <br>Further information can be found @ https://docs.microsoft.com/en-us/windows/security/threat-protection/device-guard/enable-virtualization-based-protection-of-code-integrity<br>"
 
     $descripElev = "Auto Elevate User is a setting that elevates users allowing them to install software without being an administrator. "
 
@@ -2818,23 +2946,23 @@ $style = @"
 
     $descripAutoLogon = "MECM\SCCM\MDT could leave Autologon credentials including a clear text password in the Registry."
 
-    $descripUnquoted = "The Unquoted paths vulnerability is when a Windows Service's 'Path to Executable' contains spaces and not wrapped in double-quotes providing a route to System. Further information can be found @ https://www.tenaka.net/unquotedpaths"
+    $descripUnquoted = "The Unquoted paths vulnerability is when a Windows Service's 'Path to Executable' contains spaces and not wrapped in double-quotes providing a route to System. <br> <br>Further information can be found @ https://www.tenaka.net/unquotedpaths<br>"
 
     $descripProcPw = "Processes that contain credentials to authenticate and access applications. Launching Task Manager, Details and add ‘Command line’ to the view."
 
-    $descripLegacyNet = "LLMNR and other legacy network protocols can be used to steal password hashes. Further information can be found @https://www.tenaka.net/responder"
+    $descripLegacyNet = "LLMNR and other legacy network protocols can be used to steal password hashes. <br> <br>Further information can be found @https://www.tenaka.net/responder<br>"
 
-    $descripRegPer ="Weak Registry permissions allowing users to change the path to launch malicious software @ https://www.tenaka.net/unquotedpaths"
+    $descripRegPer ="Weak Registry permissions allowing users to change the path to launch malicious software.<br> <br>Further information can be found @ https://www.tenaka.net/unquotedpaths"
 
-    $descripSysFold = "Default System Folders that allow a User the Write permissions. These can be abused by creating content in some of the allowable default locations. Prevent by applying Execution controls eg Applocker Further information can be found @ https://www.tenaka.net/unquotedpaths"
+    $descripSysFold = "Default System Folders that allow a User the Write permissions. These can be abused by creating content in some of the allowable default locations. Prevent by applying Execution controls eg Applocker.<br> <br> Further information can be found @ https://www.tenaka.net/unquotedpaths<br>"
 
-    $descripCreateSysFold = "Default System Folders that allows a User the CreateFile permissions. These can be abused by creating content in some of the allowable default locations. Prevent by applying Execution controls eg Applocker Further information can be found @ https://www.tenaka.net/unquotedpaths"
+    $descripCreateSysFold = "Default System Folders that allows a User the CreateFile permissions. These can be abused by creating content in some of the allowable default locations. Prevent by applying Execution controls eg Applocker.<br> <br>Further information can be found @ https://www.tenaka.net/unquotedpaths<br>"
 
-    $descripNonFold = "A vulnerability exists when enterprise software has been installed on the root of C:\. The default permissions allow a user to replace approved software binaries with malicious binaries. Further information can be found @ https://www.tenaka.net/unquotedpaths"
+    $descripNonFold = "A vulnerability exists when enterprise software has been installed on the root of C:\. The default permissions allow a user to replace approved software binaries with malicious binaries. <br> <br>Further information can be found @ https://www.tenaka.net/unquotedpaths<br>"
 
-    $descripFile = "System files that allow users to write can be swapped out for malicious software binaries. Further information can be found @ https://www.tenaka.net/unquotedpaths"
+    $descripFile = "System files that allow users to write can be swapped out for malicious software binaries. <br> <br>Further  information can be found @ https://www.tenaka.net/unquotedpaths<br>"
 
-    $descripFirewalls = "Firewalls should always block inbound and exceptions should be to a named IP and Port. Further information can be found @ https://www.tenaka.net/whyhbfirewallsneeded" 
+    $descripFirewalls = "Firewalls should always block inbound and exceptions should be to a named IP and Port.<br> <br>Further  information can be found @ https://www.tenaka.net/whyhbfirewallsneeded<br>" 
 
     $descripTaskSchPerms = "Checks for Scheduled Tasks excluding any that reference System32 as a directory. These potential user-created tasks are checked for scripts and their directory permissions are validated. No user should be allowed to access the script and make amendments, this is a privilege escalation route." 
 
@@ -2846,9 +2974,11 @@ $style = @"
 
     $descriptDLLHijack = "DLL Hijacking is when a malicious dll replaces a legitimate dll due to a path vulnerability. A program or service makes a call on that dll gaining the privileges of that program or service. Additionally missing dll’s presents a risk where a malicious dll is dropped into a path where no current dll exists but the program or service is making a call to that non-existent dll. This audit is reliant on programs being launched so that DLL’s are loaded. Each process’s loaded dll’s are checked for permissions issues and whether they are signed. The DLL hijacking audit does not currently check for missing dll’s being called. Process Monitor filtered for ‘NAME NOT FOUND’ and path ends with ‘DLL’ will."
 
-    $descripCredGu = "Credential Guard securely isolating the LSA process preventing the recovery of domain hashes from memory. Credential Guard only works for Domain joined clients and servers. Further information can be found @ https://www.tenaka.net/pass-the-hash"
+    $descripCredGu = "Credential Guard securely isolating the LSA process preventing the recovery of domain hashes from memory. Credential Guard only works for Domain joined clients and servers.<br> <br>Further information can be found @ https://www.tenaka.net/pass-the-hash<br>"
 
-    $descripLAPS = "Local Administrator Password Solution (LAPS) is a small program with some GPO settings that randomly sets the local administrator password for clients and servers across the estate. Only Domain Admins by default permission to view the local administrator password via DSA.MSC Access to the LAPS passwords may be delegated unintentionally. This could lead to a serious security breach, leaking all local admin accounts passwords for all computer objects to those that shouldn't have access. Installation guide can be found @ https://www.tenaka.net/post/local-admin-passwords. Security related issue details can be found @ https://www.tenaka.net/post/laps-leaks-local-admin-passwords"
+    $descripLAPS = "Local Administrator Password Solution (LAPS0) is a small program with some GPO settings that randomly sets the local administrator password for clients and servers across the estate. Only Domain Admins by default permission to view the local administrator password via DSA.MSC Access to the LAPS passwords may be delegated unintentionally. This could lead to a serious security breach, leaking all local admin accounts passwords for all computer objects to those that shouldn't have access. <br> <br>Installation guide can be found @ https://www.tenaka.net/post/local-admin-passwords. <br> <br>Security related issue details can be found @ https://www.tenaka.net/post/laps-leaks-local-admin-passwords<br>"
+
+    $descripURA = "User Rights Assignments (URA) control what tasks a user can perform on the local client, server or Domain Controller. For example the ‘Log on as a service’ (SeServiceLogonRight) provides the rights for a service account to Logon as a Service, not Interactively. <br> <br> Access to URA can be abused and attack the system. <br> <br>Both SeImpersonatePrivilege and SeAssignPrimaryTokenPrivilege are commonly used by service accounts and vulnerable to escalation of privilege via Juicy Potato exploits.<br> <br>Further details can be found @ https://docs.microsoft.com/en-us/windows/security/threat-protection/security-policy-settings/user-rights-assignment<br> <br>Access this computer from the network (SeNetworkLogonRight) allows pass-the-hash when Local Admins share the same password, remove all the default groups and apply named groups, separating client from servers."
 
 ################################################
 ################  FRAGMENTS  ###################
@@ -2904,11 +3034,14 @@ $style = @"
    
     $frag_LapsPwEna = $fragLapsPwEna | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:$titleCol'>LAPS - Local Administrator Password Solution</span></h2>" -PostContent "<h4>$descripLAPS</h4>" | Out-String
   
+    $frag_URA = $fragURA | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:$titleCol'>URA - User Rights Assignments</span></h2>" -PostContent "<h4>$descripURA</h4>" | Out-String
+  
 
 ################################################
 ############  CREATE HTML REPORT  ##############
 ################################################
-
+if ($folders -eq "y")
+{
     ConvertTo-Html -Head $style -Body "<h1 align=center style='text-align:center'><span style='color:$titleCol;'>TENAKA.NET</span><h1>", 
     $fragDescrip1, 
     $fraghost, 
@@ -2916,6 +3049,7 @@ $style = @"
     $FragAccountDetails,
     $FragGroupDetails,
     $FragPassPol,
+    $frag_URA,
     $fragInstaApps,
     $fragHotFix,
     $fragInstaApps16,
@@ -2951,7 +3085,47 @@ $style = @"
     $frag_FWProf,
     $frag_FW,
     $FragDescripFin  | out-file $Report
-
+}
+else
+{
+    ConvertTo-Html -Head $style -Body "<h1 align=center style='text-align:center'><span style='color:$titleCol;'>TENAKA.NET</span><h1>", 
+    $fragDescrip1, 
+    $fraghost, 
+    $fragOS, 
+    $FragAccountDetails,
+    $FragGroupDetails,
+    $FragPassPol,
+    $frag_URA,
+    $fragInstaApps,
+    $fragHotFix,
+    $fragInstaApps16,
+    $fragbios, 
+    $fragcpu, 
+    $frag_BitLocker, 
+    $frag_Msinfo,
+    $Frag_descripVirt2,
+    $frag_DriverQuery,
+    $frag_Code,
+    $frag_SecOptions,
+    $frag_LSAPPL,
+    $frag_CredGuCFG,
+    $frag_LapsPwEna,
+    $frag_DLLSafe,
+    $frag_DLLHijack,
+    $frag_PCElevate,
+    $frag_FilePass,
+    $frag_AutoLogon,
+    $frag_UnQu, 
+    $frag_TaskPerms,
+    $frag_TaskListings,
+    $frag_PSPass,
+    $frag_LegNIC,
+    $frag_Share,
+    $frag_AuthCodeSig,
+    $frag_FWProf,
+    $frag_FW,
+    $FragDescripFin  | out-file $Report
+}
     $repDate = (date).Date.ToString("yy-MM-dd:hh:mm").Replace(":","_")
 
     Get-Content $Report | 
@@ -2990,6 +3164,9 @@ look for %COMSPEC%
 Check for impersonation - aimed at servers
 snmp
 powershell history, stored creds 
+USers in the domain that dont pre-authenticate
+
+data streams dir /r
 
 
 Stuff that wont get fixed.....
