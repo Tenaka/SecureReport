@@ -463,6 +463,7 @@ sleep 5
         "Bypass traverse checking" = "SeChangeNotifyPrivilege", "Bypass traverse checking"
         "Change the system time" = "SeSystemtimePrivilege", "Change the system time"
         "Create a pagefile" = "SeCreatePagefilePrivilege", "Create a pagefile"
+        "Debug programs" = "SeDebugPrivilege", "Debug programs"
         "Force shutdown from a remote system" = "SeRemoteShutdownPrivilege", "Force shutdown from a remote system"
         "Generate security audits" = "SeAuditPrivilege", "Generate security audits" 
         "Adjust memory quotas for a process" = "SeIncreaseQuotaPrivilege", "Adjust memory quotas for a process"
