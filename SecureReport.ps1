@@ -93,6 +93,13 @@ C:\Windows\system32\icsxml\ipcfg.xml
 C:\Windows\system32\icsxml\pppcfg.xml
 C:\Windows\system32\slmgr\0409\slmgr.ini
 C:\Windows\system32\winrm\0409\winrm.ini
+
+#Passwords in the Registry
+Searches HKLM and HKCU for the words 'password' and 'passwd', then displays the password value in the report. 
+The search will work with VNC encrypted passwords stored in the registry, from Kali run the following command to decrypt
+
+echo -n PasswordHere | xxd -r -p | openssl enc -des-cbc --nopad --nosalt -K e84ad660c4721ae0 -iv 0000000000000000 -d | hexdump -Cv
+
 ​
 #Password embedded in Processes
 Processes that contain credentials to authenticate and access applications. Launching Task Manager, Details and add ‘Command line’ to the view.
@@ -254,8 +261,12 @@ YYMMDD
            $fragcreateSysFold   $frag_CreateSysFold   
            $fragDllNotSigned    $frag_DllNotSigned    
            $fragAuthCodeSig     $frag_AuthCodeSig  
-220712.3 - Added Grey Theme           
-              
+220712.3 - Added Grey Theme  
+220713.1 - Added warning for Powershell verison 4 - Win8\2012\2012 R2 - The Get-childitem -depth is not supported - generates a sea of red. Script generates report minus the file,folder,reg audit data.         
+220715.1 - Fixed issue with URA, Debug was missed off the list.  
+220716.1 - Updated Reg Search from -notlike to match   
+220718.1 - Added Filter to remove null content so its not displayed in the final report
+220718.2 - Added Passwords embedded in the Registry         
 #>
 
 #Remove any DVD from client
@@ -292,6 +303,14 @@ else
 
 function reports
 {
+    $psver4 = $psversiontable.PSVersion 
+    if ($psver4 -le "4.0")
+    {
+    write-host " " 
+    Write-Host "PowerShell version 4 is installed (Windows8.1\Server 2012 R2), the Get-ChildItem -Depth is not supported, don't waste your time selecting audit Files, Folders and Registry for permissions issues" -ForegroundColor Red
+    write-host " "
+    }
+
     #Start Message
     Write-Host " "
     Write-Host "The report requires at least 30 minutes to run, depending on hardware and amount of data on the system, it could take much longer"  -ForegroundColor Yellow
@@ -302,9 +321,13 @@ function reports
     Write-Host " "
     Write-Host "READ ME - To audit for Dll Hijacking vulnerabilities applications and services must be active, launch programs before continuing." -ForegroundColor Yellow
     Write-Host " "
+
     $Scheme = Read-Host "Type either Tenaka, Dark, Grey or Light for choice of colour schemes" 
+
     $folders = Read-Host "Long running audit - Do you want to audit Files, Folders and Registry for permissions issues....type `"Y`" to audit, any other key for no"
+
     if ($folders -eq "Y") {$depth = Read-Host "What depth do you wish the folders to be auditied, the higher the number the slower the audit, recommended is 2"}
+
     $authenticode = Read-Host "Long running audit - Do you want to check that digitally signed files are valid with a trusted hash....type `"Y`" to audit, any other key for no"
 
 ################################################
@@ -1871,7 +1894,7 @@ sleep 7
     {
         #Get a list of key names and make a variable
         cd hklm:
-        $SvcPath = Get-childItem $key -Recurse -Depth 1 -ErrorAction SilentlyContinue | where {$_.Name -notlike "HKEY_LOCAL_MACHINE\SOFTWARE\Classes\*"}
+        $SvcPath = Get-childItem $key -Recurse -Depth 1 -ErrorAction SilentlyContinue | where {$_.Name -notmatch "Classes"}
         #Update HKEY_Local.... to HKLM:
         $RegList = $SvcPath.name.replace("HKEY_LOCAL_MACHINE","HKLM:")
     
@@ -2431,6 +2454,62 @@ sleep 7
 Write-Host " "
 Write-Host "Finished Searching for Embedded Password in Files" -foregroundColor Green
 
+
+################################################
+#####  SEARCHING FOR REGISTRY PASSWORDS   ######
+################################################
+Write-Host " "
+Write-Host "Auditing Registry Passwords" -foregroundColor Green
+sleep 5
+
+    $VulnReport = "C:\SecureReport"
+    $OutFunc = "RegPasswords" 
+                
+    $tpSec10 = Test-Path "C:\SecureReport\output\$OutFunc\"
+    
+    if ($tpSec10 -eq $false)
+    {
+        New-Item -Path "C:\SecureReport\output\$OutFunc\" -ItemType Directory -Force
+    }
+
+    $secEditPath = "C:\SecureReport\output\$OutFunc\" + "$OutFunc.txt"
+
+    #Enter list of words to search
+    $regSearchWords = "password", "passwd"
+
+    foreach ($regSearchItems in $regSearchWords){
+        #swap to native tool, Powershell is too slow
+        reg query HKLM\SOFTWARE /f $regSearchItems /t REG_SZ /s >> $secEditPath
+        reg query HKCU\SOFTWARE /f $regSearchItems /t REG_SZ /s >> $secEditPath
+}
+
+$getRegPassCon = (get-content $secEditPath | where {$_ -notmatch "classes" -and $_ -notmatch "ClickToRun" -and $_ -notmatch "microsoft" -and $_ -notmatch "default"} | Select-String -Pattern "hkey_")
+$fragRegPasswords=@()
+foreach ($getRegPassItem in $getRegPassCon)
+{
+    foreach ($regSearchItems in $regSearchWords)
+    {
+        $regPassValue = get-itemproperty $getRegPassItem | where {$_ -like "*$regSearchItems*"}
+        
+        if ($regPassValue -ne $null){
+            #$regPassValue | write-host -ForegroundColor yellow
+            $regPassPath = $regPassValue.PSPath.Replace("Microsoft.PowerShell.Core\Registry::","") 
+        
+            $regPassword = $regPassValue.$regSearchItems
+         
+            $newObjRegPasswords = New-Object -TypeName PSObject
+            Add-Member -InputObject $newObjRegPasswords -Type NoteProperty -Name RegistryPath -Value $regPassPath
+            Add-Member -InputObject $newObjRegPasswords -Type NoteProperty -Name RegistryValue -Value $regSearchItems
+            Add-Member -InputObject $newObjRegPasswords -Type NoteProperty -Name RegistryPassword -Value $regPassword 
+            $fragRegPasswords += $newObjRegPasswords
+        }
+    }
+}
+
+
+Write-Host " "
+Write-Host "Finished Searching for Embedded Password in the Registry" -foregroundColor Green
+
 ################################################
 ###############  DLL HIJACKING  ################
 ################################################
@@ -2523,7 +2602,7 @@ $titleCol = "#4682B4"
 #HTML GENERATOR CSS
 $style = @"
     <Style>
-    body
+    body|aq
     {
         background-color:#250F00; 
         color:#B87333;
@@ -3080,7 +3159,10 @@ $style = @"
 
     $descripLAPS = "Local Administrator Password Solution (LAPS0) is a small program with some GPO settings that randomly sets the local administrator password for clients and servers across the estate. Only Domain Admins by default permission to view the local administrator password via DSA.MSC Access to the LAPS passwords may be delegated unintentionally. This could lead to a serious security breach, leaking all local admin accounts passwords for all computer objects to those that shouldn't have access. <br> <br>Installation guide can be found @ https://www.tenaka.net/post/local-admin-passwords. <br> <br>Security related issue details can be found @ https://www.tenaka.net/post/laps-leaks-local-admin-passwords<br>"
 
-    $descripURA = "User Rights Assignments (URA) control what tasks a user can perform on the local client, server or Domain Controller. For example the ‘Log on as a service’ (SeServiceLogonRight) provides the rights for a service account to Logon as a Service, not Interactively. <br> <br> Access to URA can be abused and attack the system. <br> <br>Both SeImpersonatePrivilege and SeAssignPrimaryTokenPrivilege are commonly used by service accounts and vulnerable to escalation of privilege via Juicy Potato exploits.<br> <br>Further details can be found @ https://docs.microsoft.com/en-us/windows/security/threat-protection/security-policy-settings/user-rights-assignment<br> <br>Access this computer from the network (SeNetworkLogonRight) allows pass-the-hash when Local Admins share the same password, remove all the default groups and apply named groups, separating client from servers."
+    $descripURA = "User Rights Assignments (URA) control what tasks a user can perform on the local client, server or Domain Controller. For example the ‘Log on as a service’ (SeServiceLogonRight) provides the rights for a service account to Logon as a Service, not Interactively. <br> <br> Access to URA can be abused and attack the system. <br> <br>Both SeImpersonatePrivilege (Impersonate a client after authentication) and SeAssignPrimaryTokenPrivilege (Replace a process level token) are commonly used by service accounts and vulnerable to escalation of privilege via Juicy Potato exploits.<br> <br>SeBackupPrivilege (Back up files and directories), read access to all files including SAM Database, Registry and NTDS.dit (AD Database). <br> <br>SeRestorePrivilege (Restore files and directories), Write access to all files. <br> <br>SeDebugPrivilege (Debug programs), allows the ability to dump and inject into process memory inc kernel. Passwords are stored in memory in the clear and can be dumped and easily extracted. <br> <br>SeTakeOwnershipPrivilege (Take ownership of files or other objects), take ownership of file regardless of access.<br> <br>SeNetworkLogonRight (Access this computer from the network) allows pass-the-hash when Local Admins share the same password, remove all the default groups and apply named groups, separating client from servers.<br> <br>Further details can be found @ https://docs.microsoft.com/en-us/windows/security/threat-protection/security-policy-settings/user-rights-assignment<br> "
+
+    $descripRegPasswords = "Searches HKLM and HKCU for the words 'password' and 'passwd', then displays the password value in the report.<br><br>The search will work with VNC encrypted passwords stored in the registry, from Kali run the following command<br> <br>echo -n PasswordHere | xxd -r -p | openssl enc -des-cbc --nopad --nosalt -K e84ad660c4721ae0 -iv 0000000000000000 -d | hexdump -Cv<br>"
+
 
 ################################################
 ################  FRAGMENTS  ###################
@@ -3106,15 +3188,15 @@ $style = @"
 
     #Security Review
     $frag_BitLocker = $fragBitLocker | ConvertTo-Html -As List -fragment -PreContent "<h2><span style='color:$titleCol'>Bitlocker and TPM Details</span></h2>" -PostContent "<h4>$descripBitlocker</h4>" | Out-String
-    $frag_Msinfo =  $MsinfoClixml | ConvertTo-Html -As Table -fragment -PreContent "<h2><span style='color:$titleCol'>Virtualization and Secure Boot Details</span></h2>" -PostContent "<h4>$descripVirt</h4>"  | Out-String
+    $frag_Msinfo = $MsinfoClixml | ConvertTo-Html -As Table -fragment -PreContent "<h2><span style='color:$titleCol'>Virtualization and Secure Boot Details</span></h2>" -PostContent "<h4>$descripVirt</h4>"  | Out-String
     $frag_LSAPPL = $fragLSAPPL | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:$titleCol'>LSA Protection for Stored Credentials</span></h2>" -PostContent "<h4>$descripLSA</h4>" | Out-String
-    $frag_DLLSafe  =  $fragDLLSafe | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:$titleCol'>DLL Safe Search Order</span></h2>"  -PostContent "<h4>$descripDLL</h4>"| Out-String
+    $frag_DLLSafe = $fragDLLSafe | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:$titleCol'>DLL Safe Search Order</span></h2>"  -PostContent "<h4>$descripDLL</h4>"| Out-String
     $frag_DLLHijack = $fragDLLHijack | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:$titleCol'>Loaded DLL's that are vulnerable to DLL Hijacking</span></h2>" | Out-String
     $frag_DllNotSigned = $fragDllNotSigned | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:$titleCol'>All DLL's that aren't signed and user permissions allow write</span></h2>"  -PostContent "<h4>$descriptDLLHijack</h4>"| Out-String
-    $frag_Code  =  $fragCode   | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:$titleCol'>Hypervisor Enforced Code Integrity</span></h2>" -PostContent "<h4>$descripHyper</h4>" | Out-String
-    $frag_PCElevate  =  $fragPCElevate | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:$titleCol'>Automatically Elevates User Installing Software</span></h2>"  -PostContent "<h4>$descripElev</h4>"| Out-String
-    $frag_FilePass  =  $fragFilePass | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:$titleCol'>Files that Contain the Word PASSWORD</span></h2>" -PostContent "<h4>$descripFilePw</h4>" | Out-String
-    $frag_AutoLogon  =  $fragAutoLogon   | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:$titleCol'>AutoLogon Credentials in Registry</span></h2>"  -PostContent "<h4>$descripAutoLogon</h4>"| Out-String
+    $frag_Code = $fragCode | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:$titleCol'>Hypervisor Enforced Code Integrity</span></h2>" -PostContent "<h4>$descripHyper</h4>" | Out-String
+    $frag_PCElevate = $fragPCElevate | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:$titleCol'>Automatically Elevates User Installing Software</span></h2>"  -PostContent "<h4>$descripElev</h4>"| Out-String
+    $frag_FilePass = $fragFilePass | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:$titleCol'>Files that Contain the Word PASSWORD</span></h2>" -PostContent "<h4>$descripFilePw</h4>" | Out-String
+    $frag_AutoLogon = $fragAutoLogon   | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:$titleCol'>AutoLogon Credentials in Registry</span></h2>"  -PostContent "<h4>$descripAutoLogon</h4>"| Out-String
     $frag_UnQu = $fragUnQuoted | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:$titleCol'>Vectors that Allow UnQuoted Paths Attack</span></h2>" -PostContent "<h4>$DescripUnquoted</h4>" | Out-String
     $frag_LegNIC = $fragLegNIC | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:$titleCol'>Legacy and Vulnerable Network Protocols</span></h2>" -PostContent "<h4>$DescripLegacyNet</h4>" | Out-String
     $frag_SysRegPerms = $fragReg | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:$titleCol'>Registry Permissions Allowing User Access - Security Risk if Exist</span></h2>" -PostContent "<h4>$descripRegPer</h4>" | Out-String
@@ -3123,21 +3205,42 @@ $style = @"
     $frag_wFolders = $fragwFold | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:$titleCol'>Non System Folders that are Writeable - Security Risk when Executable</span></h2>" -PostContent "<h4>$descripNonFold</h4>"| Out-String
     $frag_SysFolders = $fragsysFold | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:$titleCol'>Default System Folders that are Writeable - Security Risk if Exist</span></h2>"  -PostContent "<h4>$descripSysFold</h4>"| Out-String
     $frag_CreateSysFold = $fragCreateSysFold | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:$titleCol'>Default System Folders that Permit Users to Create Files - Security Risk if Exist</span></h2>"  -PostContent "<h4>$descripCreateSysFold</h4>"| Out-String
-    $frag_wFile =  $fragwFile | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:$titleCol'>System Files that are Writeable - Security Risk if Exist</span></h2>" -PostContent "<h4>$descripFile</h4>" | Out-String
-    $frag_FWProf =   $fragFWProfile | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:$titleCol'>Firewall Profile</span></h2>"  -PostContent "<h4>$DescripFirewalls</h4>"| Out-String
-    $frag_FW =  $fragFW | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:$titleCol'>Enabled Firewall Rules</span></h2>" | Out-String
+    $frag_wFile = $fragwFile | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:$titleCol'>System Files that are Writeable - Security Risk if Exist</span></h2>" -PostContent "<h4>$descripFile</h4>" | Out-String
+    $frag_FWProf = $fragFWProfile | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:$titleCol'>Firewall Profile</span></h2>"  -PostContent "<h4>$DescripFirewalls</h4>"| Out-String
+    $frag_FW = $fragFW | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:$titleCol'>Enabled Firewall Rules</span></h2>" | Out-String
     $frag_TaskPerms =  $SchedTaskPerms | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:$titleCol'>Scheduled Tasks that call on Files on Storage</span></h2>"  -PostContent "<h4>$descripTaskSchPerms</h4>" | Out-String
-    $frag_TaskListings =  $SchedTaskListings | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:$titleCol'>Scheduled Tasks that Contain something Encoded</span></h2>"  -PostContent "<h4>$descripTaskSchEncode</h4>" | Out-String
-    $frag_DriverQuery =  $DriverQuery | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:$titleCol'>Drivers that aren't Signed</span></h2>" -PostContent "<h4>$descriptDriverQuery</h4>" | Out-String
+    $frag_TaskListings = $SchedTaskListings | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:$titleCol'>Scheduled Tasks that Contain something Encoded</span></h2>"  -PostContent "<h4>$descripTaskSchEncode</h4>" | Out-String
+    $frag_DriverQuery = $DriverQuery | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:$titleCol'>Drivers that aren't Signed</span></h2>" -PostContent "<h4>$descriptDriverQuery</h4>" | Out-String
     $frag_Share = $fragShare | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:$titleCol'>Shares and their Share Permissions</span></h2>"  | Out-String
     $frag_AuthCodeSig = $fragAuthCodeSig | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:$titleCol'>Files with an Authenticode Signature HashMisMatch</span></h2>" -PostContent "<h4>$descriptAuthCodeSig</h4>"  | Out-String  
-    
     $frag_CredGuCFG = $fragCredGuCFG | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:$titleCol'>Credential Guard</span></h2>" -PostContent "<h4>$descripCredGu</h4>" | Out-String
-   
     $frag_LapsPwEna = $fragLapsPwEna | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:$titleCol'>LAPS - Local Administrator Password Solution</span></h2>" -PostContent "<h4>$descripLAPS</h4>" | Out-String
-  
     $frag_URA = $fragURA | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:$titleCol'>URA - User Rights Assignments</span></h2>" -PostContent "<h4>$descripURA</h4>" | Out-String
   
+    $frag_RegPasswords = $fragRegPasswords | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:$titleCol'>Passwords enmbedded in the Registry</span></h2>" -PostContent "<h4>$descripRegPasswords</h4>" | Out-String
+
+    #Quick and dirty tidy up and removal of Frags that are $null
+    if ($fragAuthCodeSig -eq $null){$frag_AuthCodeSig = ""}
+    if ($fragDLLSafe -eq $null){$frag_DLLSafe = ""}
+    if ($fragDLLHijack -eq $null){$fragD_LLHijack = ""}
+    if ($fragDllNotSigned -eq $null){$fragD_llNotSigned = ""}
+    if ($fragPCElevate-eq $null){$frag_PCElevate= ""}
+    if ($fragFilePass-eq $null){$frag_FilePass = ""}
+    if ($fragAutoLogon -eq $null){$frag_AutoLogon = ""}
+    if ($fragUnQuoted -eq $null){$frag_UnQu = ""}
+    if ($fragReg -eq $null){$frag_SysRegPerms = ""}
+    if ($fragwFold -eq $null){$frag_SysFolders = ""}
+    if ($fragwFile -eq $null){$frag_wFile = ""}
+    if ($fragFWProfile -eq $null){$frag_FWProf = ""}
+    if ($DriverQuery -eq $null){$frag_DriverQuery = ""}
+    if ($fragLapsPwEna -eq $null){$frag_LapsPwEna = ""}
+    if ($SchedTaskPerms -eq $null){$frag_TaskPerms = ""}
+    if ($SchedTaskListings -eq $null){$frag_TaskListings = ""}
+    if ($InstallApps16  -eq $null){$fragInstaApps16 = ""}
+    if ($fragPSPass -eq $null){$frag_PSPass = ""}
+    if ($fragRegPasswords -eq $null){$frag_RegPasswords = ""}
+    if ($DriverQuery -eq $null){$frag_DriverQuery = ""}
+    if ($SchedTaskPerms-eq $null){$frag_TaskPerms= ""}
 
 ################################################
 ############  CREATE HTML REPORT  ##############
@@ -3171,6 +3274,7 @@ if ($folders -eq "y")
     $frag_DllNotSigned,
     $frag_PCElevate,
     $frag_FilePass,
+    $frag_RegPasswords,
     $frag_AutoLogon,
     $frag_UnQu, 
     $frag_TaskPerms,
@@ -3216,6 +3320,7 @@ else
     $frag_DLLHijack,
     $frag_PCElevate,
     $frag_FilePass,
+    $frag_RegPasswords,
     $frag_AutoLogon,
     $frag_UnQu, 
     $frag_TaskPerms,
@@ -3233,7 +3338,7 @@ else
     Get-Content $Report | 
     foreach {$_ -replace "<tr><th>*</th></tr>",""} | 
     foreach {$_ -replace "<tr><td> </td></tr>",""} |
-    foreach {$_ -replace "<td>Warning","<td><font color=#FF4040>Warning"} | 
+    foreach {$_ -replace "<td>Warning","<td><font color=#ff9933>Warning"} | 
     foreach {$_ -replace "Warning</td>","<font></td>"} | Set-Content "C:\SecureReport\FinishedReport.htm" -Force
    
     }
@@ -3248,6 +3353,7 @@ Null message warning that security is missing
 set warning for secure boot
 Expand on explanations - currently of use to non-techies
 add filter to report only displaying when items are reported on.
+validation for number of folders to check
 
 remove extra blanks when listing progs via registry 
 
@@ -3270,6 +3376,7 @@ USers in the domain that dont pre-authenticate
 
 data streams dir /r
 
+remove powershell commands where performance is an issue, consider replacing with cmd alts
 
 Stuff that wont get fixed.....
 Progress bars or screen output will remain limited, each time an output is written to screen the performance degrads
