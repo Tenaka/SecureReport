@@ -266,7 +266,13 @@ YYMMDD
 220715.1 - Fixed issue with URA, Debug was missed off the list.  
 220716.1 - Updated Reg Search from -notlike to match   
 220718.1 - Added Filter to remove null content so its not displayed in the final report
-220718.2 - Added Passwords embedded in the Registry         
+220718.2 - Added Passwords embedded in the Registry  
+220719.1 - Added ASR    
+220719.2 - Added WDigest   
+220720.1 - Added whoami groups 
+220720.2 - Added whoami privs
+220720.3 - Fixed issue with Host Details
+
 #>
 
 #Remove any DVD from client
@@ -387,7 +393,7 @@ Write-Host "Gathering Host and Account Details" -foregroundColor Green
 sleep 5
 
     #OS Details
-    $hn = Get-CimInstance -ClassName win32_computersystem 
+    $fragHost = Get-CimInstance -ClassName win32_computersystem 
     $OS = Get-CimInstance -ClassName win32_operatingsystem 
     $bios = Get-CimInstance -ClassName win32_bios
     $cpu = Get-CimInstance -ClassName win32_processor
@@ -788,7 +794,29 @@ sleep 5
     #Add-Member -InputObject $newObjLSA -Type NoteProperty -Name LSAComment -Value $lsaCom
     $fragLSAPPL += $newObjLSA
  
- 
+    #WDigest
+    $getWDigest = Get-Item 'HKLM:\SYSTEM\CurrentControlSet\Control\SecurityProviders\WDigest\' -ErrorAction SilentlyContinue
+    $getWDigestULC =  $getWDigest.GetValue("UseLogonCredential")
+    $fragWDigestULC =@()
+
+    if ($getWDigestULC -eq "1")
+    {
+        $WDigestSet = "Warning - WDigest is enabled and plain text passwords are stored in LSASS Warning" 
+        $WDigestReg = "HKLM:\SYSTEM\CurrentControlSet\Control\SecurityProviders\WDigest\"
+
+    }
+    else
+    {
+        $WDigestSet = "Secure WDigest is disabled" 
+        $WDigestReg = "HKLM:\SYSTEM\CurrentControlSet\Control\SecurityProviders\WDigest\"
+    }
+
+    $newObjWDigest = New-Object -TypeName PSObject
+    Add-Member -InputObject $newObjWDigest -Type NoteProperty -Name WDigestSetting -Value  $WDigestSet
+    Add-Member -InputObject $newObjWDigest -Type NoteProperty -Name WDigestRegValue -Value $WDigestReg 
+    $fragWDigestULC += $newObjWDigest
+
+
     #Credential Guard
     $getCredGu = Get-Item 'HKLM:\SYSTEM\CurrentControlSet\Control\LSA\' -ErrorAction SilentlyContinue
     $getCredGuCFG =  $getCredGu.GetValue("LsaCfgFlags")
@@ -862,7 +890,6 @@ sleep 5
         #Add-Member -InputObject $newObjLapsPw -Type NoteProperty -Name LapsPwComment -Value $LapsPwCom
         $fragLapsPwEna += $newObjLapsPw
     }
-
 
         
     #DLL Safe Search
@@ -2478,7 +2505,7 @@ sleep 5
     $regSearchWords = "password", "passwd"
 
     foreach ($regSearchItems in $regSearchWords){
-        #swap to native tool, Powershell is too slow
+        #swapped to native tool, Powershell is too slow
         reg query HKLM\SOFTWARE /f $regSearchItems /t REG_SZ /s >> $secEditPath
         reg query HKCU\SOFTWARE /f $regSearchItems /t REG_SZ /s >> $secEditPath
 }
@@ -2524,7 +2551,6 @@ $fragDLLHijack=@()
 foreach ($dll in $getDll)
 {
     $procName = $dll.Name
-    #Write-Host $procName -ForegroundColor Green
     $dllMods = $dll | Select-Object -ExpandProperty modules 
     $dllFilename = $dllMods.filename
 
@@ -2550,12 +2576,154 @@ foreach ($dll in $getDll)
                 Add-Member -InputObject $newObjDLLHijack -Type NoteProperty -Name DLLPath -Value $dllPath
                 Add-Member -InputObject $newObjDLLHijack -Type NoteProperty -Name DLLSigStatus -Value $dllStatus
                 $fragDLLHijack += $newObjDLLHijack
-                #Write-Host $dllPath -ForegroundColor Yellow
             }              
      }
 }
 
+################################################
+####################  ASR  #####################
+################################################
 
+Write-Host " "
+Write-Host "Starting ASR Audit" -foregroundColor Green
+sleep 5
+
+$VulnReport = "C:\SecureReport"
+$OutFunc = "ASR" 
+                
+$tpSec10 = Test-Path "C:\SecureReport\output\$OutFunc\"
+if ($tpSec10 -eq $false)
+{
+   New-Item -Path "C:\SecureReport\output\$OutFunc\" -ItemType Directory -Force
+}
+
+$ASRPathtxt = "C:\SecureReport\output\$OutFunc\" + "$OutFunc.txt"
+$getASRGuids = Get-ItemProperty "HKLM:\SOFTWARE\Policies\Microsoft\Windows Defender\Windows Defender Exploit Guard\ASR\Rules" -ErrorAction SilentlyContinue
+
+if ($getASRGuids -eq $null)
+    {
+    Set-Content -Path $ASRPathtxt -Value "ASP Policy is not set: 0"
+    $getASRCont = Get-Content $ASRPathtxt | Select-String -Pattern ": 1", ": 0"
+    }
+else
+    {
+    $getASRGuids | Out-File $ASRPathtxt
+    $getASRCont = Get-Content $ASRPathtxt | Select-String -Pattern ": 1", ": 0"
+    }
+
+
+#List of known ASR's
+$asrDescription = 
+"Block abuse of exploited vulnerable signed drivers - 56a863a9-875e-4185-98a7-b882c64b5ce5",
+"Block adobe Reader from creating child processes - 7674ba52-37eb-4a4f-a9a1-f0f9a1619a2c",
+"Block all Office applications from creating child processes - d4f940ab-401b-4efc-aadc-ad5f3c50688a",
+"Block credential stealing from the Windows local security authority subsystem (lsass.exe) - 9e6c4e1f-7d60-472f-ba1a-a39ef669e4b2",
+"Block executable content from email client and webmail - be9ba2d9-53ea-4cdc-84e5-9b1eeee46550",
+"Block executable files from running unless they meet a prevalence, age, or trusted list criterion - 01443614-cd74-433a-b99e-2ecdc07bfc25",
+"Block execution of potentially obfuscated scripts - 5beb7efe-fd9a-4556-801d-275e5ffc04cc",
+"Block JavaScript or VBScript from launching downloaded executable content - d3e037e1-3eb8-44c8-a917-57927947596d",
+"Block Office applications from creating executable content - 3b576869-a4ec-4529-8536-b80a7769e899",
+"Block Office applications from injecting code into other processes - 75668c1f-73b5-4cf0-bb93-3ecf5cb7cc84",
+"Block Office communication application from creating child processes - 26190899-1602-49e8-8b27-eb1d0a1ce869",
+"Block persistence through WMI event subscription * File and folder exclusions not supported. - e6db77e5-3df2-4cf1-b95a-636979351e5b",
+"Block process creations originating from PSExec and WMI commands - d1e49aac-8f56-4280-b9ba-993a6d77406c",
+"Block untrusted and unsigned processes that run from USB - b2b3f03d-6a65-4f7b-a9c7-1c7ef74a9ba4",
+"Block Win32 API calls from Office macros - 92e97fa1-2edf-4476-bdd6-9dd0b4dddc7b",
+"Block Use advanced protection against ransomware - c1db55ab-c21a-4637-bb3f-a12568109d35"
+
+
+$ASRList = 
+"9BE9BA2D9-53EA-4CDC-84E5-9B1EEEE4655",
+"D4F940AB-401B-4EFC-AADC-AD5F3C50688A",
+"3B576869-A4EC-4529-8536-B80A7769E899",
+"75668C1F-73B5-4CF0-BB93-3ECF5CB7CC84",
+"D3E037E1-3EB8-44C8-A917-57927947596D",
+"5BEB7EFE-FD9A-4556-801D-275E5FFC04CC",
+"92E97FA1-2EDF-4476-BDD6-9DD0B4DDDC7B",
+"01443614-CD74-433A-B99E-2ECDC07BFC25",
+"C1DB55AB-C21A-4637-BB3F-A12568109D35",
+"9E6C4E1F-7D60-472F-BA1A-A39EF669E4B2",
+"D1E49AAC-8F56-4280-B9BA-993A6D77406C",
+"B2B3F03D-6A65-4F7B-A9C7-1C7EF74A9BA4",
+"26190899-1602-49E8-8B27-EB1D0A1CE869",
+"7674BA52-37EB-4A4F-A9A1-F0F9A1619A2C",
+"E6DB77E5-3DF2-4CF1-B95A-636979351E5B",
+"BE9BA2D9-53EA-4CDC-84E5-9B1EEEE46550",
+"56a863a9-875e-4185-98a7-b882c64b5ce5"
+
+$fragASR=@()
+$asrGuidSetObj=@()
+
+foreach ($getASRContItems in $getASRCont)
+{
+$asrGuid = $getASRContItems.ToString().split(":").replace(" ","")[0]
+$asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
+
+    foreach ($asrGuiditem in $asrGuid)
+        {
+        $asrGuidContains = $ASRList.Contains($asrGuiditem) 
+        write-host "$asrGuiditem"
+        Write-Host $asrGuidContains-ForegroundColor Green
+        if ($asrGuidContains -eq "true")
+            {
+            $ASRGuidObj = "ASR Guid $asrGuiditem is set" 
+            }
+        else
+            {
+            $ASRGuidObj = "Warning - ASR Guid $asrGuiditem is not set  Warning" 
+            }
+        
+        if ($asrGuidSetting -eq "1")
+            {
+            $asrGuidSetObj = "ASR is set to 1"    
+            }
+        else
+            {
+            $asrGuidSetObj = "Warning - ASR is disabled Warning"
+            }
+
+           $ASRDescripObj = $asrDescription | Select-String -Pattern $asrGuid
+
+           $newObjASR = New-Object -TypeName PSObject
+           Add-Member -InputObject $newObjASR -Type NoteProperty -Name ASRGuid -Value $ASRGuidObj
+           Add-Member -InputObject $newObjASR -Type NoteProperty -Name ASRSetting -Value $asrGuidSetObj
+           Add-Member -InputObject $newObjASR -Type NoteProperty -Name ASRDescription -Value $ASRDescripObj
+           $fragASR += $newObjASR
+        }
+}
+
+################################################
+##########  DOMAIN USER DETAILS  ###############
+################################################
+#Reports on the credentials of the user running this report 
+    $VulnReport = "C:\SecureReport"
+    $OutFunc = "DomainUser"  
+
+    $tpSec10 = Test-Path "C:\SecureReport\output\$OutFunc\"
+    
+    if ($tpSec10 -eq $false)
+    {
+        New-Item -Path "C:\SecureReport\output\$OutFunc\" -ItemType Directory -Force
+    }
+    
+    $DomainUserPath = "C:\SecureReport\output\$OutFunc\"
+
+
+    #WHOAMI /User /FO CSV /NH > C:\SecureReport\output\DomainUser\User.csv
+    WHOAMI /Groups /FO CSV /NH > C:\SecureReport\output\DomainUser\Groups.csv
+    WHOAMI /Priv /FO CSV /NH > C:\SecureReport\output\DomainUser\Priv.csv
+
+    (Get-Content C:\SecureReport\output\DomainUser\Groups.csv).replace("Mandatory group,","").replace("Enabled by default,","").replace("Enabled group,","").replace("Enabled group","").replace("Group owner","").replace(',"Attributes"',"").replace(',"  "',"").replace(',""',"")  | out-file C:\SecureReport\output\DomainUser\Groups.csv     
+    (Get-Content C:\SecureReport\output\DomainUser\Priv.csv).replace("Enabled","Enabled Warning") | out-file C:\SecureReport\output\DomainUser\Priv.csv
+    
+    #import-csv C:\SecureReport\output\DomainUser\User.csv -Delimiter "," | Export-Clixml C:\SecureReport\output\DomainUser\User.xml
+    #$whoamiUser = Import-Clixml C:\SecureReport\output\DomainUser\User.xml
+
+    import-csv C:\SecureReport\output\DomainUser\groups.csv -Delimiter "," | Export-Clixml C:\SecureReport\output\DomainUser\groups.xml
+    $whoamiGroups = Import-Clixml C:\SecureReport\output\DomainUser\groups.xml
+
+    import-csv C:\SecureReport\output\DomainUser\Priv.csv -Delimiter "," | Export-Clixml C:\SecureReport\output\DomainUser\Priv.xml
+    $whoamiPriv = Import-Clixml C:\SecureReport\output\DomainUser\Priv.xml
 
  
 ################################################
@@ -3157,12 +3325,19 @@ $style = @"
 
     $descripCredGu = "Credential Guard securely isolating the LSA process preventing the recovery of domain hashes from memory. Credential Guard only works for Domain joined clients and servers.<br> <br>Further information can be found @ https://www.tenaka.net/pass-the-hash<br>"
 
-    $descripLAPS = "Local Administrator Password Solution (LAPS0) is a small program with some GPO settings that randomly sets the local administrator password for clients and servers across the estate. Only Domain Admins by default permission to view the local administrator password via DSA.MSC Access to the LAPS passwords may be delegated unintentionally. This could lead to a serious security breach, leaking all local admin accounts passwords for all computer objects to those that shouldn't have access. <br> <br>Installation guide can be found @ https://www.tenaka.net/post/local-admin-passwords. <br> <br>Security related issue details can be found @ https://www.tenaka.net/post/laps-leaks-local-admin-passwords<br>"
+    $descripLAPS = "Local Administrator Password Solution (LAPS0) is a small program with some GPO settings that randomly sets the local administrator password for clients and servers across the estate. Domain Admins have default permission to view the local administrator password via DSA.MSC. Access to the LAPS passwords may be delegated unintentionally, this could lead to a serious security breach, leaking all local admin accounts passwords for all computer objects to those that shouldn't have access. <br> <br>Installation guide can be found @ https://www.tenaka.net/post/local-admin-passwords. <br> <br>Security related issue details can be found @ https://www.tenaka.net/post/laps-leaks-local-admin-passwords<br>"
 
-    $descripURA = "User Rights Assignments (URA) control what tasks a user can perform on the local client, server or Domain Controller. For example the ‘Log on as a service’ (SeServiceLogonRight) provides the rights for a service account to Logon as a Service, not Interactively. <br> <br> Access to URA can be abused and attack the system. <br> <br>Both SeImpersonatePrivilege (Impersonate a client after authentication) and SeAssignPrimaryTokenPrivilege (Replace a process level token) are commonly used by service accounts and vulnerable to escalation of privilege via Juicy Potato exploits.<br> <br>SeBackupPrivilege (Back up files and directories), read access to all files including SAM Database, Registry and NTDS.dit (AD Database). <br> <br>SeRestorePrivilege (Restore files and directories), Write access to all files. <br> <br>SeDebugPrivilege (Debug programs), allows the ability to dump and inject into process memory inc kernel. Passwords are stored in memory in the clear and can be dumped and easily extracted. <br> <br>SeTakeOwnershipPrivilege (Take ownership of files or other objects), take ownership of file regardless of access.<br> <br>SeNetworkLogonRight (Access this computer from the network) allows pass-the-hash when Local Admins share the same password, remove all the default groups and apply named groups, separating client from servers.<br> <br>Further details can be found @ https://docs.microsoft.com/en-us/windows/security/threat-protection/security-policy-settings/user-rights-assignment<br> "
+    $descripURA = "User Rights Assignments (URA) control what tasks a user can perform on the local client, server or Domain Controller. For example the ‘Log on as a service’ (SeServiceLogonRight) provides the rights for a service account to Logon as a Service, not Interactively. <br> <br> Access to URA can be abused and attack the system. <br> <br>Both SeImpersonatePrivilege (Impersonate a client after authentication) and SeAssignPrimaryTokenPrivilege (Replace a process level token) are commonly used by service accounts and vulnerable to escalation of privilege via Juicy Potato exploits.<br> <br>SeBackupPrivilege (Back up files and directories), read access to all files including SAM Database, Registry and NTDS.dit (AD Database). <br> <br>SeRestorePrivilege (Restore files and directories), Write access to all files. <br> <br>SeDebugPrivilege (Debug programs), allows the ability to dump and inject into process memory inc kernel. Passwords are stored in memory in the clear and can be dumped and easily extracted. <br> <br>SeTakeOwnershipPrivilege (Take ownership of files or other objects), take ownership of file regardless of access.<br> <br>SeNetworkLogonRight (Access this computer from the network) allows pass-the-hash when Local Admins share the same password, remove all the default groups and apply named groups, separating client from servers.<br> <br>Further details can be found @ https://docs.microsoft.com/en-us/windows/security/threat-protection/security-policy-settings/user-rights-assignment<br>"
 
     $descripRegPasswords = "Searches HKLM and HKCU for the words 'password' and 'passwd', then displays the password value in the report.<br><br>The search will work with VNC encrypted passwords stored in the registry, from Kali run the following command<br> <br>echo -n PasswordHere | xxd -r -p | openssl enc -des-cbc --nopad --nosalt -K e84ad660c4721ae0 -iv 0000000000000000 -d | hexdump -Cv<br>"
 
+    $descripASR = "Attack Surface Reduction (ASR) requires Windows Defender Real-Time Antivirus and works in conjunction with Exploit Guard to prevent malware abusing legitimate MS Office functionality<br> <br>Further information can be found @ https://docs.microsoft.com/en-us/microsoft-365/security/defender-endpoint/overview-attack-surface-reduction?view=o365-worldwide<br>"
+
+    $descripWDigest = "WDigest was introduced with Windows XP\2003 and has been enabled by default until and including Windows 8 and Server 2012. Enabling allows clear text passwords to be recoverable from LSASS with Mimikatz"
+
+    $descripDomainGroups = "Group membership of the user executing this script. Local admins are required, the account should not have Domain Admins as this can result in privilege escalation."
+
+    $descripDomainPrivs = "Reference User Rights Assignment (USR) section for further details"
 
 ################################################
 ################  FRAGMENTS  ###################
@@ -3175,16 +3350,21 @@ $style = @"
     $Frag_descripVirt2 = ConvertTo-Html -as table -Fragment -PostContent "<h4>$descripVirt2</h4>" | Out-String
             
     #Host details    
-    $fragHost = $hn | ConvertTo-Html -As List -Property Name,Domain,Model -fragment -PreContent "<h2><span style='color:$titleCol'>Host Details</span></h2>"  | Out-String
+    $frag_Host = $fragHost | ConvertTo-Html -As List -Property Name,Domain,Model -fragment -PreContent "<h2><span style='color:$titleCol'>Host Details</span></h2>"  | Out-String
     $fragOS = $OS | ConvertTo-Html -As List -property Caption,Version,OSArchitecture,InstallDate -fragment -PreContent "<h2><span style='color:$titleCol'>Windows Details</span></h2>" | Out-String
-    $FragAccountDetails = $AccountDetails  | ConvertTo-Html -As Table -fragment -PreContent "<h2><span style='color:$titleCol'>Account Details</span></h2>" | Out-String
-    $FragGroupDetails =  $GroupDetails  | ConvertTo-Html -As Table -fragment -PreContent "<h2><span style='color:$titleCol'>Group Members</span></h2>" | Out-String
-    $FragPassPol = $PassPol | Select-Object -SkipLast 3 | ConvertTo-Html -As Table -fragment -PreContent "<h2><span style='color:$titleCol'>Password Policy</span></h2>" | Out-String
+    $FragAccountDetails = $AccountDetails  | ConvertTo-Html -As Table -fragment -PreContent "<h2><span style='color:$titleCol'>Local Account Details</span></h2>" | Out-String
+    $FragGroupDetails =  $GroupDetails  | ConvertTo-Html -As Table -fragment -PreContent "<h2><span style='color:$titleCol'>Local Group Members</span></h2>" | Out-String
+    $FragPassPol = $PassPol | Select-Object -SkipLast 3 | ConvertTo-Html -As Table -fragment -PreContent "<h2><span style='color:$titleCol'>Local Password Policy</span></h2>" | Out-String
     $fragInstaApps  =  $InstallApps | Sort-Object publisher,displayname -Unique  | ConvertTo-Html -As Table  -fragment -PreContent "<h2><span style='color:$titleCol'>Installed Applications</span></h2>" | Out-String
     $fragHotFix = $HotFix | ConvertTo-Html -As Table -property HotFixID,InstalledOn,Caption -fragment -PreContent "<h2><span style='color:$titleCol'>Latest 10 Installed Updates</span></h2>" | Out-String
     $fragInstaApps16  =  $InstallApps16 | Sort-Object publisher,displayname -Unique  | ConvertTo-Html -As Table  -fragment -PreContent "<h2><span style='color:$titleCol'>Updates to Office 2016 and older or Updates that create KB's in the Registry</span></h2>" | Out-String
     $fragBios = $bios | ConvertTo-Html -As List -property Name,Manufacturer,SerialNumber,SMBIOSBIOSVersion,ReleaseDate -fragment -PreContent "<h2><span style='color:$titleCol'>Bios Details</span></h2>" | Out-String
     $fragCpu = $cpu | ConvertTo-Html -As List -property Name,MaxClockSpeed,NumberOfCores,ThreadCount -fragment -PreContent "<h2><span style='color:$titleCol'>Processor Details</span></h2>" | Out-String
+
+    #$frag_whoamiUser =  $whoamiUser | ConvertTo-Html -As Table -fragment -PreContent "<h2><span style='color:$titleCol'>Domain User Details</span></h2>" -PostContent "<h4>$descripDomainUsers</h4>"  | Out-String
+    $frag_whoamiGroups =  $whoamiGroups | ConvertTo-Html -As Table -fragment -PreContent "<h2><span style='color:$titleCol'>Current Users Group Membership</span></h2>" -PostContent "<h4>$descripDomainGroups</h4>"   | Out-String
+    $frag_whoamiPriv =  $whoamiPriv | ConvertTo-Html -As Table -fragment -PreContent "<h2><span style='color:$titleCol'>Current Users Local Privileges</span></h2>" -PostContent "<h4>$descripDomainPrivs</h4>"  | Out-String
+
 
     #Security Review
     $frag_BitLocker = $fragBitLocker | ConvertTo-Html -As List -fragment -PreContent "<h2><span style='color:$titleCol'>Bitlocker and TPM Details</span></h2>" -PostContent "<h4>$descripBitlocker</h4>" | Out-String
@@ -3215,9 +3395,11 @@ $style = @"
     $frag_AuthCodeSig = $fragAuthCodeSig | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:$titleCol'>Files with an Authenticode Signature HashMisMatch</span></h2>" -PostContent "<h4>$descriptAuthCodeSig</h4>"  | Out-String  
     $frag_CredGuCFG = $fragCredGuCFG | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:$titleCol'>Credential Guard</span></h2>" -PostContent "<h4>$descripCredGu</h4>" | Out-String
     $frag_LapsPwEna = $fragLapsPwEna | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:$titleCol'>LAPS - Local Administrator Password Solution</span></h2>" -PostContent "<h4>$descripLAPS</h4>" | Out-String
-    $frag_URA = $fragURA | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:$titleCol'>URA - User Rights Assignments</span></h2>" -PostContent "<h4>$descripURA</h4>" | Out-String
-  
-    $frag_RegPasswords = $fragRegPasswords | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:$titleCol'>Passwords enmbedded in the Registry</span></h2>" -PostContent "<h4>$descripRegPasswords</h4>" | Out-String
+    $frag_URA = $fragURA | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:$titleCol'>URA - Local Systems User Rights Assignments</span></h2>" -PostContent "<h4>$descripURA</h4>" | Out-String
+    $frag_RegPasswords = $fragRegPasswords | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:$titleCol'>Passwords Embedded in the Registry</span></h2>" -PostContent "<h4>$descripRegPasswords</h4>" | Out-String
+    $frag_ASR = $fragASR | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:$titleCol'>Attack Surface Reduction (ASR)</span></h2>" -PostContent "<h4>$descripASR</h4>" | Out-String
+    $frag_WDigestULC = $fragWDigestULC | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:$titleCol'WDigest</span></h2>" -PostContent "<h4>$descripWDigest</h4>" | Out-String
+
 
     #Quick and dirty tidy up and removal of Frags that are $null
     if ($fragAuthCodeSig -eq $null){$frag_AuthCodeSig = ""}
@@ -3240,7 +3422,9 @@ $style = @"
     if ($fragPSPass -eq $null){$frag_PSPass = ""}
     if ($fragRegPasswords -eq $null){$frag_RegPasswords = ""}
     if ($DriverQuery -eq $null){$frag_DriverQuery = ""}
-    if ($SchedTaskPerms-eq $null){$frag_TaskPerms= ""}
+    if ($SchedTaskPerms -eq $null){$frag_TaskPerms = ""}
+    if ($fragWDigestULC -eq $null){$frag_WDigestULC = ""}
+    
 
 ################################################
 ############  CREATE HTML REPORT  ##############
@@ -3249,24 +3433,31 @@ if ($folders -eq "y")
 {
     ConvertTo-Html -Head $style -Body "<h1 align=center style='text-align:center'><span style='color:$titleCol;'>TENAKA.NET</span><h1>", 
     $fragDescrip1, 
-    $fraghost, 
+    $frag_host, 
     $fragOS, 
+    $fragbios, 
+    $fragcpu, 
+    $frag_Share,
+    $frag_BitLocker, 
     $FragAccountDetails,
-    $FragGroupDetails,
     $FragPassPol,
+    $FragGroupDetails,
+    $frag_whoamiGroups, 
+    $frag_whoamiPriv,
     $frag_URA,
     $fragInstaApps,
     $fragHotFix,
     $fragInstaApps16,
-    $fragbios, 
-    $fragcpu, 
-    $frag_BitLocker, 
+    $frag_UnQu,
+    $frag_ASR,
     $frag_Msinfo,
     $Frag_descripVirt2,
-    $frag_DriverQuery,
     $frag_Code,
+    $frag_DriverQuery,
     $frag_SecOptions,
+    $frag_LegNIC,
     $frag_LSAPPL,
+    $frag_WDigestULC,
     $frag_CredGuCFG,
     $frag_LapsPwEna,
     $frag_DLLSafe,
@@ -3276,12 +3467,9 @@ if ($folders -eq "y")
     $frag_FilePass,
     $frag_RegPasswords,
     $frag_AutoLogon,
-    $frag_UnQu, 
     $frag_TaskPerms,
     $frag_TaskListings,
     $frag_PSPass,
-    $frag_LegNIC,
-    $frag_Share,
     $frag_SysRegPerms,
     $frag_SysFolders,
     $frag_CreateSysFold,
@@ -3296,24 +3484,31 @@ else
 {
     ConvertTo-Html -Head $style -Body "<h1 align=center style='text-align:center'><span style='color:$titleCol;'>TENAKA.NET</span><h1>", 
     $fragDescrip1, 
-    $fraghost, 
+    $frag_host, 
     $fragOS, 
+    $fragbios, 
+    $fragcpu, 
+    $frag_Share,
+    $frag_BitLocker, 
     $FragAccountDetails,
-    $FragGroupDetails,
     $FragPassPol,
+    $FragGroupDetails,
+    $frag_whoamiGroups, 
+    $frag_whoamiPriv,
     $frag_URA,
     $fragInstaApps,
     $fragHotFix,
     $fragInstaApps16,
-    $fragbios, 
-    $fragcpu, 
-    $frag_BitLocker, 
+    $frag_UnQu, 
+    $frag_ASR,
     $frag_Msinfo,
     $Frag_descripVirt2,
-    $frag_DriverQuery,
     $frag_Code,
+    $frag_DriverQuery,
     $frag_SecOptions,
+    $frag_LegNIC,
     $frag_LSAPPL,
+    $frag_WDigestULC,
     $frag_CredGuCFG,
     $frag_LapsPwEna,
     $frag_DLLSafe,
@@ -3322,12 +3517,9 @@ else
     $frag_FilePass,
     $frag_RegPasswords,
     $frag_AutoLogon,
-    $frag_UnQu, 
     $frag_TaskPerms,
     $frag_TaskListings,
     $frag_PSPass,
-    $frag_LegNIC,
-    $frag_Share,
     $frag_AuthCodeSig,
     $frag_FWProf,
     $frag_FW,
@@ -3348,7 +3540,6 @@ reports
 <#
 Stuff to Fix.....
 $ExecutionContext.SessionState.LanguageMode -eq "ConstrainedLanguage"
-Password in Registry - slow to get back results 
 Null message warning that security is missing
 set warning for secure boot
 Expand on explanations - currently of use to non-techies
@@ -3378,7 +3569,11 @@ data streams dir /r
 
 remove powershell commands where performance is an issue, consider replacing with cmd alts
 
+share permissions wont list $IPC
+
 Stuff that wont get fixed.....
 Progress bars or screen output will remain limited, each time an output is written to screen the performance degrads
+
+
 
 #>
