@@ -272,6 +272,13 @@ YYMMDD
 220720.1 - Added whoami groups 
 220720.2 - Added whoami privs
 220720.3 - Fixed issue with Host Details
+220721.1 - Updated warning message to include URA
+220721.2 - Updated local accounts to warn when enabled, Groups will warn on DA, EA and Schema Admin
+220721.3 - Adding support for MS Recommended Sec settings
+220722.1 - Adding support for MS Recommended Sec settings 
+220723.1 - Adding support for MS Recommended Sec settings
+220723.2 - Fixed misconfig in Security Options for 4 and 10. added Windows 2000 strong encryption
+220723.3 - Added Kerberos encryption types to Security Options
 
 #>
 
@@ -424,6 +431,10 @@ sleep 5
         $accounts = Get-LocalUser $AccName
         $accName = $accounts.name
         $accEnabled = $accounts.Enabled
+            if ($accEnabled -eq $true)
+            {
+            $accEnabled = "Warning - Enabled Warning"
+            } 
         $accLastLogon = $accounts.LastLogon
         $accLastPass = $accounts.PasswordLastSet
         $accPassExpired = $accounts.PasswordExpires
@@ -1407,11 +1418,11 @@ sleep 5
 
     if ($getSecOp4res -eq "0")
     {
-        $SecOptName = "$secOpTitle4 - Enabled"
+        $SecOptName = "$secOpTitle4 - Disabled"
     }
     else
     {
-        $SecOptName = "Warning - $secOpTitle4 - Disabled Warning"
+        $SecOptName = "Warning - $secOpTitle4 - Enabled Warning"
     }
     
     $newObjSecOptions = New-Object psObject
@@ -1492,11 +1503,11 @@ sleep 5
 
     if ($getSecOp9res -eq "0")
     {
-        $SecOptName = "$secOpTitle9 - Enabled"
+        $SecOptName = "$secOpTitle9 - Disabled"
     }
     else
     {
-        $SecOptName = "Warning - $secOpTitle9 - Disabled Warning"
+        $SecOptName = "Warning - $secOpTitle9 - Enabled Warning"
     }
     
     $newObjSecOptions = New-Object psObject
@@ -1507,13 +1518,61 @@ sleep 5
     $getSecOp10 = get-item 'HKLM:\SYSTEM\CurrentControlSet\Services\NTDS\parameters' -ErrorAction SilentlyContinue
     $getSecOp10res = $getSecOp10.getvalue("ldapserverintegrity")
 
-    if ($getSecOp9res -eq "2")
+    if ($getSecOp10res -eq "2")
     {
         $SecOptName = "$secOpTitle10 - Enabled"
     }
     else
     {
         $SecOptName = "Warning - $secOpTitle10 - Disabled Warning"
+    }
+    $newObjSecOptions = New-Object psObject
+    Add-Member -InputObject $newObjSecOptions -Type NoteProperty -Name SecurityOptions -Value $SecOptName
+    $fragSecOptions +=  $newObjSecOptions
+
+    <#
+    All allows the AES encryption types aes256-cts-hmac-sha1-96 and aes128-cts-hmac-sha1-96, as well as the RC4 encryption type rc4-hmac. AES takes precedence if the server supports AES and RC4 encryption types.
+
+    * Strong or leaving it unset allows only the AES types.
+    * Legacy allows only the RC4 type. RC4 is insecure. It should only be needed in very specific circumstances. 
+
+    If possible, reconfigure the server to support AES encryption.
+    
+    Caution - removing RC4 can break trusts between parent\child where rc4 is configured
+    
+    Also see https://wiki.samba.org/index.php/Samba_4.6_Features_added/changed#Kerberos_client_encryption_types.
+    #>
+    
+    $secOpTitle12 = "Domain member: Require strong (Windows 2000 or later) session key" 
+    $getSecOp12 = get-item 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System\Kerberos\Parameters\' -ErrorAction SilentlyContinue
+    $getSecOp12res = $getSecOp12.getvalue("supportedencryptiontypes")
+
+    if ($getSecOp12res -eq "2147483640")
+    {
+        $SecOptName = "$secOpTitle12 - Enabled, (AES128_HMAC_SHA1,AES256_HMAC_SHA1,Future encryption types)"
+    }
+    else
+    {
+        $SecOptName = "Warning - $secOpTitle12 - Disabled Warning"
+    }
+    
+
+    $newObjSecOptions = New-Object psObject
+    Add-Member -InputObject $newObjSecOptions -Type NoteProperty -Name SecurityOptions -Value $SecOptName
+    $fragSecOptions +=  $newObjSecOptions
+
+
+    $secOpTitle11 = "Domain member: Require strong (Windows 2000 or later) session key" 
+    $getSecOp11 = get-item 'HKLM:\System\CurrentControlSet\Services\Netlogon\Parameters\' -ErrorAction SilentlyContinue
+    $getSecOp11res = $getSecOp11.getvalue("RequireStrongKey")
+
+    if ($getSecOp11res -eq "1")
+    {
+        $SecOptName = "$secOpTitle11 - Enabled"
+    }
+    else
+    {
+        $SecOptName = "Warning - $secOpTitle11 - Disabled Warning"
     }
     
     $newObjSecOptions = New-Object psObject
@@ -2675,7 +2734,7 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
         
         if ($asrGuidSetting -eq "1")
             {
-            $asrGuidSetObj = "ASR is set to 1"    
+            $asrGuidSetObj = "ASR = 1"    
             }
         else
             {
@@ -2709,12 +2768,23 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     $DomainUserPath = "C:\SecureReport\output\$OutFunc\"
 
 
+    $HostDomain = ((Get-CimInstance -ClassName win32_computersystem).Domain).split(".")[0] + "\" 
+
+    $DomA = $HostDomain + "Domain Admins"
+    $DomAWarn = "Warning - " + $HostDomain + "Domain Admins" + "  Warning"
+
+    $EntA = $HostDomain + "Enterprise Admins"
+    $EntAWarn = "Warning - " + $HostDomain + "Enterprise Admins" + "  Warning"
+
+    $SchA = $HostDomain + "Schema Admins"
+    $SchAWarn = "Warning - " + $HostDomain + "Schema Admins" + "  Warning"
+
     #WHOAMI /User /FO CSV /NH > C:\SecureReport\output\DomainUser\User.csv
     WHOAMI /Groups /FO CSV /NH > C:\SecureReport\output\DomainUser\Groups.csv
     WHOAMI /Priv /FO CSV /NH > C:\SecureReport\output\DomainUser\Priv.csv
 
-    (Get-Content C:\SecureReport\output\DomainUser\Groups.csv).replace("Mandatory group,","").replace("Enabled by default,","").replace("Enabled group,","").replace("Enabled group","").replace("Group owner","").replace(',"Attributes"',"").replace(',"  "',"").replace(',""',"")  | out-file C:\SecureReport\output\DomainUser\Groups.csv     
-    (Get-Content C:\SecureReport\output\DomainUser\Priv.csv).replace("Enabled","Enabled Warning") | out-file C:\SecureReport\output\DomainUser\Priv.csv
+    (Get-Content C:\SecureReport\output\DomainUser\Groups.csv).replace("Mandatory group,","").replace("Enabled by default,","").replace("Enabled group,","").replace("Enabled group","").replace("Group owner","").replace(',"Attributes"',"").replace(',"  "',"").replace(',""',"").replace($EntA,$EntAWarn).replace($DomA,$DomAWarn).replace($SchA,$SchAWarn)  | out-file C:\SecureReport\output\DomainUser\Groups.csv     
+    (Get-Content C:\SecureReport\output\DomainUser\Priv.csv).replace("Enabled","Review - Enabled Review") | out-file C:\SecureReport\output\DomainUser\Priv.csv
     
     #import-csv C:\SecureReport\output\DomainUser\User.csv -Delimiter "," | Export-Clixml C:\SecureReport\output\DomainUser\User.xml
     #$whoamiUser = Import-Clixml C:\SecureReport\output\DomainUser\User.xml
@@ -2725,7 +2795,1787 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     import-csv C:\SecureReport\output\DomainUser\Priv.csv -Delimiter "," | Export-Clixml C:\SecureReport\output\DomainUser\Priv.xml
     $whoamiPriv = Import-Clixml C:\SecureReport\output\DomainUser\Priv.xml
 
+
+################################################
+#######  RECOMMENDED SECURITY SETTINGS  ########
+################################################
+    $fragNetCredVal=@()
+
+    <#
+
+    Do not display network selection UI Enabled
+
+    Computer Configuration\Policies\Administrative Templates\System\Logon\Do not display network selection UI Enabled
+
+    This policy setting allows you to control whether anyone can interact with available networks UI on the logon screen.
+    If you enable this policy setting, the PC's network connectivity state cannot be changed without signing into Windows.
+    If you disable or don't configure this policy setting, any user can disconnect the PC from the network or can connect the PC to other available networks without signing into Windows.
+    #>
+
+    $NetCredDescrip = "Do not display network selection UI Enabled"
+    $gpopath = "Computer Configuration\Policies\Administrative Templates\System\Logon\$NetCredDescrip"
+    $RegKey = 'HKLM:\Software\Policies\Microsoft\Windows\System\'
+    $NetCredVal=@()
+    $NetCredVal = "DontDisplayNetworkSelectionUI"
+
+    $getNetCred = Get-Item $RegKey -ErrorAction SilentlyContinue
+    $getNetCredVal=@()
+    $getNetCredVal = $getNetCred.GetValue("$NetCredVal")
+
+    if ($getNetCredVal -eq "1")
+    {
+        $NetCredSet = "Warning - $NetCredDescrip is Enabled Warning" 
+        $NetCredReg = "<div title=$gpoPath>$RegKey"
+    }
+    else
+    {
+        $NetCredSet = "$NetCredDescrip is disabled" 
+        $NetCredReg = "<div title=$gpoPath>$RegKey"
+    }
+
+    $newObjNetCred = New-Object -TypeName PSObject
+    Add-Member -InputObject $newObjNetCred -Type NoteProperty -Name CredentialSetting  -Value  $NetCredSet
+    Add-Member -InputObject $newObjNetCred -Type NoteProperty -Name CredentialRegValue -Value $NetCredReg 
+    $fragNetCredVal += $newObjNetCred
+
+    
+    <#
+    Enumerate local users on domain-joined computers
+
+    Computer Configuration\Policies\Administrative Templates\System\Logon
+
+    This policy setting allows local users to be enumerated on domain-joined computers.
+    If you enable this policy setting, Logon UI will enumerate all local users on domain-joined computers.
+    If you disable or do not configure this policy setting, the Logon UI will not enumerate local users on domain-joined computers.
+    #>
+    
+    $NetCredDescrip = "Enumerate local users on domain-joined computers"
+    $gpopath ="Computer Configuration\Policies\Administrative Templates\System\Logon\$NetCredDescrip"
+    $RegKey = 'HKLM:\Software\Policies\Microsoft\Windows\System\'
+    $NetCredVal=@()
+    $NetCredVal = "EnumerateLocalUsers"
+
+    $getNetCred = Get-Item $RegKey -ErrorAction SilentlyContinue
+    $getNetCredVal=@()
+    $getNetCredVal = $getNetCred.GetValue("$NetCredVal")
+
+    if ($getNetCredVal -eq "1")
+    {
+        $NetCredSet = "Warning - $NetCredDescrip is Enabled Warning" 
+        $NetCredReg = "<div title=$gpoPath>$RegKey"
+    }
+    else
+    {
+        $NetCredSet = "$NetCredDescrip is Disabled" 
+        $NetCredReg = "<div title=$gpoPath>$RegKey"
+    }
+
+    $newObjNetCred = New-Object -TypeName PSObject
+    Add-Member -InputObject $newObjNetCred -Type NoteProperty -Name CredentialSetting -Value  $NetCredSet
+    Add-Member -InputObject $newObjNetCred -Type NoteProperty -Name CredentialRegValue -Value $NetCredReg 
+    $fragNetCredVal += $newObjNetCred
+
+
+    <#
+    Do not display the password reveal button
+
+    Computer Configuration\Policies\Administrative Templates\System\Logon
+
+    This policy setting allows you to configure the display of the password reveal button in password entry user experiences.
+    If you enable this policy setting, the password reveal button will not be displayed after a user types a password in the password entry text box.
+    If you disable or do not configure this policy setting, the password reveal button will be displayed after a user types a password in the password entry text box.
+    By default, the password reveal button is displayed after a user types a password in the password entry text box. To display the password, click the password reveal button.
+    The policy applies to all Windows components and applications that use the Windows system controls, including Internet Explorer.
+    
+    #>
+
+    $NetCredDescrip = "Do not display the password reveal button"
+    $gpopath ="Computer Configuration\Policies\Administrative Templates\System\Logon\$NetCredDescrip"
+    $RegKey = 'HKLM:\Software\Policies\Microsoft\Windows\CredUI\'
+    $NetCredVal=@()
+    $NetCredVal = "DisablePasswordReveal"
+    $getNetCred = Get-Item $RegKey -ErrorAction SilentlyContinue
+    $getNetCredVal=@()
+    $getNetCredVal = $getNetCred.GetValue("$NetCredVal")
+
+    if ($getNetCredVal -eq "1")
+    {
+        $NetCredSet = "$NetCredDescrip is Enabled" 
+        $NetCredReg = "<div title=$gpoPath>$RegKey"
+    }
+    else
+    {
+        $NetCredSet = "Warning - $NetCredDescrip is disabled Warning" 
+        $NetCredReg = "<div title=$gpoPath>$RegKey"
+    }
+
+    $newObjNetCred = New-Object -TypeName PSObject
+    Add-Member -InputObject $newObjNetCred -Type NoteProperty -Name CredentialSetting -Value  $NetCredSet
+    Add-Member -InputObject $newObjNetCred -Type NoteProperty -Name CredentialRegValue -Value $NetCredReg 
+    $fragNetCredVal += $newObjNetCred
+
+
+   <#
+    Enumerate administrator accounts on elevation
+
+    Computer Configuration\Policies\Administrative Templates\Windows Components\Credential User Interface\
+
+    This policy setting controls whether administrator accounts are displayed when a user attempts to elevate a running application. By default, administrator accounts are not displayed when the user attempts to elevate a running application.
+    If you enable this policy setting, all local administrator accounts on the PC will be displayed so the user can choose one and enter the correct password.
+    If you disable this policy setting, users will always be required to type a user name and password to elevate.
+    #>
+
+    $NetCredDescrip = "Enumerate administrator accounts on elevation"
+    $gpopath ="Computer Configuration\Policies\Administrative Templates\Windows Components\Credential User Interface\$NetCredDescrip"
+    $RegKey = 'HKLM:\Software\Microsoft\Windows\CurrentVersion\Policies\CredUI\'
+    $NetCredVal=@()
+    $NetCredVal = "EnumerateAdministrators"
+    $getNetCredVal=@()
+    $getNetCred = Get-Item $RegKey -ErrorAction SilentlyContinue
+    $getNetCredVal = $getNetCred.GetValue("$NetCredVal") 
+
+    if ($getNetCredVal -eq "1")
+    {
+        $NetCredSet = "Warning - $NetCredDescrip is Enabled Warning" 
+        $NetCredReg = "<div title=$gpoPath>$RegKey"
+    }
+    else
+    {
+        $NetCredSet = "$NetCredDescrip is Disabled" 
+        $NetCredReg = "<div title=$gpoPath>$RegKey"
+    }
+
+    $newObjNetCred = New-Object -TypeName PSObject
+    Add-Member -InputObject $newObjNetCred -Type NoteProperty -Name CredentialSetting -Value  $NetCredSet
+    Add-Member -InputObject $newObjNetCred -Type NoteProperty -Name CredentialRegValue -Value $NetCredReg 
+    $fragNetCredVal += $newObjNetCred
+
+    <#
+    Require trusted path for credential entry
+
+    Computer Configuration\Policies\Administrative Templates\Windows Components\Credential User Interface
+
+    This policy setting requires the user to enter Microsoft Windows credentials using a trusted path, to prevent a Trojan horse or other types of malicious code from stealing the user's Windows credentials.
+    Note: This policy affects nonlogon authentication tasks only. As a security best practice, this policy should be enabled.
+    If you enable this policy setting, users will be required to enter Windows credentials on the Secure Desktop by means of the trusted path mechanism.
+    If you disable or do not configure this policy setting, users will enter Windows credentials within the user's desktop session, potentially allowing malicious code access to the user's Windows credentials.
+    #>
+
+    $NetCredDescrip = "Require trusted path for credential entry"
+    $gpopath ="Computer Configuration\Policies\Administrative Templates\Windows Components\Credential User Interface\$NetCredDescrip"
+    $RegKey = 'HKLM:\Software\Microsoft\Windows\CurrentVersion\Policies\CredUI\'
+    $NetCredVal=@()
+    $NetCredVal = "EnableSecureCredentialPrompting"
+    $getNetCredVal=@()
+    $getNetCred = Get-Item $RegKey -ErrorAction SilentlyContinue
+    $getNetCredVal = $getNetCred.GetValue("$NetCredVal") 
+
+    if ($getNetCredVal -eq "1")
+    {
+        $NetCredSet = "$NetCredDescrip is Enabled" 
+        $NetCredReg = "<div title=$gpoPath>$RegKey"
+    }
+    else
+    {
+        $NetCredSet = "Warning - $NetCredDescrip is disabled Warning" 
+        $NetCredReg = "<div title=$gpoPath>$RegKey"
+    }
+
+    $newObjNetCred = New-Object -TypeName PSObject
+    Add-Member -InputObject $newObjNetCred -Type NoteProperty -Name CredentialSetting -Value  $NetCredSet
+    Add-Member -InputObject $newObjNetCred -Type NoteProperty -Name CredentialRegValue -Value $NetCredReg 
+    $fragNetCredVal += $newObjNetCred
+
+    <#
+    Prevent the use of security questions for local accounts
+
+    Computer Configuration\Policies\Administrative Templates\Windows Components\Credential User Interface
+
+    If you turn this policy setting on, local users won't be able to set up and use security questions to reset their passwords.    
+    #>
+
+    $NetCredDescrip = "Prevent the use of security questions for local accounts"
+    $gpopath ="Computer Configuration\Policies\Administrative Templates\Windows Components\Credential User Interface\$NetCredDescrip"
+    $RegKey = 'HKLM:\Software\Policies\Microsoft\Windows\System\'
+    $NetCredVal=@()
+    $NetCredVal = "NoLocalPasswordResetQuestions"
+    $getNetCredVal=@()
+    $getNetCred = Get-Item $RegKey -ErrorAction SilentlyContinue
+    $getNetCredVal = $getNetCred.GetValue("$NetCredVal") 
+
+    if ($getNetCredVal -eq "1")
+    {
+        $NetCredSet = "$NetCredDescrip is Enabled" 
+        $NetCredReg = "<div title=$gpoPath>$RegKey"
+    }
+    else
+    {
+        $NetCredSet = "Warning - $NetCredDescrip is disabled Warning" 
+        $NetCredReg = "<div title=$gpoPath>$RegKey"
+    }
+
+    $newObjNetCred = New-Object -TypeName PSObject
+    Add-Member -InputObject $newObjNetCred -Type NoteProperty -Name CredentialSetting -Value  $NetCredSet
+    Add-Member -InputObject $newObjNetCred -Type NoteProperty -Name CredentialRegValue -Value $NetCredReg 
+    $fragNetCredVal += $newObjNetCred
+
+
+    <#
+    Disable or enable software Secure Attention Sequence
+
+    Computer Configuration\Policies\Administrative Templates\Windows Components\Windows Logon Options
+    
+    This policy setting controls whether or not software can simulate the Secure Attention Sequence (SAS).
+
+    If you enable this policy setting, you have one of four options:
+
+    If you set this policy setting to "None," user mode software cannot simulate the SAS.
+    If you set this policy setting to "Services," services can simulate the SAS.
+    If you set this policy setting to "Ease of Access applications," Ease of Access applications can simulate the SAS.
+    If you set this policy setting to "Services and Ease of Access applications," both services and Ease of Access applications can simulate the SAS.
+
+    If you disable or do not configure this setting, only Ease of Access applications running on the secure desktop can simulate the SAS.   
+    #>
+
+    $NetCredDescrip = "Disable or enable software Secure Attention Sequence"
+    $gpopath ="Computer Configuration\Policies\Administrative Templates\Windows Components\Windows Logon Options\$NetCredDescrip"
+    $RegKey = 'HKLM:\Software\Microsoft\Windows\CurrentVersion\Policies\System\'
+    $NetCredVal=@()
+    $NetCredVal = "SoftwareSASGeneration"
+    $getNetCredVal=@()
+    $getNetCred = Get-Item $RegKey -ErrorAction SilentlyContinue
+    $getNetCredVal = $getNetCred.GetValue("$NetCredVal") 
+
+    if ($getNetCredVal -eq $null)
+    {
+        $NetCredSet = "$NetCredDescrip is disabled" 
+        $NetCredReg = "<div title=$gpoPath>$RegKey"
+    }
+    else
+    {
+        $NetCredSet = "Warning - $NetCredDescrip is Enabled Warning" 
+        $NetCredReg = "<div title=$gpoPath>$RegKey"
+    }
+
+    $newObjNetCred = New-Object -TypeName PSObject
+    Add-Member -InputObject $newObjNetCred -Type NoteProperty -Name CredentialSetting -Value  $NetCredSet
+    Add-Member -InputObject $newObjNetCred -Type NoteProperty -Name CredentialRegValue -Value $NetCredReg 
+    $fragNetCredVal += $newObjNetCred
+
+
+    <#
+    Sign-in last interactive user automatically after a system-initiated restart
+
+    Computer Configuration\Policies\Administrative Templates\Windows Components\Windows Logon Options 
+
+    This policy setting controls whether a device will automatically sign-in the last interactive user after Windows Update restarts the system.
+
+    If you enable or do not configure this policy setting, the device securely saves the user's credentials 
+    (including the user name, domain and encrypted password) to configure automatic sign-in after a Windows Update restart. 
+    After the Windows Update restart, the user is automatically signed-in and the session is automatically locked with all 
+    the lock screen apps configured for that user.
+    If you disable this policy setting, the device does not store the user's credentials for automatic sign-in after a 
+    Windows Update restart. The users' lock screen apps are not restarted after the system restarts.
+    #>
+    $NetCredDescrip = "Sign-in last interactive user automatically after a system-initiated restart"
+    $gpopath ="Computer Configuration\Policies\Administrative Templates\Windows Components\Windows Logon Options\$NetCredDescrip"
+    $RegKey = 'HKLM:\Software\Microsoft\Windows\CurrentVersion\Policies\System\'
+    $NetCredVal=@()
+    $NetCredVal = "	DisableAutomaticRestartSignOn"
+    $getNetCredVal=@()
+    $getNetCred = Get-Item $RegKey -ErrorAction SilentlyContinue
+    $getNetCredVal = $getNetCred.GetValue("$NetCredVal") 
+
+    if ($getNetCredVal -eq "0" -or $getNetCredVal -eq $null)
+    {
+        $NetCredSet = "Warning - $NetCredDescrip is Enabled or not Set Warning" 
+        $NetCredReg = "<div title=$gpoPath>$RegKey"
+    }
+    else
+    {
+        $NetCredSet = "$NetCredDescrip is Enabled " 
+        $NetCredReg = "<div title=$gpoPath>$RegKey"
+    }
+
+    $newObjNetCred = New-Object -TypeName PSObject
+    Add-Member -InputObject $newObjNetCred -Type NoteProperty -Name CredentialSetting -Value  $NetCredSet
+    Add-Member -InputObject $newObjNetCred -Type NoteProperty -Name CredentialRegValue -Value $NetCredReg 
+    $fragNetCredVal += $newObjNetCred
+
+
+    <#
+    Interactive logon: Do not require CTRL+ALT+DEL
+
+    Computer Configuration\Windows Settings\Security Settings\Local Policies\Security Options 
+
+    This security setting determines whether pressing CTRL+ALT+DEL is required before a user can log on.
+
+    If this policy setting is enabled on a device, a user is not required to press CTRL+ALT+DEL to log on.
+    If this policy is disabled, any user is required to press CTRL+ALT+DEL before logging on to the Windows operating system 
+    (unless they are using a smart card for logon).
+    Microsoft developed this feature to make it easier for users with certain types of physical impairments to log on to device
+    running the Windows operating system; however, not having to press the CTRL+ALT+DELETE key combination leaves users susceptible 
+    to attacks that attempt to intercept their passwords. Requiring CTRL+ALT+DELETE before users log on ensures that users are
+    communicating by means of a trusted path when entering their passwords.
+    A malicious user might install malware that looks like the standard logon dialog box for the Windows operating system, and 
+    capture a user's password. The attacker can then log on to the compromised account with whatever level of user rights that user has.
+    #>
+
+    $NetCredDescrip = "Interactive logon: Do not require CTRL+ALT+DEL"
+    $gpopath ="Computer Configuration\Windows Settings\Security Settings\Local Policies\Security Options\Windows Logon Options\$NetCredDescrip"
+    $RegKey = 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System\'
+    $NetCredVal=@()
+    $NetCredVal = "disablecad"
+    $getNetCredVal=@()
+    $getNetCred = Get-Item $RegKey -ErrorAction SilentlyContinue
+    $getNetCredVal = $getNetCred.GetValue("$NetCredVal") 
+
+    if ($getNetCredVal -eq "0")
+    {
+        $NetCredSet = "$NetCredDescrip is Disabled" 
+        $NetCredReg = "<div title=$gpoPath>$RegKey"
+    }
+    else
+    {
+        $NetCredSet = "Warning - $NetCredDescrip is Enabled or not defined Warning " 
+        $NetCredReg = "<div title=$gpoPath>$RegKey"
+    }
+
+    $newObjNetCred = New-Object -TypeName PSObject
+    Add-Member -InputObject $newObjNetCred -Type NoteProperty -Name CredentialSetting -Value  $NetCredSet
+    Add-Member -InputObject $newObjNetCred -Type NoteProperty -Name CredentialRegValue -Value $NetCredReg 
+    $fragNetCredVal += $newObjNetCred
+
+
+    <#
+    Interactive logon: Number of previous logons to cache (in case domain controller is not available)
+
+    Computer Configuration\Policies\Windows Settings\Security Settings\Local Policies\Security Options
+
+    Windows caches previous users' logon information locally so that they can log on if a logon server is unavailable during later logon attempts.
+    If a domain controller is unavailable and a user's logon information is cached, the user will be prompted with a dialog that says:
+    A domain controller for your domain could not be contacted. You have been logged on using cached account information. Changes to your profile 
+    since you last logged on may not be available.
+    With caching disabled, the user is prompted with this message:
+    The system cannot log you on now because the domain <DOMAIN_NAME> is not available.
+
+    #>
+
+    $NetCredDescrip = "Interactive logon: Number of previous logons to cache"
+    $gpopath ="Computer Configuration\Windows Settings\Security Settings\Local Policies\Security Options\Windows Logon Options\$NetCredDescrip"
+    $RegKey = 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon\'
+    $NetCredVal=@()
+    $NetCredVal = "CachedLogonsCount"
+    $getNetCredVal=@()
+    $getNetCred = Get-Item $RegKey -ErrorAction SilentlyContinue
+    $getNetCredVal = $getNetCred.GetValue("$NetCredVal") 
+
+    if ($getNetCredVal -lt "2")
+    {
+        $NetCredSet = "$NetCredDescrip caches $getNetCredVal previous logons, ideally this should be set to 1" 
+        $NetCredReg = "<div title=$gpoPath>$RegKey"
+    }
+    else
+    {
+        $NetCredSet = "Warning - $NetCredDescrip is $getNetCredVal, ideally this should be set to 1 Warning" 
+        $NetCredReg = "<div title=$gpoPath>$RegKey"
+    }
+
+    $newObjNetCred = New-Object -TypeName PSObject
+    Add-Member -InputObject $newObjNetCred -Type NoteProperty -Name CredentialSetting -Value  $NetCredSet
+    Add-Member -InputObject $newObjNetCred -Type NoteProperty -Name CredentialRegValue -Value $NetCredReg 
+    $fragNetCredVal += $newObjNetCred
+
+
+    <#
+    Network access: Do not allow storage of passwords and credentials for network authentication
+
+    Computer Configuration\Policies\Windows Settings\Security Settings\Local Policies\Security Options
+
+    This security setting determines whether Credential Manager saves passwords and credentials for later use when it gains domain authentication.
+
+    Possible values
+    Enabled
+
+    Credential Manager does not store passwords and credentials on the device
+
+    Disabled
+
+    Credential Manager will store passwords and credentials on this computer for later use for domain authentication.
+
+    Not defined
+
+    Best practices
+    It is a recommended practice to disable the ability of the Windows operating system to cache credentials on any 
+    device where credentials are not needed. Evaluate your servers and workstations to determine the requirements. 
+    Cached credentials are designed primarily to be used on laptops that require domain credentials when disconnected from the domain.
+
+    #>
+    $NetCredDescrip = "Network access: Do not allow storage of passwords and credentials for network authentication"
+    $gpopath ="Computer Configuration\Windows Settings\Security Settings\Local Policies\Security Options\Windows Logon Options\$NetCredDescrip"
+    $RegKey = 'HKLM:\SYSTEM\CurrentControlSet\Control\Lsa\'
+    $NetCredVal=@()
+    $NetCredVal = "disabledomaincreds"
+    $getNetCredVal=@()
+    $getNetCred = Get-Item $RegKey -ErrorAction SilentlyContinue
+    $getNetCredVal = $getNetCred.GetValue("$NetCredVal") 
+
+    if ($getNetCredVal -eq "1")
+    {
+        $NetCredSet = "$NetCredDescrip is enabled" 
+        $NetCredReg = "<div title=$gpoPath>$RegKey"
+    }
+    else
+    {
+        $NetCredSet = "Warning - $NetCredDescrip is disabled" 
+        $NetCredReg = "<div title=$gpoPath>$RegKey"
+    }
+
+    $newObjNetCred = New-Object -TypeName PSObject
+    Add-Member -InputObject $newObjNetCred -Type NoteProperty -Name CredentialSetting -Value  $NetCredSet
+    Add-Member -InputObject $newObjNetCred -Type NoteProperty -Name CredentialRegValue -Value $NetCredReg 
+    $fragNetCredVal += $newObjNetCred
  
+
+    <#
+    Apply UAC restrictions to local accounts on network logons
+
+    This setting controls whether local accounts can be used for remote administration via network logon 
+    (e.g., NET USE, connecting to C$, etc.). Local accounts are at high risk for credential theft when the 
+    same account and password is configured on multiple systems. Enabling this policy significantly reduces that risk.
+
+    Enabled (recommended): Applies UAC token-filtering to local accounts on network logons. Membership in 
+    powerful group such as Administrators is disabled and powerful privileges are removed from the resulting 
+    access token. This configures the LocalAccountTokenFilterPolicy registry value to 0. This is the default behavior for Windows.
+
+    Disabled: Allows local accounts to have full administrative rights when authenticating via network logon, 
+    by configuring the LocalAccountTokenFilterPolicy registry value to 1.
+
+    For more information about local accounts and credential theft, see "Mitigating Pass-the-Hash (PtH) 
+    Attacks and Other Credential Theft Techniques": http://www.microsoft.com/en-us/download/details.aspx?id=36036.
+
+    For more information about LocalAccountTokenFilterPolicy, see http://support.microsoft.com/kb/951016.
+
+    #>
+    $NetCredDescrip = "Apply UAC restrictions to local accounts on network logons"
+    $gpopath ="No GPO Setting available"
+    $RegKey = 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System\'
+    $NetCredVal=@()
+    $NetCredVal = "LocalAccountTokenFilterPolicy"
+    $getNetCredVal=@()
+    $getNetCred = Get-Item $RegKey -ErrorAction SilentlyContinue
+    $getNetCredVal = $getNetCred.GetValue("$NetCredVal") 
+
+    if ($getNetCredVal -eq "1")
+    {
+        $NetCredSet = "$NetCredDescrip is enabled" 
+        $NetCredReg = "<div title=$gpoPath>$RegKey"
+    }
+    else
+    {
+        $NetCredSet = "Warning - $NetCredDescrip is disabled, mitigates Pass-the-Hash" 
+        $NetCredReg = "<div title=$gpoPath>$RegKey"
+    }
+
+    $newObjNetCred = New-Object -TypeName PSObject
+    Add-Member -InputObject $newObjNetCred -Type NoteProperty -Name CredentialSetting -Value  $NetCredSet
+    Add-Member -InputObject $newObjNetCred -Type NoteProperty -Name CredentialRegValue -Value $NetCredReg 
+    $fragNetCredVal += $newObjNetCred
+
+    <#
+    Network access: Allow anonymous SID/Name translation
+
+    Computer Configuration\Policies\Windows Settings\Security Settings\Local Policies\Security Options
+
+    This policy setting enables or disables the ability of an anonymous user to request security identifier (SID) attributes for another user.
+    If this policy setting is enabled, a user might use the well-known Administrators SID to get the real name of the built-in Administrator account, even if the account has been renamed. That person might then use the account name to initiate a brute-force password-guessing attack.
+    Misuse of this policy setting is a common error that can cause data loss or problems with data access or security.
+
+    #>
+    $NetCredDescrip = "Network access: Allow anonymous SID/Name translation"
+    $gpopath ="Computer Configuration\Policies\Windows Settings\Security Settings\Local Policies\Security Options\$NetCredDescrip"
+    $RegKey = 'HKLM:\System\CurrentControlSet\Control\Lsa\'
+    $NetCredVal=@()
+    $NetCredVal = "AnonymousNameLookup"
+    $getNetCredVal=@()
+    $getNetCred = Get-Item $RegKey -ErrorAction SilentlyContinue
+    $getNetCredVal = $getNetCred.GetValue("$NetCredVal") 
+
+    if ($getNetCredVal -eq "1")
+    {
+        $NetCredSet = "Warning - $NetCredDescrip is enabled Warning" 
+        $NetCredReg = "<div title=$gpoPath>$RegKey"
+    }
+    else
+    {
+        $NetCredSet = "$NetCredDescrip is disabled" 
+        $NetCredReg = "<div title=$gpoPath>$RegKey"
+    }
+
+    $newObjNetCred = New-Object -TypeName PSObject
+    Add-Member -InputObject $newObjNetCred -Type NoteProperty -Name CredentialSetting -Value  $NetCredSet
+    Add-Member -InputObject $newObjNetCred -Type NoteProperty -Name CredentialRegValue -Value $NetCredReg 
+    $fragNetCredVal += $newObjNetCred
+
+
+    <#
+    Network access: Let Everyone permissions apply to anonymous users
+
+    Computer Configuration\Policies\Windows Settings\Security Settings\Local Policies\Security Options
+
+
+    This policy setting determines what additional permissions are granted for anonymous connections to the device. 
+    If you enable this policy setting, anonymous users can enumerate the names of domain accounts and shared folders and 
+    perform certain other activities. This capability is convenient, for example, when an administrator wants to grant 
+    access to users in a trusted domain that does not maintain a reciprocal trust.
+
+    By default, the token that is created for anonymous connections does not include the Everyone SID. Therefore, permissions 
+    that are assigned to the Everyone group do not apply to anonymous users.
+
+    #>
+    $NetCredDescrip = "Network access: Let Everyone permissions apply to anonymous users"
+    $gpopath ="Computer Configuration\Policies\Windows Settings\Security Settings\Local Policies\Security Options\$NetCredDescrip"
+    $RegKey = 'HKLM:\System\CurrentControlSet\Control\Lsa\'
+    $NetCredVal=@()
+    $NetCredVal = "everyoneincludesanonymous"
+    $getNetCredVal=@()
+    $getNetCred = Get-Item $RegKey -ErrorAction SilentlyContinue
+    $getNetCredVal = $getNetCred.GetValue("$NetCredVal") 
+
+    if ($getNetCredVal -eq "1")
+    {
+        $NetCredSet = "Warning - $NetCredDescrip is enabled Warning" 
+        $NetCredReg = "<div title=$gpoPath>$RegKey"
+    }
+    else
+    {
+        $NetCredSet = "$NetCredDescrip is disabled" 
+        $NetCredReg = "<div title=$gpoPath>$RegKey"
+    }
+
+    $newObjNetCred = New-Object -TypeName PSObject
+    Add-Member -InputObject $newObjNetCred -Type NoteProperty -Name CredentialSetting -Value  $NetCredSet
+    Add-Member -InputObject $newObjNetCred -Type NoteProperty -Name CredentialRegValue -Value $NetCredReg 
+    $fragNetCredVal += $newObjNetCred
+
+    <#
+    Network access: Do not allow anonymous enumeration of SAM accounts
+
+    RestrictAnonymousSAM (Sam accounts)
+
+    Computer Configuration\Policies\Windows Settings\Security Settings\Local Policies\Security Options
+
+    This policy setting determines which additional permissions will be assigned for anonymous connections to the 
+    device. Windows allows anonymous users to perform certain activities, such as enumerating the names of domain 
+    accounts and network shares. This is convenient, for example, when an administrator wants to give access to users 
+    in a trusted domain that does not maintain a reciprocal trust. However, even with this policy setting enabled,
+     anonymous users will have access to resources with permissions that explicitly include the built-in group, ANONYMOUS LOGON.
+    This policy setting has no impact on domain controllers. Misuse of this policy setting is a common error that 
+    can cause data loss or problems with data access or security.
+
+    #>
+    $NetCredDescrip = "Network access: Do not allow anonymous enumeration of SAM accounts"
+    $gpopath ="Computer Configuration\Policies\Windows Settings\Security Settings\Local Policies\Security Options\$NetCredDescrip"
+    $RegKey = 'HKLM:\System\CurrentControlSet\Control\Lsa\'
+    $NetCredVal=@()
+    $NetCredVal = "RestrictAnonymousSAM"
+    $getNetCredVal=@()
+    $getNetCred = Get-Item $RegKey -ErrorAction SilentlyContinue
+    $getNetCredVal = $getNetCred.GetValue("$NetCredVal") 
+
+    if ($getNetCredVal -eq "1")
+    {
+        $NetCredSet = "$NetCredDescrip is enabled" 
+        $NetCredReg = "<div title=$gpoPath>$RegKey"
+    }
+    else
+    {
+        $NetCredSet = "Warning - $NetCredDescrip is disabled Warning" 
+        $NetCredReg = "<div title=$gpoPath>$RegKey"
+    }
+
+    $newObjNetCred = New-Object -TypeName PSObject
+    Add-Member -InputObject $newObjNetCred -Type NoteProperty -Name CredentialSetting -Value  $NetCredSet
+    Add-Member -InputObject $newObjNetCred -Type NoteProperty -Name CredentialRegValue -Value $NetCredReg 
+    $fragNetCredVal += $newObjNetCred
+
+    <#
+    Network access: Do not allow anonymous enumeration of SAM accounts and shares
+
+    Computer Configuration\Policies\Windows Settings\Security Settings\Local Policies\Security Options
+
+    RestrictAnonymous (Sam accounts and shares)
+
+    This policy setting determines which additional permissions will be assigned for anonymous connections to the device. 
+    Windows allows anonymous users to perform certain activities, such as enumerating the names of domain accounts and network shares. 
+    This is convenient, for example, when an administrator wants to give access to users in a trusted domain that does not 
+    maintain a reciprocal trust. However, even with this policy setting enabled, anonymous users will have access to resources 
+    with permissions that explicitly include the built-in group, ANONYMOUS LOGON.
+    This policy setting has no impact on domain controllers. Misuse of this policy setting is a common error that can cause data 
+    loss or problems with data access or security.
+
+    #>
+    $NetCredDescrip = "Network access: Do not allow anonymous enumeration of SAM accounts and shares"
+    $gpopath ="Computer Configuration\Policies\Windows Settings\Security Settings\Local Policies\Security Options\$NetCredDescrip"
+    $RegKey = 'HKLM:\System\CurrentControlSet\Control\Lsa\'
+    $NetCredVal=@()
+    $NetCredVal = "RestrictAnonymous"
+    $getNetCredVal=@()
+    $getNetCred = Get-Item $RegKey -ErrorAction SilentlyContinue
+    $getNetCredVal = $getNetCred.GetValue("$NetCredVal") 
+
+    if ($getNetCredVal -eq "1")
+    {
+        $NetCredSet = "$NetCredDescrip is enabled" 
+        $NetCredReg = "<div title=$gpoPath>$RegKey"
+    }
+    else
+    {
+        $NetCredSet = "Warning - $NetCredDescrip is disabled Warning" 
+        $NetCredReg = "<div title=$gpoPath>$RegKey"
+    }
+
+    $newObjNetCred = New-Object -TypeName PSObject
+    Add-Member -InputObject $newObjNetCred -Type NoteProperty -Name CredentialSetting -Value  $NetCredSet
+    Add-Member -InputObject $newObjNetCred -Type NoteProperty -Name CredentialRegValue -Value $NetCredReg 
+    $fragNetCredVal += $newObjNetCred
+
+
+    <#
+    Network access: Restrict anonymous access to Named Pipes and Shares
+
+    Computer Configuration\Policies\Windows Settings\Security Settings\Local Policies\Security Options
+
+    This policy setting enables or disables the restriction of anonymous access to only those shared folders and 
+    pipes that are named in the Network access: Named pipes that can be accessed anonymously and Network access: 
+    Shares that can be accessed anonymously settings. The setting controls null session access to shared folders 
+    on your computers by adding RestrictNullSessAccess with the value 1 in the registry key 
+    HKEY_LOCAL_MACHINE\System\CurrentControlSet\Services\LanManServer\Parameters. This registry value toggles null session 
+    shared folders on or off to control whether the Server service restricts unauthenticated clients' access to named resources.
+    Null sessions are a weakness that can be exploited through the various shared folders on the devices in your environment.
+
+
+    #>
+    $NetCredDescrip = "Network access: Restrict anonymous access to Named Pipes and Shares"
+    $gpopath ="Computer Configuration\Policies\Windows Settings\Security Settings\Local Policies\Security Options\$NetCredDescrip"
+    $RegKey = 'HKLM:\System\CurrentControlSet\Services\LanManServer\Parameters\'
+    $NetCredVal=@()
+    $NetCredVal = "RestrictNullSessAccess"
+    $getNetCredVal=@()
+    $getNetCred = Get-Item $RegKey -ErrorAction SilentlyContinue
+    $getNetCredVal = $getNetCred.GetValue("$NetCredVal") 
+
+    if ($getNetCredVal -eq "1")
+    {
+        $NetCredSet = "$NetCredDescrip is enabled" 
+        $NetCredReg = "<div title=$gpoPath>$RegKey"
+    }
+    else
+    {
+        $NetCredSet = "Warning - $NetCredDescrip is disabled Warning" 
+        $NetCredReg = "<div title=$gpoPath>$RegKey"
+    }
+
+    $newObjNetCred = New-Object -TypeName PSObject
+    Add-Member -InputObject $newObjNetCred -Type NoteProperty -Name CredentialSetting -Value  $NetCredSet
+    Add-Member -InputObject $newObjNetCred -Type NoteProperty -Name CredentialRegValue -Value $NetCredReg 
+    $fragNetCredVal += $newObjNetCred
+
+
+    <#
+    Network access: Restrict clients allowed to make remote calls to SAM
+
+    Computer Configuration\Policies\Windows Settings\Security Settings\Local Policies\Security Options
+
+    https://docs.microsoft.com/en-us/windows/security/threat-protection/security-policy-settings/network-access-restrict-clients-allowed-to-make-remote-sam-calls
+    O:BAG:BAD:(A;;RC;;;BA) = Administrator
+    #>
+    $NetCredDescrip = "Network access: Restrict clients allowed to make remote calls to SAM"
+    $gpopath ="Computer Configuration\Policies\Windows Settings\Security Settings\Local Policies\Security Options\$NetCredDescrip"
+    $RegKey = 'HKLM:\System\CurrentControlSet\Control\Lsa\'
+    $NetCredVal=@()
+    $NetCredVal = "RestrictRemoteSam"
+    $getNetCredVal=@()
+    $getNetCred = Get-Item $RegKey -ErrorAction SilentlyContinue
+    $getNetCredVal = $getNetCred.GetValue("$NetCredVal") 
+
+    if ($getNetCredVal -eq "O:BAG:BAD:(A;;RC;;;BA)")
+    {
+        $NetCredSet = "$NetCredDescrip is enabled to allow Administrator remote access (O:BAG:BAD:(A;;RC;;;BA))" 
+        $NetCredReg = "<div title=$gpoPath>$RegKey"
+
+    }
+    else
+    {
+        $NetCredSet = "Warning - $NetCredDescrip is disabled or not set Warning " 
+        $NetCredReg = "<div title=$gpoPath>$RegKey"
+    }
+
+    $newObjNetCred = New-Object -TypeName PSObject
+    Add-Member -InputObject $newObjNetCred -Type NoteProperty -Name CredentialSetting -Value  $NetCredSet
+    Add-Member -InputObject $newObjNetCred -Type NoteProperty -Name CredentialRegValue -Value $NetCredReg 
+    $fragNetCredVal += $newObjNetCred
+
+
+    <#
+    Network security: Allow Local System to use computer identity for NTLM
+
+    Computer Configuration\Policies\Windows Settings\Security Settings\Local Policies\Security Options
+
+    When services connect to devices that are running versions of the Windows operating system earlier than 
+    Windows Vista or Windows Server 2008, services that run as Local System and use SPNEGO (Negotiate) that revert 
+    to NTLM will authenticate anonymously. In Windows Server 2008 R2 and Windows 7 and later, if a service connects 
+    to a computer running Windows Server 2008 or Windows Vista, the system service uses the computer identity.
+    When a service connects with the device identity, signing and encryption are supported to provide data protection. 
+    (When a service connects anonymously, a system-generated session key is created, which provides no protection, 
+    but it allows applications to sign and encrypt data without errors. Anonymous authentication uses a NULL session, 
+    which is a session with a server in which no user authentication is performed; and therefore, anonymous access is allowed.)
+    
+    #>
+    $NetCredDescrip = "Network security: Allow Local System to use computer identity for NTLM"
+    $gpopath ="Computer Configuration\Policies\Windows Settings\Security Settings\Local Policies\Security Options\$NetCredDescrip"
+    $RegKey = 'HKLM:\System\CurrentControlSet\Control\Lsa\'
+    $NetCredVal=@()
+    $NetCredVal = "UseMachineId"
+    $getNetCredVal=@()
+    $getNetCred = Get-Item $RegKey -ErrorAction SilentlyContinue
+    $getNetCredVal = $getNetCred.GetValue("$NetCredVal") 
+
+    if ($getNetCredVal -eq "1")
+    {
+        $NetCredSet = "Warning - $NetCredDescrip is enabled Warning" 
+        $NetCredReg = "<div title=$gpoPath>$RegKey"
+    }
+    else
+    {
+        $NetCredSet = "$NetCredDescrip is disabled" 
+        $NetCredReg = "<div title=$gpoPath>$RegKey"
+    }
+
+    $newObjNetCred = New-Object -TypeName PSObject
+    Add-Member -InputObject $newObjNetCred -Type NoteProperty -Name CredentialSetting -Value  $NetCredSet
+    Add-Member -InputObject $newObjNetCred -Type NoteProperty -Name CredentialRegValue -Value $NetCredReg 
+    $fragNetCredVal += $newObjNetCred
+
+    <#
+    Network security: Allow LocalSystem NULL session fallback
+
+    Computer Configuration\Policies\Windows Settings\Security Settings\Local Policies\Security Options
+
+    This policy affects session security during the authentication process between devices running Windows Server 2008 R2 and Windows 7 
+    and later and those devices running earlier versions of the Windows operating system. For computers running Windows Server 2008 R2 
+    and Windows 7 and later, services running as Local System require a service principal name (SPN) to generate the session key. However, 
+    if Network security: Allow Local System to use computer identity for NTLM is set to disabled, services running as Local System will 
+    fall back to using NULL session authentication when they transmit data to servers running versions of Windows earlier than Windows 
+    Vista or Windows Server 2008. NULL session does not establish a unique session key for each authentication; and thus, it cannot provide 
+    integrity or confidentiality protection. The setting Network security: Allow LocalSystem NULL session fallback determines whether services 
+    that request the use of session security are allowed to perform signature or encryption functions with a well-known key for application compatibility.
+    
+    #>
+    $NetCredDescrip = "Network security: Allow LocalSystem NULL session fallback"
+    $gpopath ="Computer Configuration\Policies\Windows Settings\Security Settings\Local Policies\Security Options\$NetCredDescrip"
+    $RegKey = 'HKLM:\System\CurrentControlSet\Control\LSA\MSV1_0\'
+    $NetCredVal=@()
+    $NetCredVal = "allownullsessionfallback"
+    $getNetCredVal=@()
+    $getNetCred = Get-Item $RegKey -ErrorAction SilentlyContinue
+    $getNetCredVal = $getNetCred.GetValue("$NetCredVal") 
+
+    if ($getNetCredVal -eq "1")
+    {
+        $NetCredSet = "Warning - $NetCredDescrip is enabled Warning" 
+        $NetCredReg = "<div title=$gpoPath>$RegKey"
+    }
+    else
+    {
+        $NetCredSet = "$NetCredDescrip is disabled" 
+        $NetCredReg = "<div title=$gpoPath>$RegKey"
+    }
+
+    $newObjNetCred = New-Object -TypeName PSObject
+    Add-Member -InputObject $newObjNetCred -Type NoteProperty -Name CredentialSetting -Value  $NetCredSet
+    Add-Member -InputObject $newObjNetCred -Type NoteProperty -Name CredentialRegValue -Value $NetCredReg 
+    $fragNetCredVal += $newObjNetCred   
+
+<#
+    Disallow Autoplay for non-volume devices - Machine
+
+    Computer Configuration\Policies\Administrative Templates\Windows Components\AutoPlay Policies
+
+    #>
+    $NetCredDescrip = "Disallow Autoplay for non-volume devices"
+    $gpopath ="Computer Configuration\Policies\Administrative Templates\Windows Components\AutoPlay Policies\$NetCredDescrip"
+    $RegKey = 'HKLM:\Software\Policies\Microsoft\Windows\Explorer\'
+    $NetCredVal=@()
+    $NetCredVal = "NoAutoplayfornonVolume"
+    $getNetCredVal=@()
+    $getNetCred = Get-Item $RegKey -ErrorAction SilentlyContinue
+    $getNetCredVal = $getNetCred.GetValue("$NetCredVal") 
+
+    if ($getNetCredVal -eq "1")
+    {
+        $NetCredSet = "$NetCredDescrip is enabled" 
+        $NetCredReg = "<div title=$gpoPath>$RegKey"
+    }
+    else
+    {
+        $NetCredSet = "Warning - $NetCredDescrip is disabled" 
+        $NetCredReg = "<div title=$gpoPath>$RegKey"
+    }
+
+    $newObjNetCred = New-Object -TypeName PSObject
+    Add-Member -InputObject $newObjNetCred -Type NoteProperty -Name CredentialSetting -Value  $NetCredSet
+    Add-Member -InputObject $newObjNetCred -Type NoteProperty -Name CredentialRegValue -Value $NetCredReg 
+    $fragNetCredVal += $newObjNetCred
+
+    <#
+    Disallow Autoplay for non-volume devices - Users
+
+    User Configuration\Policies\Administrative Templates\Windows Components\AutoPlay Policies
+
+    #>
+    $NetCredDescrip = "Disallow Autoplay for non-volume devices"
+    $gpopath ="User Configuration\Policies\Administrative Templates\Windows Components\AutoPlay Policies\$NetCredDescrip"
+    $RegKey = 'HKCU:\Software\Policies\Microsoft\Windows\Explorer\'
+    $NetCredVal=@()
+    $NetCredVal = "NoAutoplayfornonVolume"
+    $getNetCredVal=@()
+    $getNetCred = Get-Item $RegKey -ErrorAction SilentlyContinue
+    $getNetCredVal = $getNetCred.GetValue("$NetCredVal") 
+
+    if ($getNetCredVal -eq "1")
+    {
+        $NetCredSet = "$NetCredDescrip is enabled" 
+        $NetCredReg = "<div title=$gpoPath>$RegKey"
+    }
+    else
+    {
+        $NetCredSet = "Warning - $NetCredDescrip is disabled" 
+        $NetCredReg = "<div title=$gpoPath>$RegKey"
+    }
+
+    $newObjNetCred = New-Object -TypeName PSObject
+    Add-Member -InputObject $newObjNetCred -Type NoteProperty -Name CredentialSetting -Value  $NetCredSet
+    Add-Member -InputObject $newObjNetCred -Type NoteProperty -Name CredentialRegValue -Value $NetCredReg 
+    $fragNetCredVal += $newObjNetCred
+
+
+    <#
+    Set the default behavior for AutoRun - Machine
+
+    Computer Configuration\Policies\Administrative Templates\Windows Components\AutoPlay Policies
+
+    #>
+    $NetCredDescrip = "Set the default behavior for AutoRun"
+    $gpopath ="Computer Configuration\Policies\Administrative Templates\Windows Components\AutoPlay Policies\$NetCredDescrip"
+    $RegKey = 'HKLM:\Software\Microsoft\Windows\CurrentVersion\Policies\Explorer\'
+    $NetCredVal=@()
+    $NetCredVal = "NoAutorun"
+    $getNetCredVal=@()
+    $getNetCred = Get-Item $RegKey -ErrorAction SilentlyContinue
+    $getNetCredVal = $getNetCred.GetValue("$NetCredVal") 
+
+    if ($getNetCredVal -eq "1")
+    {
+        $NetCredSet = "$NetCredDescrip is enabled" 
+        $NetCredReg = "<div title=$gpoPath>$RegKey"
+    }
+    else
+    {
+        $NetCredSet = "Warning - $NetCredDescrip is disabled" 
+        $NetCredReg = "<div title=$gpoPath>$RegKey"
+    }
+
+    $newObjNetCred = New-Object -TypeName PSObject
+    Add-Member -InputObject $newObjNetCred -Type NoteProperty -Name CredentialSetting -Value  $NetCredSet
+    Add-Member -InputObject $newObjNetCred -Type NoteProperty -Name CredentialRegValue -Value $NetCredReg 
+    $fragNetCredVal += $newObjNetCred
+
+    <#
+    Set the default behavior for AutoRun - Users
+
+    User Configuration\Policies\Administrative Templates\Windows Components\AutoPlay Policies
+
+    #>
+    $NetCredDescrip = "Set the default behavior for AutoRun"
+    $gpopath ="User Configuration\Policies\Administrative Templates\Windows Components\AutoPlay Policies\$NetCredDescrip"
+    $RegKey = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Policies\Explorer\'
+    $NetCredVal=@()
+    $NetCredVal = "NoAutorun"
+    $getNetCredVal=@()
+    $getNetCred = Get-Item $RegKey -ErrorAction SilentlyContinue
+    $getNetCredVal = $getNetCred.GetValue("$NetCredVal") 
+
+    if ($getNetCredVal -eq "1")
+    {
+        $NetCredSet = "$NetCredDescrip is enabled" 
+        $NetCredReg = "<div title=$gpoPath>$RegKey"
+    }
+    else
+    {
+        $NetCredSet = "Warning - $NetCredDescrip is disabled" 
+        $NetCredReg = "<div title=$gpoPath>$RegKey"
+    }
+
+    $newObjNetCred = New-Object -TypeName PSObject
+    Add-Member -InputObject $newObjNetCred -Type NoteProperty -Name CredentialSetting -Value  $NetCredSet
+    Add-Member -InputObject $newObjNetCred -Type NoteProperty -Name CredentialRegValue -Value $NetCredReg 
+    $fragNetCredVal += $newObjNetCred
+
+    <#
+    Turn off Autoplay - Machine
+
+    Computer Configuration\Policies\Administrative Templates\Windows Components\AutoPlay Policies
+
+    #>
+    $NetCredDescrip = "Turn off Autoplay"
+    $gpopath ="Computer Configuration\Policies\Administrative Templates\Windows Components\AutoPlay Policies\$NetCredDescrip"
+    $RegKey = 'HKLM:\Software\Microsoft\Windows\CurrentVersion\Policies\Explorer\'
+    $NetCredVal=@()
+    $NetCredVal = "NoDriveTypeAutoRun"
+    $getNetCredVal=@()
+    $getNetCred = Get-Item $RegKey -ErrorAction SilentlyContinue
+    $getNetCredVal = $getNetCred.GetValue("$NetCredVal") 
+
+    if ($getNetCredVal -eq "255")
+    {
+        $NetCredSet = "$NetCredDescrip is enabled" 
+        $NetCredReg = "<div title=$gpoPath>$RegKey"
+    }
+    else
+    {
+        $NetCredSet = "Warning - $NetCredDescrip is disabled" 
+        $NetCredReg = "<div title=$gpoPath>$RegKey"
+    }
+
+    $newObjNetCred = New-Object -TypeName PSObject
+    Add-Member -InputObject $newObjNetCred -Type NoteProperty -Name CredentialSetting -Value  $NetCredSet
+    Add-Member -InputObject $newObjNetCred -Type NoteProperty -Name CredentialRegValue -Value $NetCredReg 
+    $fragNetCredVal += $newObjNetCred
+
+    <#
+    Turn off Autoplay - Users
+
+    User Configuration\Policies\Administrative Templates\Windows Components\AutoPlay Policies
+
+    #>
+    $NetCredDescrip = "Turn off Autoplay"
+    $gpopath ="User Configuration\Policies\Administrative Templates\Windows Components\AutoPlay Policies\$NetCredDescrip"
+    $RegKey = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Policies\Explorer\'
+    $NetCredVal=@()
+    $NetCredVal = "NoDriveTypeAutoRun"
+    $getNetCredVal=@()
+    $getNetCred = Get-Item $RegKey -ErrorAction SilentlyContinue
+    $getNetCredVal = $getNetCred.GetValue("$NetCredVal") 
+
+    if ($getNetCredVal -eq "255")
+    {
+        $NetCredSet = "$NetCredDescrip is enabled" 
+        $NetCredReg = "<div title=$gpoPath>$RegKey"
+    }
+    else
+    {
+        $NetCredSet = "Warning - $NetCredDescrip is disabled" 
+        $NetCredReg = "<div title=$gpoPath>$RegKey"
+    }
+
+    $newObjNetCred = New-Object -TypeName PSObject
+    Add-Member -InputObject $newObjNetCred -Type NoteProperty -Name CredentialSetting -Value  $NetCredSet
+    Add-Member -InputObject $newObjNetCred -Type NoteProperty -Name CredentialRegValue -Value $NetCredReg 
+    $fragNetCredVal += $newObjNetCred
+
+<#
+    Prevent access to the command prompt
+
+    User Configuration\Policies\Administrative Templates\System
+
+    This policy setting prevents users from running the interactive command prompt Cmd.exe.
+
+    This policy setting also determines whether batch files (.cmd and .bat) can run on the computer.
+    If you enable this policy setting and the user tries to open a command window, the system displays a message explaining that a setting prevents the action. .
+    If you disable this policy setting or don't configure it, users can run Cmd.exe and batch files normally.
+
+    #>
+    $NetCredDescrip = "Prevent access to the command prompt"
+    $gpopath ="User Configuration\Policies\Administrative Templates\System\$NetCredDescrip"
+    $RegKey = 'HKCU:\Software\Policies\Microsoft\Windows\System\'
+    $NetCredVal=@()
+    $NetCredVal = "DisableCMD"
+    $getNetCredVal=@()
+    $getNetCred = Get-Item $RegKey -ErrorAction SilentlyContinue
+    $getNetCredVal = $getNetCred.GetValue("$NetCredVal") 
+
+    if ($getNetCredVal -eq "1")
+    {
+        $NetCredSet = "$NetCredDescrip is enabled" 
+        $NetCredReg = "<div title=$gpoPath>$RegKey"
+    }
+    else
+    {
+        $NetCredSet = "Warning - $NetCredDescrip is disabled" 
+        $NetCredReg = "<div title=$gpoPath>$RegKey"
+    }
+
+    $newObjNetCred = New-Object -TypeName PSObject
+    Add-Member -InputObject $newObjNetCred -Type NoteProperty -Name CredentialSetting -Value  $NetCredSet
+    Add-Member -InputObject $newObjNetCred -Type NoteProperty -Name CredentialRegValue -Value $NetCredReg 
+    $fragNetCredVal += $newObjNetCred
+
+    <#
+    Prevent access to registry editing tools
+
+    User Configuration\Policies\Administrative Templates\System
+
+    #>
+    $NetCredDescrip = "Prevent access to registry editing tools"
+    $gpopath ="User Configuration\Policies\Administrative Templates\System\$NetCredDescrip"
+    $RegKey = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Policies\System\'
+    $NetCredVal=@()
+    $NetCredVal = "DisableRegistryTools"
+    $getNetCredVal=@()
+    $getNetCred = Get-Item $RegKey -ErrorAction SilentlyContinue
+    $getNetCredVal = $getNetCred.GetValue("$NetCredVal") 
+
+    if ($getNetCredVal -eq "2")
+    {
+        $NetCredSet = "$NetCredDescrip is enabled" 
+        $NetCredReg = "<div title=$gpoPath>$RegKey"
+    }
+    else
+    {
+        $NetCredSet = "Warning - $NetCredDescrip is disabled" 
+        $NetCredReg = "<div title=$gpoPath>$RegKey"
+    }
+
+    $newObjNetCred = New-Object -TypeName PSObject
+    Add-Member -InputObject $newObjNetCred -Type NoteProperty -Name CredentialSetting -Value  $NetCredSet
+    Add-Member -InputObject $newObjNetCred -Type NoteProperty -Name CredentialRegValue -Value $NetCredReg 
+    $fragNetCredVal += $newObjNetCred
+
+
+    <#
+    Configure Windows Defender SmartScreen
+
+    Computer Configuration\Policies\Administrative Templates\Windows Components\File Explorer
+
+    This policy allows you to turn Windows Defender SmartScreen on or off. SmartScreen helps protect PCs by warning users before 
+    running potentially malicious programs downloaded from the Internet. This warning is presented as an interstitial dialog shown 
+    before running an app that has been downloaded from the Internet and is unrecognized or known to be malicious. No dialog is shown 
+    for apps that do not appear to be suspicious.
+
+    Some information is sent to Microsoft about files and programs run on PCs with this feature enabled.
+    If you enable this policy, SmartScreen will be turned on for all users. Its behavior can be controlled by the following options:
+    • Warn and prevent bypass
+    • Warn
+
+    #>
+    $NetCredDescrip = "Configure Windows Defender SmartScreen (File Explorer)"
+    $gpopath ="Computer Configuration\Policies\Administrative Templates\Windows Components\File Explorer\$NetCredDescrip"
+    $RegKey = 'HKLM:\Software\Policies\Microsoft\Windows\System\'
+    $NetCredVal=@()
+    $NetCredVal = "EnableSmartScreen"
+    $getNetCredVal=@()
+    $getNetCred = Get-Item $RegKey -ErrorAction SilentlyContinue
+    $getNetCredVal = $getNetCred.GetValue("$NetCredVal") 
+
+    if ($getNetCredVal -eq "1")
+    {
+        $NetCredSet = "$NetCredDescrip is enabled to Warn and prevent bypass" 
+        $NetCredReg = "<div title=$gpoPath>$RegKey"
+    }
+    else
+    {
+        $NetCredSet = "Warning - $NetCredDescrip is set warn and allow bypass" 
+        $NetCredReg = "<div title=$gpoPath>$RegKey"
+    }
+
+    $newObjNetCred = New-Object -TypeName PSObject
+    Add-Member -InputObject $newObjNetCred -Type NoteProperty -Name CredentialSetting -Value  $NetCredSet
+    Add-Member -InputObject $newObjNetCred -Type NoteProperty -Name CredentialRegValue -Value $NetCredReg 
+    $fragNetCredVal += $newObjNetCred
+
+    <#
+    Configure Windows Defender SmartScreen
+
+    Computer Configuration\Policies\Administrative Templates\Windows Components\Windows Defender SmartScreen\Explorer
+
+    This policy allows you to turn Windows Defender SmartScreen on or off. SmartScreen helps protect PCs by warning users before 
+    running potentially malicious programs downloaded from the Internet. This warning is presented as an interstitial dialog shown 
+    before running an app that has been downloaded from the Internet and is unrecognized or known to be malicious. No dialog is shown 
+    for apps that do not appear to be suspicious.
+
+    Some information is sent to Microsoft about files and programs run on PCs with this feature enabled.
+    If you enable this policy, SmartScreen will be turned on for all users. Its behavior can be controlled by the following options:
+    • Warn and prevent bypass
+    • Warn
+
+    Info: looks like both GPO's set the same registry setting
+
+    #>
+    $NetCredDescrip = "Configure Windows Defender SmartScreen (Windows Defender SmartScreen)"
+    $gpopath ="Computer Configuration\Policies\Administrative Templates\Windows Components\Windows Defender SmartScreen\Explorer\$NetCredDescrip"
+    $RegKey = 'HKLM:\Software\Policies\Microsoft\Windows\System\'
+    $NetCredVal=@()
+    $NetCredVal = "EnableSmartScreen"
+    $getNetCredVal=@()
+    $getNetCred = Get-Item $RegKey -ErrorAction SilentlyContinue
+    $getNetCredVal = $getNetCred.GetValue("$NetCredVal") 
+
+    if ($getNetCredVal -eq "1")
+    {
+        $NetCredSet = "$NetCredDescrip is enabled to Warn and prevent bypass" 
+        $NetCredReg = "<div title=$gpoPath>$RegKey"
+    }
+    else
+    {
+        $NetCredSet = "Warning - $NetCredDescrip is set warn and allow bypass" 
+        $NetCredReg = "<div title=$gpoPath>$RegKey"
+    }
+
+    $newObjNetCred = New-Object -TypeName PSObject
+    Add-Member -InputObject $newObjNetCred -Type NoteProperty -Name CredentialSetting -Value  $NetCredSet
+    Add-Member -InputObject $newObjNetCred -Type NoteProperty -Name CredentialRegValue -Value $NetCredReg 
+    $fragNetCredVal += $newObjNetCred
+
+    <#
+    Allow user control over installs
+
+    Computer Configuration\Policies\Administrative Templates\Windows Components\Windows Installer
+
+    This policy setting permits users to change installation options that typically are available only to system administrators.
+
+    If you enable this policy setting, some of the security features of Windows Installer are bypassed. It permits installations to 
+    complete that otherwise would be halted due to a security violation.
+        If you disable or do not configure this policy setting, the security features of Windows Installer prevent users from changing 
+        installation options typically reserved for system administrators, such as specifying the directory to which files are installed.
+
+    #>
+    $NetCredDescrip = "Allow user control over installs"
+    $gpopath ="Computer Configuration\Policies\Administrative Templates\Windows Components\Windows Installer\$NetCredDescrip"
+    $RegKey = 'HKLM:\Software\Policies\Microsoft\Windows\Installer\'
+    $NetCredVal=@()
+    $NetCredVal = "EnableUserControl"
+    $getNetCredVal=@()
+    $getNetCred = Get-Item $RegKey -ErrorAction SilentlyContinue
+    $getNetCredVal = $getNetCred.GetValue("$NetCredVal") 
+
+    if ($getNetCredVal -eq "0")
+    {
+        $NetCredSet = "$NetCredDescrip is disabled" 
+        $NetCredReg = "<div title=$gpoPath>$RegKey"
+    }
+    else
+    {
+        $NetCredSet = "Warning - $NetCredDescrip enabled warning" 
+        $NetCredReg = "<div title=$gpoPath>$RegKey"
+    }
+
+    $newObjNetCred = New-Object -TypeName PSObject
+    Add-Member -InputObject $newObjNetCred -Type NoteProperty -Name CredentialSetting -Value  $NetCredSet
+    Add-Member -InputObject $newObjNetCred -Type NoteProperty -Name CredentialRegValue -Value $NetCredReg 
+    $fragNetCredVal += $newObjNetCred
+
+    <#
+    Always install with elevated privileges - Computer
+
+    Computer Configuration\Policies\Administrative Templates\Windows Components\Windows Installer
+
+    This policy setting permits users to change installation options that typically are available only to system administrators.
+
+    If you enable this policy setting, privileges are extended to all programs. These privileges are usually reserved for programs 
+    that have been assigned to the user (offered on the desktop), assigned to the computer (installed automatically), or made available 
+    in Add or Remove Programs in Control Panel. This profile setting lets users install programs that require access to directories that the user might not have permission to view or change, including directories on highly restricted computers.
+    If you disable or do not configure this policy setting, the system applies the current user's permissions when it installs programs 
+    that a system administrator does not distribute or offer.
+    Note: This policy setting appears both in the Computer Configuration and User Configuration folders. To make this policy setting 
+    effective, you must enable it in both folders.
+
+    #>
+    $NetCredDescrip = "Always install with elevated privileges"
+    $gpopath ="Computer Configuration\Policies\Administrative Templates\Windows Components\Windows Installer\$NetCredDescrip"
+    $RegKey = 'HKLM:\Software\Policies\Microsoft\Windows\Installer\'
+    $NetCredVal=@()
+    $NetCredVal = "AlwaysInstallElevated"
+    $getNetCredVal=@()
+    $getNetCred = Get-Item $RegKey -ErrorAction SilentlyContinue
+    $getNetCredVal = $getNetCred.GetValue("$NetCredVal") 
+
+    if ($getNetCredVal -eq "0")
+    {
+        $NetCredSet = "$NetCredDescrip is disabled" 
+        $NetCredReg = "<div title=$gpoPath>$RegKey"
+    }
+    else
+    {
+        $NetCredSet = "Warning - $NetCredDescrip enabled warning" 
+        $NetCredReg = "<div title=$gpoPath>$RegKey"
+    }
+
+    $newObjNetCred = New-Object -TypeName PSObject
+    Add-Member -InputObject $newObjNetCred -Type NoteProperty -Name CredentialSetting -Value  $NetCredSet
+    Add-Member -InputObject $newObjNetCred -Type NoteProperty -Name CredentialRegValue -Value $NetCredReg 
+    $fragNetCredVal += $newObjNetCred
+
+    <#
+    Always install with elevated privileges - User
+
+    User Configuration\Policies\Administrative Templates\Windows Components\Windows Installer
+
+    This policy setting permits users to change installation options that typically are available only to system administrators.
+
+    If you enable this policy setting, privileges are extended to all programs. These privileges are usually reserved for programs 
+    that have been assigned to the user (offered on the desktop), assigned to the computer (installed automatically), or made available 
+    in Add or Remove Programs in Control Panel. This profile setting lets users install programs that require access to directories that the user might not have permission to view or change, including directories on highly restricted computers.
+    If you disable or do not configure this policy setting, the system applies the current user's permissions when it installs programs 
+    that a system administrator does not distribute or offer.
+    Note: This policy setting appears both in the Computer Configuration and User Configuration folders. To make this policy setting 
+    effective, you must enable it in both folders.
+
+    #>
+    $NetCredDescrip = "Always install with elevated privileges"
+    $gpopath ="User Configuration\Policies\Administrative Templates\Windows Components\Windows Installer\$NetCredDescrip"
+    $RegKey = 'HKCU:\Software\Policies\Microsoft\Windows\Installer\'
+    $NetCredVal=@()
+    $NetCredVal = "AlwaysInstallElevated"
+    $getNetCredVal=@()
+    $getNetCred = Get-Item $RegKey -ErrorAction SilentlyContinue
+    $getNetCredVal = $getNetCred.GetValue("$NetCredVal") 
+
+    if ($getNetCredVal -eq "0")
+    {
+        $NetCredSet = "$NetCredDescrip is disabled" 
+        $NetCredReg = "<div title=$gpoPath>$RegKey"
+    }
+    else
+    {
+        $NetCredSet = "Warning - $NetCredDescrip enabled warning" 
+        $NetCredReg = "<div title=$gpoPath>$RegKey"
+    }
+
+    $newObjNetCred = New-Object -TypeName PSObject
+    Add-Member -InputObject $newObjNetCred -Type NoteProperty -Name CredentialSetting -Value  $NetCredSet
+    Add-Member -InputObject $newObjNetCred -Type NoteProperty -Name CredentialRegValue -Value $NetCredReg 
+    $fragNetCredVal += $newObjNetCred
+
+    <#
+    Devices: Prevent users from installing printer drivers
+
+    Computer Configuration\Policies\Windows Settings\Security Settings\Local Policies\Security Options
+
+    #>
+    $NetCredDescrip = "Devices: Prevent users from installing printer drivers"
+    $gpopath ="Computer Configuration\Policies\Windows Settings\Security Settings\Local Policies\Security Options\$NetCredDescrip"
+    $RegKey = 'HKLM:\System\CurrentControlSet\Control\Print\Providers\LanMan Print Services\Servers\'
+    $NetCredVal=@()
+    $NetCredVal = "AddPrinterDrivers"
+    $getNetCredVal=@()
+    $getNetCred = Get-Item $RegKey -ErrorAction SilentlyContinue
+    $getNetCredVal = $getNetCred.GetValue("$NetCredVal") 
+
+    if ($getNetCredVal -eq "1")
+    {
+        $NetCredSet = "$NetCredDescrip is enabled, only Admin can install printer drivers" 
+        $NetCredReg = "<div title=$gpoPath>$RegKey"
+    }
+    else
+    {
+        $NetCredSet = "Warning - $NetCredDescrip disabled warning" 
+        $NetCredReg = "<div title=$gpoPath>$RegKey"
+    }
+
+    $newObjNetCred = New-Object -TypeName PSObject
+    Add-Member -InputObject $newObjNetCred -Type NoteProperty -Name CredentialSetting -Value  $NetCredSet
+    Add-Member -InputObject $newObjNetCred -Type NoteProperty -Name CredentialRegValue -Value $NetCredReg 
+    $fragNetCredVal += $newObjNetCred
+
+    <#
+    Do not process the legacy run list
+
+    Computer Configuration\Policies\Administrative Templates\System\Logon
+
+    Once malicious code has been copied to a workstation, an adversary with registry access can remotely schedule it 
+    to execute (i.e. using the run once list) or to automatically execute each time Microsoft Windows starts (i.e. using the legacy run list). 
+    To reduce this risk, legacy and run once lists should be disabled. This may interfere with the operation of legitimate applications that 
+    need to automatically execute each time Microsoft Windows starts. In such cases, the Run these programs at user logon Group Policy 
+    setting can be used to perform the same function in a more secure manner when defined at a domain level; however, if not used this Group Policy 
+    setting should be disabled rather than left in its default undefined state.
+
+    #>
+    $NetCredDescrip = "Do not process the legacy run list"
+    $gpopath ="Computer Configuration\Policies\Administrative Templates\System\Logon\$NetCredDescrip"
+    $RegKey = 'HKLM:\Software\Microsoft\Windows\CurrentVersion\Policies\Explorer\'
+    $NetCredVal=@()
+    $NetCredVal = "DisableCurrentUserRun"
+    $getNetCredVal=@()
+    $getNetCred = Get-Item $RegKey -ErrorAction SilentlyContinue
+    $getNetCredVal = $getNetCred.GetValue("$NetCredVal") 
+
+    if ($getNetCredVal -eq "1")
+    {
+        $NetCredSet = "$NetCredDescrip is enabled" 
+        $NetCredReg = "<div title=$gpoPath>$RegKey"
+    }
+    else
+    {
+        $NetCredSet = "Warning - $NetCredDescrip disabled warning" 
+        $NetCredReg = "<div title=$gpoPath>$RegKey"
+    }
+
+    $newObjNetCred = New-Object -TypeName PSObject
+    Add-Member -InputObject $newObjNetCred -Type NoteProperty -Name CredentialSetting -Value  $NetCredSet
+    Add-Member -InputObject $newObjNetCred -Type NoteProperty -Name CredentialRegValue -Value $NetCredReg 
+    $fragNetCredVal += $newObjNetCred
+
+    <#
+    Do not process the legacy run list
+
+    Computer Configuration\Policies\Administrative Templates\System\Logon
+
+    Once malicious code has been copied to a workstation, an adversary with registry access can remotely schedule it 
+    to execute (i.e. using the run once list) or to automatically execute each time Microsoft Windows starts (i.e. using the legacy run list). 
+    To reduce this risk, legacy and run once lists should be disabled. This may interfere with the operation of legitimate applications that 
+    need to automatically execute each time Microsoft Windows starts. In such cases, the Run these programs at user logon Group Policy 
+    setting can be used to perform the same function in a more secure manner when defined at a domain level; however, if not used this Group Policy 
+    setting should be disabled rather than left in its default undefined state.
+
+    #>
+    $NetCredDescrip = "Do not process the run once list"
+    $gpopath ="Computer Configuration\Policies\Administrative Templates\System\Logon\$NetCredDescrip"
+    $RegKey = 'HKLM:\Software\Microsoft\Windows\CurrentVersion\Policies\Explorer\'
+    $NetCredVal=@()
+    $NetCredVal = "DisableLocalMachineRunOnce"
+    $getNetCredVal=@()
+    $getNetCred = Get-Item $RegKey -ErrorAction SilentlyContinue
+    $getNetCredVal = $getNetCred.GetValue("$NetCredVal") 
+
+    if ($getNetCredVal -eq "1")
+    {
+        $NetCredSet = "$NetCredDescrip is enabled" 
+        $NetCredReg = "<div title=$gpoPath>$RegKey"
+    }
+    else
+    {
+        $NetCredSet = "Warning - $NetCredDescrip disabled warning" 
+        $NetCredReg = "<div title=$gpoPath>$RegKey"
+    }
+
+    $newObjNetCred = New-Object -TypeName PSObject
+    Add-Member -InputObject $newObjNetCred -Type NoteProperty -Name CredentialSetting -Value  $NetCredSet
+    Add-Member -InputObject $newObjNetCred -Type NoteProperty -Name CredentialRegValue -Value $NetCredReg 
+    $fragNetCredVal += $newObjNetCred
+
+
+    <#
+    Do not process the legacy run list
+
+    Computer Configuration\Policies\Administrative Templates\System\Logon
+
+    This policy setting specifies additional programs or documents that Windows starts automatically when a user logs on to the system.
+    If you enable this policy setting, you can specify which programs can run at the time the user logs on to this computer that has this policy applied.
+    To specify values for this policy setting, click Show. In the Show Contents dialog box in the Value column, type the name of the executable program (.exe) 
+    file or document file. To specify another name, press ENTER, and type the name. Unless the file is located in the %Systemroot% directory, you must specify 
+    the fully qualified path to the file.
+    If you disable or do not configure this policy setting, the user will have to start the appropriate programs after logon
+
+    #>
+    $NetCredDescrip = "Run these programs at user logon"
+    $gpopath ="Computer Configuration\Policies\Administrative Templates\System\Logon\$NetCredDescrip"
+    $RegKey = 'HKLM:\Software\Microsoft\Windows\CurrentVersion\Policies\Explorer\Run\'
+    $NetCredVal=@()
+    $NetCredVal = "1"
+    $getNetCredVal=@()
+    $getNetCred = Get-Item $RegKey -ErrorAction SilentlyContinue
+    $getNetCredVal = $getNetCred.GetValue("$NetCredVal") 
+
+    if ($getNetCredVal -eq 1)
+    {
+        $NetCredSet = "Warning - $NetCredDescrip is enabled warning" 
+        $NetCredReg = "<div title=$gpoPath>$RegKey"
+    }
+    else
+    {
+        $NetCredSet = "$NetCredDescrip disabled" 
+        $NetCredReg = "<div title=$gpoPath>$RegKey"
+    }
+
+    $newObjNetCred = New-Object -TypeName PSObject
+    Add-Member -InputObject $newObjNetCred -Type NoteProperty -Name CredentialSetting -Value  $NetCredSet
+    Add-Member -InputObject $newObjNetCred -Type NoteProperty -Name CredentialRegValue -Value $NetCredReg 
+    $fragNetCredVal += $newObjNetCred
+
+<#
+    Restrict Unauthenticated RPC clients
+
+    Computer Configuration\Policies\Administrative Templates\System\Remote Procedure Call
+
+    Remote Procedure Call (RPC) is a technique used for facilitating client and server application communications using a common interface. 
+    RPC is designed to make client and server interaction easier and safer by using a common library to handle tasks such as security, 
+    synchronisation and data flows. If unauthenticated communications are allowed between client and server applications, it could result in 
+    accidental disclosure of sensitive information or the failure to take advantage of RPC security functionality. To reduce this risk, all 
+    RPC clients should authenticate to RPC servers.
+
+    This policy setting impacts all RPC applications.  In a domain environment this policy setting should be used with caution as it can impact a 
+    wide range of functionality including group policy processing itself.  Reverting a change to this policy setting can require manual intervention 
+    on each affected machine. 
+    
+    This policy setting should never be applied to a domain controller.
+
+    #>
+    $NetCredDescrip = "Restrict Unauthenticated RPC clients"
+    $gpopath ="Computer Configuration\Policies\Administrative Templates\System\Remote Procedure Call\$NetCredDescrip"
+    $RegKey = 'HKLM:\Software\Policies\Microsoft\Windows NT\Rpc\'
+    $NetCredVal=@()
+    $NetCredVal = "RestrictRemoteClients"
+    $getNetCredVal=@()
+    $getNetCred = Get-Item $RegKey -ErrorAction SilentlyContinue
+    $getNetCredVal = $getNetCred.GetValue("$NetCredVal") 
+
+    if ($getNetCredVal -eq "1")
+    {
+        $NetCredSet = "$NetCredDescrip is enabled" 
+        $NetCredReg = "<div title=$gpoPath>$RegKey"
+    }
+    else
+    {
+        $NetCredSet = "Warning - $NetCredDescrip disabled - Not to be applied against DCs Warning" 
+        $NetCredReg = "<div title=$gpoPath>$RegKey"
+    }
+
+    $newObjNetCred = New-Object -TypeName PSObject
+    Add-Member -InputObject $newObjNetCred -Type NoteProperty -Name CredentialSetting -Value  $NetCredSet
+    Add-Member -InputObject $newObjNetCred -Type NoteProperty -Name CredentialRegValue -Value $NetCredReg 
+    $fragNetCredVal += $newObjNetCred
+
+    <#
+    Restrict Unauthenticated RPC clients
+
+    Computer Configuration\Policies\Administrative Templates\System\Remote Procedure Call
+
+    This policy setting controls whether RPC clients authenticate with the Endpoint Mapper Service when the call 
+    they are making contains authentication information. The Endpoint Mapper Service on computers running Windows 
+    NT4 (all service packs) cannot process authentication information supplied in this manner.
+    If you disable this policy setting, RPC clients will not authenticate to the Endpoint Mapper Service, but they 
+    will be able to communicate with the Endpoint Mapper Service on Windows NT4 Server.
+    If you enable this policy setting, RPC clients will authenticate to the Endpoint Mapper Service for calls that 
+    contain authentication information. Clients making such calls will not be able to communicate with the Windows 
+    NT4 Server Endpoint Mapper Service.
+
+    #>
+    $NetCredDescrip = "Enable RPC Endpoint Mapper Client Authentication"
+    $gpopath ="Computer Configuration\Policies\Administrative Templates\System\Remote Procedure Call\$NetCredDescrip"
+    $RegKey = 'HKLM:\Software\Policies\Microsoft\Windows NT\Rpc\'
+    $NetCredVal=@()
+    $NetCredVal = "EnableAuthEpResolution"
+    $getNetCredVal=@()
+    $getNetCred = Get-Item $RegKey -ErrorAction SilentlyContinue
+    $getNetCredVal = $getNetCred.GetValue("$NetCredVal") 
+
+    if ($getNetCredVal -eq "1")
+    {
+        $NetCredSet = "$NetCredDescrip is enabled" 
+        $NetCredReg = "<div title=$gpoPath>$RegKey"
+    }
+    else
+    {
+        $NetCredSet = "Warning - $NetCredDescrip disabled warning" 
+        $NetCredReg = "<div title=$gpoPath>$RegKey"
+    }
+
+    $newObjNetCred = New-Object -TypeName PSObject
+    Add-Member -InputObject $newObjNetCred -Type NoteProperty -Name CredentialSetting -Value  $NetCredSet
+    Add-Member -InputObject $newObjNetCred -Type NoteProperty -Name CredentialRegValue -Value $NetCredReg 
+    $fragNetCredVal += $newObjNetCred
+
+    <#
+    Microsoft Support Diagnostic Tool: Turn on MSDT interactive communication with support provider
+
+    Computer Configuration\Policies\Administrative Templates\System\Troubleshooting and Diagnostics\Microsoft Support Diagnostic Tool
+
+    #>
+    $NetCredDescrip = "Microsoft Support Diagnostic Tool: Turn on MSDT interactive communication with support provider"
+    $gpopath ="Computer Configuration\Policies\Administrative Templates\System\Troubleshooting and Diagnostics\Microsoft Support Diagnostic Tool\$NetCredDescrip"
+    $RegKey = 'HKLM:\SOFTWARE\Policies\Microsoft\Windows\ScriptedDiagnosticsProvider\Policy\'
+    $NetCredVal=@()
+    $NetCredVal = "DisableQueryRemoteServer"
+    $getNetCredVal=@()
+    $getNetCred = Get-Item $RegKey -ErrorAction SilentlyContinue
+    $getNetCredVal = $getNetCred.GetValue("$NetCredVal") 
+
+    if ($getNetCredVal -eq "0")
+    {
+        $NetCredSet = "$NetCredDescrip is disabled" 
+        $NetCredReg = "<div title=$gpoPath>$RegKey"
+    }
+    else
+    {
+        $NetCredSet = "Warning - $NetCredDescrip enabled warning" 
+        $NetCredReg = "<div title=$gpoPath>$RegKey"
+    }
+
+    $newObjNetCred = New-Object -TypeName PSObject
+    Add-Member -InputObject $newObjNetCred -Type NoteProperty -Name CredentialSetting -Value  $NetCredSet
+    Add-Member -InputObject $newObjNetCred -Type NoteProperty -Name CredentialRegValue -Value $NetCredReg 
+    $fragNetCredVal += $newObjNetCred
+
+    <#
+    Turn off Inventory Collector
+
+    Computer Configuration\Policies\Administrative Templates\Windows Components\Application Compatibility
+
+    The Inventory Collector inventories applications, files, devices, and drivers on the system and sends the information to Microsoft. 
+    This information is used to help diagnose compatibility problems.
+    If you enable this policy setting, the Inventory Collector will be turned off and data will not be sent to Microsoft. Collection of
+     installation data through the Program Compatibility Assistant is also disabled.
+    If you disable or do not configure this policy setting, the Inventory Collector will be turned on.
+
+    #>
+    $NetCredDescrip = "Turn off Inventory Collector"
+    $gpopath ="Computer Configuration\Policies\Administrative Templates\Windows Components\Application Compatibility\$NetCredDescrip"
+    $RegKey = 'HKLM:\Software\Policies\Microsoft\Windows\AppCompat\'
+    $NetCredVal=@()
+    $NetCredVal = "DisableInventory"
+    $getNetCredVal=@()
+    $getNetCred = Get-Item $RegKey -ErrorAction SilentlyContinue
+    $getNetCredVal = $getNetCred.GetValue("$NetCredVal") 
+
+    if ($getNetCredVal -eq "1")
+    {
+        $NetCredSet = "$NetCredDescrip is enabled" 
+        $NetCredReg = "<div title=$gpoPath>$RegKey"
+    }
+    else
+    {
+        $NetCredSet = "Warning - $NetCredDescrip disabled warning" 
+        $NetCredReg = "<div title=$gpoPath>$RegKey"
+    }
+
+    $newObjNetCred = New-Object -TypeName PSObject
+    Add-Member -InputObject $newObjNetCred -Type NoteProperty -Name CredentialSetting -Value  $NetCredSet
+    Add-Member -InputObject $newObjNetCred -Type NoteProperty -Name CredentialRegValue -Value $NetCredReg 
+    $fragNetCredVal += $newObjNetCred
+
+    <#
+    Turn off Steps Recorder
+
+    Computer Configuration\Policies\Administrative Templates\Windows Components\Application Compatibility
+    Steps Recorder keeps a record of steps taken by the user. The data generated by Steps Recorder can be used in feedback systems 
+    such as Windows Error Reporting to help developers understand and fix problems. The data includes user actions such as keyboard 
+    input and mouse input, user interface data, and screen shots. Steps Recorder includes an option to turn on and off data collection.
+
+    #>
+    $NetCredDescrip = "Turn off Steps Recorder"
+    $gpopath ="Computer Configuration\Policies\Administrative Templates\Windows Components\Application Compatibility\$NetCredDescrip"
+    $RegKey = 'HKLM:\Software\Policies\Microsoft\Windows\AppCompat\'
+    $NetCredVal=@()
+    $NetCredVal = "DisableUAR"
+    $getNetCredVal=@()
+    $getNetCred = Get-Item $RegKey -ErrorAction SilentlyContinue
+    $getNetCredVal = $getNetCred.GetValue("$NetCredVal") 
+
+    if ($getNetCredVal -eq "1")
+    {
+        $NetCredSet = "$NetCredDescrip is enabled" 
+        $NetCredReg = "<div title=$gpoPath>$RegKey"
+    }
+    else
+    {
+        $NetCredSet = "Warning - $NetCredDescrip disabled warning" 
+        $NetCredReg = "<div title=$gpoPath>$RegKey"
+    }
+
+    $newObjNetCred = New-Object -TypeName PSObject
+    Add-Member -InputObject $newObjNetCred -Type NoteProperty -Name CredentialSetting -Value  $NetCredSet
+    Add-Member -InputObject $newObjNetCred -Type NoteProperty -Name CredentialRegValue -Value $NetCredReg 
+    $fragNetCredVal += $newObjNetCred
+
+    <#
+    Prevent access to 16-bit applications
+
+    Computer Configuration\Policies\Administrative Templates\Windows Components\Application Compatibility
+
+    Specifies whether to prevent the MS-DOS subsystem (ntvdm.exe) from running on this computer. This setting affects the launching of 16-bit
+     applications in the operating system.
+    You can use this setting to turn off the MS-DOS subsystem, which will reduce resource usage and prevent users from running 16-bit applications. 
+    To run any 16-bit application or any application with 16-bit components, ntvdm.exe must be allowed to run. The MS-DOS subsystem starts when the 
+    first 16-bit application is launched. While the MS-DOS subsystem is running, any subsequent 16-bit applications launch faster, but overall resource 
+    usage on the system is increased.
+    If the status is set to Enabled, the MS-DOS subsystem is prevented from running, which then prevents any 16-bit applications from running. 
+    In addition, any 32-bit applications with 16-bit installers or other 16-bit components cannot run.
+
+    #>
+    $NetCredDescrip = "Prevent access to 16-bit applications"
+    $gpopath ="Computer Configuration\Policies\Administrative Templates\Windows Components\Application Compatibility\$NetCredDescrip"
+    $RegKey = 'HKLM:\Software\Policies\Microsoft\Windows\AppCompat\'
+    $NetCredVal=@()
+    $NetCredVal = "VDMDisallowed"
+    $getNetCredVal=@()
+    $getNetCred = Get-Item $RegKey -ErrorAction SilentlyContinue
+    $getNetCredVal = $getNetCred.GetValue("$NetCredVal") 
+
+    if ($getNetCredVal -eq "1")
+    {
+        $NetCredSet = "$NetCredDescrip is enabled" 
+        $NetCredReg = "<div title=$gpoPath>$RegKey"
+    }
+    else
+    {
+        $NetCredSet = "Warning - $NetCredDescrip disabled warning" 
+        $NetCredReg = "<div title=$gpoPath>$RegKey"
+    }
+
+    $newObjNetCred = New-Object -TypeName PSObject
+    Add-Member -InputObject $newObjNetCred -Type NoteProperty -Name CredentialSetting -Value  $NetCredSet
+    Add-Member -InputObject $newObjNetCred -Type NoteProperty -Name CredentialRegValue -Value $NetCredReg 
+    $fragNetCredVal += $newObjNetCred
+
+    <#
+    Allow Telemetry
+
+    Computer Configuration\Policies\Administrative Templates\Windows Components\Data Collection and Preview Builds
+
+    Diagnostic data is categorized into four levels, as follows:
+    - 0 (Security). Information that's required to help keep Windows, Windows Server, and System Center secure, including data about the Connected User Experiences and Telemetry component settings, the Malicious Software Removal Tool, and Windows Defender.
+    - 1 (Required). Basic device info, including: quality-related data, app compatibility, and data from the Security level.
+    - 2 (Enhanced). Additional insights, including: how Windows, Windows Server, System Center, and apps are used, how they perform, advanced reliability data, and data from both the Required and the Security levels.
+    - 3 (Optional). All data necessary to identify and help to fix problems, plus data from the Security, Required, and Enhanced levels.
+
+    #>
+    $NetCredDescrip = "Allow Telemetry"
+    $gpopath ="Computer Configuration\Policies\Administrative Templates\Windows Components\Data Collection and Preview Builds\$NetCredDescrip"
+    $RegKey = 'HKLM:\Software\Policies\Microsoft\Windows\DataCollection\'
+    $NetCredVal=@()
+    $NetCredVal = "AllowTelemetry"
+    $getNetCredVal=@()
+    $getNetCred = Get-Item $RegKey -ErrorAction SilentlyContinue
+    $getNetCredVal = $getNetCred.GetValue("$NetCredVal") 
+
+    if ($getNetCredVal -eq "0")
+    {
+        $NetCredSet = "$NetCredDescrip is enabled for Enterprise Only - Computer" 
+        $NetCredReg = "<div title=$gpoPath>$RegKey"
+    }
+    else
+    {
+        $NetCredSet = "Warning - $NetCredDescrip disabled warning" 
+        $NetCredReg = "<div title=$gpoPath>$RegKey"
+    }
+
+    $newObjNetCred = New-Object -TypeName PSObject
+    Add-Member -InputObject $newObjNetCred -Type NoteProperty -Name CredentialSetting -Value  $NetCredSet
+    Add-Member -InputObject $newObjNetCred -Type NoteProperty -Name CredentialRegValue -Value $NetCredReg 
+    $fragNetCredVal += $newObjNetCred
+
+
+        <#
+    Allow Telemetry
+
+    Computer Configuration\Policies\Administrative Templates\Windows Components\Data Collection and Preview Builds
+
+    Diagnostic data is categorized into four levels, as follows:
+    - 0 (Security). Information that's required to help keep Windows, Windows Server, and System Center secure, including data about the Connected User Experiences and Telemetry component settings, the Malicious Software Removal Tool, and Windows Defender.
+    - 1 (Required). Basic device info, including: quality-related data, app compatibility, and data from the Security level.
+    - 2 (Enhanced). Additional insights, including: how Windows, Windows Server, System Center, and apps are used, how they perform, advanced reliability data, and data from both the Required and the Security levels.
+    - 3 (Optional). All data necessary to identify and help to fix problems, plus data from the Security, Required, and Enhanced levels.
+
+    #>
+    $NetCredDescrip = "Allow Telemetry"
+    $gpopath ="Computer Configuration\Policies\Administrative Templates\Windows Components\Data Collection and Preview Builds\$NetCredDescrip"
+    $RegKey = 'HKLM:\Software\Policies\Microsoft\Windows\DataCollection\'
+    $NetCredVal=@()
+    $NetCredVal = "AllowTelemetry"
+    $getNetCredVal=@()
+    $getNetCred = Get-Item $RegKey -ErrorAction SilentlyContinue
+    $getNetCredVal = $getNetCred.GetValue("$NetCredVal") 
+
+    if ($getNetCredVal -eq "0")
+    {
+        $NetCredSet = "$NetCredDescrip is enabled for Enterprise Only - User" 
+        $NetCredReg = "<div title=$gpoPath>$RegKey"
+    }
+    else
+    {
+        $NetCredSet = "Warning - $NetCredDescrip disabled warning" 
+        $NetCredReg = "<div title=$gpoPath>$RegKey"
+    }
+
+    $newObjNetCred = New-Object -TypeName PSObject
+    Add-Member -InputObject $newObjNetCred -Type NoteProperty -Name CredentialSetting -Value  $NetCredSet
+    Add-Member -InputObject $newObjNetCred -Type NoteProperty -Name CredentialRegValue -Value $NetCredReg 
+    $fragNetCredVal += $newObjNetCred
+
+    <#
+    Configure Corporate Windows Error Reporting
+
+    Computer Configuration\Policies\Administrative Templates\Windows Components\Windows Error Reporting\Advanced Error Reporting Settings
+
+    This policy setting specifies a corporate server to which Windows Error Reporting sends reports (if you do not want to send error reports to Microsoft).
+    If you enable this policy setting, you can specify the name or IP address of an error report destination server on your organization's network. 
+    You can also select Connect using SSL to transmit error reports over a Secure Sockets Layer (SSL) connection, and specify a port number on the destination 
+    server for transmission.
+
+    #>
+    $NetCredDescrip = "Configure Corporate Windows Error Reporting"
+    $gpopath ="Computer Configuration\Policies\Administrative Templates\Windows Components\Windows Error Reporting\Advanced Error Reporting Settings\$NetCredDescrip"
+    $RegKey = 'HKLM:\SOFTWARE\Policies\Microsoft\Windows\Windows Error Reporting\'
+    $NetCredVal=@()
+    $NetCredVal = "CorporateWerUseSSL"   #query for SSL to be enabled
+    $getNetCredVal=@()
+    $getNetCred = Get-Item $RegKey -ErrorAction SilentlyContinue
+    $getNetCredVal = $getNetCred.GetValue("$NetCredVal") 
+
+    if ($getNetCredVal -eq "1")
+    {
+        $NetCredSet = "$NetCredDescrip is enabled" 
+        $NetCredReg = "<div title=$gpoPath>$RegKey"
+    }
+    else
+    {
+        $NetCredSet = "Warning - $NetCredDescrip is not set warning" 
+        $NetCredReg = "<div title=$gpoPath>$RegKey"
+    }
+
+    $newObjNetCred = New-Object -TypeName PSObject
+    Add-Member -InputObject $newObjNetCred -Type NoteProperty -Name CredentialSetting -Value  $NetCredSet
+    Add-Member -InputObject $newObjNetCred -Type NoteProperty -Name CredentialRegValue -Value $NetCredReg 
+    $fragNetCredVal += $newObjNetCred
+
+
+    <#
+    Safe Mode
+
+    An adversary with standard user credentials that can boot into Microsoft Windows using Safe Mode, Safe Mode with Networking or Safe Mode with 
+    Command Prompt options may be able to bypass system protections and security functionality. To reduce this risk, users with standard credentials 
+    should be prevented from using Safe Mode options to log in.
+
+    The following registry entry can be implemented using Group Policy preferences to prevent non-administrators from using Safe Mode options.
+
+    #>
+    $NetCredDescrip = "Prevent SafeMode for Non Admins"
+    $gpopath ="Computer Configuration\Policies\Administrative Templates\Windows Components\Windows Error Reporting\Advanced Error Reporting Settings\$NetCredDescrip"
+    $RegKey = 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System\'
+    $NetCredVal=@()
+    $NetCredVal = "SafeModeBlockNonAdmins"   
+    $getNetCredVal=@()
+    $getNetCred = Get-Item $RegKey -ErrorAction SilentlyContinue
+    $getNetCredVal = $getNetCred.GetValue("$NetCredVal") 
+
+    if ($getNetCredVal -eq "1")
+    {
+        $NetCredSet = "$NetCredDescrip is enabled" 
+        $NetCredReg = "<div title=$gpoPath>$RegKey"
+    }
+    else
+    {
+        $NetCredSet = "Warning - $NetCredDescrip is not set warning" 
+        $NetCredReg = "<div title=$gpoPath>$RegKey"
+    }
+
+    $newObjNetCred = New-Object -TypeName PSObject
+    Add-Member -InputObject $newObjNetCred -Type NoteProperty -Name CredentialSetting -Value  $NetCredSet
+    Add-Member -InputObject $newObjNetCred -Type NoteProperty -Name CredentialRegValue -Value $NetCredReg 
+    $fragNetCredVal += $newObjNetCred
+
+
 ################################################
 ##########  HTML GENERATION  ###################
 ################################################
@@ -3216,7 +5066,7 @@ $style = @"
     h4
     {
         background-color:#06273A; 
-        color:#766A6A;
+        color:#9f9696;
         font-size:90%;
         font-family:helvetica;
         margin:0,0,10px,0; 
@@ -3281,7 +5131,7 @@ $style = @"
 
     $descripVirt2 = "Virtualization-based security (VBS), isolates core system resources to create secure regions of memory. Enabling VBS allows for Hypervisor-Enforced Code Integrity (HVCI), Device Guard and Credential Guard. <br> <br>Further information can be found @ https://docs.microsoft.com/en-us/windows-hardware/design/device-experiences/oem-vbs<br> <br>https://www.tenaka.net/deviceguard-vs-rce and https://www.tenaka.net/pass-the-hash <br>"
 
-    $descripSecOptions = "Prevent credential relay with Impacket and Man in the Middle by Digitally Signing for SMB and LDAP connections enforcement. <br> <br>Further information can be found @ https://www.tenaka.net/smb-relay-attack<br>"
+    $descripSecOptions = "<br>GPO settings can be found @ Computer Configuration\Windows Settings\Security Settings\Local Policies\Security Options<br><br>Prevent credential relay with Impacket and Man in the Middle by Digitally Signing for SMB and LDAP connections enforcement. <br> <br>Further information can be found @ https://www.tenaka.net/smb-relay-attack<br>"
 
     $descripLSA = "Enabling RunAsPPL for LSA Protection allows only digitally signed binaries to load as a protected process preventing credential theft and access by code injection and memory access by processes that aren’t signed. <br> <br>Further information can be found @ https://docs.microsoft.com/en-us/windows-server/security/credentials-protection-and-management/configuring-additional-lsa-protection<br>"
 
@@ -3337,7 +5187,12 @@ $style = @"
 
     $descripDomainGroups = "Group membership of the user executing this script. Local admins are required, the account should not have Domain Admins as this can result in privilege escalation."
 
-    $descripDomainPrivs = "Reference User Rights Assignment (USR) section for further details"
+    $descripDomainPrivs = "Reference User Rights Assignment (USR) section below for further details"
+
+    $descripLocalAccounts = "Local accounts should be disabled when the client or server is part of a Domain. LAPS should be deployed to ensure all local account passwords are unique"
+
+    $descripCredRecom = "These are recommended GPO settings to secure Windows. Due to the sheer number of settings, the script contains details and the equivalent GPO settings, search for RECOMMENDED SECURITY SETTINGS section<br><br>MS Security Compliance Toolkit can be found @ https://admx.help/?Category=security-compliance-toolkit" 
+
 
 ################################################
 ################  FRAGMENTS  ###################
@@ -3352,7 +5207,7 @@ $style = @"
     #Host details    
     $frag_Host = $fragHost | ConvertTo-Html -As List -Property Name,Domain,Model -fragment -PreContent "<h2><span style='color:$titleCol'>Host Details</span></h2>"  | Out-String
     $fragOS = $OS | ConvertTo-Html -As List -property Caption,Version,OSArchitecture,InstallDate -fragment -PreContent "<h2><span style='color:$titleCol'>Windows Details</span></h2>" | Out-String
-    $FragAccountDetails = $AccountDetails  | ConvertTo-Html -As Table -fragment -PreContent "<h2><span style='color:$titleCol'>Local Account Details</span></h2>" | Out-String
+    $FragAccountDetails = $AccountDetails  | ConvertTo-Html -As Table -fragment -PreContent "<h2><span style='color:$titleCol'>Local Account Details</span></h2>" -PostContent "<h4>$descripLocalAccounts</h4>" | Out-String 
     $FragGroupDetails =  $GroupDetails  | ConvertTo-Html -As Table -fragment -PreContent "<h2><span style='color:$titleCol'>Local Group Members</span></h2>" | Out-String
     $FragPassPol = $PassPol | Select-Object -SkipLast 3 | ConvertTo-Html -As Table -fragment -PreContent "<h2><span style='color:$titleCol'>Local Password Policy</span></h2>" | Out-String
     $fragInstaApps  =  $InstallApps | Sort-Object publisher,displayname -Unique  | ConvertTo-Html -As Table  -fragment -PreContent "<h2><span style='color:$titleCol'>Installed Applications</span></h2>" | Out-String
@@ -3360,12 +5215,9 @@ $style = @"
     $fragInstaApps16  =  $InstallApps16 | Sort-Object publisher,displayname -Unique  | ConvertTo-Html -As Table  -fragment -PreContent "<h2><span style='color:$titleCol'>Updates to Office 2016 and older or Updates that create KB's in the Registry</span></h2>" | Out-String
     $fragBios = $bios | ConvertTo-Html -As List -property Name,Manufacturer,SerialNumber,SMBIOSBIOSVersion,ReleaseDate -fragment -PreContent "<h2><span style='color:$titleCol'>Bios Details</span></h2>" | Out-String
     $fragCpu = $cpu | ConvertTo-Html -As List -property Name,MaxClockSpeed,NumberOfCores,ThreadCount -fragment -PreContent "<h2><span style='color:$titleCol'>Processor Details</span></h2>" | Out-String
-
-    #$frag_whoamiUser =  $whoamiUser | ConvertTo-Html -As Table -fragment -PreContent "<h2><span style='color:$titleCol'>Domain User Details</span></h2>" -PostContent "<h4>$descripDomainUsers</h4>"  | Out-String
     $frag_whoamiGroups =  $whoamiGroups | ConvertTo-Html -As Table -fragment -PreContent "<h2><span style='color:$titleCol'>Current Users Group Membership</span></h2>" -PostContent "<h4>$descripDomainGroups</h4>"   | Out-String
     $frag_whoamiPriv =  $whoamiPriv | ConvertTo-Html -As Table -fragment -PreContent "<h2><span style='color:$titleCol'>Current Users Local Privileges</span></h2>" -PostContent "<h4>$descripDomainPrivs</h4>"  | Out-String
-
-
+    
     #Security Review
     $frag_BitLocker = $fragBitLocker | ConvertTo-Html -As List -fragment -PreContent "<h2><span style='color:$titleCol'>Bitlocker and TPM Details</span></h2>" -PostContent "<h4>$descripBitlocker</h4>" | Out-String
     $frag_Msinfo = $MsinfoClixml | ConvertTo-Html -As Table -fragment -PreContent "<h2><span style='color:$titleCol'>Virtualization and Secure Boot Details</span></h2>" -PostContent "<h4>$descripVirt</h4>"  | Out-String
@@ -3381,7 +5233,7 @@ $style = @"
     $frag_LegNIC = $fragLegNIC | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:$titleCol'>Legacy and Vulnerable Network Protocols</span></h2>" -PostContent "<h4>$DescripLegacyNet</h4>" | Out-String
     $frag_SysRegPerms = $fragReg | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:$titleCol'>Registry Permissions Allowing User Access - Security Risk if Exist</span></h2>" -PostContent "<h4>$descripRegPer</h4>" | Out-String
     $frag_PSPass = $fragPSPass | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:$titleCol'>Processes where CommandLine Contains a Password</span></h2>" -PostContent "<h4>$Finish</h4>" | Out-String
-    $frag_SecOptions = $fragSecOptions | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:$titleCol'>Security Options</span></h2>" -PostContent "<h4>$descripSecOptions</h4>" | Out-String
+    $frag_SecOptions = $fragSecOptions | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:$titleCol'>Security Options to Prevent MitM Attacks </span></h2>" -PostContent "<h4>$descripSecOptions</h4>" | Out-String
     $frag_wFolders = $fragwFold | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:$titleCol'>Non System Folders that are Writeable - Security Risk when Executable</span></h2>" -PostContent "<h4>$descripNonFold</h4>"| Out-String
     $frag_SysFolders = $fragsysFold | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:$titleCol'>Default System Folders that are Writeable - Security Risk if Exist</span></h2>"  -PostContent "<h4>$descripSysFold</h4>"| Out-String
     $frag_CreateSysFold = $fragCreateSysFold | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:$titleCol'>Default System Folders that Permit Users to Create Files - Security Risk if Exist</span></h2>"  -PostContent "<h4>$descripCreateSysFold</h4>"| Out-String
@@ -3398,7 +5250,8 @@ $style = @"
     $frag_URA = $fragURA | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:$titleCol'>URA - Local Systems User Rights Assignments</span></h2>" -PostContent "<h4>$descripURA</h4>" | Out-String
     $frag_RegPasswords = $fragRegPasswords | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:$titleCol'>Passwords Embedded in the Registry</span></h2>" -PostContent "<h4>$descripRegPasswords</h4>" | Out-String
     $frag_ASR = $fragASR | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:$titleCol'>Attack Surface Reduction (ASR)</span></h2>" -PostContent "<h4>$descripASR</h4>" | Out-String
-    $frag_WDigestULC = $fragWDigestULC | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:$titleCol'WDigest</span></h2>" -PostContent "<h4>$descripWDigest</h4>" | Out-String
+    $frag_WDigestULC = $fragWDigestULC | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:$titleCol'>WDigest</span></h2>" -PostContent "<h4>$descripWDigest</h4>" | Out-String
+    $frag_NetCredVal = $fragNetCredVal | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:$titleCol'>Security Recommendations</span></h2>" -PostContent "<h4>$descripCredRecom</h4>" | Out-String
 
 
     #Quick and dirty tidy up and removal of Frags that are $null
@@ -3454,7 +5307,7 @@ if ($folders -eq "y")
     $Frag_descripVirt2,
     $frag_Code,
     $frag_DriverQuery,
-    $frag_SecOptions,
+    $frag_NetCredVal,
     $frag_LegNIC,
     $frag_LSAPPL,
     $frag_WDigestULC,
@@ -3464,6 +5317,7 @@ if ($folders -eq "y")
     $frag_DLLHijack,
     $frag_DllNotSigned,
     $frag_PCElevate,
+    $frag_SecOptions,
     $frag_FilePass,
     $frag_RegPasswords,
     $frag_AutoLogon,
@@ -3505,7 +5359,7 @@ else
     $Frag_descripVirt2,
     $frag_Code,
     $frag_DriverQuery,
-    $frag_SecOptions,
+    $frag_NetCredVal,
     $frag_LegNIC,
     $frag_LSAPPL,
     $frag_WDigestULC,
@@ -3514,6 +5368,7 @@ else
     $frag_DLLSafe,
     $frag_DLLHijack,
     $frag_PCElevate,
+    $frag_SecOptions,
     $frag_FilePass,
     $frag_RegPasswords,
     $frag_AutoLogon,
@@ -3525,13 +5380,52 @@ else
     $frag_FW,
     $FragDescripFin  | out-file $Report
 }
+
+    $HostDomain = ((Get-CimInstance -ClassName win32_computersystem).Domain) + "\" 
+
     $repDate = (date).Date.ToString("yy-MM-dd:hh:mm").Replace(":","_")
 
     Get-Content $Report | 
     foreach {$_ -replace "<tr><th>*</th></tr>",""} | 
     foreach {$_ -replace "<tr><td> </td></tr>",""} |
+
     foreach {$_ -replace "<td>Warning","<td><font color=#ff9933>Warning"} | 
-    foreach {$_ -replace "Warning</td>","<font></td>"} | Set-Content "C:\SecureReport\FinishedReport.htm" -Force
+    foreach {$_ -replace "Warning</td>","<font></td>"} |
+
+    foreach {$_ -replace "<td>Review","<td><font color=#ff9933>Review"} | 
+    foreach {$_ -replace "Review</td>","<font></td>"}  | 
+    
+    foreach {$_ -replace "<td>SeImpersonatePrivilege","<td><font color=#ff9933>SeImpersonatePrivilege"} | 
+    foreach {$_ -replace "SeImpersonatePrivilege</td>","SeImpersonatePrivilege<font></td>"}  | 
+
+    foreach {$_ -replace "<td>SeAssignPrimaryTokenPrivilege","<td><font color=#ff9933>SeAssignPrimaryTokenPrivilege"} | 
+    foreach {$_ -replace "SeAssignPrimaryTokenPrivilege</td>","SeAssignPrimaryTokenPrivilege<font></td>"}  | 
+
+    foreach {$_ -replace "<td>SeBackupPrivilege","<td><font color=#ff9933>SeBackupPrivilege"} | 
+    foreach {$_ -replace "SeBackupPrivilege</td>","SeBackupPrivilege<font></td>"}  | 
+
+    foreach {$_ -replace "<td>SeDebugPrivilege","<td><font color=#ff9933>SeDebugPrivilege"} | 
+    foreach {$_ -replace "SeDebugPrivilege</td>","SeDebugPrivilege<font></td>"}  | 
+
+    foreach {$_ -replace "<td>SeTakeOwnershipPrivilege ","<td><font color=#ff9933>SeTakeOwnershipPrivilege "} | 
+    foreach {$_ -replace "SeTakeOwnershipPrivilege</td>","SeTakeOwnershipPrivilege<font></td>"}  | 
+
+    foreach {$_ -replace "<td>SeNetworkLogonRight","<td><font color=#ff9933>SeNetworkLogonRight"} | 
+    foreach {$_ -replace "SeNetworkLogonRight</td>","SeNetworkLogonRight<font></td>"}  | 
+
+    foreach {$_ -replace "<td>SeLoadDriverPrivilege","<td><font color=#ff9933>SeLoadDriverPrivilege"} | 
+    foreach {$_ -replace "SeLoadDriverPrivilege</td>","SeLoadDriverPrivilege<font></td>"}  |    
+
+    foreach {$_ -replace "<td>SeTakeOwnershipPrivilege","<td><font color=#ff9933>SeTakeOwnershipPrivilege"} | 
+    foreach {$_ -replace "SeTakeOwnershipPrivilege</td>","SeTakeOwnershipPrivilege<font></td>"}  | 
+   
+    foreach {$_ -replace "<td>SeRestorePrivilege","<td><font color=#ff9933>SeRestorePrivilege"} | 
+    foreach {$_ -replace "SeRestorePrivilege</td>","SeRestorePrivilege<font></td>"}  | 
+
+    foreach {$_ -replace '<td>&lt;div title=','<td><div title="'} | 
+    foreach {$_ -replace "&gt;",'">'}  | 
+
+    Set-Content "C:\SecureReport\FinishedReport.htm" -Force
    
     }
 }
@@ -3551,9 +5445,6 @@ remove extra blanks when listing progs via registry
 Stuff to Audit.....
 Add Server support
     features and roles
-Add warning no user account is available 
-UAC 
-AutoPlay
 Proxy password reg key
 
 FLTMC.exe - mini driver altitude looking for 'stuff' thats at an altitude to bypass security or encryption
@@ -3563,11 +5454,25 @@ look for %COMSPEC%
 Check for impersonation - aimed at servers
 snmp
 powershell history, stored creds 
-USers in the domain that dont pre-authenticate
+Users in the domain that dont pre-authenticate
 
 data streams dir /r
 
 remove powershell commands where performance is an issue, consider replacing with cmd alts
+
+Boot-Start Driver Initialization Policy - Trusted boot \UEFI
+
+####GPO Settings as recommended by MS####
+Add mouse over to any item that reports on Reg value
+
+UAC
+Microsoft accounts
+networks
+Updates
+Office macros
+Accounts and policy
+
+
 
 share permissions wont list $IPC
 
