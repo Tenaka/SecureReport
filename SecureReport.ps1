@@ -279,7 +279,7 @@ YYMMDD
 220723.1 - Adding support for MS Recommended Sec settings
 220723.2 - Fixed misconfig in Security Options for 4 and 10. added Windows 2000 strong encryption
 220723.3 - Added Kerberos encryption types to Security Options
-
+220724.1 - Added mouse over for URA to show MS recommended settings
 #>
 
 #Remove any DVD from client
@@ -497,42 +497,51 @@ sleep 5
     $hn = hostname
 
     $URALookup =[ordered]@{
-        "Access this computer from the network" = "SeNetworkLogonRight","Access this computer from the network"
+        "Access this computer from the network" = "SeNetworkLogonRight","Access this computer from the network | Administrators, Remote Desktop Users"
         "Add workstations to domain" = "SeMachineAccountPrivilege","Add workstations to domain"
-        "Back up files and directories" = "SeBackupPrivilege", "Back up files and directories"
+        "Back up files and directories" = "SeBackupPrivilege", "Back up files and directories | Administrators"
         "Bypass traverse checking" = "SeChangeNotifyPrivilege", "Bypass traverse checking"
         "Change the system time" = "SeSystemtimePrivilege", "Change the system time"
-        "Create a pagefile" = "SeCreatePagefilePrivilege", "Create a pagefile"
-        "Debug programs" = "SeDebugPrivilege", "Debug programs"
-        "Force shutdown from a remote system" = "SeRemoteShutdownPrivilege", "Force shutdown from a remote system"
+        "Create a pagefile" = "SeCreatePagefilePrivilege", "Create a pagefile | Administrators"
+        "Debug programs" = "SeDebugPrivilege", "Debug programs | Administrators (Prefer setting Blank)"
+        "Force shutdown from a remote system" = "SeRemoteShutdownPrivilege", "Force shutdown from a remote system | Administrators"
         "Generate security audits" = "SeAuditPrivilege", "Generate security audits" 
         "Adjust memory quotas for a process" = "SeIncreaseQuotaPrivilege", "Adjust memory quotas for a process"
         "Increase scheduling priority" = "SeIncreaseBasePriorityPrivilege","Increase scheduling priority"
-        "Load and unload device drivers" = "SeLoadDriverPrivilege", "Load and unload device drivers"
+        "Load and unload device drivers" = "SeLoadDriverPrivilege", "Load and unload device drivers | Administrators"
         "Log on as a batch job" = "SeBatchLogonRight", "Log on as a batch job"
         "Log on as a service" = "SeServiceLogonRight", "Log on as a service" 
-        "Allow log on locally" = "SeInteractiveLogonRight", "Allow log on locally" 
-        "Manage auditing and security log" = "SeSecurityPrivilege", "Manage auditing and security log"
-        "Modify firmware environment values" = "SeSystemEnvironmentPrivilege","Modify firmware environment values"  
-        "Profile single process" = "SeProfileSingleProcessPrivilege", "Profile single process" 
+        "Allow log on locally" = "SeInteractiveLogonRight", "Allow log on locally | Administrators, Users | Administrators, Users" 
+        "Manage auditing and security log" = "SeSecurityPrivilege", "Manage auditing and security log | Administrators"
+        "Modify firmware environment values" = "SeSystemEnvironmentPrivilege","Modify firmware environment values | Administrators"  
+        "Profile single process" = "SeProfileSingleProcessPrivilege", "Profile single process  | Administrators" 
         "Profile system performance" = "SeSystemProfilePrivilege", "Profile system performance"
         "Replace a process level token" = "SeAssignPrimaryTokenPrivilege", "Replace a process level token" 
-        "Restore files and directories" = "SeRestorePrivilege","Restore files and directories" 
+        "Restore files and directories" = "SeRestorePrivilege","Restore files and directories | Administrators" 
         "Shut down the system" = "SeShutdownPrivilege", "Shut down the system"
-        "Take ownership of files or other objects" = "SeTakeOwnershipPrivilege", "Take ownership of files or other objects"
-        "Deny access to this computer from the network"   = "SeDenyNetworkLogonRight", "Deny access to this computer from the network" 
+        "Take ownership of files or other objects" = "SeTakeOwnershipPrivilege", "Take ownership of files or other objects | Administrators"
+        "Deny access to this computer from the network"   = "SeDenyNetworkLogonRight", "Deny access to this computer from the network | NT AUTHORITY\Local Account" 
         "Deny log on as a batch job" = "SeDenyBatchLogonRight", "Deny log on as a batch job"
         "Deny log on as a service" = "SeDenyServiceLogonRight", "Deny log on as a service" 
         "Deny log on locally" = "SeDenyInteractiveLogonRight", "Deny log on locally" 
         "Remove computer from docking station" = "SeUndockPrivilege","Remove computer from docking station" 
-        "Perform volume maintenance tasks" = "SeManageVolumePrivilege", "Perform volume maintenance tasks"
-        "Deny log on through Remote Desktop Services" = "SeRemoteInteractiveLogonRight","Deny log on through Remote Desktop Services" 
-        "Impersonate a client after authentication" = "SeImpersonatePrivilege", "Impersonate a client after authentication" 
-        "Create global objects" = "SeCreateGlobalPrivilege", "Create global objects"
+        "Perform volume maintenance tasks" = "SeManageVolumePrivilege", "Perform volume maintenance tasks | Administrators"
+        "Deny log on through Remote Desktop Services" = "SeRemoteInteractiveLogonRight","Deny log on through Remote Desktop Services | NT AUTHORITY\Local Account" 
+        "Impersonate a client after authentication" = "SeImpersonatePrivilege", "Impersonate a client after authentication | Administrators, LOCAL SERVICE, NETWORK SERVICE, SERVICE" 
+        "Create global objects" = "SeCreateGlobalPrivilege", "Create global objects | Administrators,LOCAL SERVICE,NETWORK SERVICE,SERVICE"
         "Increase a process working set" = "SeIncreaseWorkingSetPrivilege","Increase a process working set" 
         "Change the time zone" = "SeTimeZonePrivilege", "Change the time zone" 
         "Create symbolic links" = "SeCreateSymbolicLinkPrivilege","Create symbolic links" 
-        "Obtain an impersonation token for another user in the same session"  = "SeDelegateSessionUserImpersonatePrivilege","Obtain an impersonation token for another user in the same session" 
+        "Obtain an impersonation token for another user in the same session" = "SeDelegateSessionUserImpersonatePrivilege","Obtain an impersonation token for another user in the same session" 
+        "Modify an object label"="SeRelabelPrivilege","Modify an object label"
+        "Access Credential Manager as a trusted caller"="SeTrustedCredManAccessPrivilege","Access Credential Manager as a trusted caller | Set Blank"
+        "Act as part of the operating system"="SeTcbPrivilege","Act as part of the operating system | Set Blank"
+        "Enable computer and user accounts to be trusted for delegation"="SeEnableDelegationPrivilege","Enable computer and user accounts to be trusted for delegation | Set Blank"
+        "Synchronize directory service data"="SeSyncAgentPrivilege","Synchronize directory service data"
+        "Lock pages in memory"="SeLockMemoryPrivilege","Lock pages in memory | Set Blank"
+        "Create permanent shared objects"="SeCreatePermanentPrivilege","Create permanent shared objects | Set Blank"
+        "Create a token object"="SeCreateTokenPrivilege","Create a token object | Set Blank"
+        "Allow log on through Remote Desktop Services"="SeRemoteInteractiveLogonRight","Allow log on through Remote Desktop Services"
         }
 
     #Export Security Settings inc User Rights Assignments with secedit.exe
@@ -552,12 +561,26 @@ sleep 5
 
             if ($uralookuptrim -eq $uraItemTrim)
                 {
-                   $uraDescripName = $uralookupName.trim()[1]
+                   $uraDescripName = $uralookupName.trim()[1].split("|")[0]
+                   $uraMSRecom = $uralookupName[1].split("|")[1].trim()
                    Write-Host $uraDescripName -ForegroundColor Cyan
 
                    #$uraDescripName | Out-File $secEditOutPath -Append
                    Add-Content $secEditOutPath -Value " "  -encoding UTF8
+                   #"<div title=$gpoPath>$RegKey"
+
+                   #<tr><td>&lt;div title = admin">Obtain
+
+
+                  # <td>&lt;div title = admin">Change the time zone  </td><td>SeTimeZonePrivilege</td><td>NT AUTHORITY\LOCAL SERVICE, BUILTIN\Administrators, BUILTIN\Users, </td></tr>
+
+
+                  # <div title="Computer Configuration\Policies\Administrative Templates\System\Logon\Enumerate local users on domain-joined computers">HKLM:\Software\Policies\Microsoft\Windows\System\</td>
+
+
+
                    $uraDescripName + " " + "`(" +$uraItem.trim()[0] +"`)" | Out-File $secEditOutPath -Append -encoding UTF8
+                   $uraDescripName = "<div title=$uraMSRecom>$uraDescripName"
                 }
         }
        
@@ -588,7 +611,7 @@ sleep 5
    }
     
 Write-Host " "
-Write-Host "Completed User Rights Assignments" -foregroundColor Green    
+Write-Host "Completed User Rights Assignments" -foregroundColor Green   
 
 ################################################
 ##############  WINDOWS UPDATES  ###############
@@ -5177,7 +5200,7 @@ $style = @"
 
     $descripLAPS = "Local Administrator Password Solution (LAPS0) is a small program with some GPO settings that randomly sets the local administrator password for clients and servers across the estate. Domain Admins have default permission to view the local administrator password via DSA.MSC. Access to the LAPS passwords may be delegated unintentionally, this could lead to a serious security breach, leaking all local admin accounts passwords for all computer objects to those that shouldn't have access. <br> <br>Installation guide can be found @ https://www.tenaka.net/post/local-admin-passwords. <br> <br>Security related issue details can be found @ https://www.tenaka.net/post/laps-leaks-local-admin-passwords<br>"
 
-    $descripURA = "User Rights Assignments (URA) control what tasks a user can perform on the local client, server or Domain Controller. For example the ‘Log on as a service’ (SeServiceLogonRight) provides the rights for a service account to Logon as a Service, not Interactively. <br> <br> Access to URA can be abused and attack the system. <br> <br>Both SeImpersonatePrivilege (Impersonate a client after authentication) and SeAssignPrimaryTokenPrivilege (Replace a process level token) are commonly used by service accounts and vulnerable to escalation of privilege via Juicy Potato exploits.<br> <br>SeBackupPrivilege (Back up files and directories), read access to all files including SAM Database, Registry and NTDS.dit (AD Database). <br> <br>SeRestorePrivilege (Restore files and directories), Write access to all files. <br> <br>SeDebugPrivilege (Debug programs), allows the ability to dump and inject into process memory inc kernel. Passwords are stored in memory in the clear and can be dumped and easily extracted. <br> <br>SeTakeOwnershipPrivilege (Take ownership of files or other objects), take ownership of file regardless of access.<br> <br>SeNetworkLogonRight (Access this computer from the network) allows pass-the-hash when Local Admins share the same password, remove all the default groups and apply named groups, separating client from servers.<br> <br>Further details can be found @ https://docs.microsoft.com/en-us/windows/security/threat-protection/security-policy-settings/user-rights-assignment<br>"
+    $descripURA = "User Rights Assignments (URA) control what tasks a user can perform on the local client, server or Domain Controller. For example the ‘Log on as a service’ (SeServiceLogonRight) provides the rights for a service account to Logon as a Service, not Interactively. <br> <br> Access to URA can be abused and attack the system. <br> <br>Both SeImpersonatePrivilege (Impersonate a client after authentication) and SeAssignPrimaryTokenPrivilege (Replace a process level token) are commonly used by service accounts and vulnerable to escalation of privilege via Juicy Potato exploits.<br> <br>SeBackupPrivilege (Back up files and directories), read access to all files including SAM Database, Registry and NTDS.dit (AD Database). <br> <br>SeRestorePrivilege (Restore files and directories), Write access to all files. <br> <br>SeDebugPrivilege (Debug programs), allows the ability to dump and inject into process memory inc kernel. Passwords are stored in memory in the clear and can be dumped and easily extracted. <br> <br>SeTakeOwnershipPrivilege (Take ownership of files or other objects), take ownership of file regardless of access.<br> <br>SeNetworkLogonRight (Access this computer from the network) allows pass-the-hash when Local Admins share the same password, remove all the default groups and apply named groups, separating client from servers.<br>SeCreateGlobalPrivilege (Create global objects), do not assign any user or group other than Local System as this will allow system takeover<br> <br>Further details can be found @ https://docs.microsoft.com/en-us/windows/security/threat-protection/security-policy-settings/user-rights-assignment<br>"
 
     $descripRegPasswords = "Searches HKLM and HKCU for the words 'password' and 'passwd', then displays the password value in the report.<br><br>The search will work with VNC encrypted passwords stored in the registry, from Kali run the following command<br> <br>echo -n PasswordHere | xxd -r -p | openssl enc -des-cbc --nopad --nosalt -K e84ad660c4721ae0 -iv 0000000000000000 -d | hexdump -Cv<br>"
 
@@ -5421,6 +5444,9 @@ else
    
     foreach {$_ -replace "<td>SeRestorePrivilege","<td><font color=#ff9933>SeRestorePrivilege"} | 
     foreach {$_ -replace "SeRestorePrivilege</td>","SeRestorePrivilege<font></td>"}  | 
+
+    foreach {$_ -replace "<td>SeCreateGlobalPrivilege","<td><font color=#ff9933>SeCreateGlobalPrivilege"} | 
+    foreach {$_ -replace "SeCreateGlobalPrivilege</td>","SeCreateGlobalPrivilege<font></td>"}  | 
 
     foreach {$_ -replace '<td>&lt;div title=','<td><div title="'} | 
     foreach {$_ -replace "&gt;",'">'}  | 
