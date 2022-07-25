@@ -280,6 +280,8 @@ YYMMDD
 220723.2 - Fixed misconfig in Security Options for 4 and 10. added Windows 2000 strong encryption
 220723.3 - Added Kerberos encryption types to Security Options
 220724.1 - Added mouse over for URA to show MS recommended settings
+220724.1 - Fixed issues with URA
+
 #>
 
 #Remove any DVD from client
@@ -497,51 +499,52 @@ sleep 5
     $hn = hostname
 
     $URALookup =[ordered]@{
+        "Access Credential Manager as a trusted caller"="SeTrustedCredManAccessPrivilege","Access Credential Manager as a trusted caller | Set Blank"
         "Access this computer from the network" = "SeNetworkLogonRight","Access this computer from the network | Administrators, Remote Desktop Users"
+        "Act as part of the operating system"="SeTcbPrivilege","Act as part of the operating system | Set Blank"
         "Add workstations to domain" = "SeMachineAccountPrivilege","Add workstations to domain"
+        "Adjust memory quotas for a process" = "SeIncreaseQuotaPrivilege", "Adjust memory quotas for a process"
+        "Allow log on locally" = "SeInteractiveLogonRight", "Allow log on locally | Administrators, Users | Administrators, Users" 
+        "Allow log on through Remote Desktop Services"="SeRemoteInteractiveLogonRight","Allow log on through Remote Desktop Services"
         "Back up files and directories" = "SeBackupPrivilege", "Back up files and directories | Administrators"
         "Bypass traverse checking" = "SeChangeNotifyPrivilege", "Bypass traverse checking"
         "Change the system time" = "SeSystemtimePrivilege", "Change the system time"
+        "Change the time zone" = "SeTimeZonePrivilege", "Change the time zone" 
         "Create a pagefile" = "SeCreatePagefilePrivilege", "Create a pagefile | Administrators"
+        "Create a token object"="SeCreateTokenPrivilege","Create a token object | Set Blank"
+        "Create global objects" = "SeCreateGlobalPrivilege", "Create global objects | Administrators,LOCAL SERVICE,NETWORK SERVICE,SERVICE"
+        "Create permanent shared objects"="SeCreatePermanentPrivilege","Create permanent shared objects | Set Blank"
+        "Create symbolic links" = "SeCreateSymbolicLinkPrivilege","Create symbolic links" 
         "Debug programs" = "SeDebugPrivilege", "Debug programs | Administrators (Prefer setting Blank)"
-        "Force shutdown from a remote system" = "SeRemoteShutdownPrivilege", "Force shutdown from a remote system | Administrators"
-        "Generate security audits" = "SeAuditPrivilege", "Generate security audits" 
-        "Adjust memory quotas for a process" = "SeIncreaseQuotaPrivilege", "Adjust memory quotas for a process"
-        "Increase scheduling priority" = "SeIncreaseBasePriorityPrivilege","Increase scheduling priority"
-        "Load and unload device drivers" = "SeLoadDriverPrivilege", "Load and unload device drivers | Administrators"
-        "Log on as a batch job" = "SeBatchLogonRight", "Log on as a batch job"
-        "Log on as a service" = "SeServiceLogonRight", "Log on as a service" 
-        "Allow log on locally" = "SeInteractiveLogonRight", "Allow log on locally | Administrators, Users | Administrators, Users" 
-        "Manage auditing and security log" = "SeSecurityPrivilege", "Manage auditing and security log | Administrators"
-        "Modify firmware environment values" = "SeSystemEnvironmentPrivilege","Modify firmware environment values | Administrators"  
-        "Profile single process" = "SeProfileSingleProcessPrivilege", "Profile single process  | Administrators" 
-        "Profile system performance" = "SeSystemProfilePrivilege", "Profile system performance"
-        "Replace a process level token" = "SeAssignPrimaryTokenPrivilege", "Replace a process level token" 
-        "Restore files and directories" = "SeRestorePrivilege","Restore files and directories | Administrators" 
-        "Shut down the system" = "SeShutdownPrivilege", "Shut down the system"
-        "Take ownership of files or other objects" = "SeTakeOwnershipPrivilege", "Take ownership of files or other objects | Administrators"
         "Deny access to this computer from the network"   = "SeDenyNetworkLogonRight", "Deny access to this computer from the network | NT AUTHORITY\Local Account" 
         "Deny log on as a batch job" = "SeDenyBatchLogonRight", "Deny log on as a batch job"
         "Deny log on as a service" = "SeDenyServiceLogonRight", "Deny log on as a service" 
         "Deny log on locally" = "SeDenyInteractiveLogonRight", "Deny log on locally" 
-        "Remove computer from docking station" = "SeUndockPrivilege","Remove computer from docking station" 
-        "Perform volume maintenance tasks" = "SeManageVolumePrivilege", "Perform volume maintenance tasks | Administrators"
         "Deny log on through Remote Desktop Services" = "SeRemoteInteractiveLogonRight","Deny log on through Remote Desktop Services | NT AUTHORITY\Local Account" 
-        "Impersonate a client after authentication" = "SeImpersonatePrivilege", "Impersonate a client after authentication | Administrators, LOCAL SERVICE, NETWORK SERVICE, SERVICE" 
-        "Create global objects" = "SeCreateGlobalPrivilege", "Create global objects | Administrators,LOCAL SERVICE,NETWORK SERVICE,SERVICE"
-        "Increase a process working set" = "SeIncreaseWorkingSetPrivilege","Increase a process working set" 
-        "Change the time zone" = "SeTimeZonePrivilege", "Change the time zone" 
-        "Create symbolic links" = "SeCreateSymbolicLinkPrivilege","Create symbolic links" 
-        "Obtain an impersonation token for another user in the same session" = "SeDelegateSessionUserImpersonatePrivilege","Obtain an impersonation token for another user in the same session" 
-        "Modify an object label"="SeRelabelPrivilege","Modify an object label"
-        "Access Credential Manager as a trusted caller"="SeTrustedCredManAccessPrivilege","Access Credential Manager as a trusted caller | Set Blank"
-        "Act as part of the operating system"="SeTcbPrivilege","Act as part of the operating system | Set Blank"
         "Enable computer and user accounts to be trusted for delegation"="SeEnableDelegationPrivilege","Enable computer and user accounts to be trusted for delegation | Set Blank"
-        "Synchronize directory service data"="SeSyncAgentPrivilege","Synchronize directory service data"
+        "Force shutdown from a remote system" = "SeRemoteShutdownPrivilege", "Force shutdown from a remote system | Administrators"
+        "Generate security audits" = "SeAuditPrivilege", "Generate security audits" 
+        "Impersonate a client after authentication" = "SeImpersonatePrivilege", "Impersonate a client after authentication | Administrators, LOCAL SERVICE, NETWORK SERVICE, SERVICE" 
+        "Increase a process working set" = "SeIncreaseWorkingSetPrivilege","Increase a process working set" 
+        "Increase scheduling priority" = "SeIncreaseBasePriorityPrivilege","Increase scheduling priority"
+        "Load and unload device drivers" = "SeLoadDriverPrivilege", "Load and unload device drivers | Administrators"
         "Lock pages in memory"="SeLockMemoryPrivilege","Lock pages in memory | Set Blank"
-        "Create permanent shared objects"="SeCreatePermanentPrivilege","Create permanent shared objects | Set Blank"
-        "Create a token object"="SeCreateTokenPrivilege","Create a token object | Set Blank"
-        "Allow log on through Remote Desktop Services"="SeRemoteInteractiveLogonRight","Allow log on through Remote Desktop Services"
+        "Log on as a batch job" = "SeBatchLogonRight", "Log on as a batch job"
+        "Log on as a service" = "SeServiceLogonRight", "Log on as a service" 
+        "Manage auditing and security log" = "SeSecurityPrivilege", "Manage auditing and security log | Administrators"
+        "Modify an object label"="SeRelabelPrivilege","Modify an object label"
+        "Modify firmware environment values" = "SeSystemEnvironmentPrivilege","Modify firmware environment values | Administrators"  
+        "Obtain an impersonation token for another user in the same session" = "SeDelegateSessionUserImpersonatePrivilege","Obtain an impersonation token for another user in the same session" 
+        "Perform volume maintenance tasks" = "SeManageVolumePrivilege", "Perform volume maintenance tasks | Administrators"
+        "Profile single process" = "SeProfileSingleProcessPrivilege", "Profile single process  | Administrators" 
+        "Profile system performance" = "SeSystemProfilePrivilege", "Profile system performance"
+        "Remove computer from docking station" = "SeUndockPrivilege","Remove computer from docking station" 
+        "Replace a process level token" = "SeAssignPrimaryTokenPrivilege", "Replace a process level token" 
+        "Restore files and directories" = "SeRestorePrivilege","Restore files and directories | Administrators" 
+        "Shut down the system" = "SeShutdownPrivilege", "Shut down the system"
+        "Synchronize directory service data"="SeSyncAgentPrivilege","Synchronize directory service data"
+        "Take ownership of files or other objects" = "SeTakeOwnershipPrivilege", "Take ownership of files or other objects | Administrators"
+
         }
 
     #Export Security Settings inc User Rights Assignments with secedit.exe
@@ -1596,6 +1599,41 @@ sleep 5
     else
     {
         $SecOptName = "Warning - $secOpTitle11 - Disabled Warning"
+    }
+    
+    $newObjSecOptions = New-Object psObject
+    Add-Member -InputObject $newObjSecOptions -Type NoteProperty -Name SecurityOptions -Value $SecOptName
+    $fragSecOptions +=  $newObjSecOptions
+
+
+    $secOpTitle13 = "System cryptography: Force strong key protection for user keys stored on the computer" 
+    $getSecOp13 = get-item 'HKLM:\SOFTWARE\Policies\Microsoft\Cryptography\' -ErrorAction SilentlyContinue
+    $getSecOp13res = $getSecOp13.getvalue("ForceKeyProtection")
+
+    if ($getSecOp13res -eq "2")
+    {
+        $SecOptName = "$secOpTitle13 - Enabled"
+    }
+    else
+    {
+        $SecOptName = "Warning - $secOpTitle13 - Disabled Warning"
+    }
+    
+    $newObjSecOptions = New-Object psObject
+    Add-Member -InputObject $newObjSecOptions -Type NoteProperty -Name SecurityOptions -Value $SecOptName
+    $fragSecOptions +=  $newObjSecOptions
+
+    $secOpTitle14 = "System cryptography: Use FIPS compliant algorithms for encryption, hashing, and signing" 
+    $getSecOp14 = get-item 'HKLM:\SYSTEM\CurrentControlSet\Control\Lsa\FIPSAlgorithmPolicy\' -ErrorAction SilentlyContinue
+    $getSecOp14res = $getSecOp14.getvalue("Enabled")
+
+    if ($getSecOp14res -eq "1")
+    {
+        $SecOptName = "$secOpTitle14 - Enabled"
+    }
+    else
+    {
+        $SecOptName = "Warning - $secOpTitle14 - Disabled Warning"
     }
     
     $newObjSecOptions = New-Object psObject
@@ -3819,7 +3857,7 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     If you disable this policy setting or don't configure it, users can run Cmd.exe and batch files normally.
 
     #>
-    $NetCredDescrip = "Prevent access to the command prompt"
+    $NetCredDescrip = "Prevent access to the Command Prompt"
     $gpopath ="User Configuration\Policies\Administrative Templates\System\$NetCredDescrip"
     $RegKey = 'HKCU:\Software\Policies\Microsoft\Windows\System\'
     $NetCredVal=@()
@@ -3850,7 +3888,7 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     User Configuration\Policies\Administrative Templates\System
 
     #>
-    $NetCredDescrip = "Prevent access to registry editing tools"
+    $NetCredDescrip = "Prevent access to Registry Editing Tools"
     $gpopath ="User Configuration\Policies\Administrative Templates\System\$NetCredDescrip"
     $RegKey = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Policies\System\'
     $NetCredVal=@()
@@ -4309,6 +4347,327 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     Add-Member -InputObject $newObjNetCred -Type NoteProperty -Name CredentialRegValue -Value $NetCredReg 
     $fragNetCredVal += $newObjNetCred
 
+    
+    <#
+    Allow Basic authentication
+
+    Computer Configuration\Policies\Administrative Templates\Windows Components\Windows Remote Management (WinRM)\WinRM Client
+    
+    If you enable this policy setting, the WinRM client uses Basic authentication. If WinRM is configured to use HTTP transport, 
+    the user name and password are sent over the network as clear text.
+    If you disable or do not configure this policy setting, the WinRM client does not use Basic authentication
+
+    #>
+    $NetCredDescrip = "Allow Basic authentication"
+    $gpopath ="Computer Configuration\Policies\Administrative Templates\Windows Components\Windows Remote Management (WinRM)\WinRM Client\$NetCredDescrip"
+    $RegKey = 'HKLM:\Software\Policies\Microsoft\Windows\WinRM\Client\'
+    $NetCredVal=@()
+    $NetCredVal = "AllowBasic"  
+    $getNetCredVal=@()
+    $getNetCred = Get-Item $RegKey -ErrorAction SilentlyContinue
+    $getNetCredVal = $getNetCred.GetValue("$NetCredVal") 
+
+    if ($getNetCredVal -eq "0")
+    {
+        $NetCredSet = "$NetCredDescrip is disabled" 
+        $NetCredReg = "<div title=$gpoPath>$RegKey"
+    }
+    else
+    {
+        $NetCredSet = "Warning - $NetCredDescrip is enabled" 
+        $NetCredReg = "<div title=$gpoPath>$RegKey"
+    }
+
+    $newObjNetCred = New-Object -TypeName PSObject
+    Add-Member -InputObject $newObjNetCred -Type NoteProperty -Name CredentialSetting -Value  $NetCredSet
+    Add-Member -InputObject $newObjNetCred -Type NoteProperty -Name CredentialRegValue -Value $NetCredReg 
+    $fragNetCredVal += $newObjNetCred
+
+    <#
+    Allow unencrypted traffic
+
+    Computer Configuration\Policies\Administrative Templates\Windows Components\Windows Remote Management (WinRM)\WinRM Client
+    
+    This policy setting allows you to manage whether the Windows Remote Management (WinRM) client sends and receives unencrypted messages over the network.
+    If you enable this policy setting, the WinRM client sends and receives unencrypted messages over the network.
+    If you disable or do not configure this policy setting, the WinRM client sends or receives only encrypted messages over the network.
+
+    #>
+    $NetCredDescrip = "Allow unencrypted traffic"
+    $gpopath ="Computer Configuration\Policies\Administrative Templates\Windows Components\Windows Remote Management (WinRM)\WinRM Client\$NetCredDescrip"
+    $RegKey = 'HKLM:\Software\Policies\Microsoft\Windows\WinRM\Client\'
+    $NetCredVal=@()
+    $NetCredVal = "AllowUnencryptedTraffic"  
+    $getNetCredVal=@()
+    $getNetCred = Get-Item $RegKey -ErrorAction SilentlyContinue
+    $getNetCredVal = $getNetCred.GetValue("$NetCredVal") 
+
+    if ($getNetCredVal -eq "0")
+    {
+        $NetCredSet = "$NetCredDescrip is disabled" 
+        $NetCredReg = "<div title=$gpoPath>$RegKey"
+    }
+    else
+    {
+        $NetCredSet = "Warning - $NetCredDescrip is enabled" 
+        $NetCredReg = "<div title=$gpoPath>$RegKey"
+    }
+
+    $newObjNetCred = New-Object -TypeName PSObject
+    Add-Member -InputObject $newObjNetCred -Type NoteProperty -Name CredentialSetting -Value  $NetCredSet
+    Add-Member -InputObject $newObjNetCred -Type NoteProperty -Name CredentialRegValue -Value $NetCredReg 
+    $fragNetCredVal += $newObjNetCred
+
+    <#
+    Disallow Digest authentication
+
+    Computer Configuration\Policies\Administrative Templates\Windows Components\Windows Remote Management (WinRM)\WinRM Client
+    
+    This policy setting allows you to manage whether the Windows Remote Management (WinRM) client uses Digest authentication.
+    If you enable this policy setting, the WinRM client does not use Digest authentication.
+    If you disable or do not configure this policy setting, the WinRM client uses Digest authentication.
+
+    #>
+    $NetCredDescrip = "Disallow Digest authentication"
+    $gpopath ="Computer Configuration\Policies\Administrative Templates\Windows Components\Windows Remote Management (WinRM)\WinRM Client\$NetCredDescrip"
+    $RegKey = 'HKLM:\Software\Policies\Microsoft\Windows\WinRM\Client\'
+    $NetCredVal=@()
+    $NetCredVal = "AllowDigest"  
+    $getNetCredVal=@()
+    $getNetCred = Get-Item $RegKey -ErrorAction SilentlyContinue
+    $getNetCredVal = $getNetCred.GetValue("$NetCredVal") 
+
+    if ($getNetCredVal -eq "0")
+    {
+        $NetCredSet = "$NetCredDescrip is enabled" 
+        $NetCredReg = "<div title=$gpoPath>$RegKey"
+    }
+    else
+    {
+        $NetCredSet = "Warning - $NetCredDescrip is disabled" 
+        $NetCredReg = "<div title=$gpoPath>$RegKey"
+    }
+
+    $newObjNetCred = New-Object -TypeName PSObject
+    Add-Member -InputObject $newObjNetCred -Type NoteProperty -Name CredentialSetting -Value  $NetCredSet
+    Add-Member -InputObject $newObjNetCred -Type NoteProperty -Name CredentialRegValue -Value $NetCredReg 
+    $fragNetCredVal += $newObjNetCred
+
+<#
+    Allow Basic authentication
+
+    Computer Configuration\Policies\Administrative Templates\Windows Components\Windows Remote Management (WinRM)\WinRM Service
+    
+    This policy setting allows you to manage whether the Windows Remote Management (WinRM) service accepts Basic authentication from a remote client.
+    If you enable this policy setting, the WinRM service accepts Basic authentication from a remote client.
+    If you disable or do not configure this policy setting, the WinRM service does not accept Basic authentication from a remote client.
+
+    #>
+    $NetCredDescrip = "Allow Basic authentication"
+    $gpopath ="Computer Configuration\Policies\Administrative Templates\Windows Components\Windows Remote Management (WinRM)\WinRM Service\$NetCredDescrip"
+    $RegKey = 'HKLM:\Software\Policies\Microsoft\Windows\WinRM\service\'
+    $NetCredVal=@()
+    $NetCredVal = "AllowBasic"  
+    $getNetCredVal=@()
+    $getNetCred = Get-Item $RegKey -ErrorAction SilentlyContinue
+    $getNetCredVal = $getNetCred.GetValue("$NetCredVal") 
+
+    if ($getNetCredVal -eq "0")
+    {
+        $NetCredSet = "$NetCredDescrip is disabled" 
+        $NetCredReg = "<div title=$gpoPath>$RegKey"
+    }
+    else
+    {
+        $NetCredSet = "Warning - $NetCredDescrip is enabled" 
+        $NetCredReg = "<div title=$gpoPath>$RegKey"
+    }
+
+    $newObjNetCred = New-Object -TypeName PSObject
+    Add-Member -InputObject $newObjNetCred -Type NoteProperty -Name CredentialSetting -Value  $NetCredSet
+    Add-Member -InputObject $newObjNetCred -Type NoteProperty -Name CredentialRegValue -Value $NetCredReg 
+    $fragNetCredVal += $newObjNetCred
+
+    <#
+    Allow unencrypted traffic
+
+    Computer Configuration\Policies\Administrative Templates\Windows Components\Windows Remote Management (WinRM)\WinRM Service
+    
+    This policy setting allows you to manage whether the Windows Remote Management (WinRM) service sends and receives unencrypted messages over the network.
+    If you enable this policy setting, the WinRM client sends and receives unencrypted messages over the network.
+    If you disable or do not configure this policy setting, the WinRM client sends or receives only encrypted messages over the network.
+
+    #>
+    $NetCredDescrip = "Allow unencrypted traffic"
+    $gpopath ="Computer Configuration\Policies\Administrative Templates\Windows Components\Windows Remote Management (WinRM)\WinRM Service\$NetCredDescrip"
+    $RegKey = 'HKLM:\Software\Policies\Microsoft\Windows\WinRM\Service\'
+    $NetCredVal=@()
+    $NetCredVal = "AllowUnencryptedTraffic"  
+    $getNetCredVal=@()
+    $getNetCred = Get-Item $RegKey -ErrorAction SilentlyContinue
+    $getNetCredVal = $getNetCred.GetValue("$NetCredVal") 
+
+    if ($getNetCredVal -eq "0")
+    {
+        $NetCredSet = "$NetCredDescrip is disabled" 
+        $NetCredReg = "<div title=$gpoPath>$RegKey"
+    }
+    else
+    {
+        $NetCredSet = "Warning - $NetCredDescrip is enabled" 
+        $NetCredReg = "<div title=$gpoPath>$RegKey"
+    }
+
+    $newObjNetCred = New-Object -TypeName PSObject
+    Add-Member -InputObject $newObjNetCred -Type NoteProperty -Name CredentialSetting -Value  $NetCredSet
+    Add-Member -InputObject $newObjNetCred -Type NoteProperty -Name CredentialRegValue -Value $NetCredReg 
+    $fragNetCredVal += $newObjNetCred
+
+    <#
+    Disallow WinRM from storing RunAs credentials
+
+    Computer Configuration\Policies\Administrative Templates\Windows Components\Windows Remote Management (WinRM)\WinRM Service
+    
+    This policy setting allows you to manage whether the Windows Remote Management (WinRM) service will not allow RunAs credentials to be stored for any plug-ins.
+    If you enable this policy setting, the WinRM service will not allow the RunAsUser or RunAsPassword configuration values to be set for any plug-ins. If a plug-in 
+    has already set the RunAsUser and RunAsPassword configuration values, the RunAsPassword configuration value will be erased from the credential store on this 
+    computer
+
+    #>
+    $NetCredDescrip = "Disallow WinRM from storing RunAs credentials"
+    $gpopath ="Computer Configuration\Policies\Administrative Templates\Windows Components\Windows Remote Management (WinRM)\WinRM Client\$NetCredDescrip"
+    $RegKey = 'HKLM:\Software\Policies\Microsoft\Windows\WinRM\Service\'
+    $NetCredVal=@()
+    $NetCredVal = "DisableRunAs"  
+    $getNetCredVal=@()
+    $getNetCred = Get-Item $RegKey -ErrorAction SilentlyContinue
+    $getNetCredVal = $getNetCred.GetValue("$NetCredVal") 
+
+    if ($getNetCredVal -eq "1")
+    {
+        $NetCredSet = "$NetCredDescrip is enabled" 
+        $NetCredReg = "<div title=$gpoPath>$RegKey"
+    }
+    else
+    {
+        $NetCredSet = "Warning - $NetCredDescrip is disabled" 
+        $NetCredReg = "<div title=$gpoPath>$RegKey"
+    }
+
+    $newObjNetCred = New-Object -TypeName PSObject
+    Add-Member -InputObject $newObjNetCred -Type NoteProperty -Name CredentialSetting -Value  $NetCredSet
+    Add-Member -InputObject $newObjNetCred -Type NoteProperty -Name CredentialRegValue -Value $NetCredReg 
+    $fragNetCredVal += $newObjNetCred
+
+
+        <#
+    Allow Remote Shell Access
+
+    Computer Configuration\Policies\Administrative Templates\Windows Components\Windows Remote Shell
+    
+    This policy setting configures access to remote shells.
+    If you enable or do not configure this policy setting, new remote shell connections are accepted by the server.
+    If you set this policy to ‘disabled', new remote shell connections are rejected by the server.
+
+    #>
+    $NetCredDescrip = "Allow Remote Shell Access"
+    $gpopath ="Computer Configuration\Policies\Administrative Templates\Windows Components\Windows Remote Shell\$NetCredDescrip"
+    $RegKey = 'HKLM:\Software\Policies\Microsoft\Windows\WinRM\Service\WinRS\'
+    $NetCredVal=@()
+    $NetCredVal = "AllowRemoteShellAccess"  
+    $getNetCredVal=@()
+    $getNetCred = Get-Item $RegKey -ErrorAction SilentlyContinue
+    $getNetCredVal = $getNetCred.GetValue("$NetCredVal") 
+
+    if ($getNetCredVal -eq "0")
+    {
+        $NetCredSet = "$NetCredDescrip is disabled" 
+        $NetCredReg = "<div title=$gpoPath>$RegKey"
+    }
+    else
+    {
+        $NetCredSet = "Warning - $NetCredDescrip is enabled" 
+        $NetCredReg = "<div title=$gpoPath>$RegKey"
+    }
+
+    $newObjNetCred = New-Object -TypeName PSObject
+    Add-Member -InputObject $newObjNetCred -Type NoteProperty -Name CredentialSetting -Value  $NetCredSet
+    Add-Member -InputObject $newObjNetCred -Type NoteProperty -Name CredentialRegValue -Value $NetCredReg 
+    $fragNetCredVal += $newObjNetCred
+
+  
+      <#
+    Allow Cortana
+
+    Computer Configuration\Policies\Administrative Templates\Windows Components\Search
+    
+    This policy setting specifies whether Cortana is allowed on the device.
+    If you enable or don't configure this setting, Cortana will be allowed on the device. If you disable this setting, Cortana will be turned off.
+
+    #>
+    $NetCredDescrip = "Allow Cortana"
+    $gpopath ="Computer Configuration\Policies\Administrative Templates\Windows Components\Search\$NetCredDescrip"
+    $RegKey = 'HKLM:\SOFTWARE\Policies\Microsoft\Windows\Windows Search\'
+    $NetCredVal=@()
+    $NetCredVal = "AllowCortana"  
+    $getNetCredVal=@()
+    $getNetCred = Get-Item $RegKey -ErrorAction SilentlyContinue
+    $getNetCredVal = $getNetCred.GetValue("$NetCredVal") 
+
+    if ($getNetCredVal -eq "0")
+    {
+        $NetCredSet = "$NetCredDescrip is disabled" 
+        $NetCredReg = "<div title=$gpoPath>$RegKey"
+    }
+    else
+    {
+        $NetCredSet = "Warning - $NetCredDescrip is enabled" 
+        $NetCredReg = "<div title=$gpoPath>$RegKey"
+    }
+
+    $newObjNetCred = New-Object -TypeName PSObject
+    Add-Member -InputObject $newObjNetCred -Type NoteProperty -Name CredentialSetting -Value  $NetCredSet
+    Add-Member -InputObject $newObjNetCred -Type NoteProperty -Name CredentialRegValue -Value $NetCredReg 
+    $fragNetCredVal += $newObjNetCred
+
+
+    <#
+    Don’t search the web or display web results in Search
+
+    Computer Configuration\Policies\Administrative Templates\Windows Components\Search
+    
+    This policy setting allows you to control whether or not Search can perform queries on the web, and if the web results are displayed in Search.
+    If you enable this policy setting, queries won't be performed on the web and web results won't be displayed when a user performs a query in Search.
+    If you disable this policy setting, queries will be performed on the web and web results will be displayed when a user performs a query in Search.
+    If you don't configure this policy setting, a user can choose whether or not Search can perform queries on the web, and if the web results are displayed in Search
+
+    #>
+    $NetCredDescrip = "Don’t search the web or display web results in Search"
+    $gpopath ="Computer Configuration\Policies\Administrative Templates\Windows Components\Search\$NetCredDescrip"
+    $RegKey = 'HKLM:\SOFTWARE\Policies\Microsoft\Windows\Windows Search\'
+    $NetCredVal=@()
+    $NetCredVal = "ConnectedSearchUseWeb"  
+    $getNetCredVal=@()
+    $getNetCred = Get-Item $RegKey -ErrorAction SilentlyContinue
+    $getNetCredVal = $getNetCred.GetValue("$NetCredVal") 
+
+    if ($getNetCredVal -eq "0")
+    {
+        $NetCredSet = "$NetCredDescrip is disabled" 
+        $NetCredReg = "<div title=$gpoPath>$RegKey"
+    }
+    else
+    {
+        $NetCredSet = "Warning - $NetCredDescrip is enabled" 
+        $NetCredReg = "<div title=$gpoPath>$RegKey"
+    }
+
+    $newObjNetCred = New-Object -TypeName PSObject
+    Add-Member -InputObject $newObjNetCred -Type NoteProperty -Name CredentialSetting -Value  $NetCredSet
+    Add-Member -InputObject $newObjNetCred -Type NoteProperty -Name CredentialRegValue -Value $NetCredReg 
+    $fragNetCredVal += $newObjNetCred
+
+
     <#
     Microsoft Support Diagnostic Tool: Turn on MSDT interactive communication with support provider
 
@@ -4598,6 +4957,201 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     Add-Member -InputObject $newObjNetCred -Type NoteProperty -Name CredentialRegValue -Value $NetCredReg 
     $fragNetCredVal += $newObjNetCred
 
+
+        <#
+    Remove Security tab
+
+    User Configuration\Policies\Administrative Templates\Windows Components\File Explorer
+
+    #>
+    $NetCredDescrip = "Remove Security tab - User"
+    $gpopath ="User Configuration\Policies\Administrative Templates\Windows Components\File Explorer\$NetCredDescrip"
+    $RegKey = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Policies\Explorer\'
+    $NetCredVal=@()
+    $NetCredVal = "NoSecurityTab"  
+    $getNetCredVal=@()
+    $getNetCred = Get-Item $RegKey -ErrorAction SilentlyContinue
+    $getNetCredVal = $getNetCred.GetValue("$NetCredVal") 
+
+    if ($getNetCredVal -eq "1")
+    {
+        $NetCredSet = "$NetCredDescrip is Enabled" 
+        $NetCredReg = "<div title=$gpoPath>$RegKey"
+    }
+    else
+    {
+        $NetCredSet = "Warning - $NetCredDescrip is disabled" 
+        $NetCredReg = "<div title=$gpoPath>$RegKey"
+    }
+
+    $newObjNetCred = New-Object -TypeName PSObject
+    Add-Member -InputObject $newObjNetCred -Type NoteProperty -Name CredentialSetting -Value  $NetCredSet
+    Add-Member -InputObject $newObjNetCred -Type NoteProperty -Name CredentialRegValue -Value $NetCredReg 
+    $fragNetCredVal += $newObjNetCred
+
+   <#
+    Turn off location
+
+    Computer Configuration\Policies\Administrative Templates\Windows Components\Location and Sensors
+
+    #>
+    $NetCredDescrip = "Turn off location"
+    $gpopath ="Computer Configuration\Policies\Administrative Templates\Windows Components\Location and Sensors\$NetCredDescrip"
+    $RegKey = 'HKLM:\Software\Policies\Microsoft\Windows\LocationAndSensors\'
+    $NetCredVal=@()
+    $NetCredVal = "DisableLocationScripting"  
+    $getNetCredVal=@()
+    $getNetCred = Get-Item $RegKey -ErrorAction SilentlyContinue
+    $getNetCredVal = $getNetCred.GetValue("$NetCredVal") 
+
+    if ($getNetCredVal -eq "1")
+    {
+        $NetCredSet = "$NetCredDescrip is Enabled" 
+        $NetCredReg = "<div title=$gpoPath>$RegKey"
+    }
+    else
+    {
+        $NetCredSet = "Warning - $NetCredDescrip is disabled" 
+        $NetCredReg = "<div title=$gpoPath>$RegKey"
+    }
+
+    $newObjNetCred = New-Object -TypeName PSObject
+    Add-Member -InputObject $newObjNetCred -Type NoteProperty -Name CredentialSetting -Value  $NetCredSet
+    Add-Member -InputObject $newObjNetCred -Type NoteProperty -Name CredentialRegValue -Value $NetCredReg 
+    $fragNetCredVal += $newObjNetCred
+    
+
+       <#
+   Turn off Windows Location Provider
+
+    Computer Configuration\Policies\Administrative Templates\Windows Components\Location and Sensors\Windows Location Provider
+
+    #>
+    $NetCredDescrip = "Turn off Windows Location Provider"
+    $gpopath ="Computer Configuration\Policies\Administrative Templates\Windows Components\Location and Sensors\Windows Location Provider\$NetCredDescrip"
+    $RegKey = 'HKLM:\Software\Policies\Microsoft\Windows\LocationAndSensors\'
+    $NetCredVal=@()
+    $NetCredVal = "DisableWindowsLocationProvider"  
+    $getNetCredVal=@()
+    $getNetCred = Get-Item $RegKey -ErrorAction SilentlyContinue
+    $getNetCredVal = $getNetCred.GetValue("$NetCredVal") 
+
+    if ($getNetCredVal -eq "1")
+    {
+        $NetCredSet = "$NetCredDescrip is Enabled" 
+        $NetCredReg = "<div title=$gpoPath>$RegKey"
+    }
+    else
+    {
+        $NetCredSet = "Warning - $NetCredDescrip is disabled" 
+        $NetCredReg = "<div title=$gpoPath>$RegKey"
+    }
+
+    $newObjNetCred = New-Object -TypeName PSObject
+    Add-Member -InputObject $newObjNetCred -Type NoteProperty -Name CredentialSetting -Value  $NetCredSet
+    Add-Member -InputObject $newObjNetCred -Type NoteProperty -Name CredentialRegValue -Value $NetCredReg 
+    $fragNetCredVal += $newObjNetCred
+
+
+    <#
+   Turn off access to the Store
+
+    Computer Configuration\Policies\Administrative Templates\System\Internet Communication Management\Internet Communication settings
+
+    Pointless setting, I dont know anyone who uses the Windows Store or at least own up to using it ;)
+
+    #>
+    $NetCredDescrip = "Turn off access to the Store"
+    $gpopath ="Computer Configuration\Policies\Administrative Templates\System\Internet Communication Management\Internet Communication settings\$NetCredDescrip"
+    $RegKey = 'HKLM:\Software\Policies\Microsoft\Windows\Explorer\'
+    $NetCredVal=@()
+    $NetCredVal = "NoUseStoreOpenWith"  
+    $getNetCredVal=@()
+    $getNetCred = Get-Item $RegKey -ErrorAction SilentlyContinue
+    $getNetCredVal = $getNetCred.GetValue("$NetCredVal") 
+
+    if ($getNetCredVal -eq "1")
+    {
+        $NetCredSet = "$NetCredDescrip is Enabled" 
+        $NetCredReg = "<div title=$gpoPath>$RegKey"
+    }
+    else
+    {
+        $NetCredSet = "Warning - $NetCredDescrip is disabled" 
+        $NetCredReg = "<div title=$gpoPath>$RegKey"
+    }
+
+    $newObjNetCred = New-Object -TypeName PSObject
+    Add-Member -InputObject $newObjNetCred -Type NoteProperty -Name CredentialSetting -Value  $NetCredSet
+    Add-Member -InputObject $newObjNetCred -Type NoteProperty -Name CredentialRegValue -Value $NetCredReg 
+    $fragNetCredVal += $newObjNetCred
+
+
+        <#
+   Turn off the Store application
+
+    Computer Configuration\Policies\Administrative Templates\Windows Components\Store
+
+    Pointless setting, I dont know anyone who uses the Windows Store or at least own up to using it ;)
+
+    #>
+    $NetCredDescrip = "Turn off the Store application"
+    $gpopath ="Computer Configuration\Policies\Administrative Templates\Windows Components\Store\$NetCredDescrip"
+    $RegKey = 'HKLM:\Software\Policies\Microsoft\WindowsStore\'
+    $NetCredVal=@()
+    $NetCredVal = "RemoveWindowsStore"  
+    $getNetCredVal=@()
+    $getNetCred = Get-Item $RegKey -ErrorAction SilentlyContinue
+    $getNetCredVal = $getNetCred.GetValue("$NetCredVal") 
+
+    if ($getNetCredVal -eq "1")
+    {
+        $NetCredSet = "$NetCredDescrip is Enabled" 
+        $NetCredReg = "<div title=$gpoPath>$RegKey"
+    }
+    else
+    {
+        $NetCredSet = "Warning - $NetCredDescrip is disabled" 
+        $NetCredReg = "<div title=$gpoPath>$RegKey"
+    }
+
+    $newObjNetCred = New-Object -TypeName PSObject
+    Add-Member -InputObject $newObjNetCred -Type NoteProperty -Name CredentialSetting -Value  $NetCredSet
+    Add-Member -InputObject $newObjNetCred -Type NoteProperty -Name CredentialRegValue -Value $NetCredReg 
+    $fragNetCredVal += $newObjNetCred
+
+   <#
+   Determine if interactive users can generate Resultant Set of Policy data
+
+    User Configuration\Policies\Administrative Templates\System\Group Policy - Users
+
+    Allows user to interrogate gpos for system weaknesses
+
+    #>
+    $NetCredDescrip = "Determine if interactive users can generate Resultant Set of Policy data"
+    $gpopath ="User Configuration\Policies\Administrative Templates\System\Group Policy\$NetCredDescrip"
+    $RegKey = 'HKCU:\Software\Policies\Microsoft\Windows\System\'
+    $NetCredVal=@()
+    $NetCredVal = "DenyRsopToInteractiveUser"  
+    $getNetCredVal=@()
+    $getNetCred = Get-Item $RegKey -ErrorAction SilentlyContinue
+    $getNetCredVal = $getNetCred.GetValue("$NetCredVal") 
+
+    if ($getNetCredVal -eq "0")
+    {
+        $NetCredSet = "$NetCredDescrip is disabled" 
+        $NetCredReg = "<div title=$gpoPath>$RegKey"
+    }
+    else
+    {
+        $NetCredSet = "Warning - $NetCredDescrip is enabled" 
+        $NetCredReg = "<div title=$gpoPath>$RegKey"
+    }
+
+    $newObjNetCred = New-Object -TypeName PSObject
+    Add-Member -InputObject $newObjNetCred -Type NoteProperty -Name CredentialSetting -Value  $NetCredSet
+    Add-Member -InputObject $newObjNetCred -Type NoteProperty -Name CredentialRegValue -Value $NetCredReg 
+    $fragNetCredVal += $newObjNetCred
 
 ################################################
 ##########  HTML GENERATION  ###################
@@ -5200,7 +5754,7 @@ $style = @"
 
     $descripLAPS = "Local Administrator Password Solution (LAPS0) is a small program with some GPO settings that randomly sets the local administrator password for clients and servers across the estate. Domain Admins have default permission to view the local administrator password via DSA.MSC. Access to the LAPS passwords may be delegated unintentionally, this could lead to a serious security breach, leaking all local admin accounts passwords for all computer objects to those that shouldn't have access. <br> <br>Installation guide can be found @ https://www.tenaka.net/post/local-admin-passwords. <br> <br>Security related issue details can be found @ https://www.tenaka.net/post/laps-leaks-local-admin-passwords<br>"
 
-    $descripURA = "User Rights Assignments (URA) control what tasks a user can perform on the local client, server or Domain Controller. For example the ‘Log on as a service’ (SeServiceLogonRight) provides the rights for a service account to Logon as a Service, not Interactively. <br> <br> Access to URA can be abused and attack the system. <br> <br>Both SeImpersonatePrivilege (Impersonate a client after authentication) and SeAssignPrimaryTokenPrivilege (Replace a process level token) are commonly used by service accounts and vulnerable to escalation of privilege via Juicy Potato exploits.<br> <br>SeBackupPrivilege (Back up files and directories), read access to all files including SAM Database, Registry and NTDS.dit (AD Database). <br> <br>SeRestorePrivilege (Restore files and directories), Write access to all files. <br> <br>SeDebugPrivilege (Debug programs), allows the ability to dump and inject into process memory inc kernel. Passwords are stored in memory in the clear and can be dumped and easily extracted. <br> <br>SeTakeOwnershipPrivilege (Take ownership of files or other objects), take ownership of file regardless of access.<br> <br>SeNetworkLogonRight (Access this computer from the network) allows pass-the-hash when Local Admins share the same password, remove all the default groups and apply named groups, separating client from servers.<br>SeCreateGlobalPrivilege (Create global objects), do not assign any user or group other than Local System as this will allow system takeover<br> <br>Further details can be found @ https://docs.microsoft.com/en-us/windows/security/threat-protection/security-policy-settings/user-rights-assignment<br>"
+    $descripURA = "User Rights Assignments (URA) control what tasks a user can perform on the local client, server or Domain Controller. For example the ‘Log on as a service’ (SeServiceLogonRight) provides the rights for a service account to Logon as a Service, not Interactively. <br> <br> Access to URA can be abused and attack the system. <br> <br>Both SeImpersonatePrivilege (Impersonate a client after authentication) and SeAssignPrimaryTokenPrivilege (Replace a process level token) are commonly used by service accounts and vulnerable to escalation of privilege via Juicy Potato exploits.<br> <br>SeBackupPrivilege (Back up files and directories), read access to all files including SAM Database, Registry and NTDS.dit (AD Database). <br> <br>SeRestorePrivilege (Restore files and directories), Write access to all files. <br> <br>SeDebugPrivilege (Debug programs), allows the ability to dump and inject into process memory inc kernel. Passwords are stored in memory in the clear and can be dumped and easily extracted. <br> <br>SeTakeOwnershipPrivilege (Take ownership of files or other objects), take ownership of file regardless of access.<br> <br>SeNetworkLogonRight (Access this computer from the network) allows pass-the-hash when Local Admins share the same password, remove all the default groups and apply named groups, separating client from servers.<br><br>SeCreateGlobalPrivilege (Create global objects), do not assign any user or group other than Local System as this will allow system takeover<br><br>Further details can be found @ <br>https://docs.microsoft.com/en-us/windows/security/threat-protection/security-policy-settings/user-rights-assignment<br>https://www.microsoft.com/en-us/download/details.aspx?id=55319<br><br>**UserRightAssignment-Name - Mouse over to show Microsofts recommended setting"
 
     $descripRegPasswords = "Searches HKLM and HKCU for the words 'password' and 'passwd', then displays the password value in the report.<br><br>The search will work with VNC encrypted passwords stored in the registry, from Kali run the following command<br> <br>echo -n PasswordHere | xxd -r -p | openssl enc -des-cbc --nopad --nosalt -K e84ad660c4721ae0 -iv 0000000000000000 -d | hexdump -Cv<br>"
 
@@ -5214,7 +5768,7 @@ $style = @"
 
     $descripLocalAccounts = "Local accounts should be disabled when the client or server is part of a Domain. LAPS should be deployed to ensure all local account passwords are unique"
 
-    $descripCredRecom = "These are recommended GPO settings to secure Windows. Due to the sheer number of settings, the script contains details and the equivalent GPO settings, search for RECOMMENDED SECURITY SETTINGS section<br><br>MS Security Compliance Toolkit can be found @ https://admx.help/?Category=security-compliance-toolkit" 
+    $descripCredRecom = "These are recommended GPO settings to secure Windows. Due to the sheer number of settings, the script contains details and the equivalent GPO settings, search for RECOMMENDED SECURITY SETTINGS section<br><br>MS Security Compliance Toolkit can be found @ <br>https://admx.help/?Category=security-compliance-toolkit<br>https://www.microsoft.com/en-us/download/details.aspx?id=55319<br><br>**CredentialRegValue - Mouse over to show Reg Key to GPO path translation" 
 
 
 ################################################
