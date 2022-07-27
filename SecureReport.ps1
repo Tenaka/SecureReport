@@ -281,6 +281,8 @@ YYMMDD
 220723.3 - Added Kerberos encryption types to Security Options
 220724.1 - Added mouse over for URA to show MS recommended settings
 220724.1 - Fixed issues with URA
+220725.1 - Added 255.255.255.255 wpad to legacy network protocols
+220726.1 - Added further Security Options and GPO checked based on ms sec guide
 
 #>
 
@@ -570,17 +572,6 @@ sleep 5
 
                    #$uraDescripName | Out-File $secEditOutPath -Append
                    Add-Content $secEditOutPath -Value " "  -encoding UTF8
-                   #"<div title=$gpoPath>$RegKey"
-
-                   #<tr><td>&lt;div title = admin">Obtain
-
-
-                  # <td>&lt;div title = admin">Change the time zone  </td><td>SeTimeZonePrivilege</td><td>NT AUTHORITY\LOCAL SERVICE, BUILTIN\Administrators, BUILTIN\Users, </td></tr>
-
-
-                  # <div title="Computer Configuration\Policies\Administrative Templates\System\Logon\Enumerate local users on domain-joined computers">HKLM:\Software\Policies\Microsoft\Windows\System\</td>
-
-
 
                    $uraDescripName + " " + "`(" +$uraItem.trim()[0] +"`)" | Out-File $secEditOutPath -Append -encoding UTF8
                    $uraDescripName = "<div title=$uraMSRecom>$uraDescripName"
@@ -1155,7 +1146,7 @@ sleep 5
     }
     else
     {
-        $legProt = "Warning - NetBios Node Type is set to $enNetBTReg, its incorrect and should be set to 2 Warning"
+        $legProt = "Warning - NetBios Node Type is set to $enNetBTReg is incorrect and should be set to 2 Warning"
         $legReg = "HKLM:\System\CurrentControlSet\Services\NetBT\Parameters.NodeType"
     }
     
@@ -1383,6 +1374,40 @@ sleep 5
     Add-Member -InputObject $newObjLegNIC -Type NoteProperty -Name LegacyPath -Value $legReg
     $fragLegNIC += $newObjLegNIC
   
+      <#
+    WPAD
+    Web Proxy Auto Discovery protocol
+
+    The Web Proxy Auto Discovery (WPAD) protocol assists with the automatic detection of proxy settings for web browsers. 
+    Unfortunately, WPAD has suffered from a number of severe security vulnerabilities. Organisations that do not rely on 
+    the use of the WPAD protocol should disable it. This can be achieved by modifying each workstation’s host file at
+
+    %SystemDrive%\Windows\System32\Drivers\etc\hosts to create the following entry: 255.255.255.255 wpad
+
+    #>
+
+    cd C:\Windows\System32
+    $getwpad = Get-content "C:\Windows\System32\Drivers\etc\hosts\" -ErrorAction SilentlyContinue
+    $getwpadstring = $getwpad | Select-String '255.255.255.255 wpad'
+
+    if ($getwpadstring -eq $null)
+    {
+        $legProt = "Warning - There is no '255.255.255.255 wpad' entry Warning" 
+        $legReg = "C:\Windows\System32\Drivers\etc\hosts\"
+    }
+    else
+    {
+        $legProt = "There's a 255.255.255.255 wpad entry" 
+        $legReg = "C:\Windows\System32\Drivers\etc\hosts\"
+
+    }
+    
+    $newObjLegNIC = New-Object psObject
+    Add-Member -InputObject $newObjLegNIC -Type NoteProperty -Name LegacyProtocol -Value $legProt
+    Add-Member -InputObject $newObjLegNIC -Type NoteProperty -Name LegacyPath -Value $legReg
+    $fragLegNIC += $newObjLegNIC
+
+
 ################################################
 ############  SECURITY OPTIONS  ################
 ################################################ 
@@ -1552,6 +1577,41 @@ sleep 5
     {
         $SecOptName = "Warning - $secOpTitle10 - Disabled Warning"
     }
+    $newObjSecOptions = New-Object psObject
+    Add-Member -InputObject $newObjSecOptions -Type NoteProperty -Name SecurityOptions -Value $SecOptName
+    $fragSecOptions +=  $newObjSecOptions
+
+        $secOpTitle15 = "Network security: Minimum session security for NTLM SSP based (including secure RPC) clients" 
+    $getSecOp15 = get-item 'HKLM:\SYSTEM\CurrentControlSet\Control\Lsa\MSV1_0\' -ErrorAction SilentlyContinue
+    $getSecOp15res = $getSecOp15.getvalue("NTLMMinClientSec")
+
+    if ($getSecOp15res -eq "537395200")
+    {
+        $SecOptName = "$secOpTitle15 - Enabled (Require NTLMv2 session security and Require 128-bit encryption)"
+    }
+    else
+    {
+        $SecOptName = "Warning - $secOpTitle15 - Disabled set Require NTLMv2 session security and Require 128-bit encryption Warning"
+    }
+    
+    $newObjSecOptions = New-Object psObject
+    Add-Member -InputObject $newObjSecOptions -Type NoteProperty -Name SecurityOptions -Value $SecOptName
+    $fragSecOptions +=  $newObjSecOptions
+
+
+    $secOpTitle16 = "Network security: Minimum session security for NTLM SSP based (including secure RPC) servers" 
+    $getSecOp16 = get-item 'HKLM:\SYSTEM\CurrentControlSet\Control\Lsa\MSV1_0\' -ErrorAction SilentlyContinue
+    $getSecOp16res = $getSecOp16.getvalue("NtlmMinServerSec")
+
+    if ($getSecOp16res -eq "537395200")
+    {
+        $SecOptName = "$secOpTitle16 - Enabled (Require NTLMv2 session security and Require 128-bit encryption)"
+    }
+    else
+    {
+        $SecOptName = "Warning - $secOpTitle16 - Disabled set Require NTLMv2 session security and Require 128-bit encryption Warning"
+    }
+    
     $newObjSecOptions = New-Object psObject
     Add-Member -InputObject $newObjSecOptions -Type NoteProperty -Name SecurityOptions -Value $SecOptName
     $fragSecOptions +=  $newObjSecOptions
@@ -2863,6 +2923,82 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     $fragNetCredVal=@()
 
     <#
+    Boot-Start Driver Initialization Policy
+
+    Computer Configuration\Policies\Administrative Templates\System\Early Launch Antimalware
+
+    This policy setting allows you to specify which boot-start drivers are initialized based on a classification determined by an Early Launch Antimalware boot-start driver. The Early Launch Antimalware boot-start driver can return the following classifications for each boot-start driver:
+    - Good: The driver has been signed and has not been tampered with.
+    - Bad: The driver has been identified as malware. It is recommended that you do not allow known bad drivers to be initialized.
+    - Bad, but required for boot: The driver has been identified as malware, but the computer cannot successfully boot without loading this driver.
+    - Unknown: This driver has not been attested to by your malware detection application and has not been classified by the Early Launch Antimalware boot-start driver.
+
+    If you enable this policy setting you will be able to choose which boot-start drivers to initialize the next time the computer is started.
+    If you disable or do not configure this policy setting, the boot start drivers determined to be Good, Unknown or Bad but Boot Critical are initialized and the initialization of drivers determined to be Bad is skipped.
+    If your malware detection application does not include an Early Launch Antimalware boot-start driver or if your Early Launch Antimalware boot-start driver has been disabled, this setting has no effect and all boot-start drivers are initialized.
+
+    #>
+    $NetCredDescrip = "Boot-Start Driver Initialization Policy"
+    $gpopath ="Computer Configuration\Policies\Administrative Templates\System\Early Launch Antimalware\$NetCredDescrip"
+    $RegKey = 'HKLM:\System\CurrentControlSet\Policies\EarlyLaunch\'
+    $NetCredVal=@()
+    $NetCredVal = "DriverLoadPolicy"  
+    $getNetCredVal=@()
+    $getNetCred = Get-Item $RegKey -ErrorAction SilentlyContinue
+    $getNetCredVal = $getNetCred.GetValue("$NetCredVal") 
+
+    if ($getNetCredVal -eq "1")
+    {
+        $NetCredSet = "$NetCredDescrip is enabled" 
+        $NetCredReg = "<div title=$gpoPath>$RegKey" +"$NetCredVal"
+    }
+    else
+    {
+        $NetCredSet = "Warning - $NetCredDescrip is disabled" 
+        $NetCredReg = "<div title=$gpoPath>$RegKey" +"$NetCredVal"
+    }
+
+    $newObjNetCred = New-Object -TypeName PSObject
+    Add-Member -InputObject $newObjNetCred -Type NoteProperty -Name CredentialSetting -Value  $NetCredSet
+    Add-Member -InputObject $newObjNetCred -Type NoteProperty -Name CredentialRegValue -Value $NetCredReg 
+    $fragNetCredVal += $newObjNetCred
+
+    <#
+    Safe Mode
+
+    An adversary with standard user credentials that can boot into Microsoft Windows using Safe Mode, Safe Mode with Networking or Safe Mode with 
+    Command Prompt options may be able to bypass system protections and security functionality. To reduce this risk, users with standard credentials 
+    should be prevented from using Safe Mode options to log in.
+
+    The following registry entry can be implemented using Group Policy preferences to prevent non-administrators from using Safe Mode options.
+
+    #>
+    $NetCredDescrip = "Prevent SafeMode for Non Admins"
+    $gpopath ="Computer Configuration\Policies\Administrative Templates\Windows Components\Windows Error Reporting\Advanced Error Reporting Settings\$NetCredDescrip"
+    $RegKey = 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System\'
+    $NetCredVal=@()
+    $NetCredVal = "SafeModeBlockNonAdmins"   
+    $getNetCredVal=@()
+    $getNetCred = Get-Item $RegKey -ErrorAction SilentlyContinue
+    $getNetCredVal = $getNetCred.GetValue("$NetCredVal") 
+
+    if ($getNetCredVal -eq "1")
+    {
+        $NetCredSet = "$NetCredDescrip is enabled" 
+        $NetCredReg = "<div title=$gpoPath>$RegKey" +"$NetCredVal"
+    }
+    else
+    {
+        $NetCredSet = "Warning - $NetCredDescrip is not set warning" 
+        $NetCredReg = "<div title=$gpoPath>$RegKey" +"$NetCredVal"
+    }
+
+    $newObjNetCred = New-Object -TypeName PSObject
+    Add-Member -InputObject $newObjNetCred -Type NoteProperty -Name CredentialSetting -Value  $NetCredSet
+    Add-Member -InputObject $newObjNetCred -Type NoteProperty -Name CredentialRegValue -Value $NetCredReg 
+    $fragNetCredVal += $newObjNetCred
+
+    <#
 
     Do not display network selection UI Enabled
 
@@ -2886,16 +3022,16 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     if ($getNetCredVal -eq "1")
     {
         $NetCredSet = "Warning - $NetCredDescrip is Enabled Warning" 
-        $NetCredReg = "<div title=$gpoPath>$RegKey"
+        $NetCredReg = "<div title=$gpoPath>$RegKey" +"$NetCredVal"
     }
     else
     {
         $NetCredSet = "$NetCredDescrip is disabled" 
-        $NetCredReg = "<div title=$gpoPath>$RegKey"
+        $NetCredReg = "<div title=$gpoPath>$RegKey" +"$NetCredVal"
     }
 
     $newObjNetCred = New-Object -TypeName PSObject
-    Add-Member -InputObject $newObjNetCred -Type NoteProperty -Name CredentialSetting  -Value  $NetCredSet
+    Add-Member -InputObject $newObjNetCred -Type NoteProperty -Name CredentialSetting  -Value $NetCredSet
     Add-Member -InputObject $newObjNetCred -Type NoteProperty -Name CredentialRegValue -Value $NetCredReg 
     $fragNetCredVal += $newObjNetCred
 
@@ -2923,12 +3059,512 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     if ($getNetCredVal -eq "1")
     {
         $NetCredSet = "Warning - $NetCredDescrip is Enabled Warning" 
-        $NetCredReg = "<div title=$gpoPath>$RegKey"
+        $NetCredReg = "<div title=$gpoPath>$RegKey" +"$NetCredVal"
     }
     else
     {
         $NetCredSet = "$NetCredDescrip is Disabled" 
-        $NetCredReg = "<div title=$gpoPath>$RegKey"
+        $NetCredReg = "<div title=$gpoPath>$RegKey" +"$NetCredVal"
+    }
+
+    $newObjNetCred = New-Object -TypeName PSObject
+    Add-Member -InputObject $newObjNetCred -Type NoteProperty -Name CredentialSetting -Value  $NetCredSet
+    Add-Member -InputObject $newObjNetCred -Type NoteProperty -Name CredentialRegValue -Value $NetCredReg 
+    $fragNetCredVal += $newObjNetCred
+
+    <#
+    Turn off picture password sign-in
+
+    Computer Configuration\Policies\Administrative Templates\System\Logon
+
+    This policy setting allows you to control whether a domain user can sign in using a picture password.
+    If you enable this policy setting, a domain user can't set up or sign in with a picture password.
+    If you disable or don't configure this policy setting, a domain user can set up and use a picture password.
+    Note that the user's domain password will be cached in the system vault when using this feature.
+
+    #>
+    $NetCredDescrip = "Turn off picture password sign-in"
+    $gpopath ="Computer Configuration\Policies\Administrative Templates\System\Logon\$NetCredDescrip"
+    $RegKey = 'HKLM:\Software\Policies\Microsoft\Windows\System\'
+    $NetCredVal=@()
+    $NetCredVal = "BlockDomainPicturePassword"
+    $getNetCredVal=@()
+    $getNetCred = Get-Item $RegKey -ErrorAction SilentlyContinue
+    $getNetCredVal = $getNetCred.GetValue("$NetCredVal") 
+
+    if ($getNetCredVal -eq "1")
+    {
+        $NetCredSet = "$NetCredDescrip is enabled" 
+        $NetCredReg = "<div title=$gpoPath>$RegKey" +"$NetCredVal"
+    }
+    else
+    {
+        $NetCredSet = "Warning - $NetCredDescrip disabled warning" 
+        $NetCredReg = "<div title=$gpoPath>$RegKey" +"$NetCredVal"
+    }
+
+    $newObjNetCred = New-Object -TypeName PSObject
+    Add-Member -InputObject $newObjNetCred -Type NoteProperty -Name CredentialSetting -Value  $NetCredSet
+    Add-Member -InputObject $newObjNetCred -Type NoteProperty -Name CredentialRegValue -Value $NetCredReg 
+    $fragNetCredVal += $newObjNetCred
+
+    <#
+    Turn on convenience PIN sign-in
+
+    Computer Configuration\Policies\Administrative Templates\System\Logon
+
+    This policy setting allows you to control whether a domain user can sign in using a convenience PIN.
+    If you enable this policy setting, a domain user can set up and sign in with a convenience PIN.
+    If you disable or don't configure this policy setting, a domain user can't set up and use a convenience PIN.
+    Note: The user's domain password will be cached in the system vault when using this feature.
+    To configure Windows Hello for Business, use the Administrative Template policies under Windows Hello for Business.
+
+    #>
+    $NetCredDescrip = "Turn on convenience PIN sign-in"
+    $gpopath ="Computer Configuration\Policies\Administrative Templates\System\Logon\$NetCredDescrip"
+    $RegKey = 'HKLM:\Software\Policies\Microsoft\Windows\System\'
+    $NetCredVal=@()
+    $NetCredVal = "AllowDomainPINLogon"
+    $getNetCredVal=@()
+    $getNetCred = Get-Item $RegKey -ErrorAction SilentlyContinue
+    $getNetCredVal = $getNetCred.GetValue("$NetCredVal") 
+
+    if ($getNetCredVal -eq "0")
+    {
+        $NetCredSet = "$NetCredDescrip is disabled" 
+        $NetCredReg = "<div title=$gpoPath>$RegKey" +"$NetCredVal"
+    }
+    else
+    {
+        $NetCredSet = "Warning - $NetCredDescrip enabled warning" 
+        $NetCredReg = "<div title=$gpoPath>$RegKey" +"$NetCredVal"
+    }
+
+    $newObjNetCred = New-Object -TypeName PSObject
+    Add-Member -InputObject $newObjNetCred -Type NoteProperty -Name CredentialSetting -Value  $NetCredSet
+    Add-Member -InputObject $newObjNetCred -Type NoteProperty -Name CredentialRegValue -Value $NetCredReg 
+    $fragNetCredVal += $newObjNetCred
+
+ <#
+    Allow users to select when a password is required when resuming from connected standby
+
+    Computer Configuration\Policies\Administrative Templates\System\Logon
+
+    This policy setting allows you to control whether a user can change the time before a password is required when a Connected Standby device screen turns off.
+    If you enable this policy setting, a user on a Connected Standby device can change the amount of time after the device's screen turns off before a password is required when waking the device. The time is limited by any EAS settings or Group Policies that affect the maximum idle time before a device locks. Additionally, if a password is required when a screensaver turns on, the screensaver timeout will limit the options the user may choose.
+    If you disable this policy setting, a user cannot change the amount of time after the device's screen turns off before a password is required when waking the device. Instead, a password is required immediately after the screen turns off.
+
+    #>
+    $NetCredDescrip = "Allow users to select when a password is required when resuming from connected standby"
+    $gpopath ="Computer Configuration\Policies\Administrative Templates\System\Logon\$NetCredDescrip"
+    $RegKey = 'HKLM:\Software\Policies\Microsoft\Windows\System\'
+    $NetCredVal=@()
+    $NetCredVal = "AllowDomainDelayLock"  
+    $getNetCredVal=@()
+    $getNetCred = Get-Item $RegKey -ErrorAction SilentlyContinue
+    $getNetCredVal = $getNetCred.GetValue("$NetCredVal") 
+
+    if ($getNetCredVal -eq "0")
+    {
+        $NetCredSet = "$NetCredDescrip is disabled" 
+        $NetCredReg = "<div title=$gpoPath>$RegKey" +"$NetCredVal"
+    }
+    else
+    {
+        $NetCredSet = "Warning - $NetCredDescrip is enabled" 
+        $NetCredReg = "<div title=$gpoPath>$RegKey" +"$NetCredVal"
+    }
+
+    $newObjNetCred = New-Object -TypeName PSObject
+    Add-Member -InputObject $newObjNetCred -Type NoteProperty -Name CredentialSetting -Value  $NetCredSet
+    Add-Member -InputObject $newObjNetCred -Type NoteProperty -Name CredentialRegValue -Value $NetCredReg 
+    $fragNetCredVal += $newObjNetCred
+
+
+    <#
+    Turn off app notifications on the lock screen
+
+    Computer Configuration\Policies\Administrative Templates\System\Logon
+
+    #>
+    $NetCredDescrip = "Turn off app notifications on the lock screen"
+    $gpopath ="Computer Configuration\Policies\Administrative Templates\System\Logon\$NetCredDescrip"
+    $RegKey = 'HKLM:\Software\Policies\Microsoft\Windows\System\'
+    $NetCredVal=@()
+    $NetCredVal = "DisableLockScreenAppNotifications"  
+    $getNetCredVal=@()
+    $getNetCred = Get-Item $RegKey -ErrorAction SilentlyContinue
+    $getNetCredVal = $getNetCred.GetValue("$NetCredVal") 
+
+    if ($getNetCredVal -eq "1")
+    {
+        $NetCredSet = "$NetCredDescrip is enabled" 
+        $NetCredReg = "<div title=$gpoPath>$RegKey" +"$NetCredVal"
+    }
+    else
+    {
+        $NetCredSet = "Warning - $NetCredDescrip is disabled" 
+        $NetCredReg = "<div title=$gpoPath>$RegKey" +"$NetCredVal"
+    }
+
+    $newObjNetCred = New-Object -TypeName PSObject
+    Add-Member -InputObject $newObjNetCred -Type NoteProperty -Name CredentialSetting -Value  $NetCredSet
+    Add-Member -InputObject $newObjNetCred -Type NoteProperty -Name CredentialRegValue -Value $NetCredReg 
+    $fragNetCredVal += $newObjNetCred
+
+
+
+<#
+    Prevent the computer from joining a homegroup
+
+    Computer Configuration\Policies\Administrative Templates\Windows Components\HomeGroup
+
+    This policy setting specifies whether users can add computers to a homegroup. By default, users can add their computer to a homegroup on a private network.
+    If you enable this policy setting, users cannot add computers to a homegroup. This policy setting does not affect other network sharing features.
+    If you disable or do not configure this policy setting, users can add computers to a homegroup. However, data on a domain-joined computer is not shared with the homegroup.
+    This policy setting is not configured by default.
+    You must restart the computer for this policy setting to take effect.
+
+    #>
+    $NetCredDescrip = "Prevent the computer from joining a homegroup"
+    $gpopath ="Computer Configuration\Policies\Administrative Templates\Windows Components\HomeGroup\$NetCredDescrip"
+    $RegKey = 'HKLM:\Software\Policies\Microsoft\Windows\HomeGroup\'
+    $NetCredVal=@()
+    $NetCredVal = "DisableHomeGroup"  
+    $getNetCredVal=@()
+    $getNetCred = Get-Item $RegKey -ErrorAction SilentlyContinue
+    $getNetCredVal = $getNetCred.GetValue("$NetCredVal") 
+
+    if ($getNetCredVal -eq "1")
+    {
+        $NetCredSet = "$NetCredDescrip is enabled" 
+        $NetCredReg = "<div title=$gpoPath>$RegKey" +"$NetCredVal"
+    }
+    else
+    {
+        $NetCredSet = "Warning - $NetCredDescrip is disabled" 
+        $NetCredReg = "<div title=$gpoPath>$RegKey" +"$NetCredVal"
+    }
+
+    $newObjNetCred = New-Object -TypeName PSObject
+    Add-Member -InputObject $newObjNetCred -Type NoteProperty -Name CredentialSetting -Value  $NetCredSet
+    Add-Member -InputObject $newObjNetCred -Type NoteProperty -Name CredentialRegValue -Value $NetCredReg 
+    $fragNetCredVal += $newObjNetCred
+
+
+  <#
+    Allow Windows Ink Workspace
+
+    Computer Configuration\Policies\Administrative Templates\Windows Components\Windows Ink Workspace
+
+    #>
+    $NetCredDescrip = "Allow Windows Ink Workspace"
+    $gpopath ="Computer Configuration\Policies\Administrative Templates\Windows Components\Windows Ink Workspace\$NetCredDescrip"
+    $RegKey = 'HKLM:\Software\Policies\Microsoft\WindowsInkWorkspace\'
+    $NetCredVal=@()
+    $NetCredVal = "AllowWindowsInkWorkspace"  
+    $getNetCredVal=@()
+    $getNetCred = Get-Item $RegKey -ErrorAction SilentlyContinue
+    $getNetCredVal = $getNetCred.GetValue("$NetCredVal") 
+
+    if ($getNetCredVal -eq "1")
+    {
+        $NetCredSet = "$NetCredDescrip is enabled" 
+        $NetCredReg = "<div title=$gpoPath>$RegKey" +"$NetCredVal"
+    }
+    else
+    {
+        $NetCredSet = "Warning - $NetCredDescrip is disabled" 
+        $NetCredReg = "<div title=$gpoPath>$RegKey" +"$NetCredVal"
+    }
+
+    $newObjNetCred = New-Object -TypeName PSObject
+    Add-Member -InputObject $newObjNetCred -Type NoteProperty -Name CredentialSetting -Value  $NetCredSet
+    Add-Member -InputObject $newObjNetCred -Type NoteProperty -Name CredentialRegValue -Value $NetCredReg 
+    $fragNetCredVal += $newObjNetCred
+
+
+    <#
+    Show lock in the user tile menu
+
+    Computer Configuration\Policies\Administrative Templates\Windows Components\File Explorer
+
+    #>
+    $NetCredDescrip = "Show lock in the user tile menu"
+    $gpopath ="Computer Configuration\Policies\Administrative Templates\Windows Components\File Explorer\$NetCredDescrip"
+    $RegKey = 'HKLM:\Software\Policies\Microsoft\Windows\Explorer\'
+    $NetCredVal=@()
+    $NetCredVal = "ShowLockOption"  
+    $getNetCredVal=@()
+    $getNetCred = Get-Item $RegKey -ErrorAction SilentlyContinue
+    $getNetCredVal = $getNetCred.GetValue("$NetCredVal") 
+
+    if ($getNetCredVal -eq "1")
+    {
+        $NetCredSet = "$NetCredDescrip is enabled" 
+        $NetCredReg = "<div title=$gpoPath>$RegKey" +"$NetCredVal"
+    }
+    else
+    {
+        $NetCredSet = "Warning - $NetCredDescrip is disabled" 
+        $NetCredReg = "<div title=$gpoPath>$RegKey" +"$NetCredVal"
+    }
+
+    $newObjNetCred = New-Object -TypeName PSObject
+    Add-Member -InputObject $newObjNetCred -Type NoteProperty -Name CredentialSetting -Value  $NetCredSet
+    Add-Member -InputObject $newObjNetCred -Type NoteProperty -Name CredentialRegValue -Value $NetCredReg 
+    $fragNetCredVal += $newObjNetCred
+
+    <#
+    Enable screen saver
+
+    User Configuration\Policies\Administrative Templates\Control Panel\Personalization
+
+    #>
+    $NetCredDescrip = "Enable screen saver"
+    $gpopath ="User Configuration\Policies\Administrative Templates\Control Panel\Personalization\$NetCredDescrip"
+    $RegKey = 'HKCU:\Software\Policies\Microsoft\Windows\Control Panel\Desktop\'
+    $NetCredVal=@()
+    $NetCredVal = "ScreenSaveActive"
+    $getNetCredVal=@()
+    $getNetCred = Get-Item $RegKey -ErrorAction SilentlyContinue
+    $getNetCredVal = $getNetCred.GetValue("$NetCredVal") 
+
+    if ($getNetCredVal -eq "1")
+    {
+        $NetCredSet = "$NetCredDescrip is enabled" 
+        $NetCredReg = "<div title=$gpoPath>$RegKey" +"$NetCredVal"
+    }
+    else
+    {
+        $NetCredSet = "Warning - $NetCredDescrip disabled warning" 
+        $NetCredReg = "<div title=$gpoPath>$RegKey" +"$NetCredVal"
+    }
+
+    $newObjNetCred = New-Object -TypeName PSObject
+    Add-Member -InputObject $newObjNetCred -Type NoteProperty -Name CredentialSetting -Value  $NetCredSet
+    Add-Member -InputObject $newObjNetCred -Type NoteProperty -Name CredentialRegValue -Value $NetCredReg 
+    $fragNetCredVal += $newObjNetCred
+
+    <#
+    Password protect the screen saver
+
+    User Configuration\Policies\Administrative Templates\Control Panel\Personalization
+
+    #>
+    $NetCredDescrip = "Password protect the screen saver"
+    $gpopath ="User Configuration\Policies\Administrative Templates\Control Panel\Personalization\$NetCredDescrip"
+    $RegKey = 'HKCU:\Software\Policies\Microsoft\Windows\Control Panel\Desktop\'
+    $NetCredVal=@()
+    $NetCredVal = "ScreenSaverIsSecure"
+    $getNetCredVal=@()
+    $getNetCred = Get-Item $RegKey -ErrorAction SilentlyContinue
+    $getNetCredVal = $getNetCred.GetValue("$NetCredVal") 
+
+    if ($getNetCredVal -eq "1")
+    {
+        $NetCredSet = "$NetCredDescrip is enabled" 
+        $NetCredReg = "<div title=$gpoPath>$RegKey" +"$NetCredVal"
+    }
+    else
+    {
+        $NetCredSet = "Warning - $NetCredDescrip disabled warning" 
+        $NetCredReg = "<div title=$gpoPath>$RegKey" +"$NetCredVal"
+    }
+
+    $newObjNetCred = New-Object -TypeName PSObject
+    Add-Member -InputObject $newObjNetCred -Type NoteProperty -Name CredentialSetting -Value  $NetCredSet
+    Add-Member -InputObject $newObjNetCred -Type NoteProperty -Name CredentialRegValue -Value $NetCredReg 
+    $fragNetCredVal += $newObjNetCred
+
+
+    <#
+    Screen saver timeout
+
+    User Configuration\Policies\Administrative Templates\Control Panel\Personalization
+
+    #>
+    $NetCredDescrip = "Screen saver timeout"
+    $gpopath ="User Configuration\Policies\Administrative Templates\Control Panel\Personalization\$NetCredDescrip"
+    $RegKey = 'HKCU:\Software\Policies\Microsoft\Windows\Control Panel\Desktop\'
+    $NetCredVal=@()
+    $NetCredVal = "ScreenSaveTimeOut"
+    $getNetCredVal=@()
+    $getNetCred = Get-Item $RegKey -ErrorAction SilentlyContinue
+    $getNetCredVal = $getNetCred.GetValue("$NetCredVal") 
+
+    if ($getNetCredVal -eq "900")
+    {
+        $NetCredSet = "$NetCredDescrip is enabled" 
+        $NetCredReg = "<div title=$gpoPath>$RegKey" +"$NetCredVal"
+    }
+    else
+    {
+        $NetCredSet = "Warning - $NetCredDescrip disabled warning" 
+        $NetCredReg = "<div title=$gpoPath>$RegKey" +"$NetCredVal"
+    }
+
+    $newObjNetCred = New-Object -TypeName PSObject
+    Add-Member -InputObject $newObjNetCred -Type NoteProperty -Name CredentialSetting -Value  $NetCredSet
+    Add-Member -InputObject $newObjNetCred -Type NoteProperty -Name CredentialRegValue -Value $NetCredReg 
+    $fragNetCredVal += $newObjNetCred
+
+
+    <#
+    Turn off toast notifications on the lock screen
+
+    User Configuration\Policies\Administrative Templates\Start Menu and Taskbar\Notifications
+
+    #>
+    $NetCredDescrip = "Turn off toast notifications on the lock screen"
+    $gpopath ="User Configuration\Policies\Administrative Templates\Start Menu and Taskbar\Notifications\$NetCredDescrip"
+    $RegKey = 'HKCU:\SOFTWARE\Policies\Microsoft\Windows\CurrentVersion\PushNotifications\'
+    $NetCredVal=@()
+    $NetCredVal = "NoToastApplicationNotificationOnLockScreen"
+    $getNetCredVal=@()
+    $getNetCred = Get-Item $RegKey -ErrorAction SilentlyContinue
+    $getNetCredVal = $getNetCred.GetValue("$NetCredVal") 
+
+    if ($getNetCredVal -eq "1")
+    {
+        $NetCredSet = "$NetCredDescrip is enabled" 
+        $NetCredReg = "<div title=$gpoPath>$RegKey" +"$NetCredVal"
+    }
+    else
+    {
+        $NetCredSet = "Warning - $NetCredDescrip disabled warning" 
+        $NetCredReg = "<div title=$gpoPath>$RegKey" +"$NetCredVal"
+    }
+
+    $newObjNetCred = New-Object -TypeName PSObject
+    Add-Member -InputObject $newObjNetCred -Type NoteProperty -Name CredentialSetting -Value  $NetCredSet
+    Add-Member -InputObject $newObjNetCred -Type NoteProperty -Name CredentialRegValue -Value $NetCredReg 
+    $fragNetCredVal += $newObjNetCred
+
+
+    <#
+    Do not suggest third-party content in Windows spotlight
+
+    User Configuration\Policies\Administrative Templates\Windows Components\Cloud Content
+
+    #>
+    $NetCredDescrip = "Do not suggest third-party content in Windows spotlight"
+    $gpopath ="User Configuration\Policies\Administrative Templates\Windows Components\Cloud Content\$NetCredDescrip"
+    $RegKey = 'HKCU:\Software\Policies\Microsoft\Windows\CloudContent\'
+    $NetCredVal=@()
+    $NetCredVal = "ScreenSaveTimeOut"
+    $getNetCredVal=@()
+    $getNetCred = Get-Item $RegKey -ErrorAction SilentlyContinue
+    $getNetCredVal = $getNetCred.GetValue("$NetCredVal") 
+
+    if ($getNetCredVal -eq "1")
+    {
+        $NetCredSet = "$NetCredDescrip is enabled" 
+        $NetCredReg = "<div title=$gpoPath>$RegKey" +"$NetCredVal"
+    }
+    else
+    {
+        $NetCredSet = "Warning - $NetCredDescrip disabled warning" 
+        $NetCredReg = "<div title=$gpoPath>$RegKey" +"$NetCredVal"
+    }
+
+    $newObjNetCred = New-Object -TypeName PSObject
+    Add-Member -InputObject $newObjNetCred -Type NoteProperty -Name CredentialSetting -Value  $NetCredSet
+    Add-Member -InputObject $newObjNetCred -Type NoteProperty -Name CredentialRegValue -Value $NetCredReg 
+    $fragNetCredVal += $newObjNetCred
+
+    <#
+    Prevent enabling lock screen camera
+
+    Computer Configuration\Policies\Administrative Templates\Control Panel\Personalization
+
+    #>
+    $NetCredDescrip = "Prevent enabling lock screen camera"
+    $gpopath ="Computer Configuration\Policies\Administrative Templates\Control Panel\Personalization\$NetCredDescrip"
+    $RegKey = 'HKLM:\Software\Policies\Microsoft\Windows\Personalization\'
+    $NetCredVal=@()
+    $NetCredVal = "NoLockScreenCamera"  
+    $getNetCredVal=@()
+    $getNetCred = Get-Item $RegKey -ErrorAction SilentlyContinue
+    $getNetCredVal = $getNetCred.GetValue("$NetCredVal") 
+
+    if ($getNetCredVal -eq "1")
+    {
+        $NetCredSet = "$NetCredDescrip is enabled" 
+        $NetCredReg = "<div title=$gpoPath>$RegKey" +"$NetCredVal"
+    }
+    else
+    {
+        $NetCredSet = "Warning - $NetCredDescrip is disabled" 
+        $NetCredReg = "<div title=$gpoPath>$RegKey" +"$NetCredVal"
+    }
+
+    $newObjNetCred = New-Object -TypeName PSObject
+    Add-Member -InputObject $newObjNetCred -Type NoteProperty -Name CredentialSetting -Value  $NetCredSet
+    Add-Member -InputObject $newObjNetCred -Type NoteProperty -Name CredentialRegValue -Value $NetCredReg 
+    $fragNetCredVal += $newObjNetCred
+
+    <#
+    Prevent enabling lock screen slide show
+
+    Computer Configuration\Policies\Administrative Templates\Control Panel\Personalization
+
+    #>
+    $NetCredDescrip = "Prevent enabling lock screen camera"
+    $gpopath ="Computer Configuration\Policies\Administrative Templates\Control Panel\Personalization\$NetCredDescrip"
+    $RegKey = 'HKLM:\Software\Policies\Microsoft\Windows\Personalization\'
+    $NetCredVal=@()
+    $NetCredVal = "NoLockScreenSlideshow"  
+    $getNetCredVal=@()
+    $getNetCred = Get-Item $RegKey -ErrorAction SilentlyContinue
+    $getNetCredVal = $getNetCred.GetValue("$NetCredVal") 
+
+    if ($getNetCredVal -eq "1")
+    {
+        $NetCredSet = "$NetCredDescrip is enabled" 
+        $NetCredReg = "<div title=$gpoPath>$RegKey" +"$NetCredVal"
+    }
+    else
+    {
+        $NetCredSet = "Warning - $NetCredDescrip is disabled" 
+        $NetCredReg = "<div title=$gpoPath>$RegKey" +"$NetCredVal"
+    }
+
+    $newObjNetCred = New-Object -TypeName PSObject
+    Add-Member -InputObject $newObjNetCred -Type NoteProperty -Name CredentialSetting -Value  $NetCredSet
+    Add-Member -InputObject $newObjNetCred -Type NoteProperty -Name CredentialRegValue -Value $NetCredReg 
+    $fragNetCredVal += $newObjNetCred
+
+
+
+    <#
+    Prevent users from sharing files within their profile.
+
+    User Configurations\Policies\Administrative Templates\Windows Components\Network Sharing
+
+    By default users are allowed to share files within their profile to other users on their network once an administrator opts in the computer. An administrator can opt in the computer by using the sharing wizard to share a file within their profile.
+    If you enable this policy, users will not be able to share files within their profile using the sharing wizard. Also, the sharing wizard will not create a share at %root%\users and can only be used to create SMB shares on folders.
+    If you disable or don't configure this policy, then users will be able to share files out of their user profile once an administrator has opted in the computer.
+
+    #>
+    $NetCredDescrip = "Prevent users from sharing files within their profile"
+    $gpopath ="User Configurations\Policies\Administrative Templates\Windows Components\Network Sharing\$NetCredDescrip"
+    $RegKey = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Policies\Explorer\'
+    $NetCredVal=@()
+    $NetCredVal = "NoInplaceSharing"  
+    $getNetCredVal=@()
+    $getNetCred = Get-Item $RegKey -ErrorAction SilentlyContinue
+    $getNetCredVal = $getNetCred.GetValue("$NetCredVal") 
+
+    if ($getNetCredVal -eq "1")
+    {
+        $NetCredSet = "$NetCredDescrip is enabled" 
+        $NetCredReg = "<div title=$gpoPath>$RegKey" +"$NetCredVal"
+    }
+    else
+    {
+        $NetCredSet = "Warning - $NetCredDescrip is disabled" 
+        $NetCredReg = "<div title=$gpoPath>$RegKey" +"$NetCredVal"
     }
 
     $newObjNetCred = New-Object -TypeName PSObject
@@ -2962,12 +3598,12 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     if ($getNetCredVal -eq "1")
     {
         $NetCredSet = "$NetCredDescrip is Enabled" 
-        $NetCredReg = "<div title=$gpoPath>$RegKey"
+        $NetCredReg = "<div title=$gpoPath>$RegKey" +"$NetCredVal"
     }
     else
     {
         $NetCredSet = "Warning - $NetCredDescrip is disabled Warning" 
-        $NetCredReg = "<div title=$gpoPath>$RegKey"
+        $NetCredReg = "<div title=$gpoPath>$RegKey" +"$NetCredVal"
     }
 
     $newObjNetCred = New-Object -TypeName PSObject
@@ -2998,12 +3634,12 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     if ($getNetCredVal -eq "1")
     {
         $NetCredSet = "Warning - $NetCredDescrip is Enabled Warning" 
-        $NetCredReg = "<div title=$gpoPath>$RegKey"
+        $NetCredReg = "<div title=$gpoPath>$RegKey" +"$NetCredVal"
     }
     else
     {
         $NetCredSet = "$NetCredDescrip is Disabled" 
-        $NetCredReg = "<div title=$gpoPath>$RegKey"
+        $NetCredReg = "<div title=$gpoPath>$RegKey" +"$NetCredVal"
     }
 
     $newObjNetCred = New-Object -TypeName PSObject
@@ -3034,12 +3670,12 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     if ($getNetCredVal -eq "1")
     {
         $NetCredSet = "$NetCredDescrip is Enabled" 
-        $NetCredReg = "<div title=$gpoPath>$RegKey"
+        $NetCredReg = "<div title=$gpoPath>$RegKey" +"$NetCredVal"
     }
     else
     {
         $NetCredSet = "Warning - $NetCredDescrip is disabled Warning" 
-        $NetCredReg = "<div title=$gpoPath>$RegKey"
+        $NetCredReg = "<div title=$gpoPath>$RegKey" +"$NetCredVal"
     }
 
     $newObjNetCred = New-Object -TypeName PSObject
@@ -3067,12 +3703,12 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     if ($getNetCredVal -eq "1")
     {
         $NetCredSet = "$NetCredDescrip is Enabled" 
-        $NetCredReg = "<div title=$gpoPath>$RegKey"
+        $NetCredReg = "<div title=$gpoPath>$RegKey" +"$NetCredVal"
     }
     else
     {
         $NetCredSet = "Warning - $NetCredDescrip is disabled Warning" 
-        $NetCredReg = "<div title=$gpoPath>$RegKey"
+        $NetCredReg = "<div title=$gpoPath>$RegKey" +"$NetCredVal"
     }
 
     $newObjNetCred = New-Object -TypeName PSObject
@@ -3110,12 +3746,12 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     if ($getNetCredVal -eq $null)
     {
         $NetCredSet = "$NetCredDescrip is disabled" 
-        $NetCredReg = "<div title=$gpoPath>$RegKey"
+        $NetCredReg = "<div title=$gpoPath>$RegKey" +"$NetCredVal"
     }
     else
     {
         $NetCredSet = "Warning - $NetCredDescrip is Enabled Warning" 
-        $NetCredReg = "<div title=$gpoPath>$RegKey"
+        $NetCredReg = "<div title=$gpoPath>$RegKey" +"$NetCredVal"
     }
 
     $newObjNetCred = New-Object -TypeName PSObject
@@ -3147,15 +3783,15 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     $getNetCred = Get-Item $RegKey -ErrorAction SilentlyContinue
     $getNetCredVal = $getNetCred.GetValue("$NetCredVal") 
 
-    if ($getNetCredVal -eq "0" -or $getNetCredVal -eq $null)
+    if ($getNetCredVal -eq "1" -or $getNetCredVal -eq $null)
     {
-        $NetCredSet = "Warning - $NetCredDescrip is Enabled or not Set Warning" 
-        $NetCredReg = "<div title=$gpoPath>$RegKey"
+        $NetCredSet = "Warning - $NetCredDescrip is disabled or not Set Warning" 
+        $NetCredReg = "<div title=$gpoPath>$RegKey" +"$NetCredVal"
     }
     else
     {
-        $NetCredSet = "$NetCredDescrip is Enabled " 
-        $NetCredReg = "<div title=$gpoPath>$RegKey"
+        $NetCredSet = "$NetCredDescrip is enabled " 
+        $NetCredReg = "<div title=$gpoPath>$RegKey" +"$NetCredVal"
     }
 
     $newObjNetCred = New-Object -TypeName PSObject
@@ -3180,6 +3816,8 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     communicating by means of a trusted path when entering their passwords.
     A malicious user might install malware that looks like the standard logon dialog box for the Windows operating system, and 
     capture a user's password. The attacker can then log on to the compromised account with whatever level of user rights that user has.
+
+    Note: passing ctrl, alt and Del through multiple RDP wont work
     #>
 
     $NetCredDescrip = "Interactive logon: Do not require CTRL+ALT+DEL"
@@ -3194,12 +3832,43 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     if ($getNetCredVal -eq "0")
     {
         $NetCredSet = "$NetCredDescrip is Disabled" 
-        $NetCredReg = "<div title=$gpoPath>$RegKey"
+        $NetCredReg = "<div title=$gpoPath>$RegKey" +"$NetCredVal"
     }
     else
     {
         $NetCredSet = "Warning - $NetCredDescrip is Enabled or not defined Warning " 
-        $NetCredReg = "<div title=$gpoPath>$RegKey"
+        $NetCredReg = "<div title=$gpoPath>$RegKey" +"$NetCredVal"
+    }
+
+    $newObjNetCred = New-Object -TypeName PSObject
+    Add-Member -InputObject $newObjNetCred -Type NoteProperty -Name CredentialSetting -Value  $NetCredSet
+    Add-Member -InputObject $newObjNetCred -Type NoteProperty -Name CredentialRegValue -Value $NetCredReg 
+    $fragNetCredVal += $newObjNetCred
+
+    <#
+    Interactive logon: Machine inactivity limit
+
+    Computer Configuration\Policies\Windows Settings\Security Settings\Local Policies\Security Options
+
+    #>
+    $NetCredDescrip = "Interactive logon: Machine inactivity limit"
+    $gpopath ="Computer Configuration\Policies\Windows Settings\Security Settings\Local Policies\Security Options\$NetCredDescrip"
+    $RegKey = 'HKLM:\Software\Microsoft\Windows\CurrentVersion\Policies\System\'
+    $NetCredVal=@()
+    $NetCredVal = "InactivityTimeoutSecs"
+    $getNetCredVal=@()
+    $getNetCred = Get-Item $RegKey -ErrorAction SilentlyContinue
+    $getNetCredVal = $getNetCred.GetValue("$NetCredVal") 
+
+    if ($getNetCredVal -eq "900")
+    {
+        $NetCredSet = "$NetCredDescrip is enabled" 
+        $NetCredReg = "<div title=$gpoPath>$RegKey" +"$NetCredVal"
+    }
+    else
+    {
+        $NetCredSet = "Warning - $NetCredDescrip disabled warning" 
+        $NetCredReg = "<div title=$gpoPath>$RegKey" +"$NetCredVal"
     }
 
     $newObjNetCred = New-Object -TypeName PSObject
@@ -3234,12 +3903,12 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     if ($getNetCredVal -lt "2")
     {
         $NetCredSet = "$NetCredDescrip caches $getNetCredVal previous logons, ideally this should be set to 1" 
-        $NetCredReg = "<div title=$gpoPath>$RegKey"
+        $NetCredReg = "<div title=$gpoPath>$RegKey" +"$NetCredVal"
     }
     else
     {
         $NetCredSet = "Warning - $NetCredDescrip is $getNetCredVal, ideally this should be set to 1 Warning" 
-        $NetCredReg = "<div title=$gpoPath>$RegKey"
+        $NetCredReg = "<div title=$gpoPath>$RegKey" +"$NetCredVal"
     }
 
     $newObjNetCred = New-Object -TypeName PSObject
@@ -3284,12 +3953,12 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     if ($getNetCredVal -eq "1")
     {
         $NetCredSet = "$NetCredDescrip is enabled" 
-        $NetCredReg = "<div title=$gpoPath>$RegKey"
+        $NetCredReg = "<div title=$gpoPath>$RegKey" +"$NetCredVal"
     }
     else
     {
         $NetCredSet = "Warning - $NetCredDescrip is disabled" 
-        $NetCredReg = "<div title=$gpoPath>$RegKey"
+        $NetCredReg = "<div title=$gpoPath>$RegKey" +"$NetCredVal"
     }
 
     $newObjNetCred = New-Object -TypeName PSObject
@@ -3330,12 +3999,196 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     if ($getNetCredVal -eq "1")
     {
         $NetCredSet = "$NetCredDescrip is enabled" 
-        $NetCredReg = "<div title=$gpoPath>$RegKey"
+        $NetCredReg = "<div title=$gpoPath>$RegKey" +"$NetCredVal"
     }
     else
     {
         $NetCredSet = "Warning - $NetCredDescrip is disabled, mitigates Pass-the-Hash" 
-        $NetCredReg = "<div title=$gpoPath>$RegKey"
+        $NetCredReg = "<div title=$gpoPath>$RegKey" +"$NetCredVal"
+    }
+
+    $newObjNetCred = New-Object -TypeName PSObject
+    Add-Member -InputObject $newObjNetCred -Type NoteProperty -Name CredentialSetting -Value  $NetCredSet
+    Add-Member -InputObject $newObjNetCred -Type NoteProperty -Name CredentialRegValue -Value $NetCredReg 
+    $fragNetCredVal += $newObjNetCred
+
+       <#
+    Hardened UNC Paths
+
+    Computer Configuration\Policies\Administrative Templates\Network\Network Provider
+
+    Not applicable to non-domain joined systems
+
+    When enabled ensures only domain joined systems can download and access policies
+
+
+    #>
+    $NetCredDescrip = "Hardened UNC Paths"
+    $gpopath ="Computer Configuration\Policies\Administrative Templates\Network\Network Provider\$NetCredDescrip"
+    $RegKey = 'HKLM:\Software\Policies\Microsoft\Windows\NetworkProvider\HardenedPaths\'
+    $NetCredVal=@()
+    $NetCredVal = "HardenedPaths"  
+    $getNetCredVal=@()
+    $getNetCred = Get-Item $RegKey -ErrorAction SilentlyContinue
+   # $getNetCredVal = $getNetCred.GetValue("$NetCredVal") 
+     $getNetCredVal = $getNetCred.Property
+
+    if ($getNetCredVal -eq "\\*\SYSVOL" -and "\\*\NETLOGON")
+    {
+        $NetCredSet = "$NetCredDescrip is enabled" 
+        $NetCredReg = "<div title=$gpoPath>$RegKey" +"$NetCredVal"
+    }
+    else
+    {
+        $NetCredSet = "Warning - $NetCredDescrip is disabled, \\*\SYSVOL and \\*\NETLOGON are missing" 
+        $NetCredReg = "<div title=$gpoPath>$RegKey" +"$NetCredVal"
+    }
+
+    $newObjNetCred = New-Object -TypeName PSObject
+    Add-Member -InputObject $newObjNetCred -Type NoteProperty -Name CredentialSetting -Value  $NetCredSet
+    Add-Member -InputObject $newObjNetCred -Type NoteProperty -Name CredentialRegValue -Value $NetCredReg 
+    $fragNetCredVal += $newObjNetCred
+
+    
+   <#
+    Configure registry policy processing
+
+    Computer Configuration\Policies\Administrative Templates\System\Group Policy
+
+    The "Process even if the Group Policy objects have not changed" option updates and reapplies the policies even if the policies 
+    have not changed. Many policy implementations specify that they are updated only when changed. However, you might want to update 
+    unchanged policies, such as reapplying a desired policy setting in case a user has changed it.
+
+    #>
+    $NetCredDescrip = "Configure registry policy processing"
+    $gpopath ="Computer Configuration\Policies\Administrative Templates\System\Group Policy\$NetCredDescrip"
+    $RegKey = 'HKLM:\SOFTWARE\Policies\Microsoft\Windows\Group Policy\{35378EAC-683F-11D2-A89A-00C04FBBCFA2}\'
+    $NetCredVal=@()
+    $NetCredVal = "NoGPOListChanges"  
+    $getNetCredVal=@()
+    $getNetCred = Get-Item $RegKey -ErrorAction SilentlyContinue
+    $getNetCredVal = $getNetCred.GetValue("$NetCredVal") 
+
+    if ($getNetCredVal -eq "0")
+    {
+        $NetCredSet = "$NetCredDescrip is enabled" 
+        $NetCredReg = "<div title=$gpoPath>$RegKey" +"$NetCredVal"
+    }
+    else
+    {
+        $NetCredSet = "Warning - $NetCredDescrip is disabled" 
+        $NetCredReg = "<div title=$gpoPath>$RegKey" +"$NetCredVal"
+    }
+
+    $newObjNetCred = New-Object -TypeName PSObject
+    Add-Member -InputObject $newObjNetCred -Type NoteProperty -Name CredentialSetting -Value  $NetCredSet
+    Add-Member -InputObject $newObjNetCred -Type NoteProperty -Name CredentialRegValue -Value $NetCredReg 
+    $fragNetCredVal += $newObjNetCred
+
+       <#
+    Configure security policy processing
+
+    Computer Configuration\Policies\Administrative Templates\System\Group Policy
+
+    The "Process even if the Group Policy objects have not changed" option updates and reapplies the policies even if the policies 
+    have not changed. Many policy implementations specify that they are updated only when changed. However, you might want to update 
+    unchanged policies, such as reapplying a desired policy setting in case a user has changed it.
+
+    reboot for reg to be created and gpo to apply
+
+    #>
+    $NetCredDescrip = "Configure security policy processing"
+    $gpopath ="Computer Configuration\Policies\Administrative Templates\System\Group Policy\$NetCredDescrip"
+    $RegKey = 'HKLM:\Software\Policies\Microsoft\Windows\Group Policy\{827D319E-6EAC-11D2-A4EA-00C04F79F83A}\'
+    $NetCredVal=@()
+    $NetCredVal = "NoBackgroundPolicy"  
+    $getNetCredVal=@()
+    $getNetCred = Get-Item $RegKey -ErrorAction SilentlyContinue
+    $getNetCredVal = $getNetCred.GetValue("$NetCredVal") 
+
+    if ($getNetCredVal -eq "0")
+    {
+        $NetCredSet = "$NetCredDescrip is enabled" 
+        $NetCredReg = "<div title=$gpoPath>$RegKey" +"$NetCredVal"
+    }
+    else
+    {
+        $NetCredSet = "Warning - $NetCredDescrip is disabled" 
+        $NetCredReg = "<div title=$gpoPath>$RegKey" +"$NetCredVal"
+    }
+
+    $newObjNetCred = New-Object -TypeName PSObject
+    Add-Member -InputObject $newObjNetCred -Type NoteProperty -Name CredentialSetting -Value  $NetCredSet
+    Add-Member -InputObject $newObjNetCred -Type NoteProperty -Name CredentialRegValue -Value $NetCredReg 
+    $fragNetCredVal += $newObjNetCred
+
+
+    <#
+    Turn off background refresh of Group Policy
+
+    Computer Configuration\Policies\Administrative Templates\System\Group Policy
+
+    This policy setting prevents Group Policy from being updated while the computer is in use. This policy setting applies to Group Policy for computers, users, and domain controllers.
+    If you enable this policy setting, the system waits until the current user logs off the system before updating the computer and user settings.
+    If you disable or do not configure this policy setting, updates can be applied while users are working. The frequency of updates is determined by the "Set Group Policy refresh interval for computers" and "Set Group Policy refresh interval for users" policy settings.
+
+
+    #>
+    $NetCredDescrip = "Turn off background refresh of Group Policy"
+    $gpopath ="Computer Configuration\Policies\Administrative Templates\System\Group Policy\$NetCredDescrip"
+    $RegKey = 'HKLM:\Software\Microsoft\Windows\CurrentVersion\Policies\System\'
+    $NetCredVal=@()
+    $NetCredVal = "DisableBkGndGroupPolicy"  
+    $getNetCredVal=@()
+    $getNetCred = Get-Item $RegKey -ErrorAction SilentlyContinue
+    $getNetCredVal = $getNetCred.GetValue("$NetCredVal") 
+
+    if ($getNetCredVal -eq "0")
+    {
+        $NetCredSet = "$NetCredDescrip is disabled" 
+        $NetCredReg = "<div title=$gpoPath>$RegKey" +"$NetCredVal"
+    }
+    else
+    {
+        $NetCredSet = "Warning - $NetCredDescrip is enabled" 
+        $NetCredReg = "<div title=$gpoPath>$RegKey" +"$NetCredVal"
+    }
+
+    $newObjNetCred = New-Object -TypeName PSObject
+    Add-Member -InputObject $newObjNetCred -Type NoteProperty -Name CredentialSetting -Value  $NetCredSet
+    Add-Member -InputObject $newObjNetCred -Type NoteProperty -Name CredentialRegValue -Value $NetCredReg 
+    $fragNetCredVal += $newObjNetCred
+
+    <#
+    Turn off Local Group Policy Objects processing
+
+    Computer Configuration\Policies\Administrative Templates\System\Group Policy
+
+    This policy setting prevents Local Group Policy Objects (Local GPOs) from being applied.
+    By default, the policy settings in Local GPOs are applied before any domain-based GPO policy settings. These policy settings can apply to both users and the local computer. You can disable the processing and application of all Local GPOs to ensure that only domain-based GPOs are applied.
+    If you enable this policy setting, the system does not process and apply any Local GPOs.
+    If you disable or do not configure this policy setting, Local GPOs continue to be applied.
+    Note: For computers joined to a domain, it is strongly recommended that you only configure this policy setting in domain-based GPOs. This policy setting will be ignored on computers that are joined to a workgroup.
+
+    #>
+    $NetCredDescrip = "Turn off Local Group Policy Objects processing"
+    $gpopath ="Computer Configuration\Policies\Administrative Templates\System\Group Policy\$NetCredDescrip"
+    $RegKey = 'HKLM:\Software\Microsoft\Windows\CurrentVersion\Policies\System\'
+    $NetCredVal=@()
+    $NetCredVal = "DisableLGPOProcessing"  
+    $getNetCredVal=@()
+    $getNetCred = Get-Item $RegKey -ErrorAction SilentlyContinue
+    $getNetCredVal = $getNetCred.GetValue("$NetCredVal") 
+
+    if ($getNetCredVal -eq "1")
+    {
+        $NetCredSet = "$NetCredDescrip is enabled" 
+        $NetCredReg = "<div title=$gpoPath>$RegKey" +"$NetCredVal"
+    }
+    else
+    {
+        $NetCredSet = "Warning - $NetCredDescrip is disabled" 
+        $NetCredReg = "<div title=$gpoPath>$RegKey" +"$NetCredVal"
     }
 
     $newObjNetCred = New-Object -TypeName PSObject
@@ -3365,12 +4218,12 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     if ($getNetCredVal -eq "1")
     {
         $NetCredSet = "Warning - $NetCredDescrip is enabled Warning" 
-        $NetCredReg = "<div title=$gpoPath>$RegKey"
+        $NetCredReg = "<div title=$gpoPath>$RegKey" +"$NetCredVal"
     }
     else
     {
         $NetCredSet = "$NetCredDescrip is disabled" 
-        $NetCredReg = "<div title=$gpoPath>$RegKey"
+        $NetCredReg = "<div title=$gpoPath>$RegKey" +"$NetCredVal"
     }
 
     $newObjNetCred = New-Object -TypeName PSObject
@@ -3383,7 +4236,6 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     Network access: Let Everyone permissions apply to anonymous users
 
     Computer Configuration\Policies\Windows Settings\Security Settings\Local Policies\Security Options
-
 
     This policy setting determines what additional permissions are granted for anonymous connections to the device. 
     If you enable this policy setting, anonymous users can enumerate the names of domain accounts and shared folders and 
@@ -3406,12 +4258,12 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     if ($getNetCredVal -eq "1")
     {
         $NetCredSet = "Warning - $NetCredDescrip is enabled Warning" 
-        $NetCredReg = "<div title=$gpoPath>$RegKey"
+        $NetCredReg = "<div title=$gpoPath>$RegKey" +"$NetCredVal"
     }
     else
     {
         $NetCredSet = "$NetCredDescrip is disabled" 
-        $NetCredReg = "<div title=$gpoPath>$RegKey"
+        $NetCredReg = "<div title=$gpoPath>$RegKey" +"$NetCredVal"
     }
 
     $newObjNetCred = New-Object -TypeName PSObject
@@ -3447,12 +4299,12 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     if ($getNetCredVal -eq "1")
     {
         $NetCredSet = "$NetCredDescrip is enabled" 
-        $NetCredReg = "<div title=$gpoPath>$RegKey"
+        $NetCredReg = "<div title=$gpoPath>$RegKey" +"$NetCredVal"
     }
     else
     {
         $NetCredSet = "Warning - $NetCredDescrip is disabled Warning" 
-        $NetCredReg = "<div title=$gpoPath>$RegKey"
+        $NetCredReg = "<div title=$gpoPath>$RegKey" +"$NetCredVal"
     }
 
     $newObjNetCred = New-Object -TypeName PSObject
@@ -3488,12 +4340,12 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     if ($getNetCredVal -eq "1")
     {
         $NetCredSet = "$NetCredDescrip is enabled" 
-        $NetCredReg = "<div title=$gpoPath>$RegKey"
+        $NetCredReg = "<div title=$gpoPath>$RegKey" +"$NetCredVal"
     }
     else
     {
         $NetCredSet = "Warning - $NetCredDescrip is disabled Warning" 
-        $NetCredReg = "<div title=$gpoPath>$RegKey"
+        $NetCredReg = "<div title=$gpoPath>$RegKey" +"$NetCredVal"
     }
 
     $newObjNetCred = New-Object -TypeName PSObject
@@ -3529,12 +4381,12 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     if ($getNetCredVal -eq "1")
     {
         $NetCredSet = "$NetCredDescrip is enabled" 
-        $NetCredReg = "<div title=$gpoPath>$RegKey"
+        $NetCredReg = "<div title=$gpoPath>$RegKey" +"$NetCredVal"
     }
     else
     {
         $NetCredSet = "Warning - $NetCredDescrip is disabled Warning" 
-        $NetCredReg = "<div title=$gpoPath>$RegKey"
+        $NetCredReg = "<div title=$gpoPath>$RegKey" +"$NetCredVal"
     }
 
     $newObjNetCred = New-Object -TypeName PSObject
@@ -3563,13 +4415,13 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     if ($getNetCredVal -eq "O:BAG:BAD:(A;;RC;;;BA)")
     {
         $NetCredSet = "$NetCredDescrip is enabled to allow Administrator remote access (O:BAG:BAD:(A;;RC;;;BA))" 
-        $NetCredReg = "<div title=$gpoPath>$RegKey"
+        $NetCredReg = "<div title=$gpoPath>$RegKey" +"$NetCredVal"
 
     }
     else
     {
         $NetCredSet = "Warning - $NetCredDescrip is disabled or not set Warning " 
-        $NetCredReg = "<div title=$gpoPath>$RegKey"
+        $NetCredReg = "<div title=$gpoPath>$RegKey" +"$NetCredVal"
     }
 
     $newObjNetCred = New-Object -TypeName PSObject
@@ -3605,12 +4457,12 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     if ($getNetCredVal -eq "1")
     {
         $NetCredSet = "Warning - $NetCredDescrip is enabled Warning" 
-        $NetCredReg = "<div title=$gpoPath>$RegKey"
+        $NetCredReg = "<div title=$gpoPath>$RegKey" +"$NetCredVal"
     }
     else
     {
         $NetCredSet = "$NetCredDescrip is disabled" 
-        $NetCredReg = "<div title=$gpoPath>$RegKey"
+        $NetCredReg = "<div title=$gpoPath>$RegKey" +"$NetCredVal"
     }
 
     $newObjNetCred = New-Object -TypeName PSObject
@@ -3645,18 +4497,51 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     if ($getNetCredVal -eq "1")
     {
         $NetCredSet = "Warning - $NetCredDescrip is enabled Warning" 
-        $NetCredReg = "<div title=$gpoPath>$RegKey"
+        $NetCredReg = "<div title=$gpoPath>$RegKey" +"$NetCredVal"
     }
     else
     {
         $NetCredSet = "$NetCredDescrip is disabled" 
-        $NetCredReg = "<div title=$gpoPath>$RegKey"
+        $NetCredReg = "<div title=$gpoPath>$RegKey" +"$NetCredVal"
     }
 
     $newObjNetCred = New-Object -TypeName PSObject
     Add-Member -InputObject $newObjNetCred -Type NoteProperty -Name CredentialSetting -Value  $NetCredSet
     Add-Member -InputObject $newObjNetCred -Type NoteProperty -Name CredentialRegValue -Value $NetCredReg 
     $fragNetCredVal += $newObjNetCred   
+
+    <#
+    Accounts: Limit local account use of blank passwords to console logon only
+
+    Computer Configuration\Policies\Windows Settings\Security Settings\Local Policies\Security Options
+
+    #>
+    $NetCredDescrip = "Accounts: Limit local account use of blank passwords to console logon only"
+    $gpopath ="Computer Configuration\Policies\Windows Settings\Security Settings\Local Policies\Security Options\$NetCredDescrip"
+    $RegKey = 'HKLM:\System\CurrentControlSet\Control\Lsa\'
+    $NetCredVal=@()
+    $NetCredVal = "LimitBlankPasswordUse"
+    $getNetCredVal=@()
+    $getNetCred = Get-Item $RegKey -ErrorAction SilentlyContinue
+    $getNetCredVal = $getNetCred.GetValue("$NetCredVal") 
+
+    if ($getNetCredVal -eq "1")
+    {
+        $NetCredSet = "$NetCredDescrip is enabled" 
+        $NetCredReg = "<div title=$gpoPath>$RegKey" +"$NetCredVal"
+    }
+    else
+    {
+        $NetCredSet = "Warning - $NetCredDescrip disabled warning" 
+        $NetCredReg = "<div title=$gpoPath>$RegKey" +"$NetCredVal"
+    }
+
+    $newObjNetCred = New-Object -TypeName PSObject
+    Add-Member -InputObject $newObjNetCred -Type NoteProperty -Name CredentialSetting -Value  $NetCredSet
+    Add-Member -InputObject $newObjNetCred -Type NoteProperty -Name CredentialRegValue -Value $NetCredReg 
+    $fragNetCredVal += $newObjNetCred
+
+
 
 <#
     Disallow Autoplay for non-volume devices - Machine
@@ -3676,12 +4561,12 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     if ($getNetCredVal -eq "1")
     {
         $NetCredSet = "$NetCredDescrip is enabled" 
-        $NetCredReg = "<div title=$gpoPath>$RegKey"
+        $NetCredReg = "<div title=$gpoPath>$RegKey" +"$NetCredVal"
     }
     else
     {
         $NetCredSet = "Warning - $NetCredDescrip is disabled" 
-        $NetCredReg = "<div title=$gpoPath>$RegKey"
+        $NetCredReg = "<div title=$gpoPath>$RegKey" +"$NetCredVal"
     }
 
     $newObjNetCred = New-Object -TypeName PSObject
@@ -3707,12 +4592,12 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     if ($getNetCredVal -eq "1")
     {
         $NetCredSet = "$NetCredDescrip is enabled" 
-        $NetCredReg = "<div title=$gpoPath>$RegKey"
+        $NetCredReg = "<div title=$gpoPath>$RegKey" +"$NetCredVal"
     }
     else
     {
         $NetCredSet = "Warning - $NetCredDescrip is disabled" 
-        $NetCredReg = "<div title=$gpoPath>$RegKey"
+        $NetCredReg = "<div title=$gpoPath>$RegKey" +"$NetCredVal"
     }
 
     $newObjNetCred = New-Object -TypeName PSObject
@@ -3739,12 +4624,12 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     if ($getNetCredVal -eq "1")
     {
         $NetCredSet = "$NetCredDescrip is enabled" 
-        $NetCredReg = "<div title=$gpoPath>$RegKey"
+        $NetCredReg = "<div title=$gpoPath>$RegKey" +"$NetCredVal"
     }
     else
     {
         $NetCredSet = "Warning - $NetCredDescrip is disabled" 
-        $NetCredReg = "<div title=$gpoPath>$RegKey"
+        $NetCredReg = "<div title=$gpoPath>$RegKey" +"$NetCredVal"
     }
 
     $newObjNetCred = New-Object -TypeName PSObject
@@ -3770,12 +4655,12 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     if ($getNetCredVal -eq "1")
     {
         $NetCredSet = "$NetCredDescrip is enabled" 
-        $NetCredReg = "<div title=$gpoPath>$RegKey"
+        $NetCredReg = "<div title=$gpoPath>$RegKey" +"$NetCredVal"
     }
     else
     {
         $NetCredSet = "Warning - $NetCredDescrip is disabled" 
-        $NetCredReg = "<div title=$gpoPath>$RegKey"
+        $NetCredReg = "<div title=$gpoPath>$RegKey" +"$NetCredVal"
     }
 
     $newObjNetCred = New-Object -TypeName PSObject
@@ -3801,12 +4686,12 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     if ($getNetCredVal -eq "255")
     {
         $NetCredSet = "$NetCredDescrip is enabled" 
-        $NetCredReg = "<div title=$gpoPath>$RegKey"
+        $NetCredReg = "<div title=$gpoPath>$RegKey" +"$NetCredVal"
     }
     else
     {
         $NetCredSet = "Warning - $NetCredDescrip is disabled" 
-        $NetCredReg = "<div title=$gpoPath>$RegKey"
+        $NetCredReg = "<div title=$gpoPath>$RegKey" +"$NetCredVal"
     }
 
     $newObjNetCred = New-Object -TypeName PSObject
@@ -3832,12 +4717,12 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     if ($getNetCredVal -eq "255")
     {
         $NetCredSet = "$NetCredDescrip is enabled" 
-        $NetCredReg = "<div title=$gpoPath>$RegKey"
+        $NetCredReg = "<div title=$gpoPath>$RegKey" +"$NetCredVal"
     }
     else
     {
         $NetCredSet = "Warning - $NetCredDescrip is disabled" 
-        $NetCredReg = "<div title=$gpoPath>$RegKey"
+        $NetCredReg = "<div title=$gpoPath>$RegKey" +"$NetCredVal"
     }
 
     $newObjNetCred = New-Object -TypeName PSObject
@@ -3869,12 +4754,12 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     if ($getNetCredVal -eq "1")
     {
         $NetCredSet = "$NetCredDescrip is enabled" 
-        $NetCredReg = "<div title=$gpoPath>$RegKey"
+        $NetCredReg = "<div title=$gpoPath>$RegKey" +"$NetCredVal"
     }
     else
     {
         $NetCredSet = "Warning - $NetCredDescrip is disabled" 
-        $NetCredReg = "<div title=$gpoPath>$RegKey"
+        $NetCredReg = "<div title=$gpoPath>$RegKey" +"$NetCredVal"
     }
 
     $newObjNetCred = New-Object -TypeName PSObject
@@ -3900,18 +4785,81 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     if ($getNetCredVal -eq "2")
     {
         $NetCredSet = "$NetCredDescrip is enabled" 
-        $NetCredReg = "<div title=$gpoPath>$RegKey"
+        $NetCredReg = "<div title=$gpoPath>$RegKey" +"$NetCredVal"
     }
     else
     {
         $NetCredSet = "Warning - $NetCredDescrip is disabled" 
-        $NetCredReg = "<div title=$gpoPath>$RegKey"
+        $NetCredReg = "<div title=$gpoPath>$RegKey" +"$NetCredVal"
     }
 
     $newObjNetCred = New-Object -TypeName PSObject
     Add-Member -InputObject $newObjNetCred -Type NoteProperty -Name CredentialSetting -Value  $NetCredSet
     Add-Member -InputObject $newObjNetCred -Type NoteProperty -Name CredentialRegValue -Value $NetCredReg 
     $fragNetCredVal += $newObjNetCred
+
+    <#
+    Turn on PowerShell Script Block Logging
+
+    Computer Configuration\Policies\Administrative Templates\Windows Components\Windows PowerShell
+
+    #>
+    $NetCredDescrip = "Turn on PowerShell Script Block Logging"
+    $gpopath ="Computer Configuration\Policies\Administrative Templates\Windows Components\Windows PowerShell\$NetCredDescrip"
+    $RegKey = 'HKLM:\Software\Policies\Microsoft\Windows\PowerShell\ScriptBlockLogging\'
+    $NetCredVal=@()
+    $NetCredVal = "EnableScriptBlockLogging"
+    $getNetCredVal=@()
+    $getNetCred = Get-Item $RegKey -ErrorAction SilentlyContinue
+    $getNetCredVal = $getNetCred.GetValue("$NetCredVal") 
+
+    if ($getNetCredVal -eq "1")
+    {
+        $NetCredSet = "$NetCredDescrip is enabled" 
+        $NetCredReg = "<div title=$gpoPath>$RegKey" +"$NetCredVal"
+    }
+    else
+    {
+        $NetCredSet = "Warning - $NetCredDescrip is disabled warning" 
+        $NetCredReg = "<div title=$gpoPath>$RegKey" +"$NetCredVal"
+    }
+
+    $newObjNetCred = New-Object -TypeName PSObject
+    Add-Member -InputObject $newObjNetCred -Type NoteProperty -Name CredentialSetting -Value  $NetCredSet
+    Add-Member -InputObject $newObjNetCred -Type NoteProperty -Name CredentialRegValue -Value $NetCredReg 
+    $fragNetCredVal += $newObjNetCred
+
+    <#
+    Turn on Script Execution
+
+    Computer Configuration\Policies\Administrative Templates\Windows Components\Windows PowerShell
+
+    #>
+    $NetCredDescrip = "Turn on Script Execution - Execution Policy: Allow only signed scripts"
+    $gpopath ="Computer Configuration\Policies\Administrative Templates\Windows Components\Windows PowerShell\$NetCredDescrip"
+    $RegKey = 'HKLM:\Software\Policies\Microsoft\Windows\PowerShell\'
+    $NetCredVal=@()
+    $NetCredVal = "ExecutionPolicy"
+    $getNetCredVal=@()
+    $getNetCred = Get-Item $RegKey -ErrorAction SilentlyContinue
+    $getNetCredVal = $getNetCred.GetValue("$NetCredVal") 
+
+    if ($getNetCredVal -eq "1")
+    {
+        $NetCredSet = "$NetCredDescrip is enabled" 
+        $NetCredReg = "<div title=$gpoPath>$RegKey" +"$NetCredVal"
+    }
+    else
+    {
+        $NetCredSet = "Warning - $NetCredDescrip is disabled warning" 
+        $NetCredReg = "<div title=$gpoPath>$RegKey" +"$NetCredVal"
+    }
+
+    $newObjNetCred = New-Object -TypeName PSObject
+    Add-Member -InputObject $newObjNetCred -Type NoteProperty -Name CredentialSetting -Value  $NetCredSet
+    Add-Member -InputObject $newObjNetCred -Type NoteProperty -Name CredentialRegValue -Value $NetCredReg 
+    $fragNetCredVal += $newObjNetCred
+
 
 
     <#
@@ -3942,12 +4890,12 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     if ($getNetCredVal -eq "1")
     {
         $NetCredSet = "$NetCredDescrip is enabled to Warn and prevent bypass" 
-        $NetCredReg = "<div title=$gpoPath>$RegKey"
+        $NetCredReg = "<div title=$gpoPath>$RegKey" +"$NetCredVal"
     }
     else
     {
         $NetCredSet = "Warning - $NetCredDescrip is set warn and allow bypass" 
-        $NetCredReg = "<div title=$gpoPath>$RegKey"
+        $NetCredReg = "<div title=$gpoPath>$RegKey" +"$NetCredVal"
     }
 
     $newObjNetCred = New-Object -TypeName PSObject
@@ -3985,12 +4933,12 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     if ($getNetCredVal -eq "1")
     {
         $NetCredSet = "$NetCredDescrip is enabled to Warn and prevent bypass" 
-        $NetCredReg = "<div title=$gpoPath>$RegKey"
+        $NetCredReg = "<div title=$gpoPath>$RegKey" +"$NetCredVal"
     }
     else
     {
         $NetCredSet = "Warning - $NetCredDescrip is set warn and allow bypass" 
-        $NetCredReg = "<div title=$gpoPath>$RegKey"
+        $NetCredReg = "<div title=$gpoPath>$RegKey" +"$NetCredVal"
     }
 
     $newObjNetCred = New-Object -TypeName PSObject
@@ -3998,6 +4946,7 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     Add-Member -InputObject $newObjNetCred -Type NoteProperty -Name CredentialRegValue -Value $NetCredReg 
     $fragNetCredVal += $newObjNetCred
 
+    
     <#
     Allow user control over installs
 
@@ -4023,12 +4972,12 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     if ($getNetCredVal -eq "0")
     {
         $NetCredSet = "$NetCredDescrip is disabled" 
-        $NetCredReg = "<div title=$gpoPath>$RegKey"
+        $NetCredReg = "<div title=$gpoPath>$RegKey" +"$NetCredVal"
     }
     else
     {
         $NetCredSet = "Warning - $NetCredDescrip enabled warning" 
-        $NetCredReg = "<div title=$gpoPath>$RegKey"
+        $NetCredReg = "<div title=$gpoPath>$RegKey" +"$NetCredVal"
     }
 
     $newObjNetCred = New-Object -TypeName PSObject
@@ -4064,12 +5013,12 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     if ($getNetCredVal -eq "0")
     {
         $NetCredSet = "$NetCredDescrip is disabled" 
-        $NetCredReg = "<div title=$gpoPath>$RegKey"
+        $NetCredReg = "<div title=$gpoPath>$RegKey" +"$NetCredVal"
     }
     else
     {
         $NetCredSet = "Warning - $NetCredDescrip enabled warning" 
-        $NetCredReg = "<div title=$gpoPath>$RegKey"
+        $NetCredReg = "<div title=$gpoPath>$RegKey" +"$NetCredVal"
     }
 
     $newObjNetCred = New-Object -TypeName PSObject
@@ -4105,12 +5054,12 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     if ($getNetCredVal -eq "0")
     {
         $NetCredSet = "$NetCredDescrip is disabled" 
-        $NetCredReg = "<div title=$gpoPath>$RegKey"
+        $NetCredReg = "<div title=$gpoPath>$RegKey" +"$NetCredVal"
     }
     else
     {
         $NetCredSet = "Warning - $NetCredDescrip enabled warning" 
-        $NetCredReg = "<div title=$gpoPath>$RegKey"
+        $NetCredReg = "<div title=$gpoPath>$RegKey" +"$NetCredVal"
     }
 
     $newObjNetCred = New-Object -TypeName PSObject
@@ -4136,12 +5085,12 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     if ($getNetCredVal -eq "1")
     {
         $NetCredSet = "$NetCredDescrip is enabled, only Admin can install printer drivers" 
-        $NetCredReg = "<div title=$gpoPath>$RegKey"
+        $NetCredReg = "<div title=$gpoPath>$RegKey" +"$NetCredVal"
     }
     else
     {
         $NetCredSet = "Warning - $NetCredDescrip disabled warning" 
-        $NetCredReg = "<div title=$gpoPath>$RegKey"
+        $NetCredReg = "<div title=$gpoPath>$RegKey" +"$NetCredVal"
     }
 
     $newObjNetCred = New-Object -TypeName PSObject
@@ -4174,12 +5123,12 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     if ($getNetCredVal -eq "1")
     {
         $NetCredSet = "$NetCredDescrip is enabled" 
-        $NetCredReg = "<div title=$gpoPath>$RegKey"
+        $NetCredReg = "<div title=$gpoPath>$RegKey" +"$NetCredVal"
     }
     else
     {
         $NetCredSet = "Warning - $NetCredDescrip disabled warning" 
-        $NetCredReg = "<div title=$gpoPath>$RegKey"
+        $NetCredReg = "<div title=$gpoPath>$RegKey" +"$NetCredVal"
     }
 
     $newObjNetCred = New-Object -TypeName PSObject
@@ -4212,12 +5161,12 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     if ($getNetCredVal -eq "1")
     {
         $NetCredSet = "$NetCredDescrip is enabled" 
-        $NetCredReg = "<div title=$gpoPath>$RegKey"
+        $NetCredReg = "<div title=$gpoPath>$RegKey" +"$NetCredVal"
     }
     else
     {
         $NetCredSet = "Warning - $NetCredDescrip disabled warning" 
-        $NetCredReg = "<div title=$gpoPath>$RegKey"
+        $NetCredReg = "<div title=$gpoPath>$RegKey" +"$NetCredVal"
     }
 
     $newObjNetCred = New-Object -TypeName PSObject
@@ -4227,7 +5176,7 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
 
 
     <#
-    Do not process the legacy run list
+    Run these programs at user logon
 
     Computer Configuration\Policies\Administrative Templates\System\Logon
 
@@ -4251,18 +5200,97 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     if ($getNetCredVal -eq 1)
     {
         $NetCredSet = "Warning - $NetCredDescrip is enabled warning" 
-        $NetCredReg = "<div title=$gpoPath>$RegKey"
+        $NetCredReg = "<div title=$gpoPath>$RegKey" +"$NetCredVal"
     }
     else
     {
         $NetCredSet = "$NetCredDescrip disabled" 
-        $NetCredReg = "<div title=$gpoPath>$RegKey"
+        $NetCredReg = "<div title=$gpoPath>$RegKey" +"$NetCredVal"
     }
 
     $newObjNetCred = New-Object -TypeName PSObject
     Add-Member -InputObject $newObjNetCred -Type NoteProperty -Name CredentialSetting -Value  $NetCredSet
     Add-Member -InputObject $newObjNetCred -Type NoteProperty -Name CredentialRegValue -Value $NetCredReg 
     $fragNetCredVal += $newObjNetCred
+
+<#
+    Do not preserve zone information in file attachments
+
+    User Configuration\Policies\Administrative Templates\Windows Components\Attachment Manager
+
+    The Attachment Manager within Microsoft Windows works in conjunction with applications such as the Microsoft Office suite and Internet Explorer to 
+    help protect workstations from attachments that have been received via email or downloaded from the internet. The Attachment Manager classifies files 
+    as high, medium or low risk based on the zone they originated from and the type of file. Based on the risk to the workstation, the Attachment Manager 
+    will either issue a warning to a user or prevent them from opening a file. If zone information is not preserved, or can be removed, it can allow an 
+    adversary to socially engineer a user to bypass protections afforded by the Attachment Manager. To reduce this risk, the Attachment Manager should 
+    be configured to preserve and protect zone information for files.
+
+
+    #>
+    $NetCredDescrip = "Do not preserve zone information in file attachments"
+    $gpopath ="User Configuration\Policies\Administrative Templates\Windows Components\Attachment Manager\$NetCredDescrip"
+    $RegKey = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Policies\Attachments\'
+    $NetCredVal=@()
+    $NetCredVal = "SaveZoneInformation"  
+    $getNetCredVal=@()
+    $getNetCred = Get-Item $RegKey -ErrorAction SilentlyContinue
+    $getNetCredVal = $getNetCred.GetValue("$NetCredVal") 
+
+    if ($getNetCredVal -eq "2")
+    {
+        $NetCredSet = "$NetCredDescrip is disabled" 
+        $NetCredReg = "<div title=$gpoPath>$RegKey" +"$NetCredVal"
+    }
+    else
+    {
+        $NetCredSet = "Warning - $NetCredDescrip is enabled" 
+        $NetCredReg = "<div title=$gpoPath>$RegKey" +"$NetCredVal"
+    }
+
+    $newObjNetCred = New-Object -TypeName PSObject
+    Add-Member -InputObject $newObjNetCred -Type NoteProperty -Name CredentialSetting -Value  $NetCredSet
+    Add-Member -InputObject $newObjNetCred -Type NoteProperty -Name CredentialRegValue -Value $NetCredReg 
+    $fragNetCredVal += $newObjNetCred
+
+
+    <#
+    Hide mechanisms to remove zone information
+
+    User Configuration\Policies\Administrative Templates\Windows Components\Attachment Manager
+
+    This policy setting allows you to manage whether users can manually remove the zone information from saved file attachments by 
+    clicking the Unblock button in the file's property sheet or by using a check box in the security warning dialog. Removing the zone 
+    information allows users to open potentially dangerous file attachments that Windows has blocked users from opening.
+    If you enable this policy setting, Windows hides the check box and Unblock button.
+    If you disable this policy setting, Windows shows the check box and Unblock button.
+    If you do not configure this policy setting, Windows hides the check box and Unblock button.
+
+    #>
+    $NetCredDescrip = "Hide mechanisms to remove zone information"
+    $gpopath ="User Configuration\Policies\Administrative Templates\Windows Components\Attachment Manager\$NetCredDescrip"
+    $RegKey = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Policies\Attachments\'
+    $NetCredVal=@()
+    $NetCredVal = "HideZoneInfoOnProperties"  
+    $getNetCredVal=@()
+    $getNetCred = Get-Item $RegKey -ErrorAction SilentlyContinue
+    $getNetCredVal = $getNetCred.GetValue("$NetCredVal") 
+
+    if ($getNetCredVal -eq "1")
+    {
+        $NetCredSet = "$NetCredDescrip is enabled" 
+        $NetCredReg = "<div title=$gpoPath>$RegKey" +"$NetCredVal"
+    }
+    else
+    {
+        $NetCredSet = "Warning - $NetCredDescrip is disabled" 
+        $NetCredReg = "<div title=$gpoPath>$RegKey" +"$NetCredVal"
+    }
+
+    $newObjNetCred = New-Object -TypeName PSObject
+    Add-Member -InputObject $newObjNetCred -Type NoteProperty -Name CredentialSetting -Value  $NetCredSet
+    Add-Member -InputObject $newObjNetCred -Type NoteProperty -Name CredentialRegValue -Value $NetCredReg 
+    $fragNetCredVal += $newObjNetCred
+
 
 <#
     Restrict Unauthenticated RPC clients
@@ -4294,12 +5322,12 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     if ($getNetCredVal -eq "1")
     {
         $NetCredSet = "$NetCredDescrip is enabled" 
-        $NetCredReg = "<div title=$gpoPath>$RegKey"
+        $NetCredReg = "<div title=$gpoPath>$RegKey" +"$NetCredVal"
     }
     else
     {
         $NetCredSet = "Warning - $NetCredDescrip disabled - Not to be applied against DCs Warning" 
-        $NetCredReg = "<div title=$gpoPath>$RegKey"
+        $NetCredReg = "<div title=$gpoPath>$RegKey" +"$NetCredVal"
     }
 
     $newObjNetCred = New-Object -TypeName PSObject
@@ -4334,12 +5362,12 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     if ($getNetCredVal -eq "1")
     {
         $NetCredSet = "$NetCredDescrip is enabled" 
-        $NetCredReg = "<div title=$gpoPath>$RegKey"
+        $NetCredReg = "<div title=$gpoPath>$RegKey" +"$NetCredVal"
     }
     else
     {
         $NetCredSet = "Warning - $NetCredDescrip disabled warning" 
-        $NetCredReg = "<div title=$gpoPath>$RegKey"
+        $NetCredReg = "<div title=$gpoPath>$RegKey" +"$NetCredVal"
     }
 
     $newObjNetCred = New-Object -TypeName PSObject
@@ -4370,12 +5398,12 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     if ($getNetCredVal -eq "0")
     {
         $NetCredSet = "$NetCredDescrip is disabled" 
-        $NetCredReg = "<div title=$gpoPath>$RegKey"
+        $NetCredReg = "<div title=$gpoPath>$RegKey" +"$NetCredVal"
     }
     else
     {
         $NetCredSet = "Warning - $NetCredDescrip is enabled" 
-        $NetCredReg = "<div title=$gpoPath>$RegKey"
+        $NetCredReg = "<div title=$gpoPath>$RegKey" +"$NetCredVal"
     }
 
     $newObjNetCred = New-Object -TypeName PSObject
@@ -4405,12 +5433,12 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     if ($getNetCredVal -eq "0")
     {
         $NetCredSet = "$NetCredDescrip is disabled" 
-        $NetCredReg = "<div title=$gpoPath>$RegKey"
+        $NetCredReg = "<div title=$gpoPath>$RegKey" +"$NetCredVal"
     }
     else
     {
         $NetCredSet = "Warning - $NetCredDescrip is enabled" 
-        $NetCredReg = "<div title=$gpoPath>$RegKey"
+        $NetCredReg = "<div title=$gpoPath>$RegKey" +"$NetCredVal"
     }
 
     $newObjNetCred = New-Object -TypeName PSObject
@@ -4440,12 +5468,12 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     if ($getNetCredVal -eq "0")
     {
         $NetCredSet = "$NetCredDescrip is enabled" 
-        $NetCredReg = "<div title=$gpoPath>$RegKey"
+        $NetCredReg = "<div title=$gpoPath>$RegKey" +"$NetCredVal"
     }
     else
     {
         $NetCredSet = "Warning - $NetCredDescrip is disabled" 
-        $NetCredReg = "<div title=$gpoPath>$RegKey"
+        $NetCredReg = "<div title=$gpoPath>$RegKey" +"$NetCredVal"
     }
 
     $newObjNetCred = New-Object -TypeName PSObject
@@ -4475,12 +5503,12 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     if ($getNetCredVal -eq "0")
     {
         $NetCredSet = "$NetCredDescrip is disabled" 
-        $NetCredReg = "<div title=$gpoPath>$RegKey"
+        $NetCredReg = "<div title=$gpoPath>$RegKey" +"$NetCredVal"
     }
     else
     {
         $NetCredSet = "Warning - $NetCredDescrip is enabled" 
-        $NetCredReg = "<div title=$gpoPath>$RegKey"
+        $NetCredReg = "<div title=$gpoPath>$RegKey" +"$NetCredVal"
     }
 
     $newObjNetCred = New-Object -TypeName PSObject
@@ -4510,12 +5538,12 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     if ($getNetCredVal -eq "0")
     {
         $NetCredSet = "$NetCredDescrip is disabled" 
-        $NetCredReg = "<div title=$gpoPath>$RegKey"
+        $NetCredReg = "<div title=$gpoPath>$RegKey" +"$NetCredVal"
     }
     else
     {
         $NetCredSet = "Warning - $NetCredDescrip is enabled" 
-        $NetCredReg = "<div title=$gpoPath>$RegKey"
+        $NetCredReg = "<div title=$gpoPath>$RegKey" +"$NetCredVal"
     }
 
     $newObjNetCred = New-Object -TypeName PSObject
@@ -4546,12 +5574,12 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     if ($getNetCredVal -eq "1")
     {
         $NetCredSet = "$NetCredDescrip is enabled" 
-        $NetCredReg = "<div title=$gpoPath>$RegKey"
+        $NetCredReg = "<div title=$gpoPath>$RegKey" +"$NetCredVal"
     }
     else
     {
         $NetCredSet = "Warning - $NetCredDescrip is disabled" 
-        $NetCredReg = "<div title=$gpoPath>$RegKey"
+        $NetCredReg = "<div title=$gpoPath>$RegKey" +"$NetCredVal"
     }
 
     $newObjNetCred = New-Object -TypeName PSObject
@@ -4582,12 +5610,12 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     if ($getNetCredVal -eq "0")
     {
         $NetCredSet = "$NetCredDescrip is disabled" 
-        $NetCredReg = "<div title=$gpoPath>$RegKey"
+        $NetCredReg = "<div title=$gpoPath>$RegKey" +"$NetCredVal"
     }
     else
     {
         $NetCredSet = "Warning - $NetCredDescrip is enabled" 
-        $NetCredReg = "<div title=$gpoPath>$RegKey"
+        $NetCredReg = "<div title=$gpoPath>$RegKey" +"$NetCredVal"
     }
 
     $newObjNetCred = New-Object -TypeName PSObject
@@ -4617,12 +5645,12 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     if ($getNetCredVal -eq "0")
     {
         $NetCredSet = "$NetCredDescrip is disabled" 
-        $NetCredReg = "<div title=$gpoPath>$RegKey"
+        $NetCredReg = "<div title=$gpoPath>$RegKey" +"$NetCredVal"
     }
     else
     {
         $NetCredSet = "Warning - $NetCredDescrip is enabled" 
-        $NetCredReg = "<div title=$gpoPath>$RegKey"
+        $NetCredReg = "<div title=$gpoPath>$RegKey" +"$NetCredVal"
     }
 
     $newObjNetCred = New-Object -TypeName PSObject
@@ -4654,12 +5682,12 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     if ($getNetCredVal -eq "0")
     {
         $NetCredSet = "$NetCredDescrip is disabled" 
-        $NetCredReg = "<div title=$gpoPath>$RegKey"
+        $NetCredReg = "<div title=$gpoPath>$RegKey" +"$NetCredVal"
     }
     else
     {
         $NetCredSet = "Warning - $NetCredDescrip is enabled" 
-        $NetCredReg = "<div title=$gpoPath>$RegKey"
+        $NetCredReg = "<div title=$gpoPath>$RegKey" +"$NetCredVal"
     }
 
     $newObjNetCred = New-Object -TypeName PSObject
@@ -4686,12 +5714,12 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     if ($getNetCredVal -eq "0")
     {
         $NetCredSet = "$NetCredDescrip is disabled" 
-        $NetCredReg = "<div title=$gpoPath>$RegKey"
+        $NetCredReg = "<div title=$gpoPath>$RegKey" +"$NetCredVal"
     }
     else
     {
         $NetCredSet = "Warning - $NetCredDescrip enabled warning" 
-        $NetCredReg = "<div title=$gpoPath>$RegKey"
+        $NetCredReg = "<div title=$gpoPath>$RegKey" +"$NetCredVal"
     }
 
     $newObjNetCred = New-Object -TypeName PSObject
@@ -4723,12 +5751,12 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     if ($getNetCredVal -eq "1")
     {
         $NetCredSet = "$NetCredDescrip is enabled" 
-        $NetCredReg = "<div title=$gpoPath>$RegKey"
+        $NetCredReg = "<div title=$gpoPath>$RegKey" +"$NetCredVal"
     }
     else
     {
         $NetCredSet = "Warning - $NetCredDescrip disabled warning" 
-        $NetCredReg = "<div title=$gpoPath>$RegKey"
+        $NetCredReg = "<div title=$gpoPath>$RegKey" +"$NetCredVal"
     }
 
     $newObjNetCred = New-Object -TypeName PSObject
@@ -4757,12 +5785,12 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     if ($getNetCredVal -eq "1")
     {
         $NetCredSet = "$NetCredDescrip is enabled" 
-        $NetCredReg = "<div title=$gpoPath>$RegKey"
+        $NetCredReg = "<div title=$gpoPath>$RegKey" +"$NetCredVal"
     }
     else
     {
         $NetCredSet = "Warning - $NetCredDescrip disabled warning" 
-        $NetCredReg = "<div title=$gpoPath>$RegKey"
+        $NetCredReg = "<div title=$gpoPath>$RegKey" +"$NetCredVal"
     }
 
     $newObjNetCred = New-Object -TypeName PSObject
@@ -4797,12 +5825,12 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     if ($getNetCredVal -eq "1")
     {
         $NetCredSet = "$NetCredDescrip is enabled" 
-        $NetCredReg = "<div title=$gpoPath>$RegKey"
+        $NetCredReg = "<div title=$gpoPath>$RegKey" +"$NetCredVal"
     }
     else
     {
         $NetCredSet = "Warning - $NetCredDescrip disabled warning" 
-        $NetCredReg = "<div title=$gpoPath>$RegKey"
+        $NetCredReg = "<div title=$gpoPath>$RegKey" +"$NetCredVal"
     }
 
     $newObjNetCred = New-Object -TypeName PSObject
@@ -4834,12 +5862,12 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     if ($getNetCredVal -eq "0")
     {
         $NetCredSet = "$NetCredDescrip is enabled for Enterprise Only - Computer" 
-        $NetCredReg = "<div title=$gpoPath>$RegKey"
+        $NetCredReg = "<div title=$gpoPath>$RegKey" +"$NetCredVal"
     }
     else
     {
         $NetCredSet = "Warning - $NetCredDescrip disabled warning" 
-        $NetCredReg = "<div title=$gpoPath>$RegKey"
+        $NetCredReg = "<div title=$gpoPath>$RegKey" +"$NetCredVal"
     }
 
     $newObjNetCred = New-Object -TypeName PSObject
@@ -4872,12 +5900,12 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     if ($getNetCredVal -eq "0")
     {
         $NetCredSet = "$NetCredDescrip is enabled for Enterprise Only - User" 
-        $NetCredReg = "<div title=$gpoPath>$RegKey"
+        $NetCredReg = "<div title=$gpoPath>$RegKey" +"$NetCredVal"
     }
     else
     {
         $NetCredSet = "Warning - $NetCredDescrip disabled warning" 
-        $NetCredReg = "<div title=$gpoPath>$RegKey"
+        $NetCredReg = "<div title=$gpoPath>$RegKey" +"$NetCredVal"
     }
 
     $newObjNetCred = New-Object -TypeName PSObject
@@ -4908,12 +5936,45 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     if ($getNetCredVal -eq "1")
     {
         $NetCredSet = "$NetCredDescrip is enabled" 
-        $NetCredReg = "<div title=$gpoPath>$RegKey"
+        $NetCredReg = "<div title=$gpoPath>$RegKey" +"$NetCredVal"
     }
     else
     {
         $NetCredSet = "Warning - $NetCredDescrip is not set warning" 
-        $NetCredReg = "<div title=$gpoPath>$RegKey"
+        $NetCredReg = "<div title=$gpoPath>$RegKey" +"$NetCredVal"
+    }
+
+    $newObjNetCred = New-Object -TypeName PSObject
+    Add-Member -InputObject $newObjNetCred -Type NoteProperty -Name CredentialSetting -Value  $NetCredSet
+    Add-Member -InputObject $newObjNetCred -Type NoteProperty -Name CredentialRegValue -Value $NetCredReg 
+    $fragNetCredVal += $newObjNetCred
+
+    <#
+    Turn off Data Execution Prevention for Explorer
+
+    Computer Configuration\Policies\Administrative Templates\Windows Components\File Explorer
+
+    Disabling data execution prevention can allow certain legacy plug-in applications to function without terminating Explorer.
+
+    #>
+    $NetCredDescrip = "Turn off Data Execution Prevention for Explorer"
+    $gpopath ="Computer Configuration\Policies\Administrative Templates\Windows Components\File Explorer\$NetCredDescrip"
+    $RegKey = 'HKLM:\Software\Policies\Microsoft\Windows\Explorer\'
+    $NetCredVal=@()
+    $NetCredVal = "NoDataExecutionPrevention"  
+    $getNetCredVal=@()
+    $getNetCred = Get-Item $RegKey -ErrorAction SilentlyContinue
+    $getNetCredVal = $getNetCred.GetValue("$NetCredVal") 
+
+    if ($getNetCredVal -eq "1")
+    {
+        $NetCredSet = "$NetCredDescrip is enabled" 
+        $NetCredReg = "<div title=$gpoPath>$RegKey" +"$NetCredVal"
+    }
+    else
+    {
+        $NetCredSet = "Warning - $NetCredDescrip is disabled" 
+        $NetCredReg = "<div title=$gpoPath>$RegKey" +"$NetCredVal"
     }
 
     $newObjNetCred = New-Object -TypeName PSObject
@@ -4923,33 +5984,35 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
 
 
     <#
-    Safe Mode
+    Enabled Structured Exception Handling Overwrite Protection (SEHOP)
 
-    An adversary with standard user credentials that can boot into Microsoft Windows using Safe Mode, Safe Mode with Networking or Safe Mode with 
-    Command Prompt options may be able to bypass system protections and security functionality. To reduce this risk, users with standard credentials 
-    should be prevented from using Safe Mode options to log in.
+    Computer Configuration\Policies\Administrative Templates\Windows Components\File Explorer
 
-    The following registry entry can be implemented using Group Policy preferences to prevent non-administrators from using Safe Mode options.
+    If this setting is enabled, SEHOP is enforced. For more information, see 
+    https://support.microsoft.com/en-us/help/956607/how-to-enable-structured-exception-handling-overwrite-protection-sehop-in-windows-operating-systems.
+    If this setting is disabled or not configured, SEHOP is not enforced for 32-bit processes.
+
+    https://support.microsoft.com/en-us/topic/how-to-enable-structured-exception-handling-overwrite-protection-sehop-in-windows-operating-systems-8d4595f7-827f-72ee-8c34-fa8e0fe7b915
 
     #>
-    $NetCredDescrip = "Prevent SafeMode for Non Admins"
-    $gpopath ="Computer Configuration\Policies\Administrative Templates\Windows Components\Windows Error Reporting\Advanced Error Reporting Settings\$NetCredDescrip"
-    $RegKey = 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System\'
+    $NetCredDescrip = "Enabled Structured Exception Handling Overwrite Protection (SEHOP)"
+    $gpopath ="Create manually or via GPO Preferences"
+    $RegKey = 'HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\kernel\'
     $NetCredVal=@()
-    $NetCredVal = "SafeModeBlockNonAdmins"   
+    $NetCredVal = "NoDataExecutionPrevention"  
     $getNetCredVal=@()
     $getNetCred = Get-Item $RegKey -ErrorAction SilentlyContinue
     $getNetCredVal = $getNetCred.GetValue("$NetCredVal") 
 
-    if ($getNetCredVal -eq "1")
+    if ($getNetCredVal -eq "0")
     {
         $NetCredSet = "$NetCredDescrip is enabled" 
-        $NetCredReg = "<div title=$gpoPath>$RegKey"
+        $NetCredReg = "<div title=$gpoPath>$RegKey" +"$NetCredVal"
     }
     else
     {
-        $NetCredSet = "Warning - $NetCredDescrip is not set warning" 
-        $NetCredReg = "<div title=$gpoPath>$RegKey"
+        $NetCredSet = "Warning - $NetCredDescrip is disabled" 
+        $NetCredReg = "<div title=$gpoPath>$RegKey" +"$NetCredVal"
     }
 
     $newObjNetCred = New-Object -TypeName PSObject
@@ -4957,8 +6020,7 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     Add-Member -InputObject $newObjNetCred -Type NoteProperty -Name CredentialRegValue -Value $NetCredReg 
     $fragNetCredVal += $newObjNetCred
 
-
-        <#
+    <#
     Remove Security tab
 
     User Configuration\Policies\Administrative Templates\Windows Components\File Explorer
@@ -4976,12 +6038,12 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     if ($getNetCredVal -eq "1")
     {
         $NetCredSet = "$NetCredDescrip is Enabled" 
-        $NetCredReg = "<div title=$gpoPath>$RegKey"
+        $NetCredReg = "<div title=$gpoPath>$RegKey" +"$NetCredVal"
     }
     else
     {
         $NetCredSet = "Warning - $NetCredDescrip is disabled" 
-        $NetCredReg = "<div title=$gpoPath>$RegKey"
+        $NetCredReg = "<div title=$gpoPath>$RegKey" +"$NetCredVal"
     }
 
     $newObjNetCred = New-Object -TypeName PSObject
@@ -5007,12 +6069,12 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     if ($getNetCredVal -eq "1")
     {
         $NetCredSet = "$NetCredDescrip is Enabled" 
-        $NetCredReg = "<div title=$gpoPath>$RegKey"
+        $NetCredReg = "<div title=$gpoPath>$RegKey" +"$NetCredVal"
     }
     else
     {
         $NetCredSet = "Warning - $NetCredDescrip is disabled" 
-        $NetCredReg = "<div title=$gpoPath>$RegKey"
+        $NetCredReg = "<div title=$gpoPath>$RegKey" +"$NetCredVal"
     }
 
     $newObjNetCred = New-Object -TypeName PSObject
@@ -5039,12 +6101,12 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     if ($getNetCredVal -eq "1")
     {
         $NetCredSet = "$NetCredDescrip is Enabled" 
-        $NetCredReg = "<div title=$gpoPath>$RegKey"
+        $NetCredReg = "<div title=$gpoPath>$RegKey" +"$NetCredVal"
     }
     else
     {
         $NetCredSet = "Warning - $NetCredDescrip is disabled" 
-        $NetCredReg = "<div title=$gpoPath>$RegKey"
+        $NetCredReg = "<div title=$gpoPath>$RegKey" +"$NetCredVal"
     }
 
     $newObjNetCred = New-Object -TypeName PSObject
@@ -5073,12 +6135,12 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     if ($getNetCredVal -eq "1")
     {
         $NetCredSet = "$NetCredDescrip is Enabled" 
-        $NetCredReg = "<div title=$gpoPath>$RegKey"
+        $NetCredReg = "<div title=$gpoPath>$RegKey" +"$NetCredVal"
     }
     else
     {
         $NetCredSet = "Warning - $NetCredDescrip is disabled" 
-        $NetCredReg = "<div title=$gpoPath>$RegKey"
+        $NetCredReg = "<div title=$gpoPath>$RegKey" +"$NetCredVal"
     }
 
     $newObjNetCred = New-Object -TypeName PSObject
@@ -5087,7 +6149,7 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     $fragNetCredVal += $newObjNetCred
 
 
-        <#
+   <#
    Turn off the Store application
 
     Computer Configuration\Policies\Administrative Templates\Windows Components\Store
@@ -5107,12 +6169,12 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     if ($getNetCredVal -eq "1")
     {
         $NetCredSet = "$NetCredDescrip is Enabled" 
-        $NetCredReg = "<div title=$gpoPath>$RegKey"
+        $NetCredReg = "<div title=$gpoPath>$RegKey" +"$NetCredVal"
     }
     else
     {
         $NetCredSet = "Warning - $NetCredDescrip is disabled" 
-        $NetCredReg = "<div title=$gpoPath>$RegKey"
+        $NetCredReg = "<div title=$gpoPath>$RegKey" +"$NetCredVal"
     }
 
     $newObjNetCred = New-Object -TypeName PSObject
@@ -5140,12 +6202,12 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     if ($getNetCredVal -eq "0")
     {
         $NetCredSet = "$NetCredDescrip is disabled" 
-        $NetCredReg = "<div title=$gpoPath>$RegKey"
+        $NetCredReg = "<div title=$gpoPath>$RegKey" +"$NetCredVal"
     }
     else
     {
         $NetCredSet = "Warning - $NetCredDescrip is enabled" 
-        $NetCredReg = "<div title=$gpoPath>$RegKey"
+        $NetCredReg = "<div title=$gpoPath>$RegKey" +"$NetCredVal"
     }
 
     $newObjNetCred = New-Object -TypeName PSObject
@@ -5768,7 +6830,7 @@ $style = @"
 
     $descripLocalAccounts = "Local accounts should be disabled when the client or server is part of a Domain. LAPS should be deployed to ensure all local account passwords are unique"
 
-    $descripCredRecom = "These are recommended GPO settings to secure Windows. Due to the sheer number of settings, the script contains details and the equivalent GPO settings, search for RECOMMENDED SECURITY SETTINGS section<br><br>MS Security Compliance Toolkit can be found @ <br>https://admx.help/?Category=security-compliance-toolkit<br>https://www.microsoft.com/en-us/download/details.aspx?id=55319<br><br>**CredentialRegValue - Mouse over to show Reg Key to GPO path translation" 
+    $descripCredRecom = "These are recommended GPO settings to secure Windows by Microsoft, do NOT implement without the correct research and testing. Some settings could adversely affect your system.<br>Due to the sheer number of settings, the script contains details and the equivalent GPO settings, search for RECOMMENDED SECURITY SETTINGS section<br><br>MS Security Compliance Toolkit can be found @ <br>https://admx.help/?Category=security-compliance-toolkit<br>https://www.microsoft.com/en-us/download/details.aspx?id=55319<br><br>**CredentialRegValue - Mouse over to show Reg Key to GPO path translation" 
 
 
 ################################################
@@ -6046,11 +7108,12 @@ Boot-Start Driver Initialization Policy - Trusted boot \UEFI
 Add mouse over to any item that reports on Reg value
 
 UAC
-Microsoft accounts
 networks
 Updates
 Office macros
 Accounts and policy
+
+Allign look and feel for all Reg and gpo queries inc mouse over effect
 
 
 
