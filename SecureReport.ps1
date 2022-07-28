@@ -4143,14 +4143,14 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     $getNetCred = Get-Item $RegKey -ErrorAction SilentlyContinue
     $getNetCredVal = $getNetCred.GetValue("$NetCredVal") 
 
-    if ($getNetCredVal -eq "0")
+    if ($getNetCredVal -eq "1")
     {
-        $NetCredSet = "$NetCredDescrip is disabled" 
+        $NetCredSet = "$NetCredDescrip is enabled" 
         $NetCredReg = "<div title=$gpoPath>$RegKey" +"$NetCredVal"
     }
     else
     {
-        $NetCredSet = "Warning - $NetCredDescrip is enabled" 
+        $NetCredSet = "Warning - $NetCredDescrip is disabled" 
         $NetCredReg = "<div title=$gpoPath>$RegKey" +"$NetCredVal"
     }
 
@@ -4173,7 +4173,7 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     #>
     $NetCredDescrip = "Turn off Local Group Policy Objects processing"
     $gpopath ="Computer Configuration\Policies\Administrative Templates\System\Group Policy\$NetCredDescrip"
-    $RegKey = 'HKLM:\Software\Microsoft\Windows\CurrentVersion\Policies\System\'
+    $RegKey = 'HKLM:\Software\Policies\Microsoft\Windows\System\'
     $NetCredVal=@()
     $NetCredVal = "DisableLGPOProcessing"  
     $getNetCredVal=@()
