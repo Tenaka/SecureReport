@@ -285,6 +285,8 @@ YYMMDD
 220726.1 - Added further Security Options and GPO checked based on ms sec guide
 180822.1 - Added MS Edge GPO check
 190821.1 - Added Office 2016\365 GPO check
+200821.1 - Updated URA to include GPO Path as a mouse over
+250825.1 - Added DSQuery to search for accounts that dont pre-auth - Issue requires AD RSAT installed
 
 #>
 
@@ -474,6 +476,27 @@ sleep 5
                 $GroupDetails += $newObjGroup
             }
    }
+
+#Pre-Authenticaiton enabled
+$dsQuery = & dsquery * -limit 0 -filter "&(objectclass=user)(userAccountControl:1.2.840.113556.1.4.803:=4194304)" -attr samaccountname, distinguishedName, userAccountControl | select -skip 1
+$fragPreAuth=@()
+
+foreach ($preAuth in $dsQuery)
+    {
+        $preAuth = $preAuth.trim("").Split(" ",[System.StringSplitOptions]::RemoveEmptyEntries)
+           
+
+        $preAuthSam = "Warning - " + $preAuth[0] + " warning" 
+        $preAuthOu = "Warning - " +$preAuth[1]  + " warning" 
+        $preAuthUac = "Warning - " +$preAuth[2]  + " warning" 
+
+        $newObjPreAuth = New-Object -TypeName PSObject
+        Add-Member -InputObject $newObjPreAuth -Type NoteProperty -Name PreAuth-Account -Value $preAuthSam
+        Add-Member -InputObject $newObjPreAuth -Type NoteProperty -Name PreAuth-OUPath -Value $preAuthOu
+        Add-Member -InputObject $newObjPreAuth -Type NoteProperty -Name PreAuth-UACValue -Value $preAuthUac
+        $fragPreAuth += $newObjPreAuth
+    }
+
 Write-Host " "
 Write-Host "Completed Gathering Host and Account Details" -foregroundColor Green
 
@@ -551,6 +574,8 @@ sleep 5
 
         }
 
+    $URACommonPath = "Computer Configuration\Policies\Windows Settings\Security Settings\Local Policies\User Rights Assingments\" 
+
     #Export Security Settings inc User Rights Assignments with secedit.exe
     secEdit.exe /export /cfg $secEditPath
    
@@ -560,7 +585,7 @@ sleep 5
    {
    $uraItem = $uraLine.ToString().split("*").split("=") #.replace(",","")
    #write-host $uraItem -ForegroundColor Yellow
- 
+
         foreach ($uralookupName in $URALookup.Values)
         {
         $uraItemTrim = $uraItem[0].trim()
@@ -571,12 +596,16 @@ sleep 5
                    $uraDescripName = $uralookupName.trim()[1].split("|")[0]
                    $uraMSRecom = $uralookupName[1].split("|")[1].trim()
                    #Write-Host $uraDescripName -ForegroundColor Cyan
+                   
+                   $URAGPOPath = $URACommonPath + $uraDescripName
 
-                   #$uraDescripName | Out-File $secEditOutPath -Append
-                   Add-Content $secEditOutPath -Value " "  -encoding UTF8
+                   Add-Content $secEditOutPath -Value " " -encoding UTF8
 
                    $uraDescripName + " " + "`(" +$uraItem.trim()[0] +"`)" | Out-File $secEditOutPath -Append -encoding UTF8
                    $uraDescripName = "<div title=$uraMSRecom>$uraDescripName"
+
+                   $uraTrimDescrip = "<div title=$URAGPOPath>$uraItemTrim"
+
                 }
         }
        
@@ -588,20 +617,19 @@ sleep 5
        $NameURA=@()
        foreach($uraSidItems in $uraItemTrimStart)
        {
-       $objSid = New-Object System.Security.Principal.SecurityIdentifier("$uraSidItems")
-       $objUserName = $objSID.Translate( [System.Security.Principal.NTAccount])
-       #Write-Host $objUserName.Value -ForegroundColor Magenta
+           $objSid = New-Object System.Security.Principal.SecurityIdentifier("$uraSidItems")
+           $objUserName = $objSID.Translate( [System.Security.Principal.NTAccount])
+           #Write-Host $objUserName.Value -ForegroundColor Magenta
        
-       #$objUserName.Value  | Out-File $secEditOutPath -Append
-       "   " + $objUserName.Value  | Out-File $secEditOutPath -Append  -encoding UTF8
+           "   " + $objUserName.Value  | Out-File $secEditOutPath -Append  -encoding UTF8
 
-       [string]$NameURA += $objUserName.Value + ", "
+           [string]$NameURA += $objUserName.Value + ", "
 
        }
             
        $newObjURA = New-Object -TypeName PSObject
        Add-Member -InputObject $newObjURA -Type NoteProperty -Name UserRightAssignment-Name -Value $uraDescripName
-       Add-Member -InputObject $newObjURA -Type NoteProperty -Name UserRightAssignment-Priv -Value $uraItemTrim
+       Add-Member -InputObject $newObjURA -Type NoteProperty -Name UserRightAssignment-Priv -Value $uraTrimDescrip
        Add-Member -InputObject $newObjURA -Type NoteProperty -Name URA-GroupName -Value $NameURA
        $fragURA += $newObjURA
    }
@@ -1706,6 +1734,7 @@ sleep 5
 #Network security: Do not store LAN Manager hash value on next password change
 Write-Host " "
 Write-Host "Finished Auditing Various Registry Settings" -foregroundColor Green
+
 
 ################################################
 ############  FIREWALL DETAILS  ################
@@ -6220,7 +6249,7 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     }
 
     $newObjWindowsOS = New-Object -TypeName PSObject
-    Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsSetting -Value  $WindowsOSSet
+    Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsGPONameSetting -Value  $WindowsOSSet
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsRegValue -Value $WindowsOSReg 
     $fragWindowsOSVal += $newObjWindowsOS
 
@@ -6289,7 +6318,7 @@ $getEdgeValue = $getEdgePath.GetValue("$edgeRegName")
     }
 
     $newObjEdge = New-Object -TypeName PSObject
-    Add-Member -InputObject $newObjEdge -Type NoteProperty -Name EdgeSetting -Value  $EdgeSet
+    Add-Member -InputObject $newObjEdge -Type NoteProperty -Name EdgeGPONameSetting -Value  $EdgeSet
     Add-Member -InputObject $newObjEdge -Type NoteProperty -Name EdgeRegValue -Value $EdgeReg 
     $fragEdgeVal += $newObjEdge
 
@@ -6554,8 +6583,8 @@ foreach ($OfficePolItems in $OfficePolicies.values)
         }
 
         $newObjOffice = New-Object -TypeName PSObject
-        Add-Member -InputObject $newObjOffice -Type NoteProperty -Name CredentialSetting -Value  $OfficeSet
-        Add-Member -InputObject $newObjOffice -Type NoteProperty -Name CredentialRegValue -Value $OfficeReg 
+        Add-Member -InputObject $newObjOffice -Type NoteProperty -Name OfficeGPONameSetting -Value  $OfficeSet
+        Add-Member -InputObject $newObjOffice -Type NoteProperty -Name OfficeRegValue -Value $OfficeReg 
         $fragOfficeVal += $newObjOffice
 
 }
@@ -7180,6 +7209,9 @@ $style = @"
 
     $descripOffice2016 = "These are recommended GPO settings to secure Office 2016-365 by Microsoft, do NOT implement without the correct research and testing. Some settings could adversely affect your system.<br> Its recommended that Attack Surface Reduction (ASR) is enabled but requires Windows Defender Real-Time Antivirus and works in conjunction with Exploit Guard to prevent malware abusing legitimate MS Office functionality"
 
+    $descripPreAuth = "READ ME - Requires the AD RSAT tools to be install for this to display any results.<br><br>Pre-authentication is when the user sends the KDC an Authentication Service Request (AS_REQ) with an encrypted Timestamp. The KDC replies with an Authentication Service Reply (AS_REP) with the TGT and a logon session. The issue arises when the user's account doesn't require pre-authentication, it's a check box on the user's account settings. An attacker is then able to request a DC, and the DC dutifully replies with user encrypted TGT using the user's own NTLM password hash. An offline brute force attack is then possible in the hope of extracting the clear text password, known as AS-REP Roasting <br> <br>Further information @<br><br>https://www.tenaka.net/kerberos-armouring<br>https://social.technet.microsoft.com/wiki/contents/articles/23559.kerberos-pre-authentication-why-it-should-not-be-disabled.aspx"
+
+
 ################################################
 ################  FRAGMENTS  ###################
 ################################################
@@ -7194,7 +7226,10 @@ $style = @"
     $frag_Host = $fragHost | ConvertTo-Html -As List -Property Name,Domain,Model -fragment -PreContent "<h2><span style='color:$titleCol'>Host Details</span></h2>"  | Out-String
     $fragOS = $OS | ConvertTo-Html -As List -property Caption,Version,OSArchitecture,InstallDate -fragment -PreContent "<h2><span style='color:$titleCol'>Windows Details</span></h2>" | Out-String
     $FragAccountDetails = $AccountDetails  | ConvertTo-Html -As Table -fragment -PreContent "<h2><span style='color:$titleCol'>Local Account Details</span></h2>" -PostContent "<h4>$descripLocalAccounts</h4>" | Out-String 
-    $FragGroupDetails =  $GroupDetails  | ConvertTo-Html -As Table -fragment -PreContent "<h2><span style='color:$titleCol'>Local Group Members</span></h2>" | Out-String
+    
+    $frag_PreAuth = $fragPreAuth | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:$titleCol'>Domain Account that DO NOT Pre-Authenticate</span></h2>" -PostContent "<h4>$descripPreAuth</h4>" | Out-String
+
+    $FragGroupDetails =  $GroupDetails  | ConvertTo-Html -As Table -fragment -PreContent "<h2><span style='color:$titleCol'>Local System Group Members</span></h2>" | Out-String
     $FragPassPol = $PassPol | Select-Object -SkipLast 3 | ConvertTo-Html -As Table -fragment -PreContent "<h2><span style='color:$titleCol'>Local PassWord Policy</span></h2>" | Out-String
     $fragInstaApps  =  $InstallApps | Sort-Object publisher,displayname -Unique  | ConvertTo-Html -As Table  -fragment -PreContent "<h2><span style='color:$titleCol'>Installed Applications</span></h2>" | Out-String
     $fragHotFix = $HotFix | ConvertTo-Html -As Table -property HotFixID,InstalledOn,Caption -fragment -PreContent "<h2><span style='color:$titleCol'>Latest 10 Installed Updates</span></h2>" | Out-String
@@ -7237,15 +7272,13 @@ $style = @"
     $frag_RegPassWords = $fragRegPassWords | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:$titleCol'>PassWords Embedded in the Registry</span></h2>" -PostContent "<h4>$descripRegPassWords</h4>" | Out-String
     $frag_ASR = $fragASR | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:$titleCol'>Attack Surface Reduction (ASR)</span></h2>" -PostContent "<h4>$descripASR</h4>" | Out-String
     $frag_WDigestULC = $fragWDigestULC | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:$titleCol'>WDigest</span></h2>" -PostContent "<h4>$descripWDigest</h4>" | Out-String
-    
+  
     
     #MS Recommended Secuirty settings (SSLF)
     $frag_WindowsOSVal = $fragWindowsOSVal | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:$titleCol'>Windows OS Security Recommendations</span></h2>" -PostContent "<h4>$descripWindowsOS</h4>" | Out-String
     $frag_EdgeVal = $fragEdgeVal | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:$titleCol'>MS Edge Security Recommendations</span></h2>" | Out-String
     $frag_OfficeVal = $fragOfficeVal | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:$titleCol'>MS Office Security Recommendations</span></h2>" -PostContent "<h4>$descripOffice2016</h4>" | Out-String
 
-
-    $fragOfficeVal
 
     #Quick and dirty tidy up and removal of Frags that are $null
     if ($fragAuthCodeSig -eq $null){$frag_AuthCodeSig = ""}
@@ -7287,6 +7320,7 @@ if ($folders -eq "y")
     $frag_Share,
     $frag_BitLocker, 
     $FragAccountDetails,
+    $frag_PreAuth,
     $FragPassPol,
     $FragGroupDetails,
     $frag_whoamiGroups, 
@@ -7341,6 +7375,7 @@ else
     $frag_Share,
     $frag_BitLocker, 
     $FragAccountDetails,
+    $frag_PreAuth,
     $FragPassPol,
     $FragGroupDetails,
     $frag_whoamiGroups, 
@@ -7392,10 +7427,10 @@ else
 
     foreach {$_ -replace "<td>Review","<td><font color=#ff9933>Review"} | 
     foreach {$_ -replace "Review</td>","<font></td>"}  | 
-    
+  
     foreach {$_ -replace "<td>SeImpersonatePrivilege","<td><font color=#ff9933>SeImpersonatePrivilege"} | 
     foreach {$_ -replace "SeImpersonatePrivilege</td>","SeImpersonatePrivilege<font></td>"}  | 
-
+    
     foreach {$_ -replace "<td>SeAssignPrimaryTokenPrivilege","<td><font color=#ff9933>SeAssignPrimaryTokenPrivilege"} | 
     foreach {$_ -replace "SeAssignPrimaryTokenPrivilege</td>","SeAssignPrimaryTokenPrivilege<font></td>"}  | 
 
@@ -7425,7 +7460,26 @@ else
 
     foreach {$_ -replace '<td>&lt;div title=','<td><div title="'} | 
     foreach {$_ -replace "&gt;",'">'}  | 
+    
+    foreach {$_ -replace ">Take ownership of files or other objects </td><td><div",">Take ownership of files or other objects</td><td><font color=#ff9933><div"} |
 
+    foreach {$_ -replace ">Load and unload device drivers </td><td><div",">Load and unload device drivers</td><td><font color=#ff9933><div"} |
+
+    foreach {$_ -replace ">Back up files and directories </td><td><div",">Back up files and directories</td><td><font color=#ff9933><div"} |
+
+    foreach {$_ -replace ">Restore files and directories </td><td><div",">Restore files and directories</td><td><font color=#ff9933><div"}|
+
+    foreach {$_ -replace ">Impersonate a client after authentication </td><td><div",">Impersonate a client after authentication</td><td><font color=#ff9933><div"} |
+
+    foreach {$_ -replace ">Create global objects </td><td><div",">Create global objects</td><td><font color=#ff9933><div"} |
+
+    foreach {$_ -replace ">Replace a process level token</td><td><div",">Replace a process level token</td><td><font color=#ff9933><div"} |
+
+    foreach {$_ -replace ">Debug programs</td><td><div",">Debug programs</td><td><font color=#ff9933><div"} |
+    foreach {$_ -replace ">Debug programs </td><td><div",">Debug programs</td><td><font color=#ff9933><div"} |
+
+    foreach {$_ -replace ">Access this computer from the network </td><td><div",">Access this computer from the network</td><td><font color=#ff9933><div"} |
+   
     Set-Content "C:\SecureReport\FinishedReport.htm" -Force
    
     }
@@ -7452,7 +7506,6 @@ FLTMC.exe - mini driver altitude looking for 'stuff' thats at an altitude to byp
 report on appX bypass and seriousSam
 Remote desktop and permissions
 look for %COMSPEC%
-Check for impersonation - aimed at servers
 snmp
 powershell history, stored creds 
 Users in the domain that dont pre-authenticate
@@ -7469,11 +7522,9 @@ Add mouse over to any item that reports on Reg value
 UAC
 networks
 Updates
-Accounts and policy
+Audit Settings
 
 Allign look and feel for all Reg and gpo queries inc mouse over effect
-
-
 
 share permissions wont list $IPC
 
