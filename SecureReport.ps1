@@ -735,19 +735,21 @@ Write-Host "Completed Gathering Windows Update and Installed Application Informa
         #Switch to determine the status of antivirus definitions and real-time protection.
         switch ($AntiVirusProduct.productState) 
         {
-            "262144" {$defstatus = "Up to date" ;$rtstatus = "Disabled"}
-            "262160" {$defstatus = "Out of date" ;$rtstatus = "Disabled"}
+            "262144" {$defstatus = "Up to date" ;$rtstatus = "Warning - Disabled warning"}
+            "262160" {$defstatus = "Warning - Out of date warning" ;$rtstatus = "Warning - Disabled warning"}
             "266240" {$defstatus = "Up to date" ;$rtstatus = "Enabled"}
-            "266256" {$defstatus = "Out of date" ;$rtstatus = "Enabled"}
-            "393216" {$defstatus = "Up to date" ;$rtstatus = "Disabled"}
-            "393232" {$defstatus = "Out of date" ;$rtstatus = "Disabled"}
-            "393488" {$defstatus = "Out of date" ;$rtstatus = "Disabled"}
+            "266256" {$defstatus = "Warning - Out of date warning" ;$rtstatus = "Enabled"}
+            "270336" {$defstatus = "Up to date" ;$rtstatus = "Enabled"}
+            "393216" {$defstatus = "Up to date" ;$rtstatus = "Warning - Disabled warning"}
+            "393232" {$defstatus = "Warning - Out of date" ;$rtstatus = "Warning - Disabled warning"}
+            "393488" {$defstatus = "Warning - Out of date" ;$rtstatus = "Warning - Disabled warning"}
             "397312" {$defstatus = "Up to date" ;$rtstatus = "Enabled"}
             "397568" {$defstatus = "Up to date" ;$rtstatus = "Enabled"}
-            "397328" {$defstatus = "Out of date" ;$rtstatus = "Enabled"}
-            "397584" {$defstatus = "Out of date" ;$rtstatus = "Enabled"}   
-            "393472" {$defstatus = "Up to date" ;$rtstatus  = "Disabled"}
-            default {$defstatus = "Unknown" ;$rtstatus = "Unknown"}
+            "397328" {$defstatus = "Warning - Out of date" ;$rtstatus = "Enabled"}
+            "397584" {$defstatus = "Warning - Out of date" ;$rtstatus = "Enabled"}   
+            "393472" {$defstatus = "Up to date" ;$rtstatus  = "Warning - Disabled warning"}
+            "401664" {$defstatus = "Up to date" ;$rtstatus  = "Warning - Disabled warning"}
+            default {$defstatus = "Warning - Unknown warning" ;$rtstatus = "Warning - Unknown warning"}
         }
 
         $avDisplay = $AntiVirusProduct.displayName
