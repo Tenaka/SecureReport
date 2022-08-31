@@ -283,10 +283,11 @@ YYMMDD
 220724.1 - Fixed issues with URA
 220725.1 - Added 255.255.255.255 wpad to legacy network protocols
 220726.1 - Added further Security Options and GPO checked based on ms sec guide
-180822.1 - Added MS Edge GPO check
-190821.1 - Added Office 2016\365 GPO check
-200821.1 - Updated URA to include GPO Path as a mouse over
-250825.1 - Added DSQuery to search for accounts that dont pre-auth - Issue requires AD RSAT installed
+220818.1 - Added MS Edge GPO check
+220819.1 - Added Office 2016\365 GPO check
+220820.1 - Updated URA to include GPO Path as a mouse over
+220825.1 - Added DSQuery to search for accounts that dont pre-auth - Issue requires AD RSAT installed
+220830.1 - Added Antivirus Audit - Uses known status codes to report on AV engine and definitions
 
 #>
 
@@ -717,7 +718,57 @@ sleep 5
  
 Write-Host " "
 Write-Host "Completed Gathering Windows Update and Installed Application Information" -foregroundColor Green
+
+################################################
+##################  ANTIVIRUS  #################
+################################################
+
+#https://stackoverflow.com/questions/33649043/powershell-how-to-get-antivirus-product-details - "borrowed" baulk of script from site
+
+    $AntiVirusProducts = Get-WmiObject -Namespace "root\SecurityCenter2" -Class AntiVirusProduct  
+
+    if ($AntiVirusProducts.Count -gt "1")
+    {$AntiVirusProducts = $AntiVirusProducts | where {$_.displayname -ne "Windows Defender"}}
+    
+    $newObjAVStatus=@()
+    foreach($AntiVirusProduct in $AntiVirusProducts){
+        #Switch to determine the status of antivirus definitions and real-time protection.
+        switch ($AntiVirusProduct.productState) 
+        {
+            "262144" {$defstatus = "Up to date" ;$rtstatus = "Disabled"}
+            "262160" {$defstatus = "Out of date" ;$rtstatus = "Disabled"}
+            "266240" {$defstatus = "Up to date" ;$rtstatus = "Enabled"}
+            "266256" {$defstatus = "Out of date" ;$rtstatus = "Enabled"}
+            "393216" {$defstatus = "Up to date" ;$rtstatus = "Disabled"}
+            "393232" {$defstatus = "Out of date" ;$rtstatus = "Disabled"}
+            "393488" {$defstatus = "Out of date" ;$rtstatus = "Disabled"}
+            "397312" {$defstatus = "Up to date" ;$rtstatus = "Enabled"}
+            "397568" {$defstatus = "Up to date" ;$rtstatus = "Enabled"}
+            "397328" {$defstatus = "Out of date" ;$rtstatus = "Enabled"}
+            "397584" {$defstatus = "Out of date" ;$rtstatus = "Enabled"}   
+            "393472" {$defstatus = "Up to date" ;$rtstatus  = "Disabled"}
+            default {$defstatus = "Unknown" ;$rtstatus = "Unknown"}
+        }
+
+        $avDisplay = $AntiVirusProduct.displayName
+        $avProduct = $AntiVirusProduct.pathToSignedProductExe 
+        $avPath = $AntiVirusProduct.pathToSignedReportingExe 
+        $avStatus = $defstatus
+        $avReal = $rtstatus
+
+        $AVService = ((get-service | where {$_.DisplayName -like "*$avDisplay*" }).Status)[0]
         
+        $newObjAVStatus = New-Object -TypeName PSObject
+        Add-Member -InputObject $newObjAVStatus -Type NoteProperty -Name AVName -Value $avDisplay
+        Add-Member -InputObject $newObjAVStatus -Type NoteProperty -Name AVProduct -Value $avProduct
+        Add-Member -InputObject $newObjAVStatus -Type NoteProperty -Name AVPathtoExecute -Value $avPath
+        Add-Member -InputObject $newObjAVStatus -Type NoteProperty -Name AVStatus -Value $avStatus 
+        Add-Member -InputObject $newObjAVStatus -Type NoteProperty -Name AVEngine -Value $avReal
+        #Add-Member -InputObject $newObjAVStatus -Type NoteProperty -Name AVService -Value $AVService 
+        $FragAVStatus += $newObjAVStatus
+
+        }
+      
 ################################################
 ################  MSINFO32  ####################
 ################################################
@@ -2881,7 +2932,7 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
             }
         else
             {
-            $ASRGuidObj = "Warning - ASR Guid $asrGuiditem is not set  Warning" 
+            $ASRGuidObj = "Warning - ASR Guid $asrGuiditem is not set Warning" 
             }
         
         if ($asrGuidSetting -eq "1")
@@ -2992,7 +3043,7 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     }
     else
     {
-        $WindowsOSSet = "Warning - $WindowsOSDescrip is disabled" 
+        $WindowsOSSet = "Warning - $WindowsOSDescrip is disabled Warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
     }
 
@@ -3209,7 +3260,7 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     }
     else
     {
-        $WindowsOSSet = "Warning - $WindowsOSDescrip is enabled" 
+        $WindowsOSSet = "Warning - $WindowsOSDescrip is enabled Warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
     }
 
@@ -3241,7 +3292,7 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     }
     else
     {
-        $WindowsOSSet = "Warning - $WindowsOSDescrip is disabled" 
+        $WindowsOSSet = "Warning - $WindowsOSDescrip is disabled Warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
     }
 
@@ -3280,7 +3331,7 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     }
     else
     {
-        $WindowsOSSet = "Warning - $WindowsOSDescrip is disabled" 
+        $WindowsOSSet = "Warning - $WindowsOSDescrip is disabled Warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
     }
 
@@ -3312,7 +3363,7 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     }
     else
     {
-        $WindowsOSSet = "Warning - $WindowsOSDescrip is disabled" 
+        $WindowsOSSet = "Warning - $WindowsOSDescrip is disabled Warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
     }
 
@@ -3344,7 +3395,7 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     }
     else
     {
-        $WindowsOSSet = "Warning - $WindowsOSDescrip is disabled" 
+        $WindowsOSSet = "Warning - $WindowsOSDescrip is disabled Warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
     }
 
@@ -3533,7 +3584,7 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     }
     else
     {
-        $WindowsOSSet = "Warning - $WindowsOSDescrip is disabled" 
+        $WindowsOSSet = "Warning - $WindowsOSDescrip is disabled Warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
     }
 
@@ -3564,7 +3615,7 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     }
     else
     {
-        $WindowsOSSet = "Warning - $WindowsOSDescrip is disabled" 
+        $WindowsOSSet = "Warning - $WindowsOSDescrip is disabled Warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
     }
 
@@ -3601,7 +3652,7 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     }
     else
     {
-        $WindowsOSSet = "Warning - $WindowsOSDescrip is disabled" 
+        $WindowsOSSet = "Warning - $WindowsOSDescrip is disabled Warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
     }
 
@@ -3874,7 +3925,7 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     }
     else
     {
-        $WindowsOSSet = "Warning - $WindowsOSDescrip is Enabled or not defined Warning " 
+        $WindowsOSSet = "Warning - $WindowsOSDescrip is Enabled or not defined Warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
     }
 
@@ -3995,7 +4046,7 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     }
     else
     {
-        $WindowsOSSet = "Warning - $WindowsOSDescrip is disabled" 
+        $WindowsOSSet = "Warning - $WindowsOSDescrip is disabled Warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
     }
 
@@ -4041,7 +4092,7 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     }
     else
     {
-        $WindowsOSSet = "Warning - $WindowsOSDescrip is disabled, mitigates Pass-the-Hash" 
+        $WindowsOSSet = "Warning - $WindowsOSDescrip is disabled, mitigates Pass-the-Hash Warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
     }
 
@@ -4078,7 +4129,7 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     }
     else
     {
-        $WindowsOSSet = "Warning - $WindowsOSDescrip is disabled, \\*\SYSVOL and \\*\NETLOGON are missing" 
+        $WindowsOSSet = "Warning - $WindowsOSDescrip is disabled, \\*\SYSVOL and \\*\NETLOGON are missing Warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
     }
 
@@ -4114,7 +4165,7 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     }
     else
     {
-        $WindowsOSSet = "Warning - $WindowsOSDescrip is disabled" 
+        $WindowsOSSet = "Warning - $WindowsOSDescrip is disabled Warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
     }
 
@@ -4151,7 +4202,7 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     }
     else
     {
-        $WindowsOSSet = "Warning - $WindowsOSDescrip is disabled" 
+        $WindowsOSSet = "Warning - $WindowsOSDescrip is disabled Warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
     }
 
@@ -4188,7 +4239,7 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     }
     else
     {
-        $WindowsOSSet = "Warning - $WindowsOSDescrip is disabled" 
+        $WindowsOSSet = "Warning - $WindowsOSDescrip is disabled Warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
     }
 
@@ -4225,7 +4276,7 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     }
     else
     {
-        $WindowsOSSet = "Warning - $WindowsOSDescrip is disabled" 
+        $WindowsOSSet = "Warning - $WindowsOSDescrip is disabled Warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
     }
 
@@ -4458,7 +4509,7 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     }
     else
     {
-        $WindowsOSSet = "Warning - $WindowsOSDescrip is disabled or not set Warning " 
+        $WindowsOSSet = "Warning - $WindowsOSDescrip is disabled or not set Warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
     }
 
@@ -4603,7 +4654,7 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     }
     else
     {
-        $WindowsOSSet = "Warning - $WindowsOSDescrip is disabled" 
+        $WindowsOSSet = "Warning - $WindowsOSDescrip is disabled Warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
     }
 
@@ -4634,7 +4685,7 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     }
     else
     {
-        $WindowsOSSet = "Warning - $WindowsOSDescrip is disabled" 
+        $WindowsOSSet = "Warning - $WindowsOSDescrip is disabled Warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
     }
 
@@ -4666,7 +4717,7 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     }
     else
     {
-        $WindowsOSSet = "Warning - $WindowsOSDescrip is disabled" 
+        $WindowsOSSet = "Warning - $WindowsOSDescrip is disabled Warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
     }
 
@@ -4697,7 +4748,7 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     }
     else
     {
-        $WindowsOSSet = "Warning - $WindowsOSDescrip is disabled" 
+        $WindowsOSSet = "Warning - $WindowsOSDescrip is disabled Warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
     }
 
@@ -4728,7 +4779,7 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     }
     else
     {
-        $WindowsOSSet = "Warning - $WindowsOSDescrip is disabled" 
+        $WindowsOSSet = "Warning - $WindowsOSDescrip is disabled Warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
     }
 
@@ -4759,7 +4810,7 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     }
     else
     {
-        $WindowsOSSet = "Warning - $WindowsOSDescrip is disabled" 
+        $WindowsOSSet = "Warning - $WindowsOSDescrip is disabled Warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
     }
 
@@ -4796,7 +4847,7 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     }
     else
     {
-        $WindowsOSSet = "Warning - $WindowsOSDescrip is disabled" 
+        $WindowsOSSet = "Warning - $WindowsOSDescrip is disabled Warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
     }
 
@@ -4827,7 +4878,7 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     }
     else
     {
-        $WindowsOSSet = "Warning - $WindowsOSDescrip is disabled" 
+        $WindowsOSSet = "Warning - $WindowsOSDescrip is disabled Warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
     }
 
@@ -4932,7 +4983,7 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     }
     else
     {
-        $WindowsOSSet = "Warning - $WindowsOSDescrip is set warn and allow bypass" 
+        $WindowsOSSet = "Warning - $WindowsOSDescrip is set warn and allow bypass Warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
     }
 
@@ -4975,7 +5026,7 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     }
     else
     {
-        $WindowsOSSet = "Warning - $WindowsOSDescrip is set warn and allow bypass" 
+        $WindowsOSSet = "Warning - $WindowsOSDescrip is set warn and allow bypass Warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
     }
 
@@ -5281,7 +5332,7 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     }
     else
     {
-        $WindowsOSSet = "Warning - $WindowsOSDescrip is enabled" 
+        $WindowsOSSet = "Warning - $WindowsOSDescrip is enabled Warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
     }
 
@@ -5320,7 +5371,7 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     }
     else
     {
-        $WindowsOSSet = "Warning - $WindowsOSDescrip is disabled" 
+        $WindowsOSSet = "Warning - $WindowsOSDescrip is disabled Warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
     }
 
@@ -5440,7 +5491,7 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     }
     else
     {
-        $WindowsOSSet = "Warning - $WindowsOSDescrip is enabled" 
+        $WindowsOSSet = "Warning - $WindowsOSDescrip is enabled Warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
     }
 
@@ -5475,7 +5526,7 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     }
     else
     {
-        $WindowsOSSet = "Warning - $WindowsOSDescrip is enabled" 
+        $WindowsOSSet = "Warning - $WindowsOSDescrip is enabled Warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
     }
 
@@ -5510,7 +5561,7 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     }
     else
     {
-        $WindowsOSSet = "Warning - $WindowsOSDescrip is disabled" 
+        $WindowsOSSet = "Warning - $WindowsOSDescrip is disabled Warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
     }
 
@@ -5545,7 +5596,7 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     }
     else
     {
-        $WindowsOSSet = "Warning - $WindowsOSDescrip is enabled" 
+        $WindowsOSSet = "Warning - $WindowsOSDescrip is enabled Warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
     }
 
@@ -5580,7 +5631,7 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     }
     else
     {
-        $WindowsOSSet = "Warning - $WindowsOSDescrip is enabled" 
+        $WindowsOSSet = "Warning - $WindowsOSDescrip is enabled Warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
     }
 
@@ -5616,7 +5667,7 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     }
     else
     {
-        $WindowsOSSet = "Warning - $WindowsOSDescrip is disabled" 
+        $WindowsOSSet = "Warning - $WindowsOSDescrip is disabled Warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
     }
 
@@ -5652,7 +5703,7 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     }
     else
     {
-        $WindowsOSSet = "Warning - $WindowsOSDescrip is enabled" 
+        $WindowsOSSet = "Warning - $WindowsOSDescrip is enabled Warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
     }
 
@@ -5687,7 +5738,7 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     }
     else
     {
-        $WindowsOSSet = "Warning - $WindowsOSDescrip is enabled" 
+        $WindowsOSSet = "Warning - $WindowsOSDescrip is enabled Warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
     }
 
@@ -5724,7 +5775,7 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     }
     else
     {
-        $WindowsOSSet = "Warning - $WindowsOSDescrip is enabled" 
+        $WindowsOSSet = "Warning - $WindowsOSDescrip is enabled Warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
     }
 
@@ -6011,7 +6062,7 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     }
     else
     {
-        $WindowsOSSet = "Warning - $WindowsOSDescrip is disabled" 
+        $WindowsOSSet = "Warning - $WindowsOSDescrip is disabled Warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
     }
 
@@ -6049,7 +6100,7 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     }
     else
     {
-        $WindowsOSSet = "Warning - $WindowsOSDescrip is disabled" 
+        $WindowsOSSet = "Warning - $WindowsOSDescrip is disabled Warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
     }
 
@@ -6080,7 +6131,7 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     }
     else
     {
-        $WindowsOSSet = "Warning - $WindowsOSDescrip is disabled" 
+        $WindowsOSSet = "Warning - $WindowsOSDescrip is disabled Warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
     }
 
@@ -6111,7 +6162,7 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     }
     else
     {
-        $WindowsOSSet = "Warning - $WindowsOSDescrip is disabled" 
+        $WindowsOSSet = "Warning - $WindowsOSDescrip is disabled Warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
     }
 
@@ -6143,7 +6194,7 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     }
     else
     {
-        $WindowsOSSet = "Warning - $WindowsOSDescrip is disabled" 
+        $WindowsOSSet = "Warning - $WindowsOSDescrip is disabled Warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
     }
 
@@ -6177,7 +6228,7 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     }
     else
     {
-        $WindowsOSSet = "Warning - $WindowsOSDescrip is disabled" 
+        $WindowsOSSet = "Warning - $WindowsOSDescrip is disabled Warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
     }
 
@@ -6211,7 +6262,7 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     }
     else
     {
-        $WindowsOSSet = "Warning - $WindowsOSDescrip is disabled" 
+        $WindowsOSSet = "Warning - $WindowsOSDescrip is disabled Warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
     }
 
@@ -6244,7 +6295,7 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     }
     else
     {
-        $WindowsOSSet = "Warning - $WindowsOSDescrip is enabled" 
+        $WindowsOSSet = "Warning - $WindowsOSDescrip is enabled Warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
     }
 
@@ -7211,6 +7262,7 @@ $style = @"
 
     $descripPreAuth = "READ ME - Requires the AD RSAT tools to be install for this to display any results.<br><br>Pre-authentication is when the user sends the KDC an Authentication Service Request (AS_REQ) with an encrypted Timestamp. The KDC replies with an Authentication Service Reply (AS_REP) with the TGT and a logon session. The issue arises when the user's account doesn't require pre-authentication, it's a check box on the user's account settings. An attacker is then able to request a DC, and the DC dutifully replies with user encrypted TGT using the user's own NTLM password hash. An offline brute force attack is then possible in the hope of extracting the clear text password, known as AS-REP Roasting <br> <br>Further information @<br><br>https://www.tenaka.net/kerberos-armouring<br>https://social.technet.microsoft.com/wiki/contents/articles/23559.kerberos-pre-authentication-why-it-should-not-be-disabled.aspx"
 
+    $descripAV = ""
 
 ################################################
 ################  FRAGMENTS  ###################
@@ -7234,10 +7286,11 @@ $style = @"
     $fragInstaApps  =  $InstallApps | Sort-Object publisher,displayname -Unique  | ConvertTo-Html -As Table  -fragment -PreContent "<h2><span style='color:$titleCol'>Installed Applications</span></h2>" | Out-String
     $fragHotFix = $HotFix | ConvertTo-Html -As Table -property HotFixID,InstalledOn,Caption -fragment -PreContent "<h2><span style='color:$titleCol'>Latest 10 Installed Updates</span></h2>" | Out-String
     $fragInstaApps16  =  $InstallApps16 | Sort-Object publisher,displayname -Unique  | ConvertTo-Html -As Table  -fragment -PreContent "<h2><span style='color:$titleCol'>Updates to Office 2016 and older or Updates that create KB's in the Registry</span></h2>" | Out-String
+    $Frag_AVStatus = $FragAVStatus | ConvertTo-Html -As Table  -fragment -PreContent "<h2><span style='color:$titleCol'>AntiVirus Engine and Definition Status</span></h2>" -PostContent "<h4>$descripAV</h4>" | Out-String
     $fragBios = $bios | ConvertTo-Html -As List -property Name,Manufacturer,SerialNumber,SMBIOSBIOSVersion,ReleaseDate -fragment -PreContent "<h2><span style='color:$titleCol'>Bios Details</span></h2>" | Out-String
     $fragCpu = $cpu | ConvertTo-Html -As List -property Name,MaxClockSpeed,NumberOfCores,ThreadCount -fragment -PreContent "<h2><span style='color:$titleCol'>Processor Details</span></h2>" | Out-String
-    $frag_whoamiGroups =  $whoamiGroups | ConvertTo-Html -As Table -fragment -PreContent "<h2><span style='color:$titleCol'>Current Users Group Membership</span></h2>" -PostContent "<h4>$descripDomainGroups</h4>"   | Out-String
-    $frag_whoamiPriv =  $whoamiPriv | ConvertTo-Html -As Table -fragment -PreContent "<h2><span style='color:$titleCol'>Current Users Local Privileges</span></h2>" -PostContent "<h4>$descripDomainPrivs</h4>"  | Out-String
+    $frag_whoamiGroups =  $whoamiGroups | ConvertTo-Html -As Table -fragment -PreContent "<h2><span style='color:$titleCol'>Current Users Group Membership</span></h2>" -PostContent "<h4>$descripDomainGroups</h4>" | Out-String
+    $frag_whoamiPriv =  $whoamiPriv | ConvertTo-Html -As Table -fragment -PreContent "<h2><span style='color:$titleCol'>Current Users Local Privileges</span></h2>" -PostContent "<h4>$descripDomainPrivs</h4>" | Out-String
     
     #Security Review
     $frag_BitLocker = $fragBitLocker | ConvertTo-Html -As List -fragment -PreContent "<h2><span style='color:$titleCol'>Bitlocker and TPM Details</span></h2>" -PostContent "<h4>$descripBitlocker</h4>" | Out-String
@@ -7329,6 +7382,7 @@ if ($folders -eq "y")
     $fragInstaApps,
     $fragHotFix,
     $fragInstaApps16,
+    $Frag_AVStatus,
     $frag_UnQu,
     $frag_ASR,
     $frag_Msinfo,
@@ -7384,6 +7438,7 @@ else
     $fragInstaApps,
     $fragHotFix,
     $fragInstaApps16,
+    $Frag_AVStatus,
     $frag_UnQu, 
     $frag_ASR,
     $frag_Msinfo,
@@ -7492,8 +7547,6 @@ $ExecutionContext.SessionState.LanguageMode -eq "ConstrainedLanguage"
 Null message warning that security is missing
 set warning for secure boot
 Expand on explanations - currently of use to non-techies
-add filter to report only displaying when items are reported on.
-validation for number of folders to check
 
 remove extra blanks when listing progs via registry 
 
@@ -7508,13 +7561,11 @@ Remote desktop and permissions
 look for %COMSPEC%
 snmp
 powershell history, stored creds 
-Users in the domain that dont pre-authenticate
 
 data streams dir /r
+Get-Item   -Stream * | where {$_.stream -notmatch "$DATA"}
 
 remove powershell commands where performance is an issue, consider replacing with cmd alts
-
-Boot-Start Driver Initialization Policy - Trusted boot \UEFI
 
 ####GPO Settings as recommended by MS####
 Add mouse over to any item that reports on Reg value
@@ -7523,6 +7574,9 @@ UAC
 networks
 Updates
 Audit Settings
+Chrome GPOs
+
+Report on Windows defender and memory protections
 
 Allign look and feel for all Reg and gpo queries inc mouse over effect
 
