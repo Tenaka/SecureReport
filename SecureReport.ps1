@@ -288,6 +288,7 @@ YYMMDD
 220820.1 - Updated URA to include GPO Path as a mouse over
 220825.1 - Added DSQuery to search for accounts that dont pre-auth - Issue requires AD RSAT installed
 220830.1 - Added Antivirus Audit - Uses known status codes to report on AV engine and definitions
+220831.1 - Updated Get Shares to ignore error for IPC's lack of path and permissions
 
 #>
 
@@ -2644,7 +2645,7 @@ Write-Host " "
 Write-Host "Auditing Shares and permissions" -foregroundColor Green
 sleep 3
 
-    $getShr = Get-SmbShare | where {$_.name -ne "IPC$"}
+    $getShr = Get-SmbShare #| where {$_.name -ne "IPC$"}
     $Permarray=@()
     $fragShare=@()
 
@@ -2655,7 +2656,7 @@ sleep 3
         $shrPath = $Shr.path
         $shrDes = $Shr.description
 
-        $getShrPerms = Get-FileShareAccessControlEntry -Name $shr.Name
+        $getShrPerms = Get-FileShareAccessControlEntry -Name $shr.Name -ErrorAction SilentlyContinue
     
         foreach($perms in $getShrPerms)
         {
@@ -7581,8 +7582,6 @@ Chrome GPOs
 Report on Windows defender and memory protections
 
 Allign look and feel for all Reg and gpo queries inc mouse over effect
-
-share permissions wont list $IPC
 
 Stuff that wont get fixed.....
 Progress bars or screen output will remain limited, each time an output is written to screen the performance degrads
