@@ -289,6 +289,7 @@ YYMMDD
 220825.1 - Added DSQuery to search for accounts that dont pre-auth - Issue requires AD RSAT installed
 220830.1 - Added Antivirus Audit - Uses known status codes to report on AV engine and definitions
 220831.1 - Updated Get Shares to ignore error for IPC's lack of path and permissions
+220901.1 - Added IPv4 and IPv6 Details
 
 #>
 
@@ -874,6 +875,107 @@ sleep 5
 
 Write-Host " "
 Write-Host "Finished Collectiong DriverQuery data for VBS" -foregroundColor Green
+
+
+################################################
+##############  NETWORK SETTINGS  ##############
+################################################
+#Going to use the table below for other projects prefix, mask, available addresses, number of hosts
+    $IPSubnet =[ordered]@{
+
+    32 = "32","255.255.255.255","1","1"
+    31 = "31","255.255.255.254","2","2"
+    30 = "30","255.255.255.252","4","2"
+    29 = "29","255.255.255.248","8","6"
+    28 = "28","255.255.255.240","16","14"
+    27 = "27","255.255.255.224","32","30"
+    26 = "26","255.255.255.192","64","62"
+    25 = "25","255.255.255.128","128","126"
+    24 = "24","255.255.255.0","256","254"
+    23 = "23","255.255.254.0","512","510"
+    22 = "22","255.255.252.0","1024","1022"
+    21 = "21","255.255.248.0","2048","2046"
+    20 = "20","255.255.240.0","4096","4094"
+    19 = "19","255.255.224.0","8192","8190"
+    18 = "18","255.255.192.0","16384","16382"
+    17 = "17","255.255.128.0","32768","32766"
+    16 = "16","255.255.0.0","65536","65534"
+    15 = "15","255.254.0.0","131072","131070"
+    14 = "14","255.252.0.0","262144","262142"
+    13 = "13","255.248.0.0","524288","524286"
+    12 = "12","255.240.0.0","1048576","1048574"
+    11 = "11","255.224.0.0","2097152","2097150"
+    10 = "10","255.192.0.0","4194304","4194302"
+    9 = "9","255.128.0.0","8388608","8388606"
+    8 = "8","255.0.0.0","16777216","16777214"
+    7 = "7","254.0.0.0","33554432","33554430"
+    6 = "6","252.0.0.0","67108864","67108862"
+    5 = "5","248.0.0.0","134217728","134217726"
+    4 = "4","240.0.0.0","268435456","268435454"
+    3 = "3","224.0.0.0","536870912","536870910"
+    2 = "2","192.0.0.0","1073741824","1073741822"
+    1 = "1","128.0.0.0","2147483648","2147483646"
+    0 = "0","0.0.0.0","4294967296","4294967294"
+    }
+
+$fragNetwork=@()
+
+    $gNetAdp = Get-NetAdapter | where {$_.Status -eq "up"}
+    $intAlias = $gNetAdp.InterfaceAlias
+
+    $macAddy = $gNetAdp.MacAddress 
+
+    $gNetIPC = Get-NetIPConfiguration  -InterfaceAlias $gNetAdp.Name
+        $IPAddress4 = $gNetIPC.IPv4Address.ipaddress -join ", "
+        $IPAddress4 = [string]$IPAddress4 
+        
+        $IPAddress6 = $gNetIPC.IPv6Address.ipaddress -join ", "
+        $IPAddress6 = [string]$IPAddress6
+
+        $Router4 = $gNetIPC.IPv4DefaultGateway.nexthop -join ", "
+        $Router4 =[string]$Router4
+        
+        $Router6 = $gNetIPC.IPv6DefaultGateway.nexthop -join ", "
+        $Router6  = [string]$Router6 
+        
+        $dnsAddress = $gNetIPC.dnsserver.serveraddresses -join ", "
+        $dnsAddress = [String]$dnsAddress
+
+    $InterfaceAlias = $gNetAdp.Name
+    $gNetIPA4 = Get-NetIPAddress  | where {$_.InterfaceAlias -eq "$InterfaceAlias" -and $_.AddressFamily -eq "IPv4"}
+    $IPSubnet4 = $gNetIPA4.PrefixLength
+
+    $gNetIPA6 = Get-NetIPAddress | where {$_.InterfaceAlias -eq "$InterfaceAlias" -and $_.AddressFamily -eq "IPv6"}
+    $IPSubnet6 = $gNetIPA6.PrefixLength -join " ,"
+    $IPSubnet6 = [string]$IPSubnet6 
+
+    foreach ($IPSubItem in $IPSubnet.Values)
+    {
+    $subPrefix = $IPSubItem[0]
+    $subnet = $IPSubItem[1]
+    $subAddress = $IPSubItem[2]
+    $subHosts = $IPSubItem[3]
+        if ($subPrefix -eq $IPSubnet4)
+        {
+        $subnetTrans = $subnet
+        }
+    }
+
+$newObjNetwork4 = New-Object -TypeName PSObject
+Add-Member -InputObject $newObjNetwork4 -Type NoteProperty -Name IPv4Address -Value $IPAddress4
+Add-Member -InputObject $newObjNetwork4 -Type NoteProperty -Name IPv4Subnet -Value $subnetTrans
+Add-Member -InputObject $newObjNetwork4 -Type NoteProperty -Name IPv4Gateway -Value $Router4
+Add-Member -InputObject $newObjNetwork4 -Type NoteProperty -Name DNSServers -Value $dnsAddress
+Add-Member -InputObject $newObjNetwork4 -Type NoteProperty -Name Mac -Value $macAddy 
+$fragNetwork4 += $newObjNetwork4
+
+$newObjNetwork6 = New-Object -TypeName PSObject
+Add-Member -InputObject $newObjNetwork6 -Type NoteProperty -Name IPv6Address -Value $IPAddress6 
+Add-Member -InputObject $newObjNetwork6 -Type NoteProperty -Name IPv6Subnet -Value $IPSubnet6
+Add-Member -InputObject $newObjNetwork6 -Type NoteProperty -Name IPv6Gateway -Value $Router6
+Add-Member -InputObject $newObjNetwork6 -Type NoteProperty -Name DNSServers -Value $dnsAddress
+Add-Member -InputObject $newObjNetwork6 -Type NoteProperty -Name Mac -Value $macAddy 
+$fragNetwork6 += $newObjNetwork6
 
 ################################################
 #############  MISC REG SETTINGS  ##############
@@ -6604,14 +6706,15 @@ foreach ($OfficePolItems in $OfficePolicies.values)
     $OfficeRegName = $OfficePolItems[4]
     $OfficeHelp = $OfficePolItems[5]
 
-   # write-host $OfficeGPOPath -ForegroundColor Red
-   # write-host $OfficeGPOName -ForegroundColor Red
-   # write-host $OfficeRegPath  -ForegroundColor Green
-   # write-host $OfficeRegName -ForegroundColor Yellow
-   # Write-Host $OfficeRegValue -ForegroundColor White
+    # write-host $OfficeGPOPath -ForegroundColor Red
+    # write-host $OfficeGPOName -ForegroundColor Red
+    # write-host $OfficeRegPath  -ForegroundColor Green
+    # write-host $OfficeRegName -ForegroundColor Yellow
+    # Write-Host $OfficeRegValue -ForegroundColor White
 
-    if ($OfficeRegValue -eq "Enabled"){$OfficeRegValue = "1"}
-    if ($OfficeRegValue -eq "Disabled"){$OfficeRegValue = "0"}
+    #MS cant decided if 1 is enabled or disabled, compounded with double negs and positives, so this is of little use, updated the above table with the correct numerical values
+    #if ($OfficeRegValue -eq "Enabled"){$OfficeRegValue = "1"}
+    #if ($OfficeRegValue -eq "Disabled"){$OfficeRegValue = "0"}
 
     $gpopath = $OfficeGPOPath +"\"+ $OfficeGPOName
     $regPath = $OfficeRegPath  +"\"+ $OfficeRegName
@@ -7295,6 +7398,10 @@ $style = @"
     $frag_whoamiGroups =  $whoamiGroups | ConvertTo-Html -As Table -fragment -PreContent "<h2><span style='color:$titleCol'>Current Users Group Membership</span></h2>" -PostContent "<h4>$descripDomainGroups</h4>" | Out-String
     $frag_whoamiPriv =  $whoamiPriv | ConvertTo-Html -As Table -fragment -PreContent "<h2><span style='color:$titleCol'>Current Users Local Privileges</span></h2>" -PostContent "<h4>$descripDomainPrivs</h4>" | Out-String
     
+    $frag_Network4 = $fragNetwork4 | ConvertTo-Html -As List -fragment -PreContent "<h2><span style='color:$titleCol'>IPv4 Address Details</span></h2>"  | Out-String
+    $frag_Network6 = $fragNetwork6 | ConvertTo-Html -As List -fragment -PreContent "<h2><span style='color:$titleCol'>IPv4 Address Details</span></h2>"  | Out-String
+
+
     #Security Review
     $frag_BitLocker = $fragBitLocker | ConvertTo-Html -As List -fragment -PreContent "<h2><span style='color:$titleCol'>Bitlocker and TPM Details</span></h2>" -PostContent "<h4>$descripBitlocker</h4>" | Out-String
     $frag_Msinfo = $MsinfoClixml | ConvertTo-Html -As Table -fragment -PreContent "<h2><span style='color:$titleCol'>Virtualization and Secure Boot Details</span></h2>" -PostContent "<h4>$descripVirt</h4>"  | Out-String
@@ -7373,6 +7480,8 @@ if ($folders -eq "y")
     $fragOS, 
     $fragbios, 
     $fragcpu, 
+    $frag_Network4,
+    $frag_Network6,
     $frag_Share,
     $frag_BitLocker, 
     $FragAccountDetails,
@@ -7429,6 +7538,8 @@ else
     $fragOS, 
     $fragbios, 
     $fragcpu, 
+    $frag_Network4,
+    $frag_Network6,
     $frag_Share,
     $frag_BitLocker, 
     $FragAccountDetails,
