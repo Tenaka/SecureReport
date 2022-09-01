@@ -7674,15 +7674,29 @@ report on appX bypass and seriousSam
 Remote desktop and permissions
 look for %COMSPEC%
 snmp
-powershell history, stored creds 
 
 data streams dir /r
 Get-Item   -Stream * | where {$_.stream -notmatch "$DATA"}
 
+netstat -ano
+Find network neighbours and accessible shares
+dated or old drivers
+wifi passwords
+key manager
+powershell passwords, history, transcript, creds
+Services and svc accounts
+GPO and GPP's that apply
+Browser security
+DNS
+Auditing Wec\wef - remote collection point
+Interesting events
+wevtutil "Microsoft-Windows-Wcmsvc/Operational"
+installed certs
+reduce firewall output to something of more use - warning for LLMNR rules etc
+
 remove powershell commands where performance is an issue, consider replacing with cmd alts
 
 ####GPO Settings as recommended by MS####
-Add mouse over to any item that reports on Reg value
 
 UAC
 networks
@@ -7696,7 +7710,6 @@ Allign look and feel for all Reg and gpo queries inc mouse over effect
 
 Stuff that wont get fixed.....
 Progress bars or screen output will remain limited, each time an output is written to screen the performance degrads
-
 
 
 #>
