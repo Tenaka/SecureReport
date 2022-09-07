@@ -290,6 +290,8 @@ YYMMDD
 220830.1 - Added Antivirus Audit - Uses known status codes to report on AV engine and definitions
 220831.1 - Updated Get Shares to ignore error for IPC's lack of path and permissions
 220901.1 - Added IPv4 and IPv6 Details
+220901.2 - Added FSMO Roles
+220907.1 - Added Priv Group - DA, EA and Schema
 
 #>
 
@@ -416,7 +418,7 @@ sleep 5
     $bios = Get-CimInstance -ClassName win32_bios
     $cpu = Get-CimInstance -ClassName win32_processor
 
-################################################
+################################################f
 ##############  ACCOUNT DETAILS  ###############
 ################################################
     #PasWord Policy
@@ -479,6 +481,108 @@ sleep 5
                 $GroupDetails += $newObjGroup
             }
    }
+
+#Domain Info
+#List of DC's
+$fragDCList=@()
+[string]$queryDC = netdom /query dc
+$dcListQuery = $queryDC.Replace("The command completed successfully.","").Replace("List of domain controllers with accounts in the domain:","").Replace(" ",",").replace(",,","")
+$fqdn = ((Get-CimInstance -ClassName win32_computersystem).Domain) + "."
+$dcList = $dcListQuery.split(",") | sort 
+
+    foreach ($dcs in $dcList)
+    {
+        $dcfqdn = $dcs + "." + $fqdn
+        $newObjDCList = New-Object -TypeName PSObject
+        Add-Member -InputObject $newObjDCList -Type NoteProperty -Name DCList -Value $dcfqdn
+        $fragDCList += $newObjDCList
+    }
+
+#FSMO Roles
+$fragFSMO=@()
+[string]$fsmolist = netdom /query fsmo
+$fsmoQuery = $fsmolist.Replace("The command completed successfully.","")
+
+$fsmoQry = $fsmoQuery.replace("master","master,").replace("PDC",",PDC,").Replace("Domain",",Domain").Replace("RID",",RID").Replace("Infra",",Infra").replace("manager","manager,")
+$fsmoSplit = $fsmoQry.Split(",").Trim()
+
+$schMasterRole = $fsmoSplit[0]
+$schMasterDC = $fsmoSplit[1]
+
+$DomMasterRole = $fsmoSplit[2]
+$DomMasterDC = $fsmoSplit[3]
+
+$PDCRole = $fsmoSplit[4]
+$PDCDC = $fsmoSplit[5]
+
+$RIDRole = $fsmoSplit[6]
+$RIDDC = $fsmoSplit[7]
+
+$InfraRole = $fsmoSplit[8]
+$InfraDC = $fsmoSplit[9]
+
+$newObjFsmo = New-Object -TypeName PSObject
+Add-Member -InputObject $newObjFsmo -Type NoteProperty -Name $schMasterRole -Value $schMasterDC
+Add-Member -InputObject $newObjFsmo -Type NoteProperty -Name $DomMasterRole -Value $DomMasterDC
+Add-Member -InputObject $newObjFsmo -Type NoteProperty -Name $PDCRole -Value $PDCDC
+Add-Member -InputObject $newObjFsmo -Type NoteProperty -Name $RIDRole -Value $RIDDC
+Add-Member -InputObject $newObjFsmo -Type NoteProperty -Name $InfraRole -Value $InfraDC
+$fragFSMO += $newObjFsmo
+
+#Priv Groups
+#Formatting output is a little pernickety - aka a royal pain in the ..... expecting display issues
+$ngAdmins = Net localgroup “Administrators” /domain 
+$ngDA = Net group “Domain Admins” /domain
+$ngScAd = Net group “Schema Admins” /domain
+$ngEA = Net group “Enterprise Admins” /domain
+$ngBA = Net localgroup “Backup Operators” /domain
+$ngDNS = Net localgroup “DnsAdmins” /domain
+$ngDHCP = Net localgroup “DHCP Administrators” /domain
+$ngSrvA = Net localgroup “Server Operators” /domain
+$ngAO = Net localgroup “Account Operators” /domain
+$ngGuests = Net localgroup “Guests” /domain
+$ngDomGue = Net group “Domain Guests” /domain
+
+$ngGroups = $ngAdmins,$ngDA,$ngScAd,$ngEA,$ngBA,$ngDNS,$ngDHCP ,$ngSrvA,$ngAO,$ngGuests,$ngDomGue
+
+$fqdn = ((Get-CimInstance -ClassName win32_computersystem).Domain) + "."
+$fragDomainGrps=@()
+    foreach ($ngGrp in $ngGroups){
+
+        $removetxt = ($ngGrp -replace("-","") `
+         -replace("The command completed successfully.","") `
+         -replace("Alias name","") `
+         -replace("Comment","")`
+         -replace("Administrators have complete and unrestricted access to the computer/domain","") `
+         -replace("Members","") `
+         -replace("The request will be processed at a domain controller for domain","") `
+         -replace("Group name","") `
+         -replace("Domain Admins Enterprise","") `
+         -replace("Designated administrators of the domain","") `
+         -replace("Designated administrators of the schema","") `
+         -replace("Designated administrators of the enterprise","") `
+         -replace("Backup Operators can override security restrictions for the sole purpose of backing up or restoring files","") `
+         -replace("DNS Administrators Group","") `
+         -replace("who have administrative access to the DHCP Service","") `
+         -replace("can administer domain servers","") `
+         -replace("can administer domain user and group accounts","") `
+         -replace("who have administrative access to the DHCP Service","") `
+         -replace("All domain guests","") `
+         -replace("Guests have the same access as  of the Users group by default, except for the Guest account which is further restricted","") `
+         -replace("               ",",") `
+         -replace("$fqdn","") `
+         ).trim()
+
+        $AdminGp = (($removetxt| Where-Object {$_}) -join ", ").split(",").trim() 
+        $gpName = $AdminGp | Select-Object -First 1
+        $gpMembers = ($AdminGp.trim()  | Select-Object -Skip 1) -join ", "
+
+        $newObjDomainGrps = New-Object -TypeName PSObject
+        Add-Member -InputObject $newObjDomainGrps -Type NoteProperty -Name GroupName -Value $gpName
+        Add-Member -InputObject $newObjDomainGrps -Type NoteProperty -Name GroupMembers -Value $gpMembers
+        $fragDomainGrps += $newObjDomainGrps
+
+}
 
 #Pre-Authenticaiton enabled
 $dsQuery = & dsquery * -limit 0 -filter "&(objectclass=user)(userAccountControl:1.2.840.113556.1.4.803:=4194304)" -attr samaccountname, distinguishedName, userAccountControl | select -skip 1
@@ -7370,6 +7474,8 @@ $style = @"
 
     $descripAV = ""
 
+    $descripDomainPrivsGps = "Review and minimise members of privileged groups and delegate as much as possible. Don't nest groups into Domain Admins, allowing direct user accounts only. Deploy User Rights Assignments to explicitly prevent Domain Admin from logging on to Member Servers and Clients more information can be found here @<br><br>https://www.tenaka.net/post/deny-domain-admins-logon-to-workstations<br><br>Dont add privilged groups to Guests or Domain Guests and yes I've seen Domain Admins added to Domain Guests"
+
 ################################################
 ################  FRAGMENTS  ###################
 ################################################
@@ -7385,8 +7491,11 @@ $style = @"
     $fragOS = $OS | ConvertTo-Html -As List -property Caption,Version,OSArchitecture,InstallDate -fragment -PreContent "<h2><span style='color:$titleCol'>Windows Details</span></h2>" | Out-String
     $FragAccountDetails = $AccountDetails  | ConvertTo-Html -As Table -fragment -PreContent "<h2><span style='color:$titleCol'>Local Account Details</span></h2>" -PostContent "<h4>$descripLocalAccounts</h4>" | Out-String 
     
+    $frag_DCList  = $fragDCList | ConvertTo-Html -As Table -fragment -PreContent "<h2><span style='color:$titleCol'>List of Domain Controllers</span></h2>" | Out-String 
+    $frag_FSMO = $fragFSMO | ConvertTo-Html -As Table -fragment -PreContent "<h2><span style='color:$titleCol'>FSMO Roles</span></h2>" | Out-String 
+    $frag_DomainGrps = $fragDomainGrps | ConvertTo-Html -As Table -fragment -PreContent "<h2><span style='color:$titleCol'>Members of Privilege Groups</span></h2>" -PostContent "<h4>$descripDomainPrivsGps</h4>" | Out-String 
+    
     $frag_PreAuth = $fragPreAuth | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:$titleCol'>Domain Account that DO NOT Pre-Authenticate</span></h2>" -PostContent "<h4>$descripPreAuth</h4>" | Out-String
-
     $FragGroupDetails =  $GroupDetails  | ConvertTo-Html -As Table -fragment -PreContent "<h2><span style='color:$titleCol'>Local System Group Members</span></h2>" | Out-String
     $FragPassPol = $PassPol | Select-Object -SkipLast 3 | ConvertTo-Html -As Table -fragment -PreContent "<h2><span style='color:$titleCol'>Local PassWord Policy</span></h2>" | Out-String
     $fragInstaApps  =  $InstallApps | Sort-Object publisher,displayname -Unique  | ConvertTo-Html -As Table  -fragment -PreContent "<h2><span style='color:$titleCol'>Installed Applications</span></h2>" | Out-String
@@ -7400,8 +7509,7 @@ $style = @"
     
     $frag_Network4 = $fragNetwork4 | ConvertTo-Html -As List -fragment -PreContent "<h2><span style='color:$titleCol'>IPv4 Address Details</span></h2>"  | Out-String
     $frag_Network6 = $fragNetwork6 | ConvertTo-Html -As List -fragment -PreContent "<h2><span style='color:$titleCol'>IPv4 Address Details</span></h2>"  | Out-String
-
-
+    
     #Security Review
     $frag_BitLocker = $fragBitLocker | ConvertTo-Html -As List -fragment -PreContent "<h2><span style='color:$titleCol'>Bitlocker and TPM Details</span></h2>" -PostContent "<h4>$descripBitlocker</h4>" | Out-String
     $frag_Msinfo = $MsinfoClixml | ConvertTo-Html -As Table -fragment -PreContent "<h2><span style='color:$titleCol'>Virtualization and Secure Boot Details</span></h2>" -PostContent "<h4>$descripVirt</h4>"  | Out-String
@@ -7435,14 +7543,12 @@ $style = @"
     $frag_RegPassWords = $fragRegPassWords | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:$titleCol'>PassWords Embedded in the Registry</span></h2>" -PostContent "<h4>$descripRegPassWords</h4>" | Out-String
     $frag_ASR = $fragASR | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:$titleCol'>Attack Surface Reduction (ASR)</span></h2>" -PostContent "<h4>$descripASR</h4>" | Out-String
     $frag_WDigestULC = $fragWDigestULC | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:$titleCol'>WDigest</span></h2>" -PostContent "<h4>$descripWDigest</h4>" | Out-String
-  
-    
+      
     #MS Recommended Secuirty settings (SSLF)
     $frag_WindowsOSVal = $fragWindowsOSVal | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:$titleCol'>Windows OS Security Recommendations</span></h2>" -PostContent "<h4>$descripWindowsOS</h4>" | Out-String
     $frag_EdgeVal = $fragEdgeVal | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:$titleCol'>MS Edge Security Recommendations</span></h2>" | Out-String
     $frag_OfficeVal = $fragOfficeVal | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:$titleCol'>MS Office Security Recommendations</span></h2>" -PostContent "<h4>$descripOffice2016</h4>" | Out-String
-
-
+    
     #Quick and dirty tidy up and removal of Frags that are $null
     if ($fragAuthCodeSig -eq $null){$frag_AuthCodeSig = ""}
     if ($fragDLLSafe -eq $null){$frag_DLLSafe = ""}
@@ -7485,6 +7591,9 @@ if ($folders -eq "y")
     $frag_Share,
     $frag_BitLocker, 
     $FragAccountDetails,
+    $frag_DomainGrps,
+    $frag_DCList,
+    $frag_FSMO,
     $frag_PreAuth,
     $FragPassPol,
     $FragGroupDetails,
@@ -7543,6 +7652,9 @@ else
     $frag_Share,
     $frag_BitLocker, 
     $FragAccountDetails,
+    $frag_DomainGrps,
+    $frag_DCList,
+    $frag_FSMO,
     $frag_PreAuth,
     $FragPassPol,
     $FragGroupDetails,
@@ -7682,6 +7794,9 @@ netstat -ano
 Find network neighbours and accessible shares
 dated or old drivers
 wifi passwords
+    netsh wlan show profile
+    netsh wlan show profile name="wifi name" key=clear
+
 key manager
 powershell passwords, history, transcript, creds
 Services and svc accounts
