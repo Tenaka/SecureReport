@@ -7474,7 +7474,7 @@ $style = @"
 
     $descripAV = ""
 
-    $descripDomainPrivsGps = "Review and minimise members of privileged groups and delegate as much as possible. Don't nest groups into Domain Admins, allowing direct user accounts only. Deploy User Rights Assignments to explicitly prevent Domain Admin from logging on to Member Servers and Clients more information can be found here @<br><br>https://www.tenaka.net/post/deny-domain-admins-logon-to-workstations<br><br>Dont add privilged groups to Guests or Domain Guests and yes I've seen Domain Admins added to Domain Guests"
+    $descripDomainPrivsGps = "Review and minimise members of privileged groups and delegate as much as possible. Don't nest groups into Domain Admins, add direct user accounts only. Deploy User Rights Assignments to explicitly prevent Domain Admins from logging on to Member Servers and Clients more information can be found here @<br><br>https://www.tenaka.net/post/deny-domain-admins-logon-to-workstations<br><br>Dont add privilged groups to Guests or Domain Guests and yes I've seen Domain Guests added to Domain Admins"
 
 ################################################
 ################  FRAGMENTS  ###################
@@ -7797,7 +7797,9 @@ wifi passwords
     netsh wlan show profile
     netsh wlan show profile name="wifi name" key=clear
 
-key manager
+credential manager
+    %Systemdrive%\Users\<Username>\AppData\Local\Microsoft\Credentials
+    cmdkey /list 
 powershell passwords, history, transcript, creds
 Services and svc accounts
 GPO and GPP's that apply
