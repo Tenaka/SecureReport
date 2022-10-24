@@ -292,6 +292,8 @@ YYMMDD
 220901.1 - Added IPv4 and IPv6 Details
 220901.2 - Added FSMO Roles
 220907.1 - Added Priv Group - DA, EA and Schema
+220924.1 - Passwords embedded in files has option as it can crash PowerShell on servers
+220924.2 - Added warnings and color to unquoted paths, reg and file permission issues
 
 #>
 
@@ -349,11 +351,13 @@ function reports
     Write-Host " "
 
     $Scheme = Read-Host "Type either Tenaka, Dark, Grey or Light for choice of colour schemes" 
-
+    write-host " "
     $folders = Read-Host "Long running audit - Do you want to audit Files, Folders and Registry for permissions issues....type `"Y`" to audit, any other key for no"
 
     if ($folders -eq "Y") {$depth = Read-Host "What depth do you wish the folders to be auditied, the higher the number the slower the audit, recommended is 2"}
-
+    write-host " "
+    $embeddedpw = Read-Host "On some system retrieving passwords from within files can crash PowerShell....type `"Y`" to audit, any other key for no"
+    write-host " "
     $authenticode = Read-Host "Long running audit - Do you want to check that digitally signed files are valid with a trusted hash....type `"Y`" to audit, any other key for no"
 
 ################################################
@@ -2234,8 +2238,8 @@ sleep 7
             $SvcReg |Select-Object PSChildName,ImagePath  | out-file $qpath -Append
                 
             $newObjSvc = New-Object psObject
-            Add-Member -InputObject $newObjSvc -Type NoteProperty -Name ServiceName -Value $SvcReg.PSChildName
-            Add-Member -InputObject $newObjSvc -Type NoteProperty -Name Path -Value $SvcReg.ImagePath 
+            Add-Member -InputObject $newObjSvc -Type NoteProperty -Name ServiceName -Value "Warning - $($SvcReg.PSChildName) warning"
+            Add-Member -InputObject $newObjSvc -Type NoteProperty -Name Path -Value "Warning - $($SvcReg.ImagePath) warning"
             $fragUnQuoted += $newObjSvc
         }
     
@@ -2248,8 +2252,8 @@ sleep 7
             $SvcReg |Select-Object PSChildName,ImagePath  | out-file $qpath -Append
                        
             $newObjSvc = New-Object psObject
-            Add-Member -InputObject $newObjSvc -Type NoteProperty -Name ServiceName -Value $SvcReg.PSChildName
-            Add-Member -InputObject $newObjSvc -Type NoteProperty -Name Path -Value $SvcReg.ImagePath 
+            Add-Member -InputObject $newObjSvc -Type NoteProperty -Name ServiceName -Value "Warning - $($SvcReg.PSChildName) warning"
+            Add-Member -InputObject $newObjSvc -Type NoteProperty -Name Path -Value "Warning - $($SvcReg.ImagePath) warning"
             $fragUnQuoted += $newObjSvc
         }
     
@@ -2258,8 +2262,8 @@ sleep 7
             $image = $SvcReg.ImagePath
             $SvcReg |Select-Object PSChildName,ImagePath  | out-file $qpath -Append
             $newObjSvc = New-Object psObject
-            Add-Member -InputObject $newObjSvc -Type NoteProperty -Name ServiceName -Value $SvcReg.PSChildName
-            Add-Member -InputObject $newObjSvc -Type NoteProperty -Name Path -Value $SvcReg.ImagePath 
+            Add-Member -InputObject $newObjSvc -Type NoteProperty -Name ServiceName -Value "Warning - $($SvcReg.PSChildName) warning"
+            Add-Member -InputObject $newObjSvc -Type NoteProperty -Name Path -Value "Warning - $($SvcReg.ImagePath) warning"
             $fragUnQuoted += $newObjSvc
         }
     }
@@ -2354,7 +2358,7 @@ sleep 7
         foreach ($wFileItems in $wFileDetails)
         {
             $newObjwFile = New-Object -TypeName PSObject
-            Add-Member -InputObject $newObjwFile -Type NoteProperty -Name WriteableFiles -Value $wFileItems
+            Add-Member -InputObject $newObjwFile -Type NoteProperty -Name WriteableFiles -Value "Warning - $($wFileItems) warning"
             $fragwFile += $newObjwFile
             #Write-Host $wFileItems -ForegroundColor Yellow
         }
@@ -2432,7 +2436,7 @@ sleep 7
         {
             #Write-Host $regItems -ForegroundColor DarkCyan
             $newObjReg = New-Object -TypeName PSObject
-            Add-Member -InputObject $newObjReg -Type NoteProperty -Name RegWeakness -Value $regItems
+            Add-Member -InputObject $newObjReg -Type NoteProperty -Name RegWeakness -Value "Warning - $($regItems) warning"
             $fragReg += $newObjReg    
         }
    }
@@ -2776,7 +2780,7 @@ Write-Host "Finised Searching for CreateFile Permissions Vulnerabilities" -foreg
     foreach ($dllNotSigned in $getDllPath)
     {
         $newObjDllNotSigned = New-Object -TypeName PSObject
-        Add-Member -InputObject $newObjDllNotSigned -Type NoteProperty -Name CreateFiles -Value $dllNotSigned
+        Add-Member -InputObject $newObjDllNotSigned -Type NoteProperty -Name CreateFiles -Value "Warning - $($dllNotSigned) warning"
         $fragDllNotSigned += $newObjDllNotSigned
     }  
 
@@ -2831,8 +2835,8 @@ Write-Host "Searching for authenticode signature hashmismatch" -foregroundColor 
                 $authStatus = $getAuthCodeSig.status
 
                 $newObjAuthSig = New-Object -TypeName PSObject
-                Add-Member -InputObject $newObjAuthSig -Type NoteProperty -Name PathAuthCodeSig -Value $authPath
-                Add-Member -InputObject $newObjAuthSig -Type NoteProperty -Name StatusAuthCodeSig -Value $authStatus
+                Add-Member -InputObject $newObjAuthSig -Type NoteProperty -Name PathAuthCodeSig -Value "Warning - $($authPath) warning"
+                Add-Member -InputObject $newObjAuthSig -Type NoteProperty -Name StatusAuthCodeSig -Value "Warning - $($authStatus) warning"
                 $fragAuthCodeSig += $newObjAuthSig
             }
         }
@@ -2912,7 +2916,8 @@ sleep 7
 
 #passwords embedded in files
 #findstr /si password *.txt - alt
-
+if ($embeddedpw -eq "y")
+    {
     $drv = (psdrive | where {$_.root -match "^[a-zA-Z]:"}) | where {$_.displayroot -notlike "*\\*"}
     $drvRoot = $drv.root
     $fragFilePass=@()
@@ -2947,6 +2952,7 @@ sleep 7
                 $fragFilePass += $newObjFilePass
             }
         }
+    }
     }
 
 Write-Host " "
@@ -2996,9 +3002,9 @@ foreach ($getRegPassItem in $getRegPassCon)
             $regPassWord = $regPassValue.$regSearchItems
          
             $newObjRegPassWords = New-Object -TypeName PSObject
-            Add-Member -InputObject $newObjRegPassWords -Type NoteProperty -Name RegistryPath -Value $regPassPath
-            Add-Member -InputObject $newObjRegPassWords -Type NoteProperty -Name RegistryValue -Value $regSearchItems
-            Add-Member -InputObject $newObjRegPassWords -Type NoteProperty -Name RegistryPassWord -Value $regPassWord 
+            Add-Member -InputObject $newObjRegPassWords -Type NoteProperty -Name RegistryPath -Value "Warning - $($regPassPath) warning"
+            Add-Member -InputObject $newObjRegPassWords -Type NoteProperty -Name RegistryValue -Value "Warning - $($regSearchItems) warning"
+            Add-Member -InputObject $newObjRegPassWords -Type NoteProperty -Name RegistryPassWord -Value "Warning - $($regPassWord) warning"
             $fragRegPassWords += $newObjRegPassWords
         }
     }
@@ -3043,9 +3049,9 @@ foreach ($dll in $getDll)
                 $dllStatus = $getAuthCodeSig.Status
 
                 $newObjDLLHijack = New-Object psObject
-                Add-Member -InputObject $newObjDLLHijack -Type NoteProperty -Name DLLProcess -Value $procName
-                Add-Member -InputObject $newObjDLLHijack -Type NoteProperty -Name DLLPath -Value $dllPath
-                Add-Member -InputObject $newObjDLLHijack -Type NoteProperty -Name DLLSigStatus -Value $dllStatus
+                Add-Member -InputObject $newObjDLLHijack -Type NoteProperty -Name DLLProcess -Value "Warning - $($procName) warning"
+                Add-Member -InputObject $newObjDLLHijack -Type NoteProperty -Name DLLPath -Value "Warning - $($dllPath) warning"
+                Add-Member -InputObject $newObjDLLHijack -Type NoteProperty -Name DLLSigStatus -Value "Warning - $($dllStatus) warning"
                 $fragDLLHijack += $newObjDLLHijack
             }              
      }
