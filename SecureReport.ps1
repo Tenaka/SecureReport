@@ -296,6 +296,7 @@ YYMMDD
 221024.2 - Added warnings and color to unquoted paths, reg and file permission issues
 221024.3 - swapped out get-wmi for cim-instance to support powershell 7
 221025.1 - Fixed issue with Unquoted path and not finding .sys files that are unquoted
+221025.1 - Added audit for installed Windows Features
 
 #>
 
@@ -830,6 +831,54 @@ sleep 5
  
 Write-Host " "
 Write-Host "Completed Gathering Windows Update and Installed Application Information" -foregroundColor Green
+
+################################################
+##########  INSTALLED FEATURES #################
+################################################
+Write-Host " "
+Write-Host "Windows Features" -foregroundColor Green
+sleep 5
+
+    $VulnReport = "C:\SecureReport"
+    $OutFunc = "WindowsFeatures" 
+                
+    $tpSec10 = Test-Path "C:\SecureReport\output\$OutFunc\"
+    if ($tpSec10 -eq $false)
+    {
+       New-Item -Path "C:\SecureReport\output\$OutFunc\" -ItemType Directory -Force
+    }
+
+    $WinFeaturePathtxt = "C:\SecureReport\output\$OutFunc\" + "$OutFunc.txt"
+    $FragWinFeature=@()
+    $getWindows = Get-CimInstance win32_operatingsystem | Select-Object caption
+        if ($getWindows.caption -notlike "*Server*")
+        {
+        Dism /online /Get-Features >> $WinFeaturePathtxt
+        $getdismCont = (Get-Content $WinFeaturePathtxt | Select-String enabled -Context 1) -replace("  Feature Name : ","") -replace("> State : ",",") | Sort-Object 
+    
+        foreach ($dismItem in $getdismCont)
+            {
+                $dismSplit = $dismItem.split(",")
+                $dismSplit[0]
+                $dismSplit[1]
+
+                $newObjWinFeature = New-Object -TypeName PSObject
+                Add-Member -InputObject $newObjWinFeature -Type NoteProperty -Name WindowsFeature -Value $dismSplit[0]
+                Add-Member -InputObject $newObjWinFeature -Type NoteProperty -Name InstallState -Value $dismSplit[1]
+                $FragWinFeature += $newObjWinFeature
+            }
+        }
+        else
+        {
+        $WinFeature = Get-WindowsFeature | where {$_.installed -eq "installed"} | Sort-Object name
+        foreach ($featureItem in $WinFeature)
+            {
+                $newObjWinFeature = New-Object -TypeName PSObject
+                Add-Member -InputObject $newObjWinFeature -Type NoteProperty -Name WindowsFeature -Value $featureItem.DisplayName 
+                Add-Member -InputObject $newObjWinFeature -Type NoteProperty -Name InstallState -Value $featureItem.Installed
+                $FragWinFeature += $newObjWinFeature
+            }
+        }
 
 ################################################
 ##################  ANTIVIRUS  #################
@@ -7515,6 +7564,8 @@ $style = @"
     $frag_Network4 = $fragNetwork4 | ConvertTo-Html -As List -fragment -PreContent "<h2><span style='color:$titleCol'>IPv4 Address Details</span></h2>"  | Out-String
     $frag_Network6 = $fragNetwork6 | ConvertTo-Html -As List -fragment -PreContent "<h2><span style='color:$titleCol'>IPv4 Address Details</span></h2>"  | Out-String
     
+    $Frag_WinFeature = $FragWinFeature | ConvertTo-Html -As table -fragment -PreContent "<h2><span style='color:$titleCol'>Installed Windows Features</span></h2>"  | Out-String
+    
     #Security Review
     $frag_BitLocker = $fragBitLocker | ConvertTo-Html -As List -fragment -PreContent "<h2><span style='color:$titleCol'>Bitlocker and TPM Details</span></h2>" -PostContent "<h4>$descripBitlocker</h4>" | Out-String
     $frag_Msinfo = $MsinfoClixml | ConvertTo-Html -As Table -fragment -PreContent "<h2><span style='color:$titleCol'>Virtualization and Secure Boot Details</span></h2>" -PostContent "<h4>$descripVirt</h4>"  | Out-String
@@ -7605,6 +7656,7 @@ if ($folders -eq "y")
     $frag_whoamiGroups, 
     $frag_whoamiPriv,
     $frag_URA,
+    $Frag_WinFeature,
     $fragInstaApps,
     $fragHotFix,
     $fragInstaApps16,
@@ -7666,6 +7718,7 @@ else
     $frag_whoamiGroups, 
     $frag_whoamiPriv,
     $frag_URA,
+    $Frag_WinFeature,
     $fragInstaApps,
     $fragHotFix,
     $fragInstaApps16,
