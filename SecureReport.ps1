@@ -292,8 +292,10 @@ YYMMDD
 220901.1 - Added IPv4 and IPv6 Details
 220901.2 - Added FSMO Roles
 220907.1 - Added Priv Group - DA, EA and Schema
-220924.1 - Passwords embedded in files has option as it can crash PowerShell on servers
-220924.2 - Added warnings and color to unquoted paths, reg and file permission issues
+221024.1 - Passwords embedded in files has option as it can crash PowerShell on servers
+221024.2 - Added warnings and color to unquoted paths, reg and file permission issues
+221024.3 - swapped out get-wmi for cim-instance to support powershell 7
+221025.1 - Fixed issue with Unquoted path and not finding .sys files that are unquoted
 
 #>
 
@@ -354,7 +356,7 @@ function reports
     write-host " "
     $folders = Read-Host "Long running audit - Do you want to audit Files, Folders and Registry for permissions issues....type `"Y`" to audit, any other key for no"
 
-    if ($folders -eq "Y") {$depth = Read-Host "What depth do you wish the folders to be auditied, the higher the number the slower the audit, recommended is 2"}
+    if ($folders -eq "Y") {$depth = Read-Host "What depth do you wish the folders to be auditied, the higher the number the slower the audit, the default is 2, recommended is 4"}
     write-host " "
     $embeddedpw = Read-Host "On some system retrieving passwords from within files can crash PowerShell....type `"Y`" to audit, any other key for no"
     write-host " "
@@ -835,7 +837,8 @@ Write-Host "Completed Gathering Windows Update and Installed Application Informa
 
 #https://stackoverflow.com/questions/33649043/powershell-how-to-get-antivirus-product-details - "borrowed" baulk of script from site
 
-    $AntiVirusProducts = Get-WmiObject -Namespace "root\SecurityCenter2" -Class AntiVirusProduct  
+    #$AntiVirusProducts = Get-WmiObject -Namespace "root\SecurityCenter2" -Class AntiVirusProduct  
+    $AntiVirusProducts = Get-CimInstance -Namespace "root\SecurityCenter2" -Class AntiVirusProduct 
 
     if ($AntiVirusProducts.Count -gt "1")
     {$AntiVirusProducts = $AntiVirusProducts | where {$_.displayname -ne "Windows Defender"}}
@@ -2218,10 +2221,14 @@ sleep 7
     $qpath = "C:\SecureReport\output\$OutFunc\" + "$OutFunc.log"
  
     #Unquoted paths
-    $vulnSvc = gwmi win32_service | foreach{$_} | 
+    
+    #Get-CimInstance win32_service
+    #gwmi win32_service
+
+    $vulnSvc = Get-CimInstance win32_service | foreach{$_} | 
     where {($_.pathname -ne $null) -and ($_.pathname.trim() -ne "")} | 
     where {-not $_.pathname.startswith("`"")} | 
-    where {($_.pathname.substring(0, $_.pathname.indexof(".exe") + 4 )) -match ".* .*" }
+    where {($_.pathname.substring(0, $_.pathname.indexof(".sys") + 4 )) -match ".* .*" -or ($_.pathname.substring(0, $_.pathname.indexof(".exe") + 4 )) -match ".* .*" }
     $fragUnQuoted=@()
     
     foreach ($unQSvc in $vulnSvc)
@@ -2251,16 +2258,6 @@ sleep 7
             $image = "`"$SvcRegSp0" + ".sys`""+   " $SvcRegSp1"
             $SvcReg |Select-Object PSChildName,ImagePath  | out-file $qpath -Append
                        
-            $newObjSvc = New-Object psObject
-            Add-Member -InputObject $newObjSvc -Type NoteProperty -Name ServiceName -Value "Warning - $($SvcReg.PSChildName) warning"
-            Add-Member -InputObject $newObjSvc -Type NoteProperty -Name Path -Value "Warning - $($SvcReg.ImagePath) warning"
-            $fragUnQuoted += $newObjSvc
-        }
-    
-        if ($SvcReg.imagePath -like "*.exe") 
-        {
-            $image = $SvcReg.ImagePath
-            $SvcReg |Select-Object PSChildName,ImagePath  | out-file $qpath -Append
             $newObjSvc = New-Object psObject
             Add-Member -InputObject $newObjSvc -Type NoteProperty -Name ServiceName -Value "Warning - $($SvcReg.PSChildName) warning"
             Add-Member -InputObject $newObjSvc -Type NoteProperty -Name Path -Value "Warning - $($SvcReg.ImagePath) warning"
@@ -2896,7 +2893,9 @@ Write-Host "Searching for Embedded PassWord in Files" -foregroundColor Green
 sleep 7
   
 #PassWords in Processes
-    $getPSPass = gwmi win32_process -ErrorAction SilentlyContinue | 
+    #$getPSPass = gwmi win32_process -ErrorAction SilentlyContinue | 
+
+    $getPSPass = Get-CimInstance win32_process -ErrorAction SilentlyContinue |
     Select-Object Caption, Description,CommandLine | 
     where {$_.commandline -like "*pass*" -or $_.commandline -like "*credential*" -or $_.commandline -like "*username*"  }
 
