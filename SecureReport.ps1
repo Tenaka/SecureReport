@@ -7190,7 +7190,7 @@ foreach ($OfficePolItems in $OfficePolicies.values)
    {
        $newObjSummary = New-Object psObject
        Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value "Attack Surface Reduction GPO's have not been set"
-       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Risk -Value "Low to Medium Risk"
+       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Risk -Value "Medium Risk"
        $fragSummary += $newObjSummary
    }
 
