@@ -297,7 +297,7 @@ YYMMDD
 221024.3 - swapped out get-wmi for cim-instance to support powershell 7
 221025.1 - Fixed issue with Unquoted path and not finding .sys files that are unquoted
 221025.1 - Added audit for installed Windows Features
-
+221029.1 - Added Compliance Report showing overall status and areas of concern
 #>
 
 #Remove any DVD from client
@@ -359,9 +359,12 @@ function reports
 
     if ($folders -eq "Y") {$depth = Read-Host "What depth do you wish the folders to be auditied, the higher the number the slower the audit, the default is 2, recommended is 4"}
     write-host " "
-    $embeddedpw = Read-Host "On some system retrieving passwords from within files can crash PowerShell....type `"Y`" to audit, any other key for no"
+    $embeddedpw = Read-Host "Some systems whilst retrieving passwords from within files crash PowerShell....type `"Y`" to audit, any other key for no"
     write-host " "
     $authenticode = Read-Host "Long running audit - Do you want to check that digitally signed files are valid with a trusted hash....type `"Y`" to audit, any other key for no"
+
+    #Summary Frag
+    $fragSummary=@()
 
 ################################################
 #################  BITLOCKER  ##################
@@ -409,7 +412,7 @@ sleep 5
         Add-Member -InputObject $newObjBit -Type NoteProperty -Name BitLockerDisabled -Value $BitDisabled
         $fragBitLocker += $newObjBit
     }
-
+    
 Write-Host " "
 Write-Host "Completed Bitlocker Audit" -foregroundColor Green
 ################################################
@@ -610,6 +613,7 @@ foreach ($preAuth in $dsQuery)
         Add-Member -InputObject $newObjPreAuth -Type NoteProperty -Name PreAuth-UACValue -Value $preAuthUac
         $fragPreAuth += $newObjPreAuth
     }
+
 
 Write-Host " "
 Write-Host "Completed Gathering Host and Account Details" -foregroundColor Green
@@ -932,6 +936,77 @@ sleep 5
         $FragAVStatus += $newObjAVStatus
 
         }
+
+ 
+################################################
+############  UNQUOTED PATHS  ##################
+################################################
+Write-Host " "
+Write-Host "From this point onwards things will slow down, in some cases it may appear nothing is happening, be patient" -foregroundColor Green
+Write-Host " "
+Write-Host "Searching for UnQuoted Path Vulnerabilities" -foregroundColor Green
+sleep 7
+
+    #Unquoted paths   
+    $VulnReport = "C:\SecureReport"
+    $OutFunc = "UnQuoted" 
+                
+    $tpSec10 = Test-Path "C:\SecureReport\output\$OutFunc\"
+    if ($tpSec10 -eq $false)
+    {
+        New-Item -Path "C:\SecureReport\output\$OutFunc\" -ItemType Directory -Force
+    }
+
+    $qpath = "C:\SecureReport\output\$OutFunc\" + "$OutFunc.log"
+ 
+    #Unquoted paths
+    
+    #Get-CimInstance win32_service
+    #gwmi win32_service
+
+    $vulnSvc = Get-CimInstance win32_service | foreach{$_} | 
+    where {($_.pathname -ne $null) -and ($_.pathname.trim() -ne "")} | 
+    where {-not $_.pathname.startswith("`"")} | 
+    where {($_.pathname.substring(0, $_.pathname.indexof(".sys") + 4 )) -match ".* .*" -or ($_.pathname.substring(0, $_.pathname.indexof(".exe") + 4 )) -match ".* .*" }
+    $fragUnQuoted=@()
+    
+    foreach ($unQSvc in $vulnSvc)
+    {
+    $svc = $unQSvc.name
+    $SvcReg = Get-ItemProperty HKLM:\SYSTEM\CurrentControlSet\Services\$svc -ErrorAction SilentlyContinue
+    
+        if ($SvcReg.imagePath -like "*.exe*")
+        {
+            $SvcRegSp =  $SvcReg.imagePath -split ".exe"
+            $SvcRegSp0 = $SvcRegSp[0]
+            $SvcRegSp1 = $SvcRegSp[1]
+            $image = "`"$SvcRegSp0" + ".exe`""+  " " + $SvcRegSp1
+            $SvcReg |Select-Object PSChildName,ImagePath  | out-file $qpath -Append
+                
+            $newObjSvc = New-Object psObject
+            Add-Member -InputObject $newObjSvc -Type NoteProperty -Name ServiceName -Value "Warning - $($SvcReg.PSChildName) warning"
+            Add-Member -InputObject $newObjSvc -Type NoteProperty -Name Path -Value "Warning - $($SvcReg.ImagePath) warning"
+            $fragUnQuoted += $newObjSvc
+        }
+    
+        if ($SvcReg.imagePath -like "*.sys*")
+        {
+            $SvcRegSp =  $SvcReg.imagePath -split ".sys"
+            $SvcRegSp0 = $SvcRegSp[0]
+            $SvcRegSp1 = $SvcRegSp[1]
+            $image = "`"$SvcRegSp0" + ".sys`""+   " $SvcRegSp1"
+            $SvcReg |Select-Object PSChildName,ImagePath  | out-file $qpath -Append
+                       
+            $newObjSvc = New-Object psObject
+            Add-Member -InputObject $newObjSvc -Type NoteProperty -Name ServiceName -Value "Warning - $($SvcReg.PSChildName) warning"
+            Add-Member -InputObject $newObjSvc -Type NoteProperty -Name Path -Value "Warning - $($SvcReg.ImagePath) warning"
+            $fragUnQuoted += $newObjSvc
+
+        }
+    }
+
+Write-Host " "
+Write-Host "Finished Searching for UnQuoted Path Vulnerabilities" -foregroundColor Green
       
 ################################################
 ################  MSINFO32  ####################
@@ -1032,6 +1107,8 @@ sleep 5
         Add-Member -InputObject $newObjDriverQuery -Type NoteProperty -Name DriverName -Value $drvQryItem 
         $DriverQuery += $newObjDriverQuery
     }
+
+
 
 Write-Host " "
 Write-Host "Finished Collectiong DriverQuery data for VBS" -foregroundColor Green
@@ -1220,7 +1297,7 @@ sleep 5
     Add-Member -InputObject $newObjCredGu -Type NoteProperty -Name CredentialGuardRegValue -Value $CredGuReg 
     #Add-Member -InputObject $newObjCredGu -Type NoteProperty -Name CredGuComment -Value $CredGuCom
     $fragCredGuCFG += $newObjCredGu
-  
+ 
 
     #LAPS is installed
     $getLapsPw = Get-Item "HKLM:\Software\Policies\Microsoft Services\AdmPwd\" -ErrorAction SilentlyContinue
@@ -1241,7 +1318,7 @@ sleep 5
     }
     else
     {
-        $LapsPwSet = "LAPS is not installed or the value is set to 0 Warning" 
+        $LapsPwSet = "Warning - LAPS is not installed or the value is set to 0 Warning" 
         $LapsPwReg = "HKLM:\Software\Policies\Microsoft Services\AdmPwd\" 
         $LapsPwCom = "LAPS is not installed or configured - Ignore if not Domain Joined"
     }
@@ -1265,7 +1342,7 @@ sleep 5
         $fragLapsPwEna += $newObjLapsPw
     }
 
-        
+       
     #DLL Safe Search
     $getDLL = Get-Item 'HKLM:\System\CurrentControlSet\Control\Session Manager' -ErrorAction SilentlyContinue
     $getDLLSafe =  $getDLL.GetValue("SafeDLLSearchMode")
@@ -1290,6 +1367,7 @@ sleep 5
     Add-Member -InputObject $newObjDLLSafe -Type NoteProperty -Name DLLSafeComment -Value $dllCom
     $fragDLLSafe += $newObjDLLSafe
 
+
     #Code Integrity
     $getCode = Get-Item 'HKLM:\SYSTEM\CurrentControlSet\Control\DeviceGuard\Scenarios\HypervisorEnforcedCodeIntegrity' -ErrorAction SilentlyContinue
     $getCode =  $getCode.GetValue("Enabled")
@@ -1313,6 +1391,7 @@ sleep 5
     Add-Member -InputObject $newObjCode -Type NoteProperty -Name CodeValue -Value $CodeReg 
     #Add-Member -InputObject $newObjCode -Type NoteProperty -Name CodeComment -Value $CodeCom
     $fragCode += $newObjCode
+
 
     #InstallElevated
     $getPCInstaller = Get-Item HKLM:\SOFTWARE\Policies\Microsoft\Windows\Installer -ErrorAction SilentlyContinue
@@ -1378,6 +1457,8 @@ sleep 5
     Add-Member -InputObject $newObjAutoLogon -Type NoteProperty -Name AutoLogonPassWord -Value  $AutoLPass
     Add-Member -InputObject $newObjAutoLogon -Type NoteProperty -Name AutoLogonRegistry -Value $AutoLReg
     $fragAutoLogon += $newObjAutoLogon
+
+
         
 ################################################
 #########  LEGACY NETWORK PROTOCOLS  ##########
@@ -1414,7 +1495,7 @@ sleep 5
     Add-Member -InputObject $newObjLegNIC -Type NoteProperty -Name LegacyProtocol -Value $legProt
     Add-Member -InputObject $newObjLegNIC -Type NoteProperty -Name LegacyPath -Value $legReg
     $fragLegNIC += $newObjLegNIC
-
+    
     #NetBIOS over TCP/IP (NetBT) queries = 0 is disabled
     cd HKLM:
     $getNetBTGPO = Get-ItemProperty "HKLM:\SOFTWARE\Policies\Microsoft\Windows NT\DNSClient" -ErrorAction SilentlyContinue
@@ -1437,7 +1518,7 @@ sleep 5
     Add-Member -InputObject $newObjLegNIC -Type NoteProperty -Name LegacyProtocol -Value $legProt
     Add-Member -InputObject $newObjLegNIC -Type NoteProperty -Name LegacyPath -Value $legReg
     $fragLegNIC += $newObjLegNIC
-  
+
     #ipv6 0xff (255)
     cd HKLM:
     $getIpv6 = get-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Services\Tcpip6\Parameters" -ErrorAction SilentlyContinue
@@ -2046,6 +2127,8 @@ sleep 5
     Add-Member -InputObject $newObjSecOptions -Type NoteProperty -Name SecurityOptions -Value $SecOptName
     $fragSecOptions +=  $newObjSecOptions
 
+
+
 #Network Access: Restrict anonymous Access to Named Pipes and Shares
 #Network security: Do not store LAN Manager hash value on next password change
 Write-Host " "
@@ -2096,7 +2179,7 @@ sleep 5
 
     $getFw = Get-NetFirewallRule | 
     Select-Object Displayname,ID,Enabled,Direction,Action,Status  | 
-    where {$_.enabled -eq "true"} | 
+    where {$_.enabled -eq "true" -and $_.Direction -eq "Inbound"} | 
     Sort-Object direction -Descending
     
     foreach($fw in $getFw)
@@ -2248,79 +2331,10 @@ foreach ($shTask in $getScTask | where {$_.Actions.execute -notlike "*system32*"
 Write-Host " "
 Write-Host "Completed Scheduled Tasks" -foregroundColor Green
 
-################################################
-############  UNQUOTED PATHS  ##################
-################################################
-Write-Host " "
-Write-Host "From this point onwards things will slow down, in some cases it may appear nothing is happening, be patient" -foregroundColor Green
-Write-Host " "
-Write-Host "Searching for UnQuoted Path Vulnerabilities" -foregroundColor Green
-sleep 7
-
-    #Unquoted paths   
-    $VulnReport = "C:\SecureReport"
-    $OutFunc = "UnQuoted" 
-                
-    $tpSec10 = Test-Path "C:\SecureReport\output\$OutFunc\"
-    if ($tpSec10 -eq $false)
-    {
-        New-Item -Path "C:\SecureReport\output\$OutFunc\" -ItemType Directory -Force
-    }
-
-    $qpath = "C:\SecureReport\output\$OutFunc\" + "$OutFunc.log"
- 
-    #Unquoted paths
-    
-    #Get-CimInstance win32_service
-    #gwmi win32_service
-
-    $vulnSvc = Get-CimInstance win32_service | foreach{$_} | 
-    where {($_.pathname -ne $null) -and ($_.pathname.trim() -ne "")} | 
-    where {-not $_.pathname.startswith("`"")} | 
-    where {($_.pathname.substring(0, $_.pathname.indexof(".sys") + 4 )) -match ".* .*" -or ($_.pathname.substring(0, $_.pathname.indexof(".exe") + 4 )) -match ".* .*" }
-    $fragUnQuoted=@()
-    
-    foreach ($unQSvc in $vulnSvc)
-    {
-    $svc = $unQSvc.name
-    $SvcReg = Get-ItemProperty HKLM:\SYSTEM\CurrentControlSet\Services\$svc -ErrorAction SilentlyContinue
-    
-        if ($SvcReg.imagePath -like "*.exe*")
-        {
-            $SvcRegSp =  $SvcReg.imagePath -split ".exe"
-            $SvcRegSp0 = $SvcRegSp[0]
-            $SvcRegSp1 = $SvcRegSp[1]
-            $image = "`"$SvcRegSp0" + ".exe`""+  " " + $SvcRegSp1
-            $SvcReg |Select-Object PSChildName,ImagePath  | out-file $qpath -Append
-                
-            $newObjSvc = New-Object psObject
-            Add-Member -InputObject $newObjSvc -Type NoteProperty -Name ServiceName -Value "Warning - $($SvcReg.PSChildName) warning"
-            Add-Member -InputObject $newObjSvc -Type NoteProperty -Name Path -Value "Warning - $($SvcReg.ImagePath) warning"
-            $fragUnQuoted += $newObjSvc
-        }
-    
-        if ($SvcReg.imagePath -like "*.sys*")
-        {
-            $SvcRegSp =  $SvcReg.imagePath -split ".sys"
-            $SvcRegSp0 = $SvcRegSp[0]
-            $SvcRegSp1 = $SvcRegSp[1]
-            $image = "`"$SvcRegSp0" + ".sys`""+   " $SvcRegSp1"
-            $SvcReg |Select-Object PSChildName,ImagePath  | out-file $qpath -Append
-                       
-            $newObjSvc = New-Object psObject
-            Add-Member -InputObject $newObjSvc -Type NoteProperty -Name ServiceName -Value "Warning - $($SvcReg.PSChildName) warning"
-            Add-Member -InputObject $newObjSvc -Type NoteProperty -Name Path -Value "Warning - $($SvcReg.ImagePath) warning"
-            $fragUnQuoted += $newObjSvc
-        }
-    }
-
-Write-Host " "
-Write-Host "Finished Searching for UnQuoted Path Vulnerabilities" -foregroundColor Green
 
 ################################################
 ##########  FILES, FOLDERS, REG AUDITS  ########
 ################################################
-
 
 #START OF IF
 if ($folders -eq "y")
@@ -2410,6 +2424,7 @@ sleep 7
         }
        
     }
+
 Write-Host " "
 Write-Host "Finished Searching for Writeable Files Vulnerabilities" -foregroundColor Green
 
@@ -2486,6 +2501,7 @@ sleep 7
             $fragReg += $newObjReg    
         }
    }
+
 
 Write-Host " "
 Write-Host "Finished Searching for Writeable Registry Hive Vulnerabilities" -foregroundColor Green
@@ -2676,6 +2692,7 @@ sleep 7
             #Write-Host $sysFoldItems -ForegroundColor White
         }
     }
+
   
 Write-Host " "
 Write-Host "Finished Searching for Writeable System Folder Vulnerabilities" -foregroundColor Green
@@ -2763,6 +2780,7 @@ sleep 7
                 #Write-Host $createSysFoldItems -ForegroundColor green
             }
         }
+
         
 Write-Host " "
 Write-Host "Finised Searching for CreateFile Permissions Vulnerabilities" -foregroundColor Green
@@ -2829,8 +2847,6 @@ Write-Host "Finised Searching for CreateFile Permissions Vulnerabilities" -foreg
         Add-Member -InputObject $newObjDllNotSigned -Type NoteProperty -Name CreateFiles -Value "Warning - $($dllNotSigned) warning"
         $fragDllNotSigned += $newObjDllNotSigned
     }  
-
-
 
 
 ###########################################################################################################################
@@ -2956,9 +2972,9 @@ sleep 7
         $PSCom = $PStems.CommandLine
 
         $newObjPSPass = New-Object -TypeName PSObject
-        Add-Member -InputObject $newObjPSPass -Type NoteProperty -Name ProcessCaption -Value  $PSCap
-        Add-Member -InputObject $newObjPSPass -Type NoteProperty -Name ProcessDescription -Value  $PSDes
-        Add-Member -InputObject $newObjPSPass -Type NoteProperty -Name ProcessCommandLine -Value  $PSCom
+        Add-Member -InputObject $newObjPSPass -Type NoteProperty -Name ProcessCaption -Value "Warning - $($PSCap) - warning"
+        Add-Member -InputObject $newObjPSPass -Type NoteProperty -Name ProcessDescription -Value "Warning - $($PSDes) - warning"
+        Add-Member -InputObject $newObjPSPass -Type NoteProperty -Name ProcessCommandLine -Value "Warning - $($PSCom) - warning"
         $fragPSPass += $newObjPSPass
     }
 
@@ -3057,7 +3073,6 @@ foreach ($getRegPassItem in $getRegPassCon)
         }
     }
 }
-
 
 Write-Host " "
 Write-Host "Finished Searching for Embedded PassWord in the Registry" -foregroundColor Green
@@ -3217,6 +3232,7 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
         }
 }
 
+
 ################################################
 ##########  DOMAIN USER DETAILS  ###############
 ################################################
@@ -3261,6 +3277,7 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     import-csv C:\SecureReport\output\DomainUser\Priv.csv -Delimiter "," | Export-Clixml C:\SecureReport\output\DomainUser\Priv.xml
     $whoamiPriv = Import-Clixml C:\SecureReport\output\DomainUser\Priv.xml
 
+#CERTS GO HERE - When its working correctly   
 
 ################################################
 #######  RECOMMENDED SECURITY SETTINGS  ########
@@ -6567,6 +6584,7 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsRegValue -Value $WindowsOSReg 
     $fragWindowsOSVal += $newObjWindowsOS
 
+
 ################################################
 #######  RECOMMENDED SECURITY SETTINGS  ########
 ###################  EDGE  #####################
@@ -6903,6 +6921,293 @@ foreach ($OfficePolItems in $OfficePolicies.values)
         $fragOfficeVal += $newObjOffice
 
 }
+
+################################################
+#################  SUMMARY  ####################
+################################################
+
+    if ($fragCode -like "*warning*")
+    {
+       $newObjSummary = New-Object psObject
+       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value "Hypervisor Enforced Code Integrity is not enabled"
+       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Risk -Value "High Risk"
+       $fragSummary += $newObjSummary
+    }
+
+    if ($fragBitLocker -like "*warning*")
+    {
+       $newObjSummary = New-Object psObject
+       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value "Bitlocker is not enabled"
+       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Risk -Value "Very High Risk"
+       $fragSummary += $newObjSummary
+    }
+
+    if ($fragPreAuth -like "*warning*")
+    {
+       $newObjSummary = New-Object psObject
+       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value "There are AD accounts that dont pre-authenticated"
+       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Risk -Value "High Risk"
+       $fragSummary += $newObjSummary
+    }
+
+    if ($fragLSAPPL -like "*warning*")
+    {
+       $newObjSummary = New-Object psObject
+       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value "LSA is Disabled"
+       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Risk -Value "High Risk"
+       $fragSummary += $newObjSummary
+    }
+
+    if ($fragCredGuCFG -like "*warning*")
+    {
+       $newObjSummary = New-Object psObject
+       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value "Credential Guard is disabled"
+       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Risk -Value "High Risk"
+       $fragSummary += $newObjSummary
+    }
+
+    if ($fragWDigestULC -like "*warning*")
+    {
+       $newObjSummary = New-Object psObject
+       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value "WDigest is enabled"
+       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Risk -Value "High Risk"
+       $fragSummary += $newObjSummary
+    }
+
+    if ($fragLapsPwEna -like "*warning*")
+    {
+       $newObjSummary = New-Object psObject
+       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value "LAPS is not configured"
+       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Risk -Value "High Risk"
+       $fragSummary += $newObjSummary
+    }
+
+    if ($FragAVStatus -like "*warning*")
+    {
+       $newObjSummary = New-Object psObject
+       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value "There are issues with AntiVirus"
+       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Risk -Value "High Risk"
+       $fragSummary += $newObjSummary
+    }
+
+   if ($fragPSPass -like "*Warning*")
+   {
+       $newObjSummary = New-Object psObject
+       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value "Process have been found that contain embedded passwords"
+       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Risk -Value "High Risk"
+       $fragSummary += $newObjSummary
+   }
+
+   if ($fragFilePass -like "*Warning*")
+   {
+       $newObjSummary = New-Object psObject
+       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value "Process have been found that contain embedded passwords"
+       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Risk -Value "High Risk"
+       $fragSummary += $newObjSummary
+   }  
+
+   if ($fragRegPassWords -like "*Warning*")
+   {
+       $newObjSummary = New-Object psObject
+       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value "Found embedded PassWords in the Registry"
+       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Risk -Value "Medium Risk"
+       $fragSummary += $newObjSummary
+   } 
+
+    if ($fragAutoLogon -like "*warning*")
+    {
+       $newObjSummary = New-Object psObject
+       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value "The Registry contains Autologon credentials"
+       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Risk -Value "High Risk"
+       $fragSummary += $newObjSummary
+    }
+
+    if ($fragPCElevate -like "*warning*")
+    {
+       $newObjSummary = New-Object psObject
+       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value "Installation of software will auto elevate"
+       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Risk -Value "High Risk"
+       $fragSummary += $newObjSummary
+    }
+
+    if ($fragDLLSafe -like "*warning*")
+    {
+       $newObjSummary = New-Object psObject
+       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value "DLL Safe Search is not enabled"
+       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Risk -Value "High Risk"
+       $fragSummary += $newObjSummary
+    }
+
+   if ($fragDllNotSigned -like "*warning*")
+   {
+       $newObjSummary = New-Object psObject
+       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value "Dlls' that are NOT signed and user permissions allow write"
+       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Risk -Value "Medium Risk"
+       $fragSummary += $newObjSummary
+   } 
+
+   if ($fragDLLHijack -like "*Warning*")
+   {
+       $newObjSummary = New-Object psObject
+       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value "Loaded  dll's that are vulnerable to dll hijacking by the User"
+       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Risk -Value "Medium Risk"
+       $fragSummary += $newObjSummary
+   } 
+
+   if ($fragAuthCodeSig -like "*warning*")
+   {
+       $newObjSummary = New-Object psObject
+       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value "Found authenticode signature hashmismatc"
+       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Risk -Value "Medium Risk"
+       $fragSummary += $newObjSummary
+   } 
+
+   if ($fragCertificates -like "*Warning*")
+   {
+       $newObjSummary = New-Object psObject
+       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value "Installed Certificates that are either Self-Signed or from a undesirable Country"
+       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Risk -Value "Low to Medium Risk"
+       $fragSummary += $newObjSummary
+   }
+
+   if ($fragUnQuoted -like "*warning*")
+   {
+       $newObjSummary = New-Object psObject
+       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value "Unquoted Paths Vulnerability"
+       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Risk -Value "Very High Risk"
+       $fragSummary += $newObjSummary
+   }
+
+   if ($fragReg -like "*warning*")
+   {
+       $newObjSummary = New-Object psObject
+       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value "Files in Program Files or Windows Directories are Writeable"
+       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Risk -Value "High Risk"
+       $fragSummary += $newObjSummary
+   } 
+
+   if ($fragsysFold -like "*warning*")
+   {
+       $newObjSummary = New-Object psObject
+       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value "Program Files or Windows Directories are Writeable"
+       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Risk -Value "Medium to High Risk"
+       $fragSummary += $newObjSummary
+   } 
+
+      if ($fragcreateSysFold -like "*warning*")
+   {
+       $newObjSummary = New-Object psObject
+       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value "Users can both Execute and Write to Program Files or Windows Directories"
+       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Risk -Value "Medium to High Risk"
+       $fragSummary += $newObjSummary
+   }
+
+   if ($fragwFile -like "*warning*")
+   {
+       $newObjSummary = New-Object psObject
+       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value "File in Program Files or Windows Directories are Writeable"
+       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Risk -Value "High Risk"
+       $fragSummary += $newObjSummary
+   } 
+
+   if ($fragwFold -like "*warning*")
+   {
+       $newObjSummary = New-Object psObject
+       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value "Directories that are Writeable and non System"
+       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Risk -Value "Low Risk"
+       $fragSummary += $newObjSummary
+   } 
+
+   if ($fragShare -like "*C$*")
+   {
+       $newObjSummary = New-Object psObject
+       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value "There are System Shares available"
+       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Risk -Value "Informational"
+       $fragSummary += $newObjSummary
+   }
+
+   if ($fragLegNIC -like "*warning*")
+   {
+       $newObjSummary = New-Object psObject
+       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value "Legacy Network Protocols are enabled"
+       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Risk -Value "Medium to High Risk"
+       $fragSummary += $newObjSummary
+   } 
+
+   if ($getFw -like "*Inbound*")
+   {
+       $newObjSummary = New-Object psObject
+       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value "There are allowed Inbound Firewall Rules"
+       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Risk -Value "High Risk"
+       $fragSummary += $newObjSummary
+   } 
+
+
+   if ($SchedTaskPerms -like "*warning*")
+   {
+       $newObjSummary = New-Object psObject
+       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value "Scheduled Tasks that reference scripts permissions are deficient"
+       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Risk -Value "High Risk"
+       $fragSummary += $newObjSummary
+   } 
+
+      if ($SchedTaskListings -like "*warning*")
+   {
+       $newObjSummary = New-Object psObject
+       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value "Scheduled Tasks contain Base64 or commands that require reviewing"
+       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Risk -Value "Medium Risk"
+       $fragSummary += $newObjSummary
+   } 
+
+
+    if ($DriverQuery -like "*warning*")
+    {
+       $newObjSummary = New-Object psObject
+       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value "There are Drivers that aren't signed"
+       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Risk -Value "Medium Risk"
+       $fragSummary += $newObjSummary
+    }
+
+      if ($fragSecOptions -like "*warning*")
+   {
+       $newObjSummary = New-Object psObject
+       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value "Security Options that prevent MitM attack are enabled"
+       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Risk -Value "High Risk"
+       $fragSummary += $newObjSummary
+   } 
+
+   if ($fragASR -like "*Warning*")
+   {
+       $newObjSummary = New-Object psObject
+       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value "Attack Surface Reduction GPO's have not been set"
+       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Risk -Value "Low to Medium Risk"
+       $fragSummary += $newObjSummary
+   }
+
+      if ($fragWindowsOSVal -like "*Warning*")
+   {
+       $newObjSummary = New-Object psObject
+       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value "Windows hardening policies recommended by Microsoft are missing"
+       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Risk -Value "High Risk"
+       $fragSummary += $newObjSummary
+   }
+
+   if ($fragEdgeVal -like "*Warning*")
+   {
+       $newObjSummary = New-Object psObject
+       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value "Edge hardening policies recommended by Microsoft are missing"
+       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Risk -Value "High Risk"
+       $fragSummary += $newObjSummary
+   }
+
+
+   if ($fragOfficeVal -like "*Warning*")
+   {
+       $newObjSummary = New-Object psObject
+       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value "Office hardening policies recommended by Microsoft are missing"
+       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Risk -Value "High Risk"
+       $fragSummary += $newObjSummary
+   }
 
 
 ################################################
@@ -7504,7 +7809,7 @@ $style = @"
 
     $descripCredGu = "Credential Guard securely isolating the LSA process preventing the recovery of domain hashes from memory. Credential Guard only works for Domain joined clients and servers.<br> <br>Further information can be found @ https://www.tenaka.net/pass-the-hash<br>"
 
-    $descripLAPS = "Local Administrator PassWord Solution (LAPS0) is a small program with some GPO settings that randomly sets the local administrator password for clients and servers across the estate. Domain Admins have default permission to view the local administrator password via DSA.MSC. Access to the LAPS passwords may be delegated unintentionally, this could lead to a serious security breach, leaking all local admin accounts passwords for all computer objects to those that shouldn't have Access. <br> <br>Installation guide can be found @ https://www.tenaka.net/post/local-admin-passwords. <br> <br>Security related issue details can be found @ https://www.tenaka.net/post/laps-leaks-local-admin-passwords<br>"
+    $descripLAPS = "Local Administrator PassWord Solution (LAPS) is a small program with some GPO settings that randomly sets the local administrator password for clients and servers across the estate. Domain Admins have default permission to view the local administrator password via DSA.MSC. Access to the LAPS passwords may be delegated unintentionally, this could lead to a serious security breach, leaking all local admin accounts passwords for all computer objects to those that shouldn't have Access. <br> <br>Installation guide can be found @ https://www.tenaka.net/post/local-admin-passwords. <br> <br>Security related issue details can be found @ https://www.tenaka.net/post/laps-leaks-local-admin-passwords<br>"
 
     $descripURA = "User Rights Assignments (URA) control what tasks a user can perform on the local client, server or Domain Controller. For example the ‘Log on as a service’ (SeServiceLogonRight) provides the rights for a service account to Logon as a Service, not Interactively. <br> <br> Access to URA can be abused and attack the system. <br> <br>Both SeImpersonatePrivilege (Impersonate a client after authentication) and SeAssignPrimaryTokenPrivilege (Replace a process level token) are commonly used by service accounts and vulnerable to escalation of privilege via Juicy Potato exploits.<br> <br>SeBackupPrivilege (Back up files and directories), read Access to all files including SAM Database, Registry and NTDS.dit (AD Database). <br> <br>SeRestorePrivilege (Restore files and directories), Write Access to all files. <br> <br>SeDebugPrivilege (Debug programs), allows the ability to dump and inject into process memory inc kernel. PassWords are stored in memory in the clear and can be dumped and easily extracted. <br> <br>SeTakeOwnershipPrivilege (Take ownership of files or other objects), take ownership of file regardless of Access.<br> <br>SeNetworkLogonRight (Access this computer from the network) allows pass-the-hash when Local Admins share the same password, remove all the default groups and apply named groups, separating client from servers.<br><br>SeCreateGlobalPrivilege (Create global objects), do not assign any user or group other than Local System as this will allow system takeover<br><br>Further details can be found @ <br>https://docs.microsoft.com/en-us/windows/security/threat-protection/security-policy-settings/user-rights-assignment<br>https://www.microsoft.com/en-us/download/details.aspx?id=55319<br><br>**UserRightAssignment-Name - Mouse over to show Microsofts recommended setting"
 
@@ -7539,6 +7844,9 @@ $style = @"
     $FragDescrip2 =  $Descrip2 | ConvertTo-Html -as table -Fragment -PreContent "<h3><span style=font-family:helvetica;>$Intro2</span></h3>" | Out-String
     $FragDescripFin =  $DescripFin | ConvertTo-Html -as table -Fragment -PreContent "<h3><span style=font-family:helvetica;>$Finish</span></h3>" | Out-String
     $Frag_descripVirt2 = ConvertTo-Html -as table -Fragment -PostContent "<h4>$descripVirt2</h4>" | Out-String
+    
+    #Summary
+    $frag_Summary = $fragSummary | ConvertTo-Html -As Table -fragment -PreContent "<h2><span style='color:$titleCol'>Overall Compliance Status</span></h2>"  | Out-String
             
     #Host details    
     $frag_Host = $fragHost | ConvertTo-Html -As List -Property Name,Domain,Model -fragment -PreContent "<h2><span style='color:$titleCol'>Host Details</span></h2>"  | Out-String
@@ -7599,6 +7907,8 @@ $style = @"
     $frag_RegPassWords = $fragRegPassWords | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:$titleCol'>PassWords Embedded in the Registry</span></h2>" -PostContent "<h4>$descripRegPassWords</h4>" | Out-String
     $frag_ASR = $fragASR | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:$titleCol'>Attack Surface Reduction (ASR)</span></h2>" -PostContent "<h4>$descripASR</h4>" | Out-String
     $frag_WDigestULC = $fragWDigestULC | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:$titleCol'>WDigest</span></h2>" -PostContent "<h4>$descripWDigest</h4>" | Out-String
+    
+    ########$frag_Certificates = $fragCertificates | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:$titleCol'>Installed Certificates</span></h2>" -PostContent "<h4>$descripWDigest</h4>" | Out-String
       
     #MS Recommended Secuirty settings (SSLF)
     $frag_WindowsOSVal = $fragWindowsOSVal | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:$titleCol'>Windows OS Security Recommendations</span></h2>" -PostContent "<h4>$descripWindowsOS</h4>" | Out-String
@@ -7629,7 +7939,14 @@ $style = @"
     if ($SchedTaskPerms -eq $null){$frag_TaskPerms = ""}
     if ($fragWDigestULC -eq $null){$frag_WDigestULC = ""}
     if ($fragOfficeVal -eq $null){$frag_OfficeVal = ""}
-    
+    if ($fragDLLHijack -eq $null){$frag_DLLHijack = ""}
+    if ($fragPSPass -eq $null){$frag_PSPass = ""}
+    if ($fragFilePass -eq $null){$frag_FilePass = ""}
+    if ($fragRegPassWords -eq $null){$frag_RegPassWords = ""}
+    if ($fragDomainGrps -eq $null){$frag_DomainGrps = ""}
+    if ($fragDCList -eq $null){$frag_DCList = ""}
+    if ($fragFSMO -eq $null){$frag_FSMO = ""}
+    if ($fragPreAuth -eq $null){$frag_PreAuth = ""}
 
 ################################################
 ############  CREATE HTML REPORT  ##############
@@ -7638,6 +7955,7 @@ if ($folders -eq "y")
 {
     ConvertTo-Html -Head $style -Body "<h1 align=center style='text-align:center'><span style='color:$titleCol;'>TENAKA.NET</span><h1>", 
     $fragDescrip1, 
+    $frag_Summary,
     $frag_host, 
     $fragOS, 
     $fragbios, 
@@ -7645,13 +7963,12 @@ if ($folders -eq "y")
     $frag_Network4,
     $frag_Network6,
     $frag_Share,
-    $frag_BitLocker, 
+    $FragPassPol,
     $FragAccountDetails,
     $frag_DomainGrps,
     $frag_DCList,
     $frag_FSMO,
     $frag_PreAuth,
-    $FragPassPol,
     $FragGroupDetails,
     $frag_whoamiGroups, 
     $frag_whoamiPriv,
@@ -7662,13 +7979,10 @@ if ($folders -eq "y")
     $fragInstaApps16,
     $Frag_AVStatus,
     $frag_UnQu,
-    $frag_ASR,
     $frag_Msinfo,
+    $frag_BitLocker, 
     $Frag_descripVirt2,
     $frag_Code,
-    $frag_DriverQuery,
-    $frag_SecOptions,
-    $frag_LegNIC,
     $frag_LSAPPL,
     $frag_WDigestULC,
     $frag_CredGuCFG,
@@ -7677,18 +7991,22 @@ if ($folders -eq "y")
     $frag_DLLHijack,
     $frag_DllNotSigned,
     $frag_PCElevate,
+    $frag_PSPass,
     $frag_FilePass,
     $frag_RegPassWords,
     $frag_AutoLogon,
     $frag_TaskPerms,
     $frag_TaskListings,
-    $frag_PSPass,
     $frag_SysRegPerms,
     $frag_SysFolders,
     $frag_CreateSysFold,
     $frag_wFolders,
     $frag_wFile,
+    $frag_DriverQuery,
     $frag_AuthCodeSig,
+    $frag_ASR,
+    $frag_LegNIC,
+    $frag_SecOptions,
     $frag_WindowsOSVal,
     $frag_EdgeVal,
     $frag_OfficeVal,
@@ -7700,6 +8018,7 @@ else
 {
     ConvertTo-Html -Head $style -Body "<h1 align=center style='text-align:center'><span style='color:$titleCol;'>TENAKA.NET</span><h1>", 
     $fragDescrip1, 
+    $frag_Summary,
     $frag_host, 
     $fragOS, 
     $fragbios, 
@@ -7707,13 +8026,12 @@ else
     $frag_Network4,
     $frag_Network6,
     $frag_Share,
-    $frag_BitLocker, 
+    $FragPassPol,
     $FragAccountDetails,
     $frag_DomainGrps,
     $frag_DCList,
     $frag_FSMO,
     $frag_PreAuth,
-    $FragPassPol,
     $FragGroupDetails,
     $frag_whoamiGroups, 
     $frag_whoamiPriv,
@@ -7724,13 +8042,10 @@ else
     $fragInstaApps16,
     $Frag_AVStatus,
     $frag_UnQu, 
-    $frag_ASR,
     $frag_Msinfo,
+    $frag_BitLocker, 
     $Frag_descripVirt2,
     $frag_Code,
-    $frag_DriverQuery,
-    $frag_SecOptions,
-    $frag_LegNIC,
     $frag_LSAPPL,
     $frag_WDigestULC,
     $frag_CredGuCFG,
@@ -7738,13 +8053,17 @@ else
     $frag_DLLSafe,
     $frag_DLLHijack,
     $frag_PCElevate,
+    $frag_PSPass,
     $frag_FilePass,
     $frag_RegPassWords,
     $frag_AutoLogon,
     $frag_TaskPerms,
     $frag_TaskListings,
-    $frag_PSPass,
+    $frag_DriverQuery,
     $frag_AuthCodeSig,
+    $frag_LegNIC,
+    $frag_SecOptions,
+    $frag_ASR,
     $frag_WindowsOSVal,
     $frag_EdgeVal,
     $frag_OfficeVal,
@@ -7818,7 +8137,15 @@ else
     foreach {$_ -replace ">Debug programs </td><td><div",">Debug programs</td><td><font color=#ff9933><div"} |
 
     foreach {$_ -replace ">Access this computer from the network </td><td><div",">Access this computer from the network</td><td><font color=#ff9933><div"} |
-   
+
+    foreach {$_ -replace "<td>Very High Risk","<td><font color=#e60000>Very High Risk"} | 
+    foreach {$_ -replace "<td>High Risk","<td><font color=#ff471a>High Risk"} | 
+    foreach {$_ -replace "<td>Medium to High Risk","<td><font color=#ff751a>Medium to High Risk"} | 
+    foreach {$_ -replace "<td>Medium Risk","<td><font color=#ffb366>Medium Risk"} | 
+    foreach {$_ -replace "<td>Low to Medium Risk","<td><font color=#a6ff4d>Low to Medium Risk"} | 
+    foreach {$_ -replace "<td>Low Risk","<td><font color=#ffff66>Low Risk"} | 
+    foreach {$_ -replace "<td>Informational","<td><font color=#80ff80>Informational"} | 
+       
     Set-Content "C:\SecureReport\FinishedReport.htm" -Force
    
     }
