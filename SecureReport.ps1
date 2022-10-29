@@ -298,6 +298,7 @@ YYMMDD
 221025.1 - Fixed issue with Unquoted path and not finding .sys files that are unquoted
 221025.1 - Added audit for installed Windows Features
 221029.1 - Added Compliance Report showing overall status and areas of concern
+221029.2 - Fixed issue where Defender cant be detected on Server OS - will assume if WMI fails that its not installed
 #>
 
 #Remove any DVD from client
@@ -893,48 +894,57 @@ sleep 5
     #$AntiVirusProducts = Get-WmiObject -Namespace "root\SecurityCenter2" -Class AntiVirusProduct  
     $AntiVirusProducts = Get-CimInstance -Namespace "root\SecurityCenter2" -Class AntiVirusProduct 
 
-    if ($AntiVirusProducts.Count -gt "1")
-    {$AntiVirusProducts = $AntiVirusProducts | where {$_.displayname -ne "Windows Defender"}}
+    if ($AntiVirusProducts -ne $null)
+    {
+        if ($AntiVirusProducts.Count -gt "1")
+        {$AntiVirusProducts = $AntiVirusProducts | where {$_.displayname -ne "Windows Defender"}}
     
-    $newObjAVStatus=@()
-    foreach($AntiVirusProduct in $AntiVirusProducts){
-        #Switch to determine the status of antivirus definitions and real-time protection.
-        switch ($AntiVirusProduct.productState) 
-        {
-            "262144" {$defstatus = "Up to date" ;$rtstatus = "Warning - Disabled warning"}
-            "262160" {$defstatus = "Warning - Out of date warning" ;$rtstatus = "Warning - Disabled warning"}
-            "266240" {$defstatus = "Up to date" ;$rtstatus = "Enabled"}
-            "266256" {$defstatus = "Warning - Out of date warning" ;$rtstatus = "Enabled"}
-            "270336" {$defstatus = "Up to date" ;$rtstatus = "Enabled"}
-            "393216" {$defstatus = "Up to date" ;$rtstatus = "Warning - Disabled warning"}
-            "393232" {$defstatus = "Warning - Out of date" ;$rtstatus = "Warning - Disabled warning"}
-            "393488" {$defstatus = "Warning - Out of date" ;$rtstatus = "Warning - Disabled warning"}
-            "397312" {$defstatus = "Up to date" ;$rtstatus = "Enabled"}
-            "397568" {$defstatus = "Up to date" ;$rtstatus = "Enabled"}
-            "397328" {$defstatus = "Warning - Out of date" ;$rtstatus = "Enabled"}
-            "397584" {$defstatus = "Warning - Out of date" ;$rtstatus = "Enabled"}   
-            "393472" {$defstatus = "Up to date" ;$rtstatus  = "Warning - Disabled warning"}
-            "401664" {$defstatus = "Up to date" ;$rtstatus  = "Warning - Disabled warning"}
-            default {$defstatus = "Warning - Unknown warning" ;$rtstatus = "Warning - Unknown warning"}
-        }
+        $newObjAVStatus=@()
+        foreach($AntiVirusProduct in $AntiVirusProducts){
+            #Switch to determine the status of antivirus definitions and real-time protection.
+            switch ($AntiVirusProduct.productState) 
+            {
+                "262144" {$defstatus = "Up to date" ;$rtstatus = "Warning - Disabled warning"}
+                "262160" {$defstatus = "Warning - Out of date warning" ;$rtstatus = "Warning - Disabled warning"}
+                "266240" {$defstatus = "Up to date" ;$rtstatus = "Enabled"}
+                "266256" {$defstatus = "Warning - Out of date warning" ;$rtstatus = "Enabled"}
+                "270336" {$defstatus = "Up to date" ;$rtstatus = "Enabled"}
+                "393216" {$defstatus = "Up to date" ;$rtstatus = "Warning - Disabled warning"}
+                "393232" {$defstatus = "Warning - Out of date" ;$rtstatus = "Warning - Disabled warning"}
+                "393488" {$defstatus = "Warning - Out of date" ;$rtstatus = "Warning - Disabled warning"}
+                "397312" {$defstatus = "Up to date" ;$rtstatus = "Enabled"}
+                "397568" {$defstatus = "Up to date" ;$rtstatus = "Enabled"}
+                "397328" {$defstatus = "Warning - Out of date" ;$rtstatus = "Enabled"}
+                "397584" {$defstatus = "Warning - Out of date" ;$rtstatus = "Enabled"}   
+                "393472" {$defstatus = "Up to date" ;$rtstatus  = "Warning - Disabled warning"}
+                "401664" {$defstatus = "Up to date" ;$rtstatus  = "Warning - Disabled warning"}
+                default {$defstatus = "Warning - Unknown warning" ;$rtstatus = "Warning - Unknown warning"}
+            }
 
-        $avDisplay = $AntiVirusProduct.displayName
-        $avProduct = $AntiVirusProduct.pathToSignedProductExe 
-        $avPath = $AntiVirusProduct.pathToSignedReportingExe 
-        $avStatus = $defstatus
-        $avReal = $rtstatus
+            $avDisplay = $AntiVirusProduct.displayName
+            $avProduct = $AntiVirusProduct.pathToSignedProductExe 
+            $avPath = $AntiVirusProduct.pathToSignedReportingExe 
+            $avStatus = $defstatus
+            $avReal = $rtstatus
 
-        $AVService = ((get-service | where {$_.DisplayName -like "*$avDisplay*" }).Status)[0]
+            $AVService = ((get-service | where {$_.DisplayName -like "*$avDisplay*" }).Status)[0]
         
-        $newObjAVStatus = New-Object -TypeName PSObject
-        Add-Member -InputObject $newObjAVStatus -Type NoteProperty -Name AVName -Value $avDisplay
-        Add-Member -InputObject $newObjAVStatus -Type NoteProperty -Name AVProduct -Value $avProduct
-        Add-Member -InputObject $newObjAVStatus -Type NoteProperty -Name AVPathtoExecute -Value $avPath
-        Add-Member -InputObject $newObjAVStatus -Type NoteProperty -Name AVStatus -Value $avStatus 
-        Add-Member -InputObject $newObjAVStatus -Type NoteProperty -Name AVEngine -Value $avReal
-        #Add-Member -InputObject $newObjAVStatus -Type NoteProperty -Name AVService -Value $AVService 
-        $FragAVStatus += $newObjAVStatus
+            $newObjAVStatus = New-Object -TypeName PSObject
+            Add-Member -InputObject $newObjAVStatus -Type NoteProperty -Name AVName -Value $avDisplay
+            Add-Member -InputObject $newObjAVStatus -Type NoteProperty -Name AVProduct -Value $avProduct
+            Add-Member -InputObject $newObjAVStatus -Type NoteProperty -Name AVPathtoExecute -Value $avPath
+            Add-Member -InputObject $newObjAVStatus -Type NoteProperty -Name AVStatus -Value $avStatus 
+            Add-Member -InputObject $newObjAVStatus -Type NoteProperty -Name AVEngine -Value $avReal
+            #Add-Member -InputObject $newObjAVStatus -Type NoteProperty -Name AVService -Value $AVService 
+            $FragAVStatus += $newObjAVStatus
 
+            }
+        }
+        Else  #server and Defender cant be detected
+        {
+            $newObjAVStatus = New-Object -TypeName PSObject
+            Add-Member -InputObject $newObjAVStatus -Type NoteProperty -Name AVName -Value "Warning - Antivirus cant be detcted, assume the worst and its not installed warning"
+            $FragAVStatus += $newObjAVStatus
         }
 
  
@@ -7066,7 +7076,7 @@ foreach ($OfficePolItems in $OfficePolicies.values)
    {
        $newObjSummary = New-Object psObject
        Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value "Installed Certificates that are either Self-Signed or from a undesirable Country"
-       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Risk -Value "Low to Medium Risk"
+       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Risk -Value "Medium to High Risk"
        $fragSummary += $newObjSummary
    }
 
@@ -8162,8 +8172,7 @@ Expand on explanations - currently of use to non-techies
 remove extra blanks when listing progs via registry 
 
 Stuff to Audit.....
-Add Server support
-    features and roles
+
 Proxy password reg key
 
 FLTMC.exe - mini driver altitude looking for 'stuff' thats at an altitude to bypass security or encryption
@@ -8193,8 +8202,6 @@ DNS
 Auditing Wec\wef - remote collection point
 Interesting events
 wevtutil "Microsoft-Windows-Wcmsvc/Operational"
-installed certs
-reduce firewall output to something of more use - warning for LLMNR rules etc
 
 remove powershell commands where performance is an issue, consider replacing with cmd alts
 
