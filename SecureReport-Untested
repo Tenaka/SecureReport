@@ -8127,7 +8127,7 @@ $style = @"
     $frag_DomainGrps = $fragDomainGrps | ConvertTo-Html -As Table -fragment -PreContent "<h2><span style='color:$titleCol'>Members of Privilege Groups</span></h2>" -PostContent "<h4>$descripDomainPrivsGps</h4>" | Out-String 
     
     $frag_PreAuth = $fragPreAuth | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"`#PreAuth`">Domain Accounts that DO NOT Pre-Authenticate</a></span></h2>" -PostContent "<h4>$descripPreAuth</h4>" | Out-String
-    $frag_NeverExpires = $fragNeverExpires | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"`#PassExpire`">Domain Accounts that Never Expire their Password</a></span></h2>" -PostContent "<h4>$descripPreAuth</h4>" | Out-String
+    $frag_NeverExpires = $fragNeverExpires | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"`#PassExpire`">Domain Accounts that Never Expire their Password</a></span></h2>"  | Out-String
     
     $FragGroupDetails =  $GroupDetails  | ConvertTo-Html -As Table -fragment -PreContent "<h2><span style='color:$titleCol'>Local System Group Members</span></h2>" | Out-String
     $FragPassPol = $PassPol | Select-Object -SkipLast 3 | ConvertTo-Html -As Table -fragment -PreContent "<h2><span style='color:$titleCol'>Local PassWord Policy</span></h2>" | Out-String
