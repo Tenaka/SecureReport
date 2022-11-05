@@ -302,6 +302,7 @@ YYMMDD
 221031.1 - Added Compliance Report showing overall status and areas of concern - Updated for hyperlinks
 221101.1 - Updated Frag titles so reported compliance is an in page link to the reported issue. 
 221102.1 - Replaced Net Group will ADSI LDAP for Domain Priv Group Membership - less text formating makes adsi more reliable.
+221103.1 - Fixed issue with color schemes not applying swapped out if for ifelse
 
 
 #>
@@ -447,7 +448,7 @@ sleep 5
     $bios = Get-CimInstance -ClassName win32_bios
     $cpu = Get-CimInstance -ClassName win32_processor
 
-################################################f
+################################################
 ##############  ACCOUNT DETAILS  ###############
 ################################################
     #PasWord Policy
@@ -492,6 +493,10 @@ sleep 5
         $AccountDetails += $newObjAccount
     }
 
+################################################
+#########  MEMBERS OF LOCAL GROUPS  ############
+################################################
+
 #Group Members
 #Cant remove "," as looping the Split breaks HTML import...back to drawing board - to fix
     $getLGrp = Get-LocalGroup 
@@ -511,6 +516,9 @@ sleep 5
             }
    }
 
+################################################
+###############  LIST OF DCs  ##################
+################################################
 #Domain Info
 #List of DC's
 $fragDCList=@()
@@ -527,6 +535,9 @@ $dcList = $dcListQuery.split(",") | sort
         $fragDCList += $newObjDCList
     }
 
+################################################
+################  FSMO ROLES  ##################
+################################################
 #FSMO Roles
 $fragFSMO=@()
 [string]$fsmolist = netdom /query fsmo
@@ -557,6 +568,10 @@ Add-Member -InputObject $newObjFsmo -Type NoteProperty -Name $PDCRole -Value $PD
 Add-Member -InputObject $newObjFsmo -Type NoteProperty -Name $RIDRole -Value $RIDDC
 Add-Member -InputObject $newObjFsmo -Type NoteProperty -Name $InfraRole -Value $InfraDC
 $fragFSMO += $newObjFsmo
+
+################################################
+#########  DOMAIN PRIV GROUPS ##################
+################################################
 
 #Domain Priv Group members
 $Root = [ADSI]"LDAP://RootDSE"
@@ -679,9 +694,16 @@ $fragDomainGrps=@()
 
 }
 #>
+
+################################################
+########  PRE-AUTHENTICATION  ##################
+################################################
 #DSQUERY
 #Pre-Authenticaiton enabled
-$dsQuery = & dsquery * -limit 0 -filter "&(objectclass=user)(userAccountControl:1.2.840.113556.1.4.803:=4194304)" -attr samaccountname, distinguishedName, userAccountControl | select -skip 1
+
+#RSAT is requried
+
+$dsQuery = & dsquery.exe * -limit 0 -filter "&(objectclass=user)(userAccountControl:1.2.840.113556.1.4.803:=4194304)" -attr samaccountname, distinguishedName, userAccountControl | select -skip 1
 $fragPreAuth=@()
 
 foreach ($preAuth in $dsQuery)
@@ -700,8 +722,12 @@ foreach ($preAuth in $dsQuery)
         $fragPreAuth += $newObjPreAuth
     }
 
+################################################
+###### PASSWORDS THAT DONT EXPIRE ##############
+################################################
 #Accounts that never Expire
-$dsQueryNexpires = & dsquery * -filter "(&(objectCategory=person)(objectClass=user)(userAccountControl:1.2.840.113556.1.4.803:=65536))" -attr samaccountname, distinguishedName, userAccountControl | select -skip 1
+
+$dsQueryNexpires = & dsquery.exe * -filter "(&(objectCategory=person)(objectClass=user)(userAccountControl:1.2.840.113556.1.4.803:=65536))" -attr samaccountname, distinguishedName, userAccountControl | select -skip 1
 $fragNeverExpires=@()
 
 foreach ($NeverExpires in $dsQueryNexpires)
@@ -7516,7 +7542,7 @@ $style = @"
 "@
 }
 
-if ($Scheme -eq "Dark")
+elseif ($Scheme -eq "Dark")
 {
 $titleCol = "#4682B4"
 
@@ -7637,7 +7663,7 @@ $style = @"
 "@
 }
 
-if ($Scheme -eq "Light")
+elseif ($Scheme -eq "Light")
 {
 $titleCol = "#000000"
 
@@ -7758,7 +7784,7 @@ $style = @"
 "@
 }
 
-if ($Scheme -eq "Grey")
+elseif ($Scheme -eq "Grey")
 {
 $titleCol = "#D3BAA9"
 
@@ -8434,7 +8460,6 @@ reports
 <#
 Stuff to Fix.....
 
-The colour scheme choice seems to no longer work, going to swap out the 'if else'
 
 $ExecutionContext.SessionState.LanguageMode -eq "ConstrainedLanguage"
 Null message warning that security is missing
