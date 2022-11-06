@@ -299,6 +299,16 @@ YYMMDD
 221025.1 - Added audit for installed Windows Features
 221029.1 - Added Compliance Report showing overall status and areas of concern
 221029.2 - Fixed issue where Defender cant be detected on Server OS - will assume if WMI fails that its not installed
+221031.1 - Added Compliance Report showing overall status and areas of concern - Updated for hyperlinks
+221101.1 - Updated Frag titles so reported compliance is an in page link to the reported issue. 
+221102.1 - Replaced Net Group will ADSI LDAP for Domain Priv Group Membership - less text formating makes adsi more reliable.
+221103.1 - Fixed issue with color schemes not applying swapped out if for ifelse
+221106.1 - Firewall profile now warns on misconfiguration
+221106.2 - Fixed issues with various links to with Summary
+221106.3 - Removed the 'Warning -' makes report look neater.
+221106.4 - Removed <span style='color:$titleCol'>, not required as CSS applies colour schemes
+
+
 #>
 
 #Remove any DVD from client
@@ -342,6 +352,19 @@ function reports
     Write-Host "PowerShell version 4 is installed (Windows8.1\Server 2012 R2), the Get-ChildItem -Depth is not supported, don't waste your time selecting audit Files, Folders and Registry for permissions issues" -ForegroundColor Red
     write-host " "
     }
+
+   # $VulnReport = "C:\SecureReport"
+   # $OutFunc = "scheme" 
+                
+   # $tpScheme = Test-Path "C:\SecureReport\output\$OutFunc\"
+    
+   # if ($tpScheme -eq $false)
+   # {
+   #     New-Item -Path "C:\SecureReport\output\$OutFunc\" -ItemType Directory -Force
+   # }
+
+   # $SchemePath = "C:\SecureReport\output\$OutFunc\" + "$OutFunc.txt"
+
 
     #Start Message
     Write-Host " "
@@ -429,7 +452,7 @@ sleep 5
     $bios = Get-CimInstance -ClassName win32_bios
     $cpu = Get-CimInstance -ClassName win32_processor
 
-################################################f
+################################################
 ##############  ACCOUNT DETAILS  ###############
 ################################################
     #PasWord Policy
@@ -474,6 +497,10 @@ sleep 5
         $AccountDetails += $newObjAccount
     }
 
+################################################
+#########  MEMBERS OF LOCAL GROUPS  ############
+################################################
+
 #Group Members
 #Cant remove "," as looping the Split breaks HTML import...back to drawing board - to fix
     $getLGrp = Get-LocalGroup 
@@ -493,6 +520,9 @@ sleep 5
             }
    }
 
+################################################
+###############  LIST OF DCs  ##################
+################################################
 #Domain Info
 #List of DC's
 $fragDCList=@()
@@ -509,6 +539,9 @@ $dcList = $dcListQuery.split(",") | sort
         $fragDCList += $newObjDCList
     }
 
+################################################
+################  FSMO ROLES  ##################
+################################################
 #FSMO Roles
 $fragFSMO=@()
 [string]$fsmolist = netdom /query fsmo
@@ -540,7 +573,77 @@ Add-Member -InputObject $newObjFsmo -Type NoteProperty -Name $RIDRole -Value $RI
 Add-Member -InputObject $newObjFsmo -Type NoteProperty -Name $InfraRole -Value $InfraDC
 $fragFSMO += $newObjFsmo
 
-#Priv Groups
+################################################
+#########  DOMAIN PRIV GROUPS ##################
+################################################
+
+#Domain Priv Group members
+$Root = [ADSI]"LDAP://RootDSE"
+$rootdse = $Root.rootDomainNamingContext
+
+$adGroups = 
+"Administrators",
+“Backup Operators”,
+“Server Operators”,
+“Account Operators”,
+“Guests”,
+“Domain Admins”,
+“Schema Admins”,
+“Enterprise Admins”,
+“DnsAdmins”,
+“DHCP Administrators”,
+“Domain Guests”
+
+$fragDomainGrps=@()
+
+foreach ($adGroup in $adGroups)
+{
+    try
+    {    
+        $gpName = [ADSI]"LDAP://CN=$adGroup,CN=Users,$($rootdse)"
+        $gpMembers = $gpName.Member    
+        $ArgpMem=@()
+        if($gpMembers -ne $null)
+        {  
+        foreach ($gpMem in $gpMembers)
+            {
+            $gpSting = $gpMem.ToString().split(",").replace("CN=","")[0]
+            $ArgpMem += $gpSting
+            }
+            $joinMem = $ArgpMem -join ", "
+
+            $newObjDomainGrps = New-Object -TypeName PSObject
+            Add-Member -InputObject $newObjDomainGrps -Type NoteProperty -Name GroupName -Value $adGroup
+            Add-Member -InputObject $newObjDomainGrps -Type NoteProperty -Name GroupMembers -Value $joinMem 
+            $fragDomainGrps += $newObjDomainGrps   
+        }
+    }
+finally
+    {
+        $gpName = [ADSI]"LDAP://CN=$adGroup,CN=builtin,$($rootdse)"
+        $gpMembers = $gpName.Member   
+        $ArgpMem=@()
+                if($gpMembers -ne $null)
+        {  
+        foreach ($gpMem in $gpMembers)
+            {
+            $gpSting = $gpMem.ToString().split(",").replace("CN=","")[0]
+            $ArgpMem += $gpSting
+            }
+            $joinMem = $ArgpMem -join ", "
+
+            $newObjDomainGrps = New-Object -TypeName PSObject
+            Add-Member -InputObject $newObjDomainGrps -Type NoteProperty -Name GroupName -Value $adGroup
+            Add-Member -InputObject $newObjDomainGrps -Type NoteProperty -Name GroupMembers -Value $joinMem 
+            $fragDomainGrps += $newObjDomainGrps   
+        }
+    }
+
+}
+
+
+
+<#Priv Groups
 #Formatting output is a little pernickety - aka a royal pain in the ..... expecting display issues
 $ngAdmins = Net localgroup “Administrators” /domain 
 $ngDA = Net group “Domain Admins” /domain
@@ -594,9 +697,17 @@ $fragDomainGrps=@()
         $fragDomainGrps += $newObjDomainGrps
 
 }
+#>
 
+################################################
+########  PRE-AUTHENTICATION  ##################
+################################################
+#DSQUERY
 #Pre-Authenticaiton enabled
-$dsQuery = & dsquery * -limit 0 -filter "&(objectclass=user)(userAccountControl:1.2.840.113556.1.4.803:=4194304)" -attr samaccountname, distinguishedName, userAccountControl | select -skip 1
+
+#RSAT is requried
+
+$dsQuery = & dsquery.exe * -limit 0 -filter "&(objectclass=user)(userAccountControl:1.2.840.113556.1.4.803:=4194304)" -attr samaccountname, distinguishedName, userAccountControl | select -skip 1
 $fragPreAuth=@()
 
 foreach ($preAuth in $dsQuery)
@@ -613,6 +724,30 @@ foreach ($preAuth in $dsQuery)
         Add-Member -InputObject $newObjPreAuth -Type NoteProperty -Name PreAuth-OUPath -Value $preAuthOu
         Add-Member -InputObject $newObjPreAuth -Type NoteProperty -Name PreAuth-UACValue -Value $preAuthUac
         $fragPreAuth += $newObjPreAuth
+    }
+
+################################################
+###### PASSWORDS THAT DONT EXPIRE ##############
+################################################
+#Accounts that never Expire
+
+$dsQueryNexpires = & dsquery.exe * -filter "(&(objectCategory=person)(objectClass=user)(userAccountControl:1.2.840.113556.1.4.803:=65536))" -attr samaccountname, distinguishedName, userAccountControl | select -skip 1
+$fragNeverExpires=@()
+
+foreach ($NeverExpires in $dsQueryNexpires)
+    {
+        $NeverExpires = $NeverExpires.trim("").Split(" ",[System.StringSplitOptions]::RemoveEmptyEntries)
+           
+
+        $NeverExpiresSam = "Warning - " + $NeverExpires[0] + " warning" 
+        $NeverExpiresOu = "Warning - " +$NeverExpires[1]  + " warning" 
+        $NeverExpiresUac = "Warning - " +$NeverExpires[2]  + " warning" 
+
+        $newObjNeverExpires = New-Object -TypeName PSObject
+        Add-Member -InputObject $newObjNeverExpires -Type NoteProperty -Name NeverExpires-Account -Value $NeverExpiresSam
+        Add-Member -InputObject $newObjNeverExpires -Type NoteProperty -Name NeverExpires-OUPath -Value $NeverExpiresOu
+        Add-Member -InputObject $newObjNeverExpires -Type NoteProperty -Name NeverExpires-UACValue -Value $NeverExpiresUac
+        $fragNeverExpires += $newObjNeverExpires
     }
 
 
@@ -1079,7 +1214,7 @@ sleep 5
     Get-Content $msinfoPathXml 
 
 Write-Host " "
-Write-Host "Finished Collectiong MSInfo32 data for VBS" -foregroundColor Green
+Write-Host "Finished Collecting MSInfo32 data for VBS" -foregroundColor Green
 
 ################################################
 ################  DRIVERQRY  ###################
@@ -1325,16 +1460,6 @@ sleep 5
         $LapsPwSetday = "LAPS password age value is to $getLapsPwDay" 
         $LapsPwReg = "HKLM:\Software\Policies\Microsoft Services\AdmPwd\" 
 
-    }
-    else
-    {
-        $LapsPwSet = "Warning - LAPS is not installed or the value is set to 0 Warning" 
-        $LapsPwReg = "HKLM:\Software\Policies\Microsoft Services\AdmPwd\" 
-        $LapsPwCom = "LAPS is not installed or configured - Ignore if not Domain Joined"
-    }
- 
-    if ($getLapsPwEna -eq "1")
-    {
         $newObjLapsPw = New-Object -TypeName PSObject
         Add-Member -InputObject $newObjLapsPw -Type NoteProperty -Name LAPSPassWordEnabled -Value $LapsPwSetena
         Add-Member -InputObject $newObjLapsPw -Type NoteProperty -Name LAPSPassWordComplexity -Value $LapsPwSetcom 
@@ -1342,14 +1467,20 @@ sleep 5
         Add-Member -InputObject $newObjLapsPw -Type NoteProperty -Name LAPSPassWordDay -Value $LapsPwSetday 
         Add-Member -InputObject $newObjLapsPw -Type NoteProperty -Name LAPSPassWordReg -Value $LapsPwReg
         $fragLapsPwEna += $newObjLapsPw
+
     }
-    else 
+    else
     {
+        $LapsPwSet = "Warning - LAPS is not installed or the value is set to 0 Warning" 
+        $LapsPwReg = "HKLM:\Software\Policies\Microsoft Services\AdmPwd\" 
+        $LapsPwCom = "LAPS is not installed or configured - Ignore if not Domain Joined"
+
         $newObjLapsPw = New-Object -TypeName PSObject
         Add-Member -InputObject $newObjLapsPw -Type NoteProperty -Name LAPSPassWordEnabled -Value  $LapsPwSet
         Add-Member -InputObject $newObjLapsPw -Type NoteProperty -Name LAPSPassWordReg -Value $LapsPwReg 
         #Add-Member -InputObject $newObjLapsPw -Type NoteProperty -Name LapsPwComment -Value $LapsPwCom
         $fragLapsPwEna += $newObjLapsPw
+
     }
 
        
@@ -2162,13 +2293,26 @@ sleep 5
         $fwProfileEn = $fwRule.Enabled
         $fwProfileIn = $fwRule.DefaultInboundAction 
         $fwProfileOut = $fwRule.DefaultOutboundAction 
-     
-        $newObjFWProf = New-Object psObject
-        Add-Member -InputObject $newObjFWProf  -Type NoteProperty -Name Name -Value $fwProfileNa
-        Add-Member -InputObject $newObjFWProf  -Type NoteProperty -Name Enabled -Value $fwProfileEn
-        Add-Member -InputObject $newObjFWProf  -Type NoteProperty -Name Inbound -Value $fwProfileIn
-        Add-Member -InputObject $newObjFWProf  -Type NoteProperty -Name Outbound -Value $fwProfileOut
-        $fragFWProfile += $newObjFWProf 
+    
+        if ($fwProfileIn -eq "allow")
+        {
+                $newObjFWProf = New-Object psObject
+                Add-Member -InputObject $newObjFWProf  -Type NoteProperty -Name Name -Value $fwProfileNa
+                Add-Member -InputObject $newObjFWProf  -Type NoteProperty -Name Enabled -Value $fwProfileEn
+                Add-Member -InputObject $newObjFWProf  -Type NoteProperty -Name Inbound -Value "Warning - $fwProfileIn warning"
+                Add-Member -InputObject $newObjFWProf  -Type NoteProperty -Name Outbound -Value $fwProfileOut
+                $fragFWProfile += $newObjFWProf 
+        }
+        else
+        {
+                $newObjFWProf = New-Object psObject
+                Add-Member -InputObject $newObjFWProf  -Type NoteProperty -Name Name -Value $fwProfileNa
+                Add-Member -InputObject $newObjFWProf  -Type NoteProperty -Name Enabled -Value $fwProfileEn
+                Add-Member -InputObject $newObjFWProf  -Type NoteProperty -Name Inbound -Value $fwProfileIn
+                Add-Member -InputObject $newObjFWProf  -Type NoteProperty -Name Outbound -Value $fwProfileOut
+                $fragFWProfile += $newObjFWProf 
+        }
+
     }
 
     #Firewall Rules
@@ -6935,11 +7079,18 @@ foreach ($OfficePolItems in $OfficePolicies.values)
 ################################################
 #################  SUMMARY  ####################
 ################################################
+    if ($MsinfoClixml -eq $null)
+    {
+       $newObjSummary = New-Object psObject
+       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value '<a href="#vbs">Virtualised Based Security</a>'
+       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Risk -Value "High Risk"
+       $fragSummary += $newObjSummary
+    }
 
     if ($fragCode -like "*warning*")
     {
        $newObjSummary = New-Object psObject
-       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value "Hypervisor Enforced Code Integrity is not enabled"
+       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value '<a href="#HECI">Hypervisor Enforced Code Integrity</a>'
        Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Risk -Value "High Risk"
        $fragSummary += $newObjSummary
     }
@@ -6947,7 +7098,7 @@ foreach ($OfficePolItems in $OfficePolicies.values)
     if ($fragBitLocker -like "*warning*")
     {
        $newObjSummary = New-Object psObject
-       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value "Bitlocker is not enabled"
+       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value '<a href="#Bitlockerisnotenabled">Bitlocker</a>'
        Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Risk -Value "Very High Risk"
        $fragSummary += $newObjSummary
     }
@@ -6955,7 +7106,15 @@ foreach ($OfficePolItems in $OfficePolicies.values)
     if ($fragPreAuth -like "*warning*")
     {
        $newObjSummary = New-Object psObject
-       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value "There are AD accounts that dont pre-authenticated"
+       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value '<a href="#PreAuth">There are AD accounts that dont pre-authenticated</a>'
+       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Risk -Value "High Risk"
+       $fragSummary += $newObjSummary
+    }
+
+    if ($fragNeverExpires -like "*warning*")
+    {
+       $newObjSummary = New-Object psObject
+       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value '<a href="#PassExpire">There are AD accounts that dont Expire their Password</a>'
        Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Risk -Value "High Risk"
        $fragSummary += $newObjSummary
     }
@@ -6963,7 +7122,7 @@ foreach ($OfficePolItems in $OfficePolicies.values)
     if ($fragLSAPPL -like "*warning*")
     {
        $newObjSummary = New-Object psObject
-       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value "LSA is Disabled"
+       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value '<a href="#LSA">LSA is Disabled</a>'
        Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Risk -Value "High Risk"
        $fragSummary += $newObjSummary
     }
@@ -6971,7 +7130,7 @@ foreach ($OfficePolItems in $OfficePolicies.values)
     if ($fragCredGuCFG -like "*warning*")
     {
        $newObjSummary = New-Object psObject
-       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value "Credential Guard is disabled"
+       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value '<a href="#CredGuard">Credential Guard is disabled</a>'
        Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Risk -Value "High Risk"
        $fragSummary += $newObjSummary
     }
@@ -6979,7 +7138,7 @@ foreach ($OfficePolItems in $OfficePolicies.values)
     if ($fragWDigestULC -like "*warning*")
     {
        $newObjSummary = New-Object psObject
-       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value "WDigest is enabled"
+       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value '<a href="#WDigest">WDigest is enabled</a>'
        Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Risk -Value "High Risk"
        $fragSummary += $newObjSummary
     }
@@ -6987,7 +7146,7 @@ foreach ($OfficePolItems in $OfficePolicies.values)
     if ($fragLapsPwEna -like "*warning*")
     {
        $newObjSummary = New-Object psObject
-       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value "LAPS is not configured"
+       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value '<a href="#LAPS">LAPS is not configured</a>'
        Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Risk -Value "High Risk"
        $fragSummary += $newObjSummary
     }
@@ -6995,7 +7154,7 @@ foreach ($OfficePolItems in $OfficePolicies.values)
     if ($FragAVStatus -like "*warning*")
     {
        $newObjSummary = New-Object psObject
-       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value "There are issues with AntiVirus"
+       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value '<a href="#AV">There are issues with AntiVirus</a>'
        Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Risk -Value "High Risk"
        $fragSummary += $newObjSummary
     }
@@ -7003,7 +7162,7 @@ foreach ($OfficePolItems in $OfficePolicies.values)
    if ($fragPSPass -like "*Warning*")
    {
        $newObjSummary = New-Object psObject
-       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value "Process have been found that contain embedded passwords"
+       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value '<a href="#ProcPW">Process have been found that contain embedded passwords</a>'
        Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Risk -Value "High Risk"
        $fragSummary += $newObjSummary
    }
@@ -7011,7 +7170,7 @@ foreach ($OfficePolItems in $OfficePolicies.values)
    if ($fragFilePass -like "*Warning*")
    {
        $newObjSummary = New-Object psObject
-       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value "Process have been found that contain embedded passwords"
+       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value '<a href="#FilePW">Files have been found that contain embedded passwords</a>'
        Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Risk -Value "High Risk"
        $fragSummary += $newObjSummary
    }  
@@ -7019,7 +7178,7 @@ foreach ($OfficePolItems in $OfficePolicies.values)
    if ($fragRegPassWords -like "*Warning*")
    {
        $newObjSummary = New-Object psObject
-       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value "Found embedded PassWords in the Registry"
+       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value '<a href="#RegPW">Found embedded PassWords in the Registry</a>'
        Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Risk -Value "Medium Risk"
        $fragSummary += $newObjSummary
    } 
@@ -7027,7 +7186,7 @@ foreach ($OfficePolItems in $OfficePolicies.values)
     if ($fragAutoLogon -like "*warning*")
     {
        $newObjSummary = New-Object psObject
-       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value "The Registry contains Autologon credentials"
+       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value '<a href="#AutoLogon">The Registry contains Autologon credentials</a>'
        Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Risk -Value "High Risk"
        $fragSummary += $newObjSummary
     }
@@ -7035,7 +7194,7 @@ foreach ($OfficePolItems in $OfficePolicies.values)
     if ($fragPCElevate -like "*warning*")
     {
        $newObjSummary = New-Object psObject
-       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value "Installation of software will auto elevate"
+       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value '<a href="#SoftElevation">Installation of software will auto elevate</a>'
        Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Risk -Value "High Risk"
        $fragSummary += $newObjSummary
     }
@@ -7043,7 +7202,7 @@ foreach ($OfficePolItems in $OfficePolicies.values)
     if ($fragDLLSafe -like "*warning*")
     {
        $newObjSummary = New-Object psObject
-       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value "DLL Safe Search is not enabled"
+       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value '<a href="#DLLSafe">DLL Safe Search is not enabled</a>'
        Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Risk -Value "High Risk"
        $fragSummary += $newObjSummary
     }
@@ -7051,7 +7210,7 @@ foreach ($OfficePolItems in $OfficePolicies.values)
    if ($fragDllNotSigned -like "*warning*")
    {
        $newObjSummary = New-Object psObject
-       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value "Dlls' that are NOT signed and user permissions allow write"
+       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value '<a href="#DLLSign">Dlls that are NOT signed and user permissions allow write</a>'
        Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Risk -Value "Medium Risk"
        $fragSummary += $newObjSummary
    } 
@@ -7059,7 +7218,7 @@ foreach ($OfficePolItems in $OfficePolicies.values)
    if ($fragDLLHijack -like "*Warning*")
    {
        $newObjSummary = New-Object psObject
-       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value "Loaded  dll's that are vulnerable to dll hijacking by the User"
+       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value '<a href="#DLLHigh">Loaded  dlls that are vulnerable to dll hijacking by the User</a>'
        Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Risk -Value "Medium Risk"
        $fragSummary += $newObjSummary
    } 
@@ -7067,7 +7226,7 @@ foreach ($OfficePolItems in $OfficePolicies.values)
    if ($fragAuthCodeSig -like "*warning*")
    {
        $newObjSummary = New-Object psObject
-       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value "Found authenticode signature hashmismatc"
+       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value '<a href="#AuthentiCode">Found authenticode signature hashmismatch</a>'
        Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Risk -Value "Medium Risk"
        $fragSummary += $newObjSummary
    } 
@@ -7075,7 +7234,7 @@ foreach ($OfficePolItems in $OfficePolicies.values)
    if ($fragCertificates -like "*Warning*")
    {
        $newObjSummary = New-Object psObject
-       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value "Installed Certificates that are either Self-Signed or from a undesirable Country"
+       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value '<a href="#Certs">Installed Certificates that are either Self-Signed or from a undesirable Country</a>'
        Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Risk -Value "Medium to High Risk"
        $fragSummary += $newObjSummary
    }
@@ -7083,7 +7242,7 @@ foreach ($OfficePolItems in $OfficePolicies.values)
    if ($fragUnQuoted -like "*warning*")
    {
        $newObjSummary = New-Object psObject
-       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value "Unquoted Paths Vulnerability"
+       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value '<a href="#unquoted">Unquoted Paths Vulnerability</a>'
        Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Risk -Value "Very High Risk"
        $fragSummary += $newObjSummary
    }
@@ -7091,7 +7250,7 @@ foreach ($OfficePolItems in $OfficePolicies.values)
    if ($fragReg -like "*warning*")
    {
        $newObjSummary = New-Object psObject
-       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value "Files in Program Files or Windows Directories are Writeable"
+       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value '<a href="#RegWrite">Registry keys that are Writeable</a>'
        Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Risk -Value "High Risk"
        $fragSummary += $newObjSummary
    } 
@@ -7099,15 +7258,15 @@ foreach ($OfficePolItems in $OfficePolicies.values)
    if ($fragsysFold -like "*warning*")
    {
        $newObjSummary = New-Object psObject
-       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value "Program Files or Windows Directories are Writeable"
+       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value '<a href="#SysDirWrite">Program Files or Windows Directories are Writeable</a>'
        Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Risk -Value "Medium to High Risk"
        $fragSummary += $newObjSummary
    } 
 
-      if ($fragcreateSysFold -like "*warning*")
+   if ($fragcreateSysFold -like "*warning*")
    {
        $newObjSummary = New-Object psObject
-       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value "Users can both Execute and Write to Program Files or Windows Directories"
+       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value '<a href="#sysDirExe">Users can both Execute and Write to Program Files or Windows Directories</a>'
        Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Risk -Value "Medium to High Risk"
        $fragSummary += $newObjSummary
    }
@@ -7115,7 +7274,7 @@ foreach ($OfficePolItems in $OfficePolicies.values)
    if ($fragwFile -like "*warning*")
    {
        $newObjSummary = New-Object psObject
-       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value "File in Program Files or Windows Directories are Writeable"
+       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value '<a href="#sysFileWrite">File in Program Files or Windows Directories are Writeable</a>'
        Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Risk -Value "High Risk"
        $fragSummary += $newObjSummary
    } 
@@ -7123,7 +7282,7 @@ foreach ($OfficePolItems in $OfficePolicies.values)
    if ($fragwFold -like "*warning*")
    {
        $newObjSummary = New-Object psObject
-       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value "Directories that are Writeable and non System"
+       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value '<a href="#nonSysDirWrite">Directories that are Writeable and non System</a>'
        Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Risk -Value "Low Risk"
        $fragSummary += $newObjSummary
    } 
@@ -7131,7 +7290,7 @@ foreach ($OfficePolItems in $OfficePolicies.values)
    if ($fragShare -like "*C$*")
    {
        $newObjSummary = New-Object psObject
-       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value "There are System Shares available"
+       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value '<a href="#shares">There are System Shares available</a>'
        Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Risk -Value "Informational"
        $fragSummary += $newObjSummary
    }
@@ -7139,24 +7298,15 @@ foreach ($OfficePolItems in $OfficePolicies.values)
    if ($fragLegNIC -like "*warning*")
    {
        $newObjSummary = New-Object psObject
-       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value "Legacy Network Protocols are enabled"
+       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value '<a href="#LegNetProt">Legacy Network Protocols are enabled</a>'
        Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Risk -Value "Medium to High Risk"
        $fragSummary += $newObjSummary
    } 
 
-   if ($getFw -like "*Inbound*")
-   {
-       $newObjSummary = New-Object psObject
-       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value "There are allowed Inbound Firewall Rules"
-       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Risk -Value "High Risk"
-       $fragSummary += $newObjSummary
-   } 
-
-
    if ($SchedTaskPerms -like "*warning*")
    {
        $newObjSummary = New-Object psObject
-       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value "Scheduled Tasks that reference scripts permissions are deficient"
+       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value '<a href="#schedDir">Scheduled Tasks that reference scripts permissions are deficient</a>'
        Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Risk -Value "High Risk"
        $fragSummary += $newObjSummary
    } 
@@ -7164,7 +7314,7 @@ foreach ($OfficePolItems in $OfficePolicies.values)
       if ($SchedTaskListings -like "*warning*")
    {
        $newObjSummary = New-Object psObject
-       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value "Scheduled Tasks contain Base64 or commands that require reviewing"
+       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value '<a href="#schedTask">Scheduled Tasks contain Base64 or commands that require reviewing</a>'
        Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Risk -Value "Medium Risk"
        $fragSummary += $newObjSummary
    } 
@@ -7173,7 +7323,7 @@ foreach ($OfficePolItems in $OfficePolicies.values)
     if ($DriverQuery -like "*warning*")
     {
        $newObjSummary = New-Object psObject
-       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value "There are Drivers that aren't signed"
+       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value '<a href="#drivers">There are Drivers that arent signed</a>'
        Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Risk -Value "Medium Risk"
        $fragSummary += $newObjSummary
     }
@@ -7181,7 +7331,7 @@ foreach ($OfficePolItems in $OfficePolicies.values)
       if ($fragSecOptions -like "*warning*")
    {
        $newObjSummary = New-Object psObject
-       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value "Security Options that prevent MitM attack are enabled"
+       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value '<a href="#secOptions">Security Options that prevent MitM attack are enabled</a>'
        Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Risk -Value "High Risk"
        $fragSummary += $newObjSummary
    } 
@@ -7189,7 +7339,7 @@ foreach ($OfficePolItems in $OfficePolicies.values)
    if ($fragASR -like "*Warning*")
    {
        $newObjSummary = New-Object psObject
-       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value "Attack Surface Reduction GPO's have not been set"
+       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value '<a href="#asr">Attack Surface Reduction GPOs have not been set</a>'
        Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Risk -Value "Medium Risk"
        $fragSummary += $newObjSummary
    }
@@ -7197,7 +7347,7 @@ foreach ($OfficePolItems in $OfficePolicies.values)
       if ($fragWindowsOSVal -like "*Warning*")
    {
        $newObjSummary = New-Object psObject
-       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value "Windows hardening policies recommended by Microsoft are missing"
+       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value '<a href="#WinSSLF">Windows hardening policies recommended by Microsoft are missing</a>'
        Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Risk -Value "High Risk"
        $fragSummary += $newObjSummary
    }
@@ -7205,7 +7355,7 @@ foreach ($OfficePolItems in $OfficePolicies.values)
    if ($fragEdgeVal -like "*Warning*")
    {
        $newObjSummary = New-Object psObject
-       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value "Edge hardening policies recommended by Microsoft are missing"
+       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value '<a href="#EdgeSSLF">Edge hardening policies recommended by Microsoft are missing</a>'
        Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Risk -Value "High Risk"
        $fragSummary += $newObjSummary
    }
@@ -7214,10 +7364,29 @@ foreach ($OfficePolItems in $OfficePolicies.values)
    if ($fragOfficeVal -like "*Warning*")
    {
        $newObjSummary = New-Object psObject
-       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value "Office hardening policies recommended by Microsoft are missing"
+       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value '<a href="#OfficeSSLF">Office hardening policies recommended by Microsoft are missing</a>'
        Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Risk -Value "High Risk"
        $fragSummary += $newObjSummary
    }
+       
+   #if ($fragFWProfile| % {$_.inbound -eq "Allow"})
+    if ($fragFWProfile -like "*Warning*")
+   {
+       $newObjSummary = New-Object psObject
+       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value '<a href="#FirewallProf">The Firewall Profile allows Inbound traffic</a>'
+       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Risk -Value "Very High Risk"
+       $fragSummary += $newObjSummary      
+   }
+
+   
+   if ($getFw -like "*Inbound*")
+   {
+       $newObjSummary = New-Object psObject
+       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value '<a href="#InFirewall">There are rules allowing Inbound Firewall Rules</a>'
+       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Risk -Value "High Risk"
+       $fragSummary += $newObjSummary
+   } 
+
 
 
 ################################################
@@ -7257,6 +7426,14 @@ foreach ($OfficePolItems in $OfficePolicies.values)
 #A88F7E = mouse
 #<font color="red"> <font>
 
+    #$VulnReport = "C:\SecureReport"
+    #$OutFunc = "scheme" 
+                
+    #$tpScheme = Test-Path "C:\SecureReport\output\$OutFunc\"
+    #$SchemePath = "C:\SecureReport\output\$OutFunc\" + "$OutFunc.txt"
+
+    #$Scheme = Get-Content $SchemePath
+
 if ($Scheme -eq "Tenaka")
 {
 $titleCol = "#4682B4"
@@ -7264,7 +7441,7 @@ $titleCol = "#4682B4"
 #HTML GENERATOR CSS
 $style = @"
     <Style>
-    body|aq
+    body
     {
         background-color:#250F00; 
         color:#B87333;
@@ -7296,7 +7473,7 @@ $style = @"
     h2
     {
         background-color:#250F00; 
-        color:#B87333;
+        color:#4682B4
         font-size:120%;
         font-family:helvetica;
         margin:0,0,10px,0; 
@@ -7350,11 +7527,35 @@ $style = @"
         background-color:#181818;
     }
 
+    a:link {
+    color:#4682B4;
+    background-color: transparent;
+    text-decoration: none;
+    }
+
+    a:visited {
+    color:#ff9933;
+    background-color: transparent;
+    text-decoration: none;
+    }
+
+    a:hover {
+    color:#B87333;
+    background-color: transparent;
+    text-decoration: none;
+    }
+
+    a:active {
+    color:#4682B4;
+    background-color: transparent;
+    text-decoration: none;
+    }
+
     </Style>
 "@
 }
 
-if ($Scheme -eq "Dark")
+elseif ($Scheme -eq "Dark")
 {
 $titleCol = "#4682B4"
 
@@ -7393,7 +7594,7 @@ $style = @"
     h2
     {
         background-color:#06273A; 
-        color:#FFF9EC;
+        color:#4682B4;
         font-size:120%;
         font-family:helvetica;
         margin:0,0,10px,0; 
@@ -7447,11 +7648,35 @@ $style = @"
         background-color:#28425F;
     }
 
+    a:link {
+    color:#4682B4;
+    background-color: transparent;
+    text-decoration: none;
+    }
+
+    a:visited {
+    color:#ff9933;
+    background-color: transparent;
+    text-decoration: none;
+    }
+
+    a:hover {
+    color:#FFF9EC;
+    background-color: transparent;
+    text-decoration: none;
+    }
+
+    a:active {
+    color:#4682B4;
+    background-color: transparent;
+    text-decoration: none;
+    }
+
     </Style>
 "@
 }
 
-if ($Scheme -eq "Light")
+elseif ($Scheme -eq "Light")
 {
 $titleCol = "#000000"
 
@@ -7490,7 +7715,7 @@ $style = @"
     h2
     {
         background-color:#EBEAE7; 
-        color:#79253D;
+        color:#000000;
         font-size:120%;
         font-family:helvetica;
         margin:0,0,10px,0; 
@@ -7544,11 +7769,35 @@ $style = @"
         background-color:#F4F2EC;
     }
 
+    a:link {
+    color:#000000;
+    background-color: transparent;
+    text-decoration: none;
+    }
+
+    a:visited {
+    color:#ff9933;
+    background-color: transparent;
+    text-decoration: none;
+    }
+
+    a:hover {
+    color:#79253D;
+    background-color: transparent;
+    text-decoration: none;
+    }
+
+    a:active {
+    color:#000000;
+    background-color: transparent;
+    text-decoration: none;
+    }
+
     </Style>
 "@
 }
 
-if ($Scheme -eq "Grey")
+elseif ($Scheme -eq "Grey")
 {
 $titleCol = "#D3BAA9"
 
@@ -7642,11 +7891,36 @@ $style = @"
         background-color:#4d4d4d;
     }
 
-    
+    a:link {
+    color:#D3BAA9;
+    background-color: transparent;
+    text-decoration: none;
+    }
+
+    a:visited {
+    color:#ff9933;
+    background-color: transparent;
+    text-decoration: none;
+    }
+
+    a:hover {
+    color:#A88F7E;
+    background-color: transparent;
+    text-decoration: none;
+    }
+
+    a:active {
+    color:#D3BAA9;
+    background-color: transparent;
+    text-decoration: none;
+    }    
 
     </Style>
 "@
 }
+
+#4682B4 - blue
+#FFF9EC - white
 
 else 
 {#Dark Theme
@@ -7688,7 +7962,7 @@ $style = @"
     h2
     {
         background-color:#06273A; 
-        color:#FFF9EC;
+        color:#4682B4;
         font-size:120%;
         font-family:helvetica;
         margin:0,0,10px,0; 
@@ -7740,6 +8014,30 @@ $style = @"
     tr:nth-child(even) 
     {
         background-color:#28425F;
+    }
+
+    a:link {
+    color:#4682B4;
+    background-color: transparent;
+    text-decoration: none;
+    }
+
+    a:visited {
+    color:#ff9933;
+    background-color: transparent;
+    text-decoration: none;
+    }
+
+    a:hover {
+    color:#FFF9EC;
+    background-color: transparent;
+    text-decoration: none;
+    }
+
+    a:active {
+    color:#4682B4;
+    background-color: transparent;
+    text-decoration: none;
     }
 
     </Style>
@@ -7856,80 +8154,82 @@ $style = @"
     $Frag_descripVirt2 = ConvertTo-Html -as table -Fragment -PostContent "<h4>$descripVirt2</h4>" | Out-String
     
     #Summary
-    $frag_Summary = $fragSummary | ConvertTo-Html -As Table -fragment -PreContent "<h2><span style='color:$titleCol'>Overall Compliance Status</span></h2>"  | Out-String
+    $frag_Summary = $fragSummary | ConvertTo-Html -As Table -fragment -PreContent "<h2>Overall Compliance Status</span></h2>"  | Out-String
             
     #Host details    
-    $frag_Host = $fragHost | ConvertTo-Html -As List -Property Name,Domain,Model -fragment -PreContent "<h2><span style='color:$titleCol'>Host Details</span></h2>"  | Out-String
-    $fragOS = $OS | ConvertTo-Html -As List -property Caption,Version,OSArchitecture,InstallDate -fragment -PreContent "<h2><span style='color:$titleCol'>Windows Details</span></h2>" | Out-String
-    $FragAccountDetails = $AccountDetails  | ConvertTo-Html -As Table -fragment -PreContent "<h2><span style='color:$titleCol'>Local Account Details</span></h2>" -PostContent "<h4>$descripLocalAccounts</h4>" | Out-String 
+    $frag_Host = $fragHost | ConvertTo-Html -As List -Property Name,Domain,Model -fragment -PreContent "<h2>Host Details</span></h2>"  | Out-String
+    $fragOS = $OS | ConvertTo-Html -As List -property Caption,Version,OSArchitecture,InstallDate -fragment -PreContent "<h2>Windows Details</span></h2>" | Out-String
+    $FragAccountDetails = $AccountDetails  | ConvertTo-Html -As Table -fragment -PreContent "<h2>Local Account Details</span></h2>" -PostContent "<h4>$descripLocalAccounts</h4>" | Out-String 
     
-    $frag_DCList  = $fragDCList | ConvertTo-Html -As Table -fragment -PreContent "<h2><span style='color:$titleCol'>List of Domain Controllers</span></h2>" | Out-String 
-    $frag_FSMO = $fragFSMO | ConvertTo-Html -As Table -fragment -PreContent "<h2><span style='color:$titleCol'>FSMO Roles</span></h2>" | Out-String 
-    $frag_DomainGrps = $fragDomainGrps | ConvertTo-Html -As Table -fragment -PreContent "<h2><span style='color:$titleCol'>Members of Privilege Groups</span></h2>" -PostContent "<h4>$descripDomainPrivsGps</h4>" | Out-String 
+    $frag_DCList  = $fragDCList | ConvertTo-Html -As Table -fragment -PreContent "<h2>List of Domain Controllers</span></h2>" | Out-String 
+    $frag_FSMO = $fragFSMO | ConvertTo-Html -As Table -fragment -PreContent "<h2>FSMO Roles</span></h2>" | Out-String 
+    $frag_DomainGrps = $fragDomainGrps | ConvertTo-Html -As Table -fragment -PreContent "<h2>Members of Privilege Groups</span></h2>" -PostContent "<h4>$descripDomainPrivsGps</h4>" | Out-String 
     
-    $frag_PreAuth = $fragPreAuth | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:$titleCol'>Domain Account that DO NOT Pre-Authenticate</span></h2>" -PostContent "<h4>$descripPreAuth</h4>" | Out-String
-    $FragGroupDetails =  $GroupDetails  | ConvertTo-Html -As Table -fragment -PreContent "<h2><span style='color:$titleCol'>Local System Group Members</span></h2>" | Out-String
-    $FragPassPol = $PassPol | Select-Object -SkipLast 3 | ConvertTo-Html -As Table -fragment -PreContent "<h2><span style='color:$titleCol'>Local PassWord Policy</span></h2>" | Out-String
-    $fragInstaApps  =  $InstallApps | Sort-Object publisher,displayname -Unique  | ConvertTo-Html -As Table  -fragment -PreContent "<h2><span style='color:$titleCol'>Installed Applications</span></h2>" | Out-String
-    $fragHotFix = $HotFix | ConvertTo-Html -As Table -property HotFixID,InstalledOn,Caption -fragment -PreContent "<h2><span style='color:$titleCol'>Latest 10 Installed Updates</span></h2>" | Out-String
-    $fragInstaApps16  =  $InstallApps16 | Sort-Object publisher,displayname -Unique  | ConvertTo-Html -As Table  -fragment -PreContent "<h2><span style='color:$titleCol'>Updates to Office 2016 and older or Updates that create KB's in the Registry</span></h2>" | Out-String
-    $Frag_AVStatus = $FragAVStatus | ConvertTo-Html -As Table  -fragment -PreContent "<h2><span style='color:$titleCol'>AntiVirus Engine and Definition Status</span></h2>" -PostContent "<h4>$descripAV</h4>" | Out-String
-    $fragBios = $bios | ConvertTo-Html -As List -property Name,Manufacturer,SerialNumber,SMBIOSBIOSVersion,ReleaseDate -fragment -PreContent "<h2><span style='color:$titleCol'>Bios Details</span></h2>" | Out-String
-    $fragCpu = $cpu | ConvertTo-Html -As List -property Name,MaxClockSpeed,NumberOfCores,ThreadCount -fragment -PreContent "<h2><span style='color:$titleCol'>Processor Details</span></h2>" | Out-String
-    $frag_whoamiGroups =  $whoamiGroups | ConvertTo-Html -As Table -fragment -PreContent "<h2><span style='color:$titleCol'>Current Users Group Membership</span></h2>" -PostContent "<h4>$descripDomainGroups</h4>" | Out-String
-    $frag_whoamiPriv =  $whoamiPriv | ConvertTo-Html -As Table -fragment -PreContent "<h2><span style='color:$titleCol'>Current Users Local Privileges</span></h2>" -PostContent "<h4>$descripDomainPrivs</h4>" | Out-String
+    $frag_PreAuth = $fragPreAuth | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"`#PreAuth`">Domain Accounts that DO NOT Pre-Authenticate</a></span></h2>" -PostContent "<h4>$descripPreAuth</h4>" | Out-String
+    $frag_NeverExpires = $fragNeverExpires | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"`#PassExpire`">Domain Accounts that Never Expire their Password</a></span></h2>"  | Out-String
     
-    $frag_Network4 = $fragNetwork4 | ConvertTo-Html -As List -fragment -PreContent "<h2><span style='color:$titleCol'>IPv4 Address Details</span></h2>"  | Out-String
-    $frag_Network6 = $fragNetwork6 | ConvertTo-Html -As List -fragment -PreContent "<h2><span style='color:$titleCol'>IPv4 Address Details</span></h2>"  | Out-String
+    $FragGroupDetails =  $GroupDetails  | ConvertTo-Html -As Table -fragment -PreContent "<h2>Local System Group Members</span></h2>" | Out-String
+    $FragPassPol = $PassPol | Select-Object -SkipLast 3 | ConvertTo-Html -As Table -fragment -PreContent "<h2>Local PassWord Policy</span></h2>" | Out-String
+    $fragInstaApps  =  $InstallApps | Sort-Object publisher,displayname -Unique  | ConvertTo-Html -As Table  -fragment -PreContent "<h2>Installed Applications</span></h2>" | Out-String
+    $fragHotFix = $HotFix | ConvertTo-Html -As Table -property HotFixID,InstalledOn,Caption -fragment -PreContent "<h2>Latest 10 Installed Updates</span></h2>" | Out-String
+    $fragInstaApps16  =  $InstallApps16 | Sort-Object publisher,displayname -Unique  | ConvertTo-Html -As Table  -fragment -PreContent "<h2>Updates to Office 2016 and older or Updates that create KB's in the Registry</span></h2>" | Out-String
+    $fragBios = $bios | ConvertTo-Html -As List -property Name,Manufacturer,SerialNumber,SMBIOSBIOSVersion,ReleaseDate -fragment -PreContent "<h2>Bios Details</span></h2>" | Out-String
+    $fragCpu = $cpu | ConvertTo-Html -As List -property Name,MaxClockSpeed,NumberOfCores,ThreadCount -fragment -PreContent "<h2>Processor Details</span></h2>" | Out-String
+    $frag_whoamiGroups =  $whoamiGroups | ConvertTo-Html -As Table -fragment -PreContent "<h2>Current Users Group Membership</span></h2>" -PostContent "<h4>$descripDomainGroups</h4>" | Out-String
+    $frag_whoamiPriv =  $whoamiPriv | ConvertTo-Html -As Table -fragment -PreContent "<h2>Current Users Local Privileges</span></h2>" -PostContent "<h4>$descripDomainPrivs</h4>" | Out-String
     
-    $Frag_WinFeature = $FragWinFeature | ConvertTo-Html -As table -fragment -PreContent "<h2><span style='color:$titleCol'>Installed Windows Features</span></h2>"  | Out-String
+    $frag_Network4 = $fragNetwork4 | ConvertTo-Html -As List -fragment -PreContent "<h2>IPv4 Address Details</span></h2>"  | Out-String
+    $frag_Network6 = $fragNetwork6 | ConvertTo-Html -As List -fragment -PreContent "<h2>IPv4 Address Details</span></h2>"  | Out-String
+    
+    $Frag_WinFeature = $FragWinFeature | ConvertTo-Html -As table -fragment -PreContent "<h2>Installed Windows Features</span></h2>"  | Out-String
     
     #Security Review
-    $frag_BitLocker = $fragBitLocker | ConvertTo-Html -As List -fragment -PreContent "<h2><span style='color:$titleCol'>Bitlocker and TPM Details</span></h2>" -PostContent "<h4>$descripBitlocker</h4>" | Out-String
-    $frag_Msinfo = $MsinfoClixml | ConvertTo-Html -As Table -fragment -PreContent "<h2><span style='color:$titleCol'>Virtualization and Secure Boot Details</span></h2>" -PostContent "<h4>$descripVirt</h4>"  | Out-String
-    $frag_LSAPPL = $fragLSAPPL | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:$titleCol'>LSA Protection for Stored Credentials</span></h2>" -PostContent "<h4>$descripLSA</h4>" | Out-String
-    $frag_DLLSafe = $fragDLLSafe | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:$titleCol'>DLL Safe Search Order</span></h2>"  -PostContent "<h4>$descripDLL</h4>"| Out-String
-    $frag_DLLHijack = $fragDLLHijack | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:$titleCol'>Loaded DLL's that are vulnerable to DLL Hijacking</span></h2>" | Out-String
-    $frag_DllNotSigned = $fragDllNotSigned | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:$titleCol'>All DLL's that aren't signed and user permissions allow write</span></h2>"  -PostContent "<h4>$descriptDLLHijack</h4>"| Out-String
-    $frag_Code = $fragCode | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:$titleCol'>Hypervisor Enforced Code Integrity</span></h2>" -PostContent "<h4>$descripHyper</h4>" | Out-String
-    $frag_PCElevate = $fragPCElevate | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:$titleCol'>Automatically Elevates User Installing Software</span></h2>"  -PostContent "<h4>$descripElev</h4>"| Out-String
-    $frag_FilePass = $fragFilePass | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:$titleCol'>Files that Contain the Word PASSWord</span></h2>" -PostContent "<h4>$descripFilePw</h4>" | Out-String
-    $frag_AutoLogon = $fragAutoLogon   | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:$titleCol'>AutoLogon Credentials in Registry</span></h2>"  -PostContent "<h4>$descripAutoLogon</h4>"| Out-String
-    $frag_UnQu = $fragUnQuoted | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:$titleCol'>Vectors that Allow UnQuoted Paths Attack</span></h2>" -PostContent "<h4>$DescripUnquoted</h4>" | Out-String
-    $frag_LegNIC = $fragLegNIC | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:$titleCol'>Legacy and Vulnerable Network Protocols</span></h2>" -PostContent "<h4>$DescripLegacyNet</h4>" | Out-String
-    $frag_SysRegPerms = $fragReg | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:$titleCol'>Registry Permissions Allowing User Access - Security Risk if Exist</span></h2>" -PostContent "<h4>$descripRegPer</h4>" | Out-String
-    $frag_PSPass = $fragPSPass | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:$titleCol'>Processes where CommandLine Contains a PassWord</span></h2>" -PostContent "<h4>$Finish</h4>" | Out-String
-    $frag_SecOptions = $fragSecOptions | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:$titleCol'>Security Options to Prevent MitM Attacks </span></h2>" -PostContent "<h4>$descripSecOptions</h4>" | Out-String
-    $frag_wFolders = $fragwFold | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:$titleCol'>Non System Folders that are Writeable - Security Risk when Executable</span></h2>" -PostContent "<h4>$descripNonFold</h4>"| Out-String
-    $frag_SysFolders = $fragsysFold | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:$titleCol'>Default System Folders that are Writeable - Security Risk if Exist</span></h2>"  -PostContent "<h4>$descripSysFold</h4>"| Out-String
-    $frag_CreateSysFold = $fragCreateSysFold | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:$titleCol'>Default System Folders that Permit Users to Create Files - Security Risk if Exist</span></h2>"  -PostContent "<h4>$descripCreateSysFold</h4>"| Out-String
-    $frag_wFile = $fragwFile | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:$titleCol'>System Files that are Writeable - Security Risk if Exist</span></h2>" -PostContent "<h4>$descripFile</h4>" | Out-String
-    $frag_FWProf = $fragFWProfile | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:$titleCol'>Firewall Profile</span></h2>"  -PostContent "<h4>$DescripFirewalls</h4>"| Out-String
-    $frag_FW = $fragFW | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:$titleCol'>Enabled Firewall Rules</span></h2>" | Out-String
-    $frag_TaskPerms =  $SchedTaskPerms | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:$titleCol'>Scheduled Tasks that call on Files on Storage</span></h2>"  -PostContent "<h4>$descripTaskSchPerms</h4>" | Out-String
-    $frag_TaskListings = $SchedTaskListings | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:$titleCol'>Scheduled Tasks that Contain something Encoded</span></h2>"  -PostContent "<h4>$descripTaskSchEncode</h4>" | Out-String
-    $frag_DriverQuery = $DriverQuery | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:$titleCol'>Drivers that aren't Signed</span></h2>" -PostContent "<h4>$descriptDriverQuery</h4>" | Out-String
-    $frag_Share = $fragShare | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:$titleCol'>Shares and their Share Permissions</span></h2>"  | Out-String
-    $frag_AuthCodeSig = $fragAuthCodeSig | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:$titleCol'>Files with an Authenticode Signature HashMisMatch</span></h2>" -PostContent "<h4>$descriptAuthCodeSig</h4>"  | Out-String  
-    $frag_CredGuCFG = $fragCredGuCFG | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:$titleCol'>Credential Guard</span></h2>" -PostContent "<h4>$descripCredGu</h4>" | Out-String
-    $frag_LapsPwEna = $fragLapsPwEna | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:$titleCol'>LAPS - Local Administrator PassWord Solution</span></h2>" -PostContent "<h4>$descripLAPS</h4>" | Out-String
-    $frag_URA = $fragURA | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:$titleCol'>URA - Local Systems User Rights Assignments</span></h2>" -PostContent "<h4>$descripURA</h4>" | Out-String
-    $frag_RegPassWords = $fragRegPassWords | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:$titleCol'>PassWords Embedded in the Registry</span></h2>" -PostContent "<h4>$descripRegPassWords</h4>" | Out-String
-    $frag_ASR = $fragASR | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:$titleCol'>Attack Surface Reduction (ASR)</span></h2>" -PostContent "<h4>$descripASR</h4>" | Out-String
-    $frag_WDigestULC = $fragWDigestULC | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:$titleCol'>WDigest</span></h2>" -PostContent "<h4>$descripWDigest</h4>" | Out-String
+    $Frag_AVStatus = $FragAVStatus | ConvertTo-Html -As Table  -fragment -PreContent "<h2><a name=`"`#AV`">AntiVirus Engine and Definition Status</a></span></h2>" -PostContent "<h4>$descripAV</h4>" | Out-String
+    $frag_BitLocker = $fragBitLocker | ConvertTo-Html -As List -fragment -PreContent "<h2><a name=`"`#Bitlockerisnotenabled`">Bitlocker and TPM Details</a></span></h2>" -PostContent "<h4>$descripBitlocker</h4>" | Out-String
+    $frag_Msinfo = $MsinfoClixml | ConvertTo-Html -As Table -fragment -PreContent "<h2><a name=`"`#VBS`">Virtualization and Secure Boot Details</a></span></h2>" -PostContent "<h4>$descripVirt</h4>"  | Out-String
+    $frag_LSAPPL = $fragLSAPPL | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"`#LSA`">LSA Protection for Stored Credentials</a></span></h2>" -PostContent "<h4>$descripLSA</h4>" | Out-String
+    $frag_DLLSafe = $fragDLLSafe | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"`#DLLSafe`">DLL Safe Search Order</a></span></h2>"  -PostContent "<h4>$descripDLL</h4>"| Out-String
+    $frag_DLLHijack = $fragDLLHijack | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"`#DLLHigh`">Loaded DLL's that are vulnerable to DLL Hijacking</a></span></h2>" | Out-String
+    $frag_DllNotSigned = $fragDllNotSigned | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"`#DLLSign`">All DLL's that aren't signed and user permissions allow write</a></span></h2>"  -PostContent "<h4>$descriptDLLHijack</h4>"| Out-String
+    $frag_Code = $fragCode | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"`#HECI`">Hypervisor Enforced Code Integrity</a></span></h2>" -PostContent "<h4>$descripHyper</h4>" | Out-String
+    $frag_PCElevate = $fragPCElevate | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"`#SoftElevation`">Automatically Elevates User Installing Software</a></span></h2>"  -PostContent "<h4>$descripElev</h4>"| Out-String
+    $frag_FilePass = $fragFilePass | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"`#FilePW`">Files that Contain the Word PASSWord</a></span></h2>" -PostContent "<h4>$descripFilePw</h4>" | Out-String
+    $frag_AutoLogon = $fragAutoLogon   | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"`#AutoLogon`">AutoLogon Credentials in Registry</a></span></h2>"  -PostContent "<h4>$descripAutoLogon</h4>"| Out-String
+    $frag_UnQu = $fragUnQuoted | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"`#unquoted`">UnQuoted Paths Attack</a></span></h2>" -PostContent "<h4>$DescripUnquoted</h4>" | Out-String
+    $frag_LegNIC = $fragLegNIC | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"`#LegNetProt`">Legacy and Vulnerable Network Protocols</a></span></h2>" -PostContent "<h4>$DescripLegacyNet</h4>" | Out-String
+    $frag_SysRegPerms = $fragReg | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"`#RegWrite`">Registry Permissions Allowing User Access - Security Risk if Exist</a></span></h2>" -PostContent "<h4>$descripRegPer</h4>" | Out-String
+    $frag_PSPass = $fragPSPass | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"`#ProcPW`">Processes where CommandLine Contains a PassWord</a></span></h2>" -PostContent "<h4>$Finish</h4>" | Out-String
+    $frag_SecOptions = $fragSecOptions | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"`#secOptions`">Security Options to Prevent MitM Attacks</a></span></h2>" -PostContent "<h4>$descripSecOptions</h4>" | Out-String
+    $frag_wFolders = $fragwFold | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"`#sysFileWrite `">Non System Folders that are Writeable - Security Risk when Executable</span></a></h2>" -PostContent "<h4>$descripNonFold</h4>"| Out-String
+    $frag_SysFolders = $fragsysFold | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"`#SysDirWrite`">Default System Folders that are Writeable - Security Risk if Exist</span></a></h2>"  -PostContent "<h4>$descripSysFold</h4>"| Out-String
+    $frag_CreateSysFold = $fragCreateSysFold | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"`#sysDirExe`">Default System Folders that Permit Users to Create Files - Security Risk if Exist</a></span></h2>"  -PostContent "<h4>$descripCreateSysFold</h4>"| Out-String
+    $frag_wFile = $fragwFile | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"`#sysFileWrite`">System Files that are Writeable - Security Risk if Exist</a></span></h2>" -PostContent "<h4>$descripFile</h4>" | Out-String
+    $frag_FWProf = $fragFWProfile | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"`#FirewallProf`">Firewall Profile</a></span></h2>"  -PostContent "<h4>$DescripFirewalls</h4>"| Out-String
+    $frag_FW = $fragFW | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"`#InFirewall`">Enabled Firewall Rules</a></span></h2>" | Out-String
+    $frag_TaskPerms =  $SchedTaskPerms | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"`#schedDir`">Scheduled Tasks that call on Files on Storage</a></span></h2>"  -PostContent "<h4>$descripTaskSchPerms</h4>" | Out-String
+    $frag_TaskListings = $SchedTaskListings | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"`#schedTask`">Scheduled Tasks that Contain something Encoded</a></span></h2>"  -PostContent "<h4>$descripTaskSchEncode</h4>" | Out-String
+    $frag_DriverQuery = $DriverQuery | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"`#drivers`">Drivers that aren't Signed</a></span></h2>" -PostContent "<h4>$descriptDriverQuery</h4>" | Out-String
+    $frag_Share = $fragShare | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"`#shares`">Shares and their Share Permissions</a></span></h2>"  | Out-String
+    $frag_AuthCodeSig = $fragAuthCodeSig | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"`#AuthentiCode`">Files with an Authenticode Signature HashMisMatch</a></span></h2>" -PostContent "<h4>$descriptAuthCodeSig</h4>"  | Out-String  
+    $frag_CredGuCFG = $fragCredGuCFG | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"`#CredGuard`">Credential Guard</a></span></h2>" -PostContent "<h4>$descripCredGu</h4>" | Out-String
+    $frag_LapsPwEna = $fragLapsPwEna | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"`#LAPS`">LAPS - Local Administrator PassWord Solution</a></span></h2>" -PostContent "<h4>$descripLAPS</h4>" | Out-String
+    $frag_URA = $fragURA | ConvertTo-Html -as Table -Fragment -PreContent "<h2>URA - Local Systems User Rights Assignments</a></span></h2>" -PostContent "<h4>$descripURA</h4>" | Out-String
+    $frag_RegPassWords = $fragRegPassWords | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"`#RegPW`">PassWords Embedded in the Registry</a></span></h2>" -PostContent "<h4>$descripRegPassWords</h4>" | Out-String
+    $frag_ASR = $fragASR | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"`#asr`">Attack Surface Reduction (ASR)</a></span></h2>" -PostContent "<h4>$descripASR</h4>" | Out-String
+    $frag_WDigestULC = $fragWDigestULC | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"`#WDigest`">WDigest</a></span></h2>" -PostContent "<h4>$descripWDigest</h4>" | Out-String
     
-    ########$frag_Certificates = $fragCertificates | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:$titleCol'>Installed Certificates</span></h2>" -PostContent "<h4>$descripWDigest</h4>" | Out-String
+    ########$frag_Certificates = $fragCertificates | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"`#Certs`">Installed Certificates</a></span></h2>" -PostContent "<h4>$descripWDigest</h4>" | Out-String
       
     #MS Recommended Secuirty settings (SSLF)
-    $frag_WindowsOSVal = $fragWindowsOSVal | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:$titleCol'>Windows OS Security Recommendations</span></h2>" -PostContent "<h4>$descripWindowsOS</h4>" | Out-String
-    $frag_EdgeVal = $fragEdgeVal | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:$titleCol'>MS Edge Security Recommendations</span></h2>" | Out-String
-    $frag_OfficeVal = $fragOfficeVal | ConvertTo-Html -as Table -Fragment -PreContent "<h2><span style='color:$titleCol'>MS Office Security Recommendations</span></h2>" -PostContent "<h4>$descripOffice2016</h4>" | Out-String
+    $frag_WindowsOSVal = $fragWindowsOSVal | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"`#WinSSLF`">Windows OS Security Recommendations</a></span></h2>" -PostContent "<h4>$descripWindowsOS</h4>" | Out-String
+    $frag_EdgeVal = $fragEdgeVal | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"`#EdgeSSLF`">MS Edge Security Recommendations</a></span></h2>" | Out-String
+    $frag_OfficeVal = $fragOfficeVal | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"`#OfficeSSLF`">MS Office Security Recommendations</a></span></h2>" -PostContent "<h4>$descripOffice2016</h4>" | Out-String
     
     #Quick and dirty tidy up and removal of Frags that are $null
     if ($fragAuthCodeSig -eq $null){$frag_AuthCodeSig = ""}
     if ($fragDLLSafe -eq $null){$frag_DLLSafe = ""}
-    if ($fragDLLHijack -eq $null){$fragD_LLHijack = ""}
-    if ($fragDllNotSigned -eq $null){$fragD_llNotSigned = ""}
+    if ($fragDLLHijack -eq $null){$frag_DLLHijack = ""}
+    if ($fragDllNotSigned -eq $null){$frag_DllNotSigned = ""}
     if ($fragPCElevate-eq $null){$frag_PCElevate= ""}
     if ($fragFilePass-eq $null){$frag_FilePass = ""}
     if ($fragAutoLogon -eq $null){$frag_AutoLogon = ""}
@@ -7939,7 +8239,6 @@ $style = @"
     if ($fragwFile -eq $null){$frag_wFile = ""}
     if ($fragFWProfile -eq $null){$frag_FWProf = ""}
     if ($DriverQuery -eq $null){$frag_DriverQuery = ""}
-    if ($fragLapsPwEna -eq $null){$frag_LapsPwEna = ""}
     if ($SchedTaskPerms -eq $null){$frag_TaskPerms = ""}
     if ($SchedTaskListings -eq $null){$frag_TaskListings = ""}
     if ($InstallApps16  -eq $null){$fragInstaApps16 = ""}
@@ -7947,9 +8246,6 @@ $style = @"
     if ($fragRegPassWords -eq $null){$frag_RegPassWords = ""}
     if ($DriverQuery -eq $null){$frag_DriverQuery = ""}
     if ($SchedTaskPerms -eq $null){$frag_TaskPerms = ""}
-    if ($fragWDigestULC -eq $null){$frag_WDigestULC = ""}
-    if ($fragOfficeVal -eq $null){$frag_OfficeVal = ""}
-    if ($fragDLLHijack -eq $null){$frag_DLLHijack = ""}
     if ($fragPSPass -eq $null){$frag_PSPass = ""}
     if ($fragFilePass -eq $null){$frag_FilePass = ""}
     if ($fragRegPassWords -eq $null){$frag_RegPassWords = ""}
@@ -7979,6 +8275,7 @@ if ($folders -eq "y")
     $frag_DCList,
     $frag_FSMO,
     $frag_PreAuth,
+    $frag_NeverExpires,
     $FragGroupDetails,
     $frag_whoamiGroups, 
     $frag_whoamiPriv,
@@ -8042,6 +8339,7 @@ else
     $frag_DCList,
     $frag_FSMO,
     $frag_PreAuth,
+    $frag_NeverExpires,
     $FragGroupDetails,
     $frag_whoamiGroups, 
     $frag_whoamiPriv,
@@ -8155,15 +8453,25 @@ else
     foreach {$_ -replace "<td>Low to Medium Risk","<td><font color=#a6ff4d>Low to Medium Risk"} | 
     foreach {$_ -replace "<td>Low Risk","<td><font color=#ffff66>Low Risk"} | 
     foreach {$_ -replace "<td>Informational","<td><font color=#80ff80>Informational"} | 
+
+    foreach {$_ -replace '&lt;a href=&quot;','<a href="'} | 
+    foreach {$_ -replace '&lt;/a">','</a>'} |
+    foreach {$_ -replace '&quot;">','">'} |
+
+    foreach {$_ -replace 'Warning - ',''} |
        
     Set-Content "C:\SecureReport\FinishedReport.htm" -Force
-   
+    
+    invoke-item 'C:\SecureReport'   
+
     }
 }
 reports
 
 <#
 Stuff to Fix.....
+
+
 $ExecutionContext.SessionState.LanguageMode -eq "ConstrainedLanguage"
 Null message warning that security is missing
 set warning for secure boot
