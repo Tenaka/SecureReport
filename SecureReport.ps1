@@ -7106,7 +7106,7 @@ foreach ($OfficePolItems in $OfficePolicies.values)
     if ($fragPreAuth -like "*warning*")
     {
        $newObjSummary = New-Object psObject
-       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value '<a href="#PreAuth">There are AD accounts that dont pre-authenticated</a>'
+       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value '<a href="#PreAuth">There are AD accounts that dont Pre-Authenticated</a>'
        Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Risk -Value "High Risk"
        $fragSummary += $newObjSummary
     }
@@ -7114,7 +7114,7 @@ foreach ($OfficePolItems in $OfficePolicies.values)
     if ($fragNeverExpires -like "*warning*")
     {
        $newObjSummary = New-Object psObject
-       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value '<a href="#PassExpire">There are AD accounts that dont Expire their Password</a>'
+       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value '<a href="#PassExpire">There are AD accounts that dont Expire their Passwords</a>'
        Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Risk -Value "High Risk"
        $fragSummary += $newObjSummary
     }
@@ -7130,7 +7130,7 @@ foreach ($OfficePolItems in $OfficePolicies.values)
     if ($fragCredGuCFG -like "*warning*")
     {
        $newObjSummary = New-Object psObject
-       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value '<a href="#CredGuard">Credential Guard is disabled</a>'
+       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value '<a href="#CredGuard">Credential Guard is Disabled</a>'
        Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Risk -Value "High Risk"
        $fragSummary += $newObjSummary
     }
@@ -7138,7 +7138,7 @@ foreach ($OfficePolItems in $OfficePolicies.values)
     if ($fragWDigestULC -like "*warning*")
     {
        $newObjSummary = New-Object psObject
-       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value '<a href="#WDigest">WDigest is enabled</a>'
+       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value '<a href="#WDigest">WDigest is Enabled</a>'
        Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Risk -Value "High Risk"
        $fragSummary += $newObjSummary
     }
@@ -7146,7 +7146,7 @@ foreach ($OfficePolItems in $OfficePolicies.values)
     if ($fragLapsPwEna -like "*warning*")
     {
        $newObjSummary = New-Object psObject
-       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value '<a href="#LAPS">LAPS is not configured</a>'
+       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value '<a href="#LAPS">LAPS is not Configured</a>'
        Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Risk -Value "High Risk"
        $fragSummary += $newObjSummary
     }
@@ -7162,7 +7162,7 @@ foreach ($OfficePolItems in $OfficePolicies.values)
    if ($fragPSPass -like "*Warning*")
    {
        $newObjSummary = New-Object psObject
-       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value '<a href="#ProcPW">Process have been found that contain embedded passwords</a>'
+       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value '<a href="#ProcPW">Processes have been found that contain Embedded Passwords</a>'
        Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Risk -Value "High Risk"
        $fragSummary += $newObjSummary
    }
@@ -7170,7 +7170,7 @@ foreach ($OfficePolItems in $OfficePolicies.values)
    if ($fragFilePass -like "*Warning*")
    {
        $newObjSummary = New-Object psObject
-       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value '<a href="#FilePW">Files have been found that contain embedded passwords</a>'
+       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value '<a href="#FilePW">Files have been found that contain Embedded Passwords</a>'
        Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Risk -Value "High Risk"
        $fragSummary += $newObjSummary
    }  
@@ -7178,7 +7178,7 @@ foreach ($OfficePolItems in $OfficePolicies.values)
    if ($fragRegPassWords -like "*Warning*")
    {
        $newObjSummary = New-Object psObject
-       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value '<a href="#RegPW">Found embedded PassWords in the Registry</a>'
+       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value '<a href="#RegPW">Found Embedded PassWords in the Registry</a>'
        Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Risk -Value "Medium Risk"
        $fragSummary += $newObjSummary
    } 
@@ -7194,7 +7194,7 @@ foreach ($OfficePolItems in $OfficePolicies.values)
     if ($fragPCElevate -like "*warning*")
     {
        $newObjSummary = New-Object psObject
-       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value '<a href="#SoftElevation">Installation of software will auto elevate</a>'
+       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value '<a href="#SoftElevation">Installation of Software will Auto Elevate</a>'
        Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Risk -Value "High Risk"
        $fragSummary += $newObjSummary
     }
@@ -7202,7 +7202,7 @@ foreach ($OfficePolItems in $OfficePolicies.values)
     if ($fragDLLSafe -like "*warning*")
     {
        $newObjSummary = New-Object psObject
-       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value '<a href="#DLLSafe">DLL Safe Search is not enabled</a>'
+       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value '<a href="#DLLSafe">DLL Safe Search is not Enabled</a>'
        Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Risk -Value "High Risk"
        $fragSummary += $newObjSummary
     }
@@ -7210,7 +7210,7 @@ foreach ($OfficePolItems in $OfficePolicies.values)
    if ($fragDllNotSigned -like "*warning*")
    {
        $newObjSummary = New-Object psObject
-       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value '<a href="#DLLSign">Dlls that are NOT signed and user permissions allow write</a>'
+       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value '<a href="#DLLSign">Dlls that are Not Signed and User Permissions Allow Write</a>'
        Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Risk -Value "Medium Risk"
        $fragSummary += $newObjSummary
    } 
@@ -7218,7 +7218,7 @@ foreach ($OfficePolItems in $OfficePolicies.values)
    if ($fragDLLHijack -like "*Warning*")
    {
        $newObjSummary = New-Object psObject
-       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value '<a href="#DLLHigh">Loaded  dlls that are vulnerable to dll hijacking by the User</a>'
+       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value '<a href="#DLLHigh">Loaded  dlls that are Vulnerable to dll Hijacking by the User</a>'
        Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Risk -Value "Medium Risk"
        $fragSummary += $newObjSummary
    } 
@@ -7226,7 +7226,7 @@ foreach ($OfficePolItems in $OfficePolicies.values)
    if ($fragAuthCodeSig -like "*warning*")
    {
        $newObjSummary = New-Object psObject
-       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value '<a href="#AuthentiCode">Found authenticode signature hashmismatch</a>'
+       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value '<a href="#AuthentiCode">Found Authenticode Signature Hash Mismatch</a>'
        Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Risk -Value "Medium Risk"
        $fragSummary += $newObjSummary
    } 
@@ -7234,7 +7234,7 @@ foreach ($OfficePolItems in $OfficePolicies.values)
    if ($fragCertificates -like "*Warning*")
    {
        $newObjSummary = New-Object psObject
-       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value '<a href="#Certs">Installed Certificates that are either Self-Signed or from a undesirable Country</a>'
+       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value '<a href="#Certs">Installed Certificates that are either Self-Signed or from a Undesirable Country</a>'
        Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Risk -Value "Medium to High Risk"
        $fragSummary += $newObjSummary
    }
@@ -7250,7 +7250,7 @@ foreach ($OfficePolItems in $OfficePolicies.values)
    if ($fragReg -like "*warning*")
    {
        $newObjSummary = New-Object psObject
-       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value '<a href="#RegWrite">Registry keys that are Writeable</a>'
+       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value '<a href="#RegWrite">Registry Keys that are Writeable</a>'
        Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Risk -Value "High Risk"
        $fragSummary += $newObjSummary
    } 
@@ -7282,7 +7282,7 @@ foreach ($OfficePolItems in $OfficePolicies.values)
    if ($fragwFold -like "*warning*")
    {
        $newObjSummary = New-Object psObject
-       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value '<a href="#nonSysDirWrite">Directories that are Writeable and non System</a>'
+       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value '<a href="#nonSysDirWrite">Directories that are Writeable and Non System</a>'
        Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Risk -Value "Low Risk"
        $fragSummary += $newObjSummary
    } 
@@ -7298,7 +7298,7 @@ foreach ($OfficePolItems in $OfficePolicies.values)
    if ($fragLegNIC -like "*warning*")
    {
        $newObjSummary = New-Object psObject
-       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value '<a href="#LegNetProt">Legacy Network Protocols are enabled</a>'
+       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value '<a href="#LegNetProt">Legacy Network Protocols are Enabled</a>'
        Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Risk -Value "Medium to High Risk"
        $fragSummary += $newObjSummary
    } 
@@ -7306,7 +7306,7 @@ foreach ($OfficePolItems in $OfficePolicies.values)
    if ($SchedTaskPerms -like "*warning*")
    {
        $newObjSummary = New-Object psObject
-       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value '<a href="#schedDir">Scheduled Tasks that reference scripts permissions are deficient</a>'
+       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value '<a href="#schedDir">Scheduled Tasks with Scripts and Permissions are Weak</a>'
        Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Risk -Value "High Risk"
        $fragSummary += $newObjSummary
    } 
@@ -7314,7 +7314,7 @@ foreach ($OfficePolItems in $OfficePolicies.values)
       if ($SchedTaskListings -like "*warning*")
    {
        $newObjSummary = New-Object psObject
-       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value '<a href="#schedTask">Scheduled Tasks contain Base64 or commands that require reviewing</a>'
+       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value '<a href="#schedTask">Scheduled Tasks Contain Base64 or Commands that Require Reviewing</a>'
        Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Risk -Value "Medium Risk"
        $fragSummary += $newObjSummary
    } 
@@ -7323,7 +7323,7 @@ foreach ($OfficePolItems in $OfficePolicies.values)
     if ($DriverQuery -like "*warning*")
     {
        $newObjSummary = New-Object psObject
-       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value '<a href="#drivers">There are Drivers that arent signed</a>'
+       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value '<a href="#drivers">There are Drivers that Arent Signed</a>'
        Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Risk -Value "Medium Risk"
        $fragSummary += $newObjSummary
     }
@@ -7331,7 +7331,7 @@ foreach ($OfficePolItems in $OfficePolicies.values)
       if ($fragSecOptions -like "*warning*")
    {
        $newObjSummary = New-Object psObject
-       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value '<a href="#secOptions">Security Options that prevent MitM attack are enabled</a>'
+       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value '<a href="#secOptions">Security Options that Pevent MitM Attack are Enabled</a>'
        Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Risk -Value "High Risk"
        $fragSummary += $newObjSummary
    } 
@@ -7339,7 +7339,7 @@ foreach ($OfficePolItems in $OfficePolicies.values)
    if ($fragASR -like "*Warning*")
    {
        $newObjSummary = New-Object psObject
-       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value '<a href="#asr">Attack Surface Reduction GPOs have not been set</a>'
+       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value '<a href="#asr">Attack Surface Reduction GPOs have not been Set</a>'
        Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Risk -Value "Medium Risk"
        $fragSummary += $newObjSummary
    }
@@ -7347,7 +7347,7 @@ foreach ($OfficePolItems in $OfficePolicies.values)
       if ($fragWindowsOSVal -like "*Warning*")
    {
        $newObjSummary = New-Object psObject
-       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value '<a href="#WinSSLF">Windows hardening policies recommended by Microsoft are missing</a>'
+       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value '<a href="#WinSSLF">Windows Hardening Policies Recommended by Microsoft are Missing</a>'
        Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Risk -Value "High Risk"
        $fragSummary += $newObjSummary
    }
@@ -7355,7 +7355,7 @@ foreach ($OfficePolItems in $OfficePolicies.values)
    if ($fragEdgeVal -like "*Warning*")
    {
        $newObjSummary = New-Object psObject
-       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value '<a href="#EdgeSSLF">Edge hardening policies recommended by Microsoft are missing</a>'
+       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value '<a href="#EdgeSSLF">Edge Hardening Policies Recommended by Microsoft are Missing</a>'
        Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Risk -Value "High Risk"
        $fragSummary += $newObjSummary
    }
@@ -7364,7 +7364,7 @@ foreach ($OfficePolItems in $OfficePolicies.values)
    if ($fragOfficeVal -like "*Warning*")
    {
        $newObjSummary = New-Object psObject
-       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value '<a href="#OfficeSSLF">Office hardening policies recommended by Microsoft are missing</a>'
+       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value '<a href="#OfficeSSLF">Office Hardening Policies Recommended by Microsoft are Missing</a>'
        Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Risk -Value "High Risk"
        $fragSummary += $newObjSummary
    }
@@ -7373,7 +7373,7 @@ foreach ($OfficePolItems in $OfficePolicies.values)
     if ($fragFWProfile -like "*Warning*")
    {
        $newObjSummary = New-Object psObject
-       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value '<a href="#FirewallProf">The Firewall Profile allows Inbound traffic</a>'
+       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value '<a href="#FirewallProf">The Firewall Profile Allows Inbound Traffic</a>'
        Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Risk -Value "Very High Risk"
        $fragSummary += $newObjSummary      
    }
@@ -7382,7 +7382,7 @@ foreach ($OfficePolItems in $OfficePolicies.values)
    if ($getFw -like "*Inbound*")
    {
        $newObjSummary = New-Object psObject
-       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value '<a href="#InFirewall">There are rules allowing Inbound Firewall Rules</a>'
+       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value '<a href="#InFirewall">There are Firewall rules Allowing Inbound Firewall Traffic</a>'
        Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Risk -Value "High Risk"
        $fragSummary += $newObjSummary
    } 
