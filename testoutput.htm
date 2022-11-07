@@ -1,0 +1,1117 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <Style>
+    body
+    {
+        background-color:#06273A; 
+        color:#FFF9EC;
+        font-size:100%;
+        font-family:helvetica;
+        margin:0,0,10px,0; 
+        Word-break:normal; 
+        Word-wrap:break-Word
+    }
+    table
+    {
+        border-width: 1px;
+        padding: 7px;
+        border-style: solid;
+        border-color:#FFF9EC;
+        border-collapse:collapse;
+        width:auto
+    }
+    h1
+    {
+        background-color:#06273A; 
+        color:#FFF9EC;
+        font-size:150%;
+        font-family:helvetica;
+        margin:0,0,10px,0;
+        Word-break:normal; 
+        Word-wrap:break-Word
+    }
+    h2
+    {
+        background-color:#06273A; 
+        color:#4682B4;
+        font-size:120%;
+        font-family:helvetica;
+        margin:0,0,10px,0; 
+        Word-break:normal; 
+        Word-wrap:break-Word
+    }
+    h3
+    {
+        background-color:#06273A; 
+        color:#FFF9EC;
+        font-size:100%;
+        font-family:helvetica;
+        margin:0,0,10px,0; 
+        Word-break:normal; 
+        Word-wrap:break-Word;
+        font-weight: normal;
+        width:auto
+    }
+    h4
+    {
+        background-color:#06273A; 
+        color:#9f9696;
+        font-size:90%;
+        font-family:helvetica;
+        margin:0,0,10px,0; 
+        Word-break:normal; 
+        Word-wrap:break-Word;
+        font-weight: normal
+    }
+    th
+    {
+        border-width: 1px;
+        padding: 7px;
+        border-style: solid;
+        border-color:#FFF9EC;
+        background-color:#06273A
+    }
+    td
+    {
+        border-width: 1px;
+        padding:7px;
+        border-style: solid; 
+        border-style: #FFF9EC
+    }
+    tr:nth-child(odd) 
+    {
+        background-color:#06273A;
+    }
+    tr:nth-child(even) 
+    {
+        background-color:#28425F;
+    }
+
+    a:link {
+    color:#4682B4;
+    background-color: transparent;
+    text-decoration: none;
+    }
+
+    a:visited {
+    color:#ff9933;
+    background-color: transparent;
+    text-decoration: none;
+    }
+
+    a:hover {
+    color:#FFF9EC;
+    background-color: transparent;
+    text-decoration: none;
+    }
+
+    a:active {
+    color:#4682B4;
+    background-color: transparent;
+    text-decoration: none;
+    }
+
+    </Style>
+</head><body>
+<h1 align=center style='text-align:center'><span style='color:#4682B4;'>TENAKA.NET</span><h1>
+<h3><span style=font-family:helvetica;>Thanks for using the vulnerability report written by Tenaka.net, please show your support and visit my site, it's non-profit and Ad-free. <br> <br>Any issues with the report's accuracy please do let me know and I'll get it fixed asap. The results in this report are a guide and not a guarantee that the tested system is not without further defects or vulnerability. <br>
+    <br>The tests focus on known and common issues with Windows that can be exploited by an attacker. Each section contains a small snippet to provide some context, follow the links for further detail. <br> <br>Further support for the output can be found @ https://www.tenaka.net/windowsclient-vulnscanner<br></span></h3>
+<table>
+</table>
+
+<h2>Overall Compliance Status</span></h2>
+<table>
+<colgroup><col/><col/></colgroup>
+<tr><th>Vulnerability</th><th>Risk</th></tr>
+<tr><td><a href="#HECI">Hypervisor Enforced Code Integrity</a></td><td><font color=#ff471a>High Risk</td></tr>
+<tr><td><a href="#Bitlockerisnotenabled">Bitlocker</a></td><td><font color=#e60000>Very High Risk</td></tr>
+<tr><td><a href="#LSA">LSA is Disabled</a></td><td><font color=#ff471a>High Risk</td></tr>
+<tr><td><a href="#CredGuard">Credential Guard is Disabled</a></td><td><font color=#ff471a>High Risk</td></tr>
+<tr><td><a href="#LAPS">LAPS is not Configured</a></td><td><font color=#ff471a>High Risk</td></tr>
+<tr><td><a href="#DLLSafe">DLL Safe Search is not Enabled</a></td><td><font color=#ff471a>High Risk</td></tr>
+<tr><td><a href="#unquoted">Unquoted Paths Vulnerability</a></td><td><font color=#e60000>Very High Risk</td></tr>
+<tr><td><a href="#shares">There are System Shares available</a></td><td><font color=#80ff80>Informational</td></tr>
+<tr><td><a href="#LegNetProt">Legacy Network Protocols are Enabled</a></td><td><font color=#ff751a>Medium to High Risk</td></tr>
+<tr><td><a href="#drivers">There are Drivers that Arent Signed</a></td><td><font color=#ffb366>Medium Risk</td></tr>
+<tr><td><a href="#secOptions">Security Options that Pevent MitM Attack are Enabled</a></td><td><font color=#ff471a>High Risk</td></tr>
+<tr><td><a href="#asr">Attack Surface Reduction GPOs have not been Set</a></td><td><font color=#ffb366>Medium Risk</td></tr>
+<tr><td><a href="#WinSSLF">Windows Hardening Policies Recommended by Microsoft are Missing</a></td><td><font color=#ff471a>High Risk</td></tr>
+<tr><td><a href="#EdgeSSLF">Edge Hardening Policies Recommended by Microsoft are Missing</a></td><td><font color=#ff471a>High Risk</td></tr>
+<tr><td><a href="#OfficeSSLF">Office Hardening Policies Recommended by Microsoft are Missing</a></td><td><font color=#ff471a>High Risk</td></tr>
+<tr><td><a href="#InFirewall">There are Firewall rules Allowing Inbound Firewall Traffic</a></td><td><font color=#ff471a>High Risk</td></tr>
+</table>
+
+<h2>Host Details</span></h2>
+<table>
+<tr><td>Name:</td><td>DESKTOP-L5S6COL</td></tr>
+<tr><td>Domain:</td><td>tenaka.loc</td></tr>
+<tr><td>Model:</td><td>Virtual Machine</td></tr>
+</table>
+
+<h2>Windows Details</span></h2>
+<table>
+<tr><td>Caption:</td><td>Microsoft Windows 10 Enterprise LTSC</td></tr>
+<tr><td>Version:</td><td>10.0.19044</td></tr>
+<tr><td>OSArchitecture:</td><td>64-bit</td></tr>
+<tr><td>InstallDate:</td><td>23/10/2022 15:59:26</td></tr>
+</table>
+
+<h2>Bios Details</span></h2>
+<table>
+<tr><td>Name:</td><td>Hyper-V UEFI Release v4.1</td></tr>
+<tr><td>Manufacturer:</td><td>Microsoft Corporation</td></tr>
+<tr><td>SerialNumber:</td><td>8051-3542-5988-2027-5842-9767-86</td></tr>
+<tr><td>SMBIOSBIOSVersion:</td><td>Hyper-V UEFI Release v4.1</td></tr>
+<tr><td>ReleaseDate:</td><td>05/05/2021 01:00:00</td></tr>
+</table>
+
+<h2>Processor Details</span></h2>
+<table>
+<tr><td>Name:</td><td>11th Gen Intel(R) Core(TM) i7-1165G7 @ 2.80GHz</td></tr>
+<tr><td>MaxClockSpeed:</td><td>2803</td></tr>
+<tr><td>NumberOfCores:</td><td>1</td></tr>
+<tr><td>ThreadCount:</td><td>2</td></tr>
+</table>
+
+<h2>IPv4 Address Details</span></h2>
+<table>
+<tr><td>IPv4Address:</td><td>10.1.1.2</td></tr>
+<tr><td>IPv4Subnet:</td><td>255.255.255.0</td></tr>
+<tr><td>IPv4Gateway:</td><td></td></tr>
+<tr><td>DNSServers:</td><td>10.1.1.1</td></tr>
+<tr><td>Mac:</td><td>00-15-5D-00-38-04</td></tr>
+</table>
+
+<h2>IPv4 Address Details</span></h2>
+<table>
+<tr><td>IPv6Address:</td><td></td></tr>
+<tr><td>IPv6Subnet:</td><td>64</td></tr>
+<tr><td>IPv6Gateway:</td><td></td></tr>
+<tr><td>DNSServers:</td><td>10.1.1.1</td></tr>
+<tr><td>Mac:</td><td>00-15-5D-00-38-04</td></tr>
+</table>
+
+<h2><a name="#shares">Shares and their Share Permissions</a></span></h2>
+<table>
+<colgroup><col/><col/><col/></colgroup>
+<tr><th>Name</th><th>Path</th><th>Perms</th></tr>
+<tr><td>ADMIN$</td><td>C:\Windows</td><td>BUILTIN\Administrators</td></tr>
+<tr><td>C$</td><td>C:\</td><td>BUILTIN\Administrators</td></tr>
+<tr><td>IPC$</td><td></td><td></td></tr>
+</table>
+
+<h2>Local PassWord Policy</span></h2>
+<table>
+<colgroup><col/><col/></colgroup>
+<tr><th>PassWordPolicy</th><th>Value</th></tr>
+<tr><td>Force user logoff how long after time expires?</td><td>       Never</td></tr>
+<tr><td>Minimum password age (days)</td><td>                          1</td></tr>
+<tr><td>Maximum password age (days)</td><td>                          42</td></tr>
+<tr><td>Minimum password length</td><td>                              7</td></tr>
+<tr><td>Length of password history maintained</td><td>                24</td></tr>
+<tr><td>Lockout threshold</td><td>                                    Never</td></tr>
+<tr><td>Lockout duration (minutes)</td><td>                           30</td></tr>
+<tr><td>Lockout observation window (minutes)</td><td>                 30</td></tr>
+</table>
+
+<h2>Local Account Details</span></h2>
+<table>
+<colgroup><col/><col/><col/><col/><col/><col/></colgroup>
+<tr><th>AccountName</th><th>IsAccountEnabled</th><th>AccountLastLogon</th><th>AccountLastPassChange</th><th>AccountExpiresOn</th><th>AccountSource</th></tr>
+<tr><td>admin</td><td><font color=#ff9933>Enabled <font></td><td>23/10/2022 16:04:31</td><td>23/10/2022 16:02:48</td><td></td><td>Local</td></tr>
+<tr><td>Administrator</td><td>False</td><td></td><td></td><td></td><td>Local</td></tr>
+<tr><td>DefaultAccount</td><td>False</td><td></td><td></td><td></td><td>Local</td></tr>
+<tr><td>Guest</td><td>False</td><td></td><td></td><td></td><td>Local</td></tr>
+<tr><td>WDAGUtilityAccount</td><td>False</td><td></td><td>23/10/2022 15:58:35</td><td>04/12/2022 14:58:35</td><td>Local</td></tr>
+</table>
+<h4>Local accounts should be disabled when the client or server is part of a Domain. LAPS should be deployed to ensure all local account passwords are unique</h4>
+
+<h2>Members of Privilege Groups</span></h2>
+<table>
+</table>
+<h4>Review and minimise members of privileged groups and delegate as much as possible. Don't nest groups into Domain Admins, add direct user accounts only. Deploy User Rights Assignments to explicitly prevent Domain Admins from logging on to Member Servers and Clients more information can be found here @<br><br>https://www.tenaka.net/post/deny-domain-admins-logon-to-workstations<br><br>Dont add privilged groups to Guests or Domain Guests and yes I've seen Domain Guests added to Domain Admins</h4>
+
+<h2>List of Domain Controllers</span></h2>
+<table>
+</table>
+
+<h2>FSMO Roles</span></h2>
+<table>
+</table>
+
+<h2><a name="#PreAuth">Domain Accounts that DO NOT Pre-Authenticate</a></span></h2>
+<table>
+</table>
+<h4>READ ME - Requires the installation of the AD RSAT tools for this to work.<br><br>Pre-authentication is when the user sends the KDC an Authentication Service Request (AS_REQ) with an encrypted Timestamp. The KDC replies with an Authentication Service Reply (AS_REP) with the TGT and a logon session. The issue arises when the user's account doesn't require pre-authentication, it's a check box on the user's account settings. An attacker is then able to request a DC, and the DC dutifully replies with user encrypted TGT using the user's own NTLM password hash. An offline brute force attack is then possible in the hope of extracting the clear text password, known as AS-REP Roasting <br> <br>Further information @<br><br>https://www.tenaka.net/kerberos-armouring<br>https://social.technet.microsoft.com/wiki/contents/articles/23559.kerberos-pre-authentication-why-it-should-not-be-disabled.aspx</h4>
+
+<h2><a name="#PassExpire">Domain Accounts that Never Expire their Password</a></span></h2>
+<table>
+</table>
+
+<h2>Local System Group Members</span></h2>
+<table>
+<colgroup><col/><col/></colgroup>
+<tr><th>GroupName</th><th>GroupMembers</th></tr>
+<tr><td>Guests</td><td>DESKTOP-L5S6COL\Guest,,,,</td></tr>
+<tr><td>IIS_IUSRS</td><td>NT AUTHORITY\IUSR,,,,</td></tr>
+<tr><td>System Managed Accounts Group</td><td>DESKTOP-L5S6COL\DefaultAccount,,,,</td></tr>
+</table>
+
+<h2>Current Users Group Membership</span></h2>
+<table>
+<colgroup><col/><col/><col/></colgroup>
+<tr><th>Everyone</th><th>Well-known group</th><th>S-1-1-0</th></tr>
+<tr><td>BUILTIN\Users</td><td>Alias</td><td>S-1-5-32-545</td></tr>
+<tr><td>BUILTIN\Administrators</td><td>Alias</td><td>S-1-5-32-544</td></tr>
+<tr><td>NT AUTHORITY\REMOTE INTERACTIVE LOGON</td><td>Well-known group</td><td>S-1-5-14</td></tr>
+<tr><td>NT AUTHORITY\INTERACTIVE</td><td>Well-known group</td><td>S-1-5-4</td></tr>
+<tr><td>NT AUTHORITY\Authenticated Users</td><td>Well-known group</td><td>S-1-5-11</td></tr>
+<tr><td>NT AUTHORITY\This Organization</td><td>Well-known group</td><td>S-1-5-15</td></tr>
+<tr><td>LOCAL</td><td>Well-known group</td><td>S-1-2-0</td></tr>
+<tr><td>   </td><td>Unknown SID type</td><td>S-1-5-21-3277369373-2270119816-3512805238-512</td></tr>
+<tr><td>   </td><td>Unknown SID type</td><td>S-1-5-21-3277369373-2270119816-3512805238-520</td></tr>
+<tr><td>   </td><td>Unknown SID type</td><td>S-1-5-21-3277369373-2270119816-3512805238-518</td></tr>
+<tr><td>   </td><td>Unknown SID type</td><td>S-1-5-21-3277369373-2270119816-3512805238-519</td></tr>
+<tr><td>Authentication authority asserted identity</td><td>Well-known group</td><td>S-1-18-1</td></tr>
+<tr><td>   </td><td>Unknown SID type</td><td>S-1-5-21-3277369373-2270119816-3512805238-572</td></tr>
+<tr><td>Mandatory Label\High Mandatory Level</td><td>Label</td><td>S-1-16-12288</td></tr>
+</table>
+<h4>Group membership of the user executing this script. Local admins are required, the account should not have Domain Admins as this can result in privilege escalation.</h4>
+
+<h2>Current Users Local Privileges</span></h2>
+<table>
+<colgroup><col/><col/><col/></colgroup>
+<tr><th>SeIncreaseQuotaPrivilege</th><th>Adjust memory quotas for a process</th><th>Disabled</th></tr>
+<tr><td>SeSecurityPrivilege</td><td>Manage auditing and security log</td><td>Disabled</td></tr>
+<tr><td><font color=#ff9933>SeTakeOwnershipPrivilege<font></td><td>Take ownership of files or other objects</td><td>Disabled</td></tr>
+<tr><td><font color=#ff9933>SeLoadDriverPrivilege<font></td><td>Load and unload device drivers</td><td>Disabled</td></tr>
+<tr><td>SeSystemProfilePrivilege</td><td>Profile system performance</td><td>Disabled</td></tr>
+<tr><td>SeSystemtimePrivilege</td><td>Change the system time</td><td>Disabled</td></tr>
+<tr><td>SeProfileSingleProcessPrivilege</td><td>Profile single process</td><td>Disabled</td></tr>
+<tr><td>SeIncreaseBasePriorityPrivilege</td><td>Increase scheduling priority</td><td>Disabled</td></tr>
+<tr><td>SeCreatePagefilePrivilege</td><td>Create a pagefile</td><td>Disabled</td></tr>
+<tr><td><font color=#ff9933>SeBackupPrivilege<font></td><td>Back up files and directories</td><td>Disabled</td></tr>
+<tr><td><font color=#ff9933>SeRestorePrivilege<font></td><td>Restore files and directories</td><td>Disabled</td></tr>
+<tr><td>SeShutdownPrivilege</td><td>Shut down the system</td><td>Disabled</td></tr>
+<tr><td><font color=#ff9933>SeDebugPrivilege<font></td><td>Debug programs</td><td><font color=#ff9933>Review - Enabled <font></td></tr>
+<tr><td>SeSystemEnvironmentPrivilege</td><td>Modify firmware environment values</td><td>Disabled</td></tr>
+<tr><td>SeChangeNotifyPrivilege</td><td>Bypass traverse checking</td><td><font color=#ff9933>Review - Enabled <font></td></tr>
+<tr><td>SeRemoteShutdownPrivilege</td><td>Force shutdown from a remote system</td><td>Disabled</td></tr>
+<tr><td>SeUndockPrivilege</td><td>Remove computer from docking station</td><td>Disabled</td></tr>
+<tr><td>SeManageVolumePrivilege</td><td>Perform volume maintenance tasks</td><td>Disabled</td></tr>
+<tr><td><font color=#ff9933>SeImpersonatePrivilege<font></td><td>Impersonate a client after authentication</td><td><font color=#ff9933>Review - Enabled <font></td></tr>
+<tr><td><font color=#ff9933>SeCreateGlobalPrivilege<font></td><td>Create global objects</td><td><font color=#ff9933>Review - Enabled <font></td></tr>
+<tr><td>SeIncreaseWorkingSetPrivilege</td><td>Increase a process working set</td><td>Disabled</td></tr>
+<tr><td>SeTimeZonePrivilege</td><td>Change the time zone</td><td>Disabled</td></tr>
+<tr><td>SeCreateSymbolicLinkPrivilege</td><td>Create symbolic links</td><td>Disabled</td></tr>
+<tr><td>SeDelegateSessionUserImpersonatePrivilege</td><td>Obtain an impersonation token for another user in the same session</td><td>Disabled</td></tr>
+</table>
+<h4>Reference User Rights Assignment (USR) section below for further details</h4>
+
+<h2>URA - Local Systems User Rights Assignments</a></span></h2>
+<table>
+<colgroup><col/><col/><col/></colgroup>
+<tr><th>UserRightAssignment-Name</th><th>UserRightAssignment-Priv</th><th>URA-GroupName</th></tr>
+<tr><td><div title="Administrators, Remote Desktop Users">Access this computer from the network</td><td><font color=#ff9933><div title="Computer Configuration\Policies\Windows Settings\Security Settings\Local Policies\User Rights Assingments\Access this computer from the network ">SeNetworkLogonRight<font></td><td>Everyone, BUILTIN\Administrators, BUILTIN\Users, BUILTIN\Backup Operators, </td></tr>
+<tr><td><div title="Administrators">Back up files and directories</td><td><font color=#ff9933><div title="Computer Configuration\Policies\Windows Settings\Security Settings\Local Policies\User Rights Assingments\Back up files and directories ">SeBackupPrivilege<font></td><td>BUILTIN\Administrators, BUILTIN\Backup Operators, </td></tr>
+<tr><td><div title="Administrators">Bypass traverse checking</td><td><div title="Computer Configuration\Policies\Windows Settings\Security Settings\Local Policies\User Rights Assingments\Bypass traverse checking">SeChangeNotifyPrivilege</td><td>Everyone, NT AUTHORITY\LOCAL SERVICE, NT AUTHORITY\NETWORK SERVICE, BUILTIN\Administrators, BUILTIN\Users, BUILTIN\Backup Operators, </td></tr>
+<tr><td><div title="Administrators">Change the system time</td><td><div title="Computer Configuration\Policies\Windows Settings\Security Settings\Local Policies\User Rights Assingments\Change the system time">SeSystemtimePrivilege</td><td>NT AUTHORITY\LOCAL SERVICE, BUILTIN\Administrators, </td></tr>
+<tr><td><div title="Administrators">Create a pagefile </td><td><div title="Computer Configuration\Policies\Windows Settings\Security Settings\Local Policies\User Rights Assingments\Create a pagefile ">SeCreatePagefilePrivilege</td><td>BUILTIN\Administrators, </td></tr>
+<tr><td><div title="Administrators (Prefer setting Blank)">Debug programs</td><td><font color=#ff9933><div title="Computer Configuration\Policies\Windows Settings\Security Settings\Local Policies\User Rights Assingments\Debug programs ">SeDebugPrivilege<font></td><td>BUILTIN\Administrators, </td></tr>
+<tr><td><div title="Administrators">Force shutdown from a remote system </td><td><div title="Computer Configuration\Policies\Windows Settings\Security Settings\Local Policies\User Rights Assingments\Force shutdown from a remote system ">SeRemoteShutdownPrivilege</td><td>BUILTIN\Administrators, </td></tr>
+<tr><td><div title="Administrators">Generate security audits</td><td><div title="Computer Configuration\Policies\Windows Settings\Security Settings\Local Policies\User Rights Assingments\Generate security audits">SeAuditPrivilege</td><td>NT AUTHORITY\LOCAL SERVICE, NT AUTHORITY\NETWORK SERVICE, </td></tr>
+<tr><td><div title="Administrators">Adjust memory quotas for a process</td><td><div title="Computer Configuration\Policies\Windows Settings\Security Settings\Local Policies\User Rights Assingments\Adjust memory quotas for a process">SeIncreaseQuotaPrivilege</td><td>NT AUTHORITY\LOCAL SERVICE, NT AUTHORITY\NETWORK SERVICE, BUILTIN\Administrators, </td></tr>
+<tr><td><div title="Administrators">Increase scheduling priority</td><td><div title="Computer Configuration\Policies\Windows Settings\Security Settings\Local Policies\User Rights Assingments\Increase scheduling priority">SeIncreaseBasePriorityPrivilege</td><td>BUILTIN\Administrators, Window Manager\Window Manager Group, </td></tr>
+<tr><td><div title="Administrators">Load and unload device drivers</td><td><font color=#ff9933><div title="Computer Configuration\Policies\Windows Settings\Security Settings\Local Policies\User Rights Assingments\Load and unload device drivers ">SeLoadDriverPrivilege<font></td><td>BUILTIN\Administrators, </td></tr>
+<tr><td><div title="Administrators">Log on as a batch job</td><td><div title="Computer Configuration\Policies\Windows Settings\Security Settings\Local Policies\User Rights Assingments\Log on as a batch job">SeBatchLogonRight</td><td>BUILTIN\Administrators, BUILTIN\Backup Operators, BUILTIN\Performance Log Users, </td></tr>
+<tr><td><div title="Administrators">Log on as a service</td><td><div title="Computer Configuration\Policies\Windows Settings\Security Settings\Local Policies\User Rights Assingments\Log on as a service">SeServiceLogonRight</td><td>NT SERVICE\ALL SERVICES, </td></tr>
+<tr><td><div title="Administrators, Users">Allow log on locally </td><td><div title="Computer Configuration\Policies\Windows Settings\Security Settings\Local Policies\User Rights Assingments\Allow log on locally ">SeInteractiveLogonRight</td><td>BUILTIN\Administrators, BUILTIN\Users, BUILTIN\Backup Operators, </td></tr>
+<tr><td><div title="Administrators">Manage auditing and security log </td><td><div title="Computer Configuration\Policies\Windows Settings\Security Settings\Local Policies\User Rights Assingments\Manage auditing and security log ">SeSecurityPrivilege</td><td>BUILTIN\Administrators, </td></tr>
+<tr><td><div title="Administrators">Modify firmware environment values </td><td><div title="Computer Configuration\Policies\Windows Settings\Security Settings\Local Policies\User Rights Assingments\Modify firmware environment values ">SeSystemEnvironmentPrivilege</td><td>BUILTIN\Administrators, </td></tr>
+<tr><td><div title="Administrators">Profile single process  </td><td><div title="Computer Configuration\Policies\Windows Settings\Security Settings\Local Policies\User Rights Assingments\Profile single process  ">SeProfileSingleProcessPrivilege</td><td>BUILTIN\Administrators, </td></tr>
+<tr><td><div title="Administrators">Profile system performance</td><td><div title="Computer Configuration\Policies\Windows Settings\Security Settings\Local Policies\User Rights Assingments\Profile system performance">SeSystemProfilePrivilege</td><td>BUILTIN\Administrators, NT SERVICE\WdiServiceHost, </td></tr>
+<tr><td><div title="Administrators">Replace a process level token</td><td><font color=#ff9933><div title="Computer Configuration\Policies\Windows Settings\Security Settings\Local Policies\User Rights Assingments\Replace a process level token">SeAssignPrimaryTokenPrivilege<font></td><td>NT AUTHORITY\LOCAL SERVICE, NT AUTHORITY\NETWORK SERVICE, </td></tr>
+<tr><td><div title="Administrators">Restore files and directories</td><td><font color=#ff9933><div title="Computer Configuration\Policies\Windows Settings\Security Settings\Local Policies\User Rights Assingments\Restore files and directories ">SeRestorePrivilege<font></td><td>BUILTIN\Administrators, BUILTIN\Backup Operators, </td></tr>
+<tr><td><div title="Administrators">Shut down the system</td><td><div title="Computer Configuration\Policies\Windows Settings\Security Settings\Local Policies\User Rights Assingments\Shut down the system">SeShutdownPrivilege</td><td>BUILTIN\Administrators, BUILTIN\Users, BUILTIN\Backup Operators, </td></tr>
+<tr><td><div title="Administrators">Take ownership of files or other objects</td><td><font color=#ff9933><div title="Computer Configuration\Policies\Windows Settings\Security Settings\Local Policies\User Rights Assingments\Take ownership of files or other objects ">SeTakeOwnershipPrivilege<font></td><td>BUILTIN\Administrators, </td></tr>
+<tr><td><div title="Administrators">Remove computer from docking station</td><td><div title="Computer Configuration\Policies\Windows Settings\Security Settings\Local Policies\User Rights Assingments\Remove computer from docking station">SeUndockPrivilege</td><td>BUILTIN\Administrators, BUILTIN\Users, </td></tr>
+<tr><td><div title="Administrators">Perform volume maintenance tasks </td><td><div title="Computer Configuration\Policies\Windows Settings\Security Settings\Local Policies\User Rights Assingments\Perform volume maintenance tasks ">SeManageVolumePrivilege</td><td>BUILTIN\Administrators, </td></tr>
+<tr><td><div title="NT AUTHORITY\Local Account">Deny log on through Remote Desktop Services </td><td><div title="Computer Configuration\Policies\Windows Settings\Security Settings\Local Policies\User Rights Assingments\Deny log on through Remote Desktop Services ">SeRemoteInteractiveLogonRight</td><td>BUILTIN\Administrators, BUILTIN\Remote Desktop Users, </td></tr>
+<tr><td><div title="Administrators, LOCAL SERVICE, NETWORK SERVICE, SERVICE">Impersonate a client after authentication</td><td><font color=#ff9933><div title="Computer Configuration\Policies\Windows Settings\Security Settings\Local Policies\User Rights Assingments\Impersonate a client after authentication ">SeImpersonatePrivilege<font></td><td>NT AUTHORITY\LOCAL SERVICE, NT AUTHORITY\NETWORK SERVICE, BUILTIN\Administrators, NT AUTHORITY\SERVICE, </td></tr>
+<tr><td><div title="Administrators,LOCAL SERVICE,NETWORK SERVICE,SERVICE">Create global objects</td><td><font color=#ff9933><div title="Computer Configuration\Policies\Windows Settings\Security Settings\Local Policies\User Rights Assingments\Create global objects ">SeCreateGlobalPrivilege<font></td><td>NT AUTHORITY\LOCAL SERVICE, NT AUTHORITY\NETWORK SERVICE, BUILTIN\Administrators, NT AUTHORITY\SERVICE, </td></tr>
+<tr><td><div title="Administrators,LOCAL SERVICE,NETWORK SERVICE,SERVICE">Increase a process working set</td><td><div title="Computer Configuration\Policies\Windows Settings\Security Settings\Local Policies\User Rights Assingments\Increase a process working set">SeIncreaseWorkingSetPrivilege</td><td>BUILTIN\Users, </td></tr>
+<tr><td><div title="Administrators,LOCAL SERVICE,NETWORK SERVICE,SERVICE">Change the time zone</td><td><div title="Computer Configuration\Policies\Windows Settings\Security Settings\Local Policies\User Rights Assingments\Change the time zone">SeTimeZonePrivilege</td><td>NT AUTHORITY\LOCAL SERVICE, BUILTIN\Administrators, BUILTIN\Users, </td></tr>
+<tr><td><div title="Administrators,LOCAL SERVICE,NETWORK SERVICE,SERVICE">Create symbolic links</td><td><div title="Computer Configuration\Policies\Windows Settings\Security Settings\Local Policies\User Rights Assingments\Create symbolic links">SeCreateSymbolicLinkPrivilege</td><td>BUILTIN\Administrators, </td></tr>
+<tr><td><div title="Administrators,LOCAL SERVICE,NETWORK SERVICE,SERVICE">Obtain an impersonation token for another user in the same session</td><td><div title="Computer Configuration\Policies\Windows Settings\Security Settings\Local Policies\User Rights Assingments\Obtain an impersonation token for another user in the same session">SeDelegateSessionUserImpersonatePrivilege</td><td>BUILTIN\Administrators, </td></tr>
+</table>
+<h4>User Rights Assignments (URA) control what tasks a user can perform on the local client, server or Domain Controller. For example the ‘Log on as a service’ (SeServiceLogonRight) provides the rights for a service account to Logon as a Service, not Interactively. <br> <br> Access to URA can be abused and attack the system. <br> <br>Both SeImpersonatePrivilege (Impersonate a client after authentication) and SeAssignPrimaryTokenPrivilege (Replace a process level token) are commonly used by service accounts and vulnerable to escalation of privilege via Juicy Potato exploits.<br> <br>SeBackupPrivilege (Back up files and directories), read Access to all files including SAM Database, Registry and NTDS.dit (AD Database). <br> <br>SeRestorePrivilege (Restore files and directories), Write Access to all files. <br> <br>SeDebugPrivilege (Debug programs), allows the ability to dump and inject into process memory inc kernel. PassWords are stored in memory in the clear and can be dumped and easily extracted. <br> <br>SeTakeOwnershipPrivilege (Take ownership of files or other objects), take ownership of file regardless of Access.<br> <br>SeNetworkLogonRight (Access this computer from the network) allows pass-the-hash when Local Admins share the same password, remove all the default groups and apply named groups, separating client from servers.<br><br>SeCreateGlobalPrivilege (Create global objects), do not assign any user or group other than Local System as this will allow system takeover<br><br>Further details can be found @ <br>https://docs.microsoft.com/en-us/windows/security/threat-protection/security-policy-settings/user-rights-assignment<br>https://www.microsoft.com/en-us/download/details.aspx?id=55319<br><br>**UserRightAssignment-Name - Mouse over to show Microsofts recommended setting</h4>
+
+<h2>Installed Windows Features</span></h2>
+<table>
+<colgroup><col/><col/></colgroup>
+<tr><th>WindowsFeature</th><th>InstallState</th></tr>
+<tr><td>Internet-Explorer-Optional-amd64
+</td><td>Enabled
+  </td></tr>
+<tr><td>MediaPlayback
+</td><td>Enabled
+  </td></tr>
+<tr><td>MicrosoftWindowsPowerShellV2
+</td><td>Enabled
+  </td></tr>
+<tr><td>MicrosoftWindowsPowerShellV2Root
+</td><td>Enabled
+  </td></tr>
+<tr><td>MSRDC-Infrastructure
+</td><td>Enabled
+  </td></tr>
+<tr><td>NetFx4-AdvSrvs
+</td><td>Enabled
+  </td></tr>
+<tr><td>Printing-Foundation-Features
+</td><td>Enabled
+  </td></tr>
+<tr><td>Printing-Foundation-InternetPrinting-Client
+</td><td>Enabled
+  </td></tr>
+<tr><td>Printing-PrintToPDFServices-Features
+</td><td>Enabled
+  </td></tr>
+<tr><td>Printing-XPSServices-Features
+</td><td>Enabled
+  </td></tr>
+<tr><td>SearchEngine-Client-Package
+</td><td>Enabled
+  </td></tr>
+<tr><td>SmbDirect
+</td><td>Enabled
+  </td></tr>
+<tr><td>WCF-Services45
+</td><td>Enabled
+  </td></tr>
+<tr><td>WCF-TCP-PortSharing45
+</td><td>Enabled
+  </td></tr>
+<tr><td>Windows-Defender-Default-Definitions
+</td><td>Enabled
+  </td></tr>
+<tr><td>WindowsMediaPlayer
+</td><td>Enabled
+  </td></tr>
+<tr><td>WorkFolders-Client
+</td><td>Enabled
+  </td></tr>
+</table>
+
+<h2>Installed Applications</span></h2>
+<table>
+<colgroup><col/><col/><col/><col/></colgroup>
+<tr><th>Publisher</th><th>DisplayName</th><th>DisplayVersion</th><th>InstallDate</th></tr>
+<tr><td></td><td></td><td></td><td></td></tr>
+<tr><td></td><td>Microsoft Edge Update</td><td>1.3.147.37</td><td></td></tr>
+<tr><td>Microsoft Corporation</td><td>Microsoft Edge</td><td>92.0.902.67</td><td>20221023</td></tr>
+</table>
+
+<h2>Latest 10 Installed Updates</span></h2>
+<table>
+<colgroup><col/><col/><col/></colgroup>
+<tr><th>HotFixID</th><th>InstalledOn</th><th>Caption</th></tr>
+<tr><td>KB5004331</td><td>06-10-2021</td><td>http://support.microsoft.com/?kbid=5004331</td></tr>
+<tr><td>KB5003791</td><td>06-10-2021</td><td>https://support.microsoft.com/help/5003791</td></tr>
+<tr><td>KB5006670</td><td>06-10-2021</td><td>https://support.microsoft.com/help/5006670</td></tr>
+<tr><td>KB5005699</td><td>06-10-2021</td><td></td></tr>
+</table>
+
+<h2>Updates to Office 2016 and older or Updates that create KB's in the Registry</span></h2>
+<table>
+<colgroup><col/><col/><col/><col/></colgroup>
+<tr><th>Publisher</th><th>DisplayName</th><th>DisplayVersion</th><th>InstallDate</th></tr>
+<tr><td></td><td></td><td></td><td></td></tr>
+</table>
+
+<h2><a name="#AV">AntiVirus Engine and Definition Status</a></span></h2>
+<table>
+<colgroup><col/><col/><col/><col/><col/></colgroup>
+<tr><th>AVName</th><th>AVProduct</th><th>AVPathtoExecute</th><th>AVStatus</th><th>AVEngine</th></tr>
+<tr><td>Windows Defender</td><td>windowsdefender://</td><td>%ProgramFiles%\Windows Defender\MsMpeng.exe</td><td>Up to date</td><td>Enabled</td></tr>
+</table>
+<h4></h4>
+
+<h2><a name="#unquoted">UnQuoted Paths Attack</a></span></h2>
+<table>
+<colgroup><col/><col/></colgroup>
+<tr><th>ServiceName</th><th>Path</th></tr>
+<tr><td><font color=#ff9933>AJRouter <font></td><td><font color=#ff9933>c:\Program Files\google\google pro.sys <font></td></tr>
+<tr><td><font color=#ff9933>ALG <font></td><td><font color=#ff9933>c:\Program Files\google\google pro.exe /kdfjaskl <font></td></tr>
+</table>
+<h4>The Unquoted paths vulnerability is when a Windows Service's 'Path to Executable' contains spaces and not wrapped in double-quotes providing a route to System. <br> <br>Further information can be found @ https://www.tenaka.net/unquotedpaths<br></h4>
+
+<h2><a name="#VBS">Virtualization and Secure Boot Details</a></span></h2>
+<table>
+<colgroup><col/><col/></colgroup>
+<tr><th>Virtualization</th><th>On\Off</th></tr>
+<tr><td>S e c u r e   B o o t   S t a t e 	 </td><td> o n 	 
+ </td></tr>
+<tr><td> K e r n e l   D M A   P r o t e c t i o n 	 </td><td> o f f 	 
+ </td></tr>
+<tr><td> D e v i c e   E n c r y p t i o n   S u p p o r t </td><td> 	 R e a s o n s   f o r   f a i l e d   a u t o m a t i c   d e v i c e   e n c r y p t i o n :   T P M   i s   n o t   u s a b l e ,   P C R 7   b i n d i n g   i s   n o t   s u p p o r t e d ,   H a r d w a r e   S e c u r i t y   T e s t   I n t e r f a c e   f a i l e d   a n d   d e v i c e   i s   n o t   M o d e r n   S t a n d b y ,   T P M   i s   n o t   u s a b l e 	 
+ </td></tr>
+<tr><td> </td><td></td></tr>
+</table>
+<h4>Secure Boot is a security standard to ensure only trusted OEM software is allowed at boot. At startup the UEFi and boot software's digital signatures are validated preventing rootkits. <br> <br>More on Secure Boot can be found here @ https://media.defense.gov/2020/Sep/15/2002497594/-1/-1/0/CTR-UEFI-SECURE-BOOT-CUSTOMIZATION-20200915.PDF/CTR-UEFI-SECURE-BOOT-CUSTOMIZATION-20200915.PDF<br></h4>
+
+<h2><a name="#Bitlockerisnotenabled">Bitlocker and TPM Details</a></span></h2>
+<table>
+<tr><td>*:</td><td><font color=#ff9933>Bitlocker is disabled <font></td></tr>
+</table>
+<h4>TPM and Bitlocker protect against offline attack from usb and mounting the local Windows system then Accessing the local data. 'TPM and Pin' enhances Bitlocker by preventing LPC Bus (Low Pin Count) bypasses of Bitlocker with TPM. <br> <br>Further information can be found @ https://www.tenaka.net/bitlocker<br></h4>
+
+<table>
+</table>
+<h4>Virtualization-based security (VBS), isolates core system resources to create secure regions of memory. Enabling VBS allows for Hypervisor-Enforced Code Integrity (HVCI), Device Guard and Credential Guard. <br> <br>Further information can be found @ https://docs.microsoft.com/en-us/windows-hardware/design/device-experiences/oem-vbs<br> <br>https://www.tenaka.net/deviceguard-vs-rce and https://www.tenaka.net/pass-the-hash <br></h4>
+
+<h2><a name="#HECI">Hypervisor Enforced Code Integrity</a></span></h2>
+<table>
+<colgroup><col/><col/></colgroup>
+<tr><th>CodeSetting</th><th>CodeValue</th></tr>
+<tr><td><font color=#ff9933>Hypervisor Enforced Code Integrity is disabled set Enabled to 1 <font></td><td>HKLM:\SYSTEM\CurrentControlSet\Control\DeviceGuard\Scenarios\HypervisorEnforcedCodeIntegrity</td></tr>
+</table>
+<h4>Hypervisor Enforced Code Integrity prevents the loading of unsigned kernel-mode drivers and system binaries from being loaded into system memory. <br> <br>Further information can be found @ https://docs.microsoft.com/en-us/windows/security/threat-protection/device-guard/enable-virtualization-based-protection-of-code-integrity<br></h4>
+
+<h2><a name="#LSA">LSA Protection for Stored Credentials</a></span></h2>
+<table>
+<colgroup><col/><col/></colgroup>
+<tr><th>LSASetting</th><th>LSARegValue</th></tr>
+<tr><td><font color=#ff9933>Secure LSA is disabled set RunAsPPL to 1 <font></td><td>HKLM:\SYSTEM\CurrentControlSet\Control\lsa\</td></tr>
+</table>
+<h4>Enabling RunAsPPL for LSA Protection allows only digitally signed binaries to load as a protected process preventing credential theft and Access by code injection and memory Access by processes that aren’t signed. <br> <br>Further information can be found @ https://docs.microsoft.com/en-us/windows-server/security/credentials-protection-and-management/configuring-additional-lsa-protection<br></h4>
+
+<h2><a name="#WDigest">WDigest</a></span></h2>
+<table>
+<colgroup><col/><col/></colgroup>
+<tr><th>WDigestSetting</th><th>WDigestRegValue</th></tr>
+<tr><td>Secure WDigest is disabled</td><td>HKLM:\SYSTEM\CurrentControlSet\Control\SecurityProviders\WDigest\</td></tr>
+</table>
+<h4>WDigest was introduced with Windows XP\2003 and has been enabled by default until and including Windows 8 and Server 2012. Enabling allows clear text passwords to be recoverable from LSASS with Mimikatz</h4>
+
+<h2><a name="#CredGuard">Credential Guard</a></span></h2>
+<table>
+<colgroup><col/><col/></colgroup>
+<tr><th>CredentialGuardSetting</th><th>CredentialGuardRegValue</th></tr>
+<tr><td><font color=#ff9933>Secure Credential Guard is disabled, LsaCfgFlags is set to 0 <font></td><td>HKLM:\SYSTEM\CurrentControlSet\Control\LSA\</td></tr>
+</table>
+<h4>Credential Guard securely isolating the LSA process preventing the recovery of domain hashes from memory. Credential Guard only works for Domain joined clients and servers.<br> <br>Further information can be found @ https://www.tenaka.net/pass-the-hash<br></h4>
+
+<h2><a name="#LAPS">LAPS - Local Administrator PassWord Solution</a></span></h2>
+<table>
+<colgroup><col/><col/></colgroup>
+<tr><th>LAPSPassWordEnabled</th><th>LAPSPassWordReg</th></tr>
+<tr><td><font color=#ff9933>LAPS is not installed or the value is set to 0 <font></td><td>HKLM:\Software\Policies\Microsoft Services\AdmPwd\</td></tr>
+</table>
+<h4>Local Administrator PassWord Solution (LAPS) is a small program with some GPO settings that randomly sets the local administrator password for clients and servers across the estate. Domain Admins have default permission to view the local administrator password via DSA.MSC. Access to the LAPS passwords may be delegated unintentionally, this could lead to a serious security breach, leaking all local admin accounts passwords for all computer objects to those that shouldn't have Access. <br> <br>Installation guide can be found @ https://www.tenaka.net/post/local-admin-passwords. <br> <br>Security related issue details can be found @ https://www.tenaka.net/post/laps-leaks-local-admin-passwords<br></h4>
+
+<h2><a name="#DLLSafe">DLL Safe Search Order</a></span></h2>
+<table>
+<colgroup><col/><col/><col/></colgroup>
+<tr><th>DLLSafeSetting</th><th>DLLSafeValue</th><th>DLLSafeComment</th></tr>
+<tr><td><font color=#ff9933>DLLSafeSearch is disabled set SafeDLLSearchMode to 1 <font></td><td>HKLM:\System\CurrentControlSet\Control\Session Manager</td><td>Protects against DLL search order hijacking</td></tr>
+</table>
+<h4>Loading DLL's default behaviour is to call the dll from the current working directory of the application, then the directories listed in the environmental variable. Setting ‘DLL Safe Search’ mitigates the risk by moving CWD to later in the search order. <br> <br>Further information can be found @ https://docs.microsoft.com/en-us/windows/win32/dlls/dynamic-link-library-search-order<br></h4>
+
+<h2><a name="#DLLHigh">Loaded DLL's that are vulnerable to DLL Hijacking</a></span></h2>
+<table>
+</table>
+
+<h2><a name="#DLLSign">All DLL's that aren't signed and user permissions allow write</a></span></h2>
+<table>
+</table>
+<h4>DLL Hijacking is when a malicious dll replaces a legitimate dll due to a path vulnerability. A program or service makes a call on that dll gaining the privileges of that program or service. Additionally missing dll’s presents a risk where a malicious dll is dropped into a path where no current dll exists but the program or service is making a call to that non-existent dll. This audit is reliant on programs being launched so that DLL’s are loaded. Each process’s loaded dll’s are checked for permissions issues and whether they are signed. The DLL hijacking audit does not currently check for missing dll’s being called. Process Monitor filtered for ‘NAME NOT FOUND’ and path ends with ‘DLL’ will.</h4>
+
+<h2><a name="#SoftElevation">Automatically Elevates User Installing Software</a></span></h2>
+<table>
+<colgroup><col/><col/></colgroup>
+<tr><th>AlwaysElevateSetting</th><th>AlwaysElevateRegistry</th></tr>
+<tr><td>Client setting  Always Install Elevate is disabled</td><td>HKLM:\SOFTWARE\Policies\Microsoft\Windows\Installer</td></tr>
+<tr><td>User setting Always Install Elevate is disabled</td><td>HKCU:\SOFTWARE\Policies\Microsoft\Windows\Installer</td></tr>
+</table>
+<h4>Auto Elevate User is a setting that elevates users allowing them to install software without being an administrator. </h4>
+
+<h2><a name="#ProcPW">Processes where CommandLine Contains a PassWord</a></span></h2>
+<table>
+</table>
+<h4>This script has been provided by Tenaka.net, if it's beneficial, please provide feedback and any additional feature requests gratefully received. </h4>
+
+
+<h2><a name="#RegPW">PassWords Embedded in the Registry</a></span></h2>
+<table>
+</table>
+<h4>Searches HKLM and HKCU for the Words 'password' and 'passwd', then displays the password value in the report.<br><br>The search will work with VNC encrypted passwords stored in the registry, from Kali run the following command<br> <br>echo -n PassWordHere | xxd -r -p | openssl enc -des-cbc --nopad --nosalt -K e84ad660c4721ae0 -iv 0000000000000000 -d | hexdump -Cv<br></h4>
+
+<h2><a name="#AutoLogon">AutoLogon Credentials in Registry</a></span></h2>
+<table>
+<colgroup><col/><col/><col/></colgroup>
+<tr><th>AutoLogonUsername</th><th>AutoLogonPassWord</th><th>AutoLogonRegistry</th></tr>
+<tr><td>There is no Default User set for AutoLogon</td><td>There is no Default PassWord set for AutoLogon</td><td>HKLM:\SOFTWARE\Microsoft\Windows NT\Currentversion\Winlogon</td></tr>
+</table>
+<h4>MECM\SCCM\MDT could leave Autologon credentials including a clear text password in the Registry.</h4>
+
+<h2><a name="#schedDir">Scheduled Tasks that call on Files on Storage</a></span></h2>
+<table>
+</table>
+<h4>Checks for Scheduled Tasks excluding any that reference System32 as a directory. These potential user-created tasks are checked for scripts and their directory permissions are validated. No user should be allowed to Access the script and make amendments, this is a privilege escalation route.</h4>
+
+<h2><a name="#schedTask">Scheduled Tasks that Contain something Encoded</a></span></h2>
+<table>
+<colgroup><col/><col/><col/></colgroup>
+<tr><th>TaskName</th><th>TaskExe</th><th>TaskArguments</th></tr>
+<tr><td>CreateExplorerShellUnelevatedTask</td><td>C:\Windows\Explorer.EXE</td><td>/NoUACCheck</td></tr>
+<tr><td>MicrosoftEdgeUpdateTaskMachineCore</td><td>C:\Program Files (x86)\Microsoft\EdgeUpdate\MicrosoftEdgeUpdate.exe</td><td>/c</td></tr>
+<tr><td>MicrosoftEdgeUpdateTaskMachineUA</td><td>C:\Program Files (x86)\Microsoft\EdgeUpdate\MicrosoftEdgeUpdate.exe</td><td>/ua /installsource scheduler</td></tr>
+<tr><td>UninstallDeviceTask</td><td>BthUdTask.exe</td><td>$(Arg0)</td></tr>
+<tr><td>{3E0A038B-D834-4930-9981-E89C9BFF83AA}</td><td>gpupdate.exe</td><td>/target:computer</td></tr>
+<tr><td>{A7719E0F-10DB-4640-AD8C-490CC6AD5202}</td><td>gpupdate.exe</td><td>/target:user</td></tr>
+<tr><td>UPnPHostConfig</td><td>sc.exe</td><td>config upnphost start= auto</td></tr>
+<tr><td>UpdateLibrary</td><td>&quot;%ProgramFiles%\Windows Media Player\wmpnscfg.exe&quot;</td><td></td></tr>
+</table>
+<h4>Checks for encoded scripts, PowerShell or exe's that make calls off box or run within Task Scheduler</h4>
+
+<h2><a name="#RegWrite">Registry Permissions Allowing User Access - Security Risk if Exist</a></span></h2>
+<table>
+</table>
+<h4>Weak Registry permissions allowing users to change the path to launch malicious software.<br> <br>Further information can be found @ https://www.tenaka.net/unquotedpaths</h4>
+
+<h2><a name="#SysDirWrite">Default System Folders that are Writeable - Security Risk if Exist</span></a></h2>
+<table>
+<colgroup><col/></colgroup>
+<tr><th>*</th></tr>
+<tr><td>C:\Windows\System32\LogFiles\WMI</td></tr>
+<tr><td>C:\Windows\System32\Microsoft\Crypto\RSA\MachineKeys</td></tr>
+<tr><td>C:\Windows\System32\Tasks</td></tr>
+<tr><td>C:\Windows\System32\Tasks\Microsoft\Windows\RemoteApp and Desktop Connections Update</td></tr>
+<tr><td>C:\Windows\SysWOW64\Tasks</td></tr>
+<tr><td>C:\Windows\SysWOW64\Tasks\Microsoft\Windows\RemoteApp and Desktop Connections Update</td></tr>
+<tr><td>C:\Windows\tracing</td></tr>
+</table>
+<h4>Default System Folders that allow a User the Write permissions. These can be abused by creating content in some of the allowable default locations. Prevent by applying Execution controls eg Applocker.<br> <br> Further information can be found @ https://www.tenaka.net/unquotedpaths<br></h4>
+
+<h2><a name="#sysDirExe">Default System Folders that Permit Users to Create Files - Security Risk if Exist</a></span></h2>
+<table>
+<colgroup><col/></colgroup>
+<tr><th>*</th></tr>
+<tr><td>C:\Windows\PLA\Reports</td></tr>
+<tr><td>C:\Windows\PLA\Reports\en-US</td></tr>
+<tr><td>C:\Windows\PLA\Rules</td></tr>
+<tr><td>C:\Windows\PLA\Rules\en-US</td></tr>
+<tr><td>C:\Windows\PLA\Templates</td></tr>
+<tr><td>C:\Windows\Registration\CRMLog</td></tr>
+<tr><td>C:\Windows\System32\Com\dmp</td></tr>
+<tr><td>C:\Windows\System32\spool\drivers\color</td></tr>
+<tr><td>C:\Windows\System32\spool\PRINTERS</td></tr>
+<tr><td>C:\Windows\System32\spool\SERVERS</td></tr>
+<tr><td>C:\Windows\SysWOW64\Com\dmp</td></tr>
+<tr><td>C:\Windows\SysWOW64\Tasks\Microsoft\Windows\PLA</td></tr>
+<tr><td>C:\Windows\Tasks</td></tr>
+<tr><td>C:\Windows\Temp</td></tr>
+<tr><td>C:\Windows\Temp\MsEdgeCrashpad</td></tr>
+<tr><td>C:\Windows\Temp\MsEdgeCrashpad\reports</td></tr>
+</table>
+<h4>Default System Folders that allows a User the CreateFile permissions. These can be abused by creating content in some of the allowable default locations. Prevent by applying Execution controls eg Applocker.<br> <br>Further information can be found @ https://www.tenaka.net/unquotedpaths<br></h4>
+
+<h2><a name="#sysFileWrite ">Non System Folders that are Writeable - Security Risk when Executable</span></a></h2>
+<table>
+<colgroup><col/></colgroup>
+<tr><th>*</th></tr>
+<tr><td>C:\dsc</td></tr>
+<tr><td>C:\dsc\cert</td></tr>
+<tr><td>C:\Secure10</td></tr>
+<tr><td>C:\Secure10\output</td></tr>
+<tr><td>C:\Secure10\output\UnQuoted</td></tr>
+<tr><td>C:\SecureReport</td></tr>
+<tr><td>C:\SecureReport\output</td></tr>
+<tr><td>C:\SecureReport\output\DriverQuery</td></tr>
+<tr><td>C:\SecureReport\output\firewall</td></tr>
+<tr><td>C:\SecureReport\output\llmnr</td></tr>
+<tr><td>C:\SecureReport\output\MSInfo</td></tr>
+<tr><td>C:\SecureReport\output\UnQuoted</td></tr>
+<tr><td>C:\SecureReport\output\URA</td></tr>
+<tr><td>C:\SecureReport\output\WindowsFeatures</td></tr>
+<tr><td>C:\SecureReport\output\WriteableFiles</td></tr>
+<tr><td>C:\SecureReport\output\WriteableFolders</td></tr>
+<tr><td>C:\SecureReport\output\WriteableReg</td></tr>
+</table>
+<h4>A vulnerability exists when enterprise software has been installed on the root of C:\. The default permissions allow a user to replace approved software binaries with malicious binaries. <br> <br>Further information can be found @ https://www.tenaka.net/unquotedpaths<br></h4>
+
+<h2><a name="#sysFileWrite">System Files that are Writeable - Security Risk if Exist</a></span></h2>
+<table>
+</table>
+<h4>System files that allow users to write can be swapped out for malicious software binaries. <br> <br>Further  information can be found @ https://www.tenaka.net/unquotedpaths<br></h4>
+
+<h2><a name="#drivers">Drivers that aren't Signed</a></span></h2>
+<table>
+<colgroup><col/></colgroup>
+<tr><th>*</th></tr>
+<tr><td><font color=#ff9933>Microsoft Remote Display Adapt rdpidd.inf    FALSE    Microsoft                 <font></td></tr>
+</table>
+<h4>All Drivers should be signed with a digital signature to verify the integrity of the packages. 64bit kernel Mode drivers must be signed without exception</h4>
+
+
+<h2><a name="#asr">Attack Surface Reduction (ASR)</a></span></h2>
+<table>
+<colgroup><col/><col/><col/></colgroup>
+<tr><th>ASRGuid</th><th>ASRSetting</th><th>ASRDescription</th></tr>
+<tr><td><font color=#ff9933>ASR Guid ASPPolicyisnotset is not set <font></td><td><font color=#ff9933>ASR is disabled <font></td><td></td></tr>
+</table>
+<h4>Attack Surface Reduction (ASR) requires Windows Defender Real-Time Antivirus and works in conjunction with Exploit Guard to prevent malware abusing legitimate MS Office functionality<br> <br>Further information can be found @ https://docs.microsoft.com/en-us/microsoft-365/security/defender-endpoint/overview-attack-surface-reduction?view=o365-worldwide<br></h4>
+
+<h2><a name="#LegNetProt">Legacy and Vulnerable Network Protocols</a></span></h2>
+<table>
+<colgroup><col/><col/></colgroup>
+<tr><th>LegacyProtocol</th><th>LegacyPath</th></tr>
+<tr><td><font color=#ff9933>LLMNR (Responder) is Enabled <font></td><td>HKLM:\SOFTWARE\Policies\Microsoft\Windows NT\DNSClient.EnableMulticast</td></tr>
+<tr><td><font color=#ff9933>NetBios is enabled <font></td><td>HKLM:\SOFTWARE\Policies\Microsoft\Windows NT\DNSClient.QueryNetBTFQDN</td></tr>
+<tr><td><font color=#ff9933>IPv6 is enabled <font></td><td>HKLM:\SYSTEM\CurrentControlSet\Services\Tcpip6\Parameters.DisabledComponents</td></tr>
+<tr><td>LMHosts is disabled the Registry = 1</td><td>HKLM:\System\CurrentControlSet\Services\NetBT\Parameters.EnableLMHosts</td></tr>
+<tr><td><font color=#ff9933>NetBios Node Type is set to  is incorrect and should be set to 2 <font></td><td>HKLM:\System\CurrentControlSet\Services\NetBT\Parameters.NodeType</td></tr>
+<tr><td>NetBios is set to 0 in the Registry</td><td>HKLM:\SYSTEM\CurrentControlSet\services\NetBT\Parameters\Interfaces.Tcpip_{539ba69a-f475-4f10-b468-bd59cd6fb1f6}</td></tr>
+<tr><td>NetBios is set to 0 in the Registry</td><td>HKLM:\SYSTEM\CurrentControlSet\services\NetBT\Parameters\Interfaces.Tcpip_{8d2c8bf5-b9c7-4b74-916b-d828d4ea95ce}</td></tr>
+<tr><td>Peer to Peer is set to 0 and disabled</td><td>HKLM:\Software\policies\Microsoft\Peernet</td></tr>
+<tr><td><font color=#ff9933>Enable Font Providers is enabled <font></td><td>HKLM:\Software\Policies\Microsoft\Windows\System</td></tr>
+<tr><td><font color=#ff9933>EnableLLTDIO is enabled <font></td><td>HKLM:\SOFTWARE\Policies\Microsoft\Windows\LLTD</td></tr>
+<tr><td><font color=#ff9933>EnableRspndr is enabled <font></td><td>HKLM:\SOFTWARE\Policies\Microsoft\Windows\LLTD</td></tr>
+<tr><td><font color=#ff9933>AllowLLTDIOOnDomain is enabled <font></td><td>HKLM:\SOFTWARE\Policies\Microsoft\Windows\LLTD</td></tr>
+<tr><td><font color=#ff9933>AllowLLTDIOOnPublicNet is enabled <font></td><td>HKLM:\SOFTWARE\Policies\Microsoft\Windows\LLTD</td></tr>
+<tr><td><font color=#ff9933>AllowRspndrOnDomain is enabled <font></td><td>HKLM:\SOFTWARE\Policies\Microsoft\Windows\LLTD</td></tr>
+<tr><td><font color=#ff9933>AllowRspndrOnPublicNet is enabled <font></td><td>HKLM:\SOFTWARE\Policies\Microsoft\Windows\LLTD</td></tr>
+<tr><td><font color=#ff9933>ProhibitLLTDIOOnPrivateNet is enabled <font></td><td>HKLM:\SOFTWARE\Policies\Microsoft\Windows\LLTD</td></tr>
+<tr><td><font color=#ff9933>ProhibitLLTDIOOnPrivateNet is enabled <font></td><td>HKLM:\SOFTWARE\Policies\Microsoft\Windows\LLTD</td></tr>
+<tr><td><font color=#ff9933>There is no &#39;255.255.255.255 wpad&#39; entry <font></td><td>C:\Windows\System32\Drivers\etc\hosts\</td></tr>
+</table>
+<h4>LLMNR and other legacy network protocols can be used to steal password hashes. <br> <br>Further information can be found @https://www.tenaka.net/responder<br></h4>
+
+<h2><a name="#secOptions">Security Options to Prevent MitM Attacks</a></span></h2>
+<table>
+<colgroup><col/></colgroup>
+<tr><th>*</th></tr>
+<tr><td>Domain member: Digitally encrypt or sign secure channel data (always) - Enabled</td></tr>
+<tr><td><font color=#ff9933>Microsoft network client: Digitally sign communications (always) - Disabled <font></td></tr>
+<tr><td><font color=#ff9933>Microsoft network server: Digitally sign communications (always) - Disabled <font></td></tr>
+<tr><td>Microsoft network client: Send unencrypted password to connect to third-party SMB servers - Disabled</td></tr>
+<tr><td>Network security: Do not store LAN Manager hash value on next password change - Enabled</td></tr>
+<tr><td><font color=#ff9933>Network security: LAN Manager authentication level (Send NTLMv2 response only\refuse LM &amp; NTLM) - Disabled <font></td></tr>
+<tr><td>Network Access: Do not allow anonymous enumeration of SAM accounts - Enabled</td></tr>
+<tr><td><font color=#ff9933>Network Access: Do not allow anonymous enumeration of SAM accounts and shares - Disabled <font></td></tr>
+<tr><td>Network Access: Let Everyone permissions apply to anonymous users - Disabled</td></tr>
+<tr><td><font color=#ff9933>Network security: LDAP client signing requirements - Disabled <font></td></tr>
+<tr><td><font color=#ff9933>Network security: Minimum session security for NTLM SSP based (including secure RPC) clients - Disabled set Require NTLMv2 session security and Require 128-bit encryption <font></td></tr>
+<tr><td><font color=#ff9933>Network security: Minimum session security for NTLM SSP based (including secure RPC) servers - Disabled set Require NTLMv2 session security and Require 128-bit encryption <font></td></tr>
+<tr><td><font color=#ff9933>Domain member: Require strong (Windows 2000 or later) session key - Disabled <font></td></tr>
+<tr><td>Domain member: Require strong (Windows 2000 or later) session key - Enabled</td></tr>
+<tr><td><font color=#ff9933>System cryptography: Force strong key protection for user keys stored on the computer - Disabled <font></td></tr>
+<tr><td><font color=#ff9933>System cryptography: Use FIPS compliant algorithms for encryption, hashing, and signing - Disabled <font></td></tr>
+</table>
+<h4><br>GPO settings can be found @ Computer Configuration\Windows Settings\Security Settings\Local Policies\Security Options<br><br>Prevent credential relay with Impacket and Man in the Middle by Digitally Signing for SMB and LDAP connections enforcement. <br> <br>Further information can be found @ https://www.tenaka.net/smb-relay-attack<br></h4>
+
+<h2><a name="#WinSSLF">Windows OS Security Recommendations</a></span></h2>
+<table>
+<colgroup><col/><col/></colgroup>
+<tr><th>WindowsSetting</th><th>WindowsRegValue</th></tr>
+<tr><td><font color=#ff9933>Boot-Start Driver Initialization Policy is disabled <font></td><td><div title="Computer Configuration\Policies\Administrative Templates\System\Early Launch Antimalware\Boot-Start Driver Initialization Policy">HKLM:\System\CurrentControlSet\Policies\EarlyLaunch\DriverLoadPolicy</td></tr>
+<tr><td><font color=#ff9933>Prevent SafeMode for Non Admins is not set <font></td><td><div title="Computer Configuration\Policies\Administrative Templates\Windows Components\Windows Error Reporting\Advanced Error Reporting Settings\Prevent SafeMode for Non Admins">HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System\SafeModeBlockNonAdmins</td></tr>
+<tr><td>Do not display network selection UI Enabled is disabled</td><td><div title="Computer Configuration\Policies\Administrative Templates\System\Logon\Do not display network selection UI Enabled">HKLM:\Software\Policies\Microsoft\Windows\System\DontDisplayNetworkSelectionUI</td></tr>
+<tr><td>Enumerate local users on domain-joined computers is Disabled</td><td><div title="Computer Configuration\Policies\Administrative Templates\System\Logon\Enumerate local users on domain-joined computers">HKLM:\Software\Policies\Microsoft\Windows\System\EnumerateLocalUsers</td></tr>
+<tr><td><font color=#ff9933>Turn off picture password sign-in disabled <font></td><td><div title="Computer Configuration\Policies\Administrative Templates\System\Logon\Turn off picture password sign-in">HKLM:\Software\Policies\Microsoft\Windows\System\BlockDomainPicturePassWord</td></tr>
+<tr><td><font color=#ff9933>Turn on convenience PIN sign-in enabled <font></td><td><div title="Computer Configuration\Policies\Administrative Templates\System\Logon\Turn on convenience PIN sign-in">HKLM:\Software\Policies\Microsoft\Windows\System\AllowDomainPINLogon</td></tr>
+<tr><td><font color=#ff9933>Allow users to select when a password is required when resuming from connected standby is enabled <font></td><td><div title="Computer Configuration\Policies\Administrative Templates\System\Logon\Allow users to select when a password is required when resuming from connected standby">HKLM:\Software\Policies\Microsoft\Windows\System\AllowDomainDelayLock</td></tr>
+<tr><td><font color=#ff9933>Turn off app notifications on the lock screen is disabled <font></td><td><div title="Computer Configuration\Policies\Administrative Templates\System\Logon\Turn off app notifications on the lock screen">HKLM:\Software\Policies\Microsoft\Windows\System\DisableLockScreenAppNotifications</td></tr>
+<tr><td><font color=#ff9933>Prevent the computer from joining a homegroup is disabled <font></td><td><div title="Computer Configuration\Policies\Administrative Templates\Windows Components\HomeGroup\Prevent the computer from joining a homegroup">HKLM:\Software\Policies\Microsoft\Windows\HomeGroup\DisableHomeGroup</td></tr>
+<tr><td><font color=#ff9933>Allow Windows Ink Workspace is disabled <font></td><td><div title="Computer Configuration\Policies\Administrative Templates\Windows Components\Windows Ink Workspace\Allow Windows Ink Workspace">HKLM:\Software\Policies\Microsoft\WindowsInkWorkspace\AllowWindowsInkWorkspace</td></tr>
+<tr><td><font color=#ff9933>Show lock in the user tile menu is disabled <font></td><td><div title="Computer Configuration\Policies\Administrative Templates\Windows Components\File Explorer\Show lock in the user tile menu">HKLM:\Software\Policies\Microsoft\Windows\Explorer\ShowLockOption</td></tr>
+<tr><td><font color=#ff9933>Enable screen saver disabled <font></td><td><div title="User Configuration\Policies\Administrative Templates\Control Panel\Personalization\Enable screen saver">HKCU:\Software\Policies\Microsoft\Windows\Control Panel\Desktop\ScreenSaveActive</td></tr>
+<tr><td><font color=#ff9933>PassWord protect the screen saver disabled <font></td><td><div title="User Configuration\Policies\Administrative Templates\Control Panel\Personalization\PassWord protect the screen saver">HKCU:\Software\Policies\Microsoft\Windows\Control Panel\Desktop\ScreenSaverIsSecure</td></tr>
+<tr><td><font color=#ff9933>Screen saver timeout disabled <font></td><td><div title="User Configuration\Policies\Administrative Templates\Control Panel\Personalization\Screen saver timeout">HKCU:\Software\Policies\Microsoft\Windows\Control Panel\Desktop\ScreenSaveTimeOut</td></tr>
+<tr><td><font color=#ff9933>Turn off toast notifications on the lock screen disabled <font></td><td><div title="User Configuration\Policies\Administrative Templates\Start Menu and Taskbar\Notifications\Turn off toast notifications on the lock screen">HKCU:\SOFTWARE\Policies\Microsoft\Windows\CurrentVersion\PushNotifications\NoToastApplicationNotificationOnLockScreen</td></tr>
+<tr><td><font color=#ff9933>Do not suggest third-party content in Windows spotlight disabled <font></td><td><div title="User Configuration\Policies\Administrative Templates\Windows Components\Cloud Content\Do not suggest third-party content in Windows spotlight">HKCU:\Software\Policies\Microsoft\Windows\CloudContent\DisableThirdPartySuggestions</td></tr>
+<tr><td><font color=#ff9933>Prevent enabling lock screen camera is disabled <font></td><td><div title="Computer Configuration\Policies\Administrative Templates\Control Panel\Personalization\Prevent enabling lock screen camera">HKLM:\Software\Policies\Microsoft\Windows\Personalization\NoLockScreenCamera</td></tr>
+<tr><td><font color=#ff9933>Prevent enabling lock screen camera is disabled <font></td><td><div title="Computer Configuration\Policies\Administrative Templates\Control Panel\Personalization\Prevent enabling lock screen camera">HKLM:\Software\Policies\Microsoft\Windows\Personalization\NoLockScreenSlideshow</td></tr>
+<tr><td><font color=#ff9933>Prevent users from sharing files within their profile is disabled <font></td><td><div title="User Configurations\Policies\Administrative Templates\Windows Components\Network Sharing\Prevent users from sharing files within their profile">HKCU:\Software\Microsoft\Windows\CurrentVersion\Policies\Explorer\NoInplaceSharing</td></tr>
+<tr><td><font color=#ff9933>Do not display the password reveal button is disabled <font></td><td><div title="Computer Configuration\Policies\Administrative Templates\System\Logon\Do not display the password reveal button">HKLM:\Software\Policies\Microsoft\Windows\CredUI\DisablePassWordReveal</td></tr>
+<tr><td>Enumerate administrator accounts on elevation is Disabled</td><td><div title="Computer Configuration\Policies\Administrative Templates\Windows Components\Credential User Interface\Enumerate administrator accounts on elevation">HKLM:\Software\Microsoft\Windows\CurrentVersion\Policies\CredUI\EnumerateAdministrators</td></tr>
+<tr><td><font color=#ff9933>Require trusted path for credential entry is disabled <font></td><td><div title="Computer Configuration\Policies\Administrative Templates\Windows Components\Credential User Interface\Require trusted path for credential entry">HKLM:\Software\Microsoft\Windows\CurrentVersion\Policies\CredUI\EnableSecureCredentialPrompting</td></tr>
+<tr><td><font color=#ff9933>Prevent the use of security questions for local accounts is disabled <font></td><td><div title="Computer Configuration\Policies\Administrative Templates\Windows Components\Credential User Interface\Prevent the use of security questions for local accounts">HKLM:\Software\Policies\Microsoft\Windows\System\NoLocalPassWordResetQuestions</td></tr>
+<tr><td>Disable or enable software Secure Attention Sequence is disabled</td><td><div title="Computer Configuration\Policies\Administrative Templates\Windows Components\Windows Logon Options\Disable or enable software Secure Attention Sequence">HKLM:\Software\Microsoft\Windows\CurrentVersion\Policies\System\SoftwareSASGeneration</td></tr>
+<tr><td><font color=#ff9933>Sign-in last interactive user automatically after a system-initiated restart is disabled or not Set <font></td><td><div title="Computer Configuration\Policies\Administrative Templates\Windows Components\Windows Logon Options\Sign-in last interactive user automatically after a system-initiated restart">HKLM:\Software\Microsoft\Windows\CurrentVersion\Policies\System\	DisableAutomaticRestartSignOn</td></tr>
+<tr><td><font color=#ff9933>Interactive logon: Do not require CTRL+ALT+DEL is Enabled or not defined <font></td><td><div title="Computer Configuration\Windows Settings\Security Settings\Local Policies\Security Options\Windows Logon Options\Interactive logon: Do not require CTRL+ALT+DEL">HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System\disablecad</td></tr>
+<tr><td><font color=#ff9933>Interactive logon: Machine inactivity limit disabled <font></td><td><div title="Computer Configuration\Policies\Windows Settings\Security Settings\Local Policies\Security Options\Interactive logon: Machine inactivity limit">HKLM:\Software\Microsoft\Windows\CurrentVersion\Policies\System\InactivityTimeoutSecs</td></tr>
+<tr><td>Interactive logon: Number of previous logons to cache caches 10 previous logons, ideally this should be set to 1</td><td><div title="Computer Configuration\Windows Settings\Security Settings\Local Policies\Security Options\Windows Logon Options\Interactive logon: Number of previous logons to cache">HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon\CachedLogonsCount</td></tr>
+<tr><td><font color=#ff9933>Network Access: Do not allow storage of passwords and credentials for network authentication is disabled <font></td><td><div title="Computer Configuration\Windows Settings\Security Settings\Local Policies\Security Options\Windows Logon Options\Network Access: Do not allow storage of passwords and credentials for network authentication">HKLM:\SYSTEM\CurrentControlSet\Control\Lsa\disabledomaincreds</td></tr>
+<tr><td><font color=#ff9933>Apply UAC restrictions to local accounts on network logons is disabled, mitigates Pass-the-Hash <font></td><td><div title="No GPO Setting available">HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System\LocalAccountTokenFilterPolicy</td></tr>
+<tr><td><font color=#ff9933>Hardened UNC Paths is disabled, \\*\SYSVOL and \\*\NETLOGON are missing <font></td><td><div title="Computer Configuration\Policies\Administrative Templates\Network\Network Provider\Hardened UNC Paths">HKLM:\Software\Policies\Microsoft\Windows\NetworkProvider\HardenedPaths\HardenedPaths</td></tr>
+<tr><td><font color=#ff9933>Configure registry policy processing is disabled <font></td><td><div title="Computer Configuration\Policies\Administrative Templates\System\Group Policy\Configure registry policy processing">HKLM:\SOFTWARE\Policies\Microsoft\Windows\Group Policy\{35378EAC-683F-11D2-A89A-00C04FBBCFA2}\NoGPOListChanges</td></tr>
+<tr><td><font color=#ff9933>Configure security policy processing is disabled <font></td><td><div title="Computer Configuration\Policies\Administrative Templates\System\Group Policy\Configure security policy processing">HKLM:\Software\Policies\Microsoft\Windows\Group Policy\{827D319E-6EAC-11D2-A4EA-00C04F79F83A}\NoBackgroundPolicy</td></tr>
+<tr><td><font color=#ff9933>Turn off background refresh of Group Policy is disabled <font></td><td><div title="Computer Configuration\Policies\Administrative Templates\System\Group Policy\Turn off background refresh of Group Policy">HKLM:\Software\Microsoft\Windows\CurrentVersion\Policies\System\DisableBkGndGroupPolicy</td></tr>
+<tr><td><font color=#ff9933>Turn off Local Group Policy Objects processing is disabled <font></td><td><div title="Computer Configuration\Policies\Administrative Templates\System\Group Policy\Turn off Local Group Policy Objects processing">HKLM:\Software\Policies\Microsoft\Windows\System\DisableLGPOProcessing</td></tr>
+<tr><td>Network Access: Allow anonymous SID/Name translation is disabled</td><td><div title="Computer Configuration\Policies\Windows Settings\Security Settings\Local Policies\Security Options\Network Access: Allow anonymous SID/Name translation">HKLM:\System\CurrentControlSet\Control\Lsa\AnonymousNameLookup</td></tr>
+<tr><td>Network Access: Let Everyone permissions apply to anonymous users is disabled</td><td><div title="Computer Configuration\Policies\Windows Settings\Security Settings\Local Policies\Security Options\Network Access: Let Everyone permissions apply to anonymous users">HKLM:\System\CurrentControlSet\Control\Lsa\everyoneincludesanonymous</td></tr>
+<tr><td>Network Access: Do not allow anonymous enumeration of SAM accounts is enabled</td><td><div title="Computer Configuration\Policies\Windows Settings\Security Settings\Local Policies\Security Options\Network Access: Do not allow anonymous enumeration of SAM accounts">HKLM:\System\CurrentControlSet\Control\Lsa\RestrictAnonymousSAM</td></tr>
+<tr><td><font color=#ff9933>Network Access: Do not allow anonymous enumeration of SAM accounts and shares is disabled <font></td><td><div title="Computer Configuration\Policies\Windows Settings\Security Settings\Local Policies\Security Options\Network Access: Do not allow anonymous enumeration of SAM accounts and shares">HKLM:\System\CurrentControlSet\Control\Lsa\RestrictAnonymous</td></tr>
+<tr><td>Network Access: Restrict anonymous Access to Named Pipes and Shares is enabled</td><td><div title="Computer Configuration\Policies\Windows Settings\Security Settings\Local Policies\Security Options\Network Access: Restrict anonymous Access to Named Pipes and Shares">HKLM:\System\CurrentControlSet\Services\LanManServer\Parameters\RestrictNullSessAccess</td></tr>
+<tr><td><font color=#ff9933>Network Access: Restrict clients allowed to make remote calls to SAM is disabled or not set <font></td><td><div title="Computer Configuration\Policies\Windows Settings\Security Settings\Local Policies\Security Options\Network Access: Restrict clients allowed to make remote calls to SAM">HKLM:\System\CurrentControlSet\Control\Lsa\RestrictRemoteSam</td></tr>
+<tr><td>Network security: Allow Local System to use computer identity for NTLM is disabled</td><td><div title="Computer Configuration\Policies\Windows Settings\Security Settings\Local Policies\Security Options\Network security: Allow Local System to use computer identity for NTLM">HKLM:\System\CurrentControlSet\Control\Lsa\UseMachineId</td></tr>
+<tr><td>Network security: Allow LocalSystem NULL session fallback is disabled</td><td><div title="Computer Configuration\Policies\Windows Settings\Security Settings\Local Policies\Security Options\Network security: Allow LocalSystem NULL session fallback">HKLM:\System\CurrentControlSet\Control\LSA\MSV1_0\allownullsessionfallback</td></tr>
+<tr><td>Accounts: Limit local account use of blank passwords to console logon only is enabled</td><td><div title="Computer Configuration\Policies\Windows Settings\Security Settings\Local Policies\Security Options\Accounts: Limit local account use of blank passwords to console logon only">HKLM:\System\CurrentControlSet\Control\Lsa\LimitBlankPassWordUse</td></tr>
+<tr><td><font color=#ff9933>Disallow Autoplay for non-volume devices is disabled <font></td><td><div title="Computer Configuration\Policies\Administrative Templates\Windows Components\AutoPlay Policies\Disallow Autoplay for non-volume devices">HKLM:\Software\Policies\Microsoft\Windows\Explorer\NoAutoplayfornonVolume</td></tr>
+<tr><td><font color=#ff9933>Disallow Autoplay for non-volume devices is disabled <font></td><td><div title="User Configuration\Policies\Administrative Templates\Windows Components\AutoPlay Policies\Disallow Autoplay for non-volume devices">HKCU:\Software\Policies\Microsoft\Windows\Explorer\NoAutoplayfornonVolume</td></tr>
+<tr><td><font color=#ff9933>Set the default behavior for AutoRun is disabled <font></td><td><div title="Computer Configuration\Policies\Administrative Templates\Windows Components\AutoPlay Policies\Set the default behavior for AutoRun">HKLM:\Software\Microsoft\Windows\CurrentVersion\Policies\Explorer\NoAutorun</td></tr>
+<tr><td><font color=#ff9933>Set the default behavior for AutoRun is disabled <font></td><td><div title="User Configuration\Policies\Administrative Templates\Windows Components\AutoPlay Policies\Set the default behavior for AutoRun">HKCU:\Software\Microsoft\Windows\CurrentVersion\Policies\Explorer\NoAutorun</td></tr>
+<tr><td><font color=#ff9933>Turn off Autoplay is disabled <font></td><td><div title="Computer Configuration\Policies\Administrative Templates\Windows Components\AutoPlay Policies\Turn off Autoplay">HKLM:\Software\Microsoft\Windows\CurrentVersion\Policies\Explorer\NoDriveTypeAutoRun</td></tr>
+<tr><td><font color=#ff9933>Turn off Autoplay is disabled <font></td><td><div title="User Configuration\Policies\Administrative Templates\Windows Components\AutoPlay Policies\Turn off Autoplay">HKCU:\Software\Microsoft\Windows\CurrentVersion\Policies\Explorer\NoDriveTypeAutoRun</td></tr>
+<tr><td><font color=#ff9933>Prevent Access to the Command Prompt is disabled <font></td><td><div title="User Configuration\Policies\Administrative Templates\System\Prevent Access to the Command Prompt">HKCU:\Software\Policies\Microsoft\Windows\System\DisableCMD</td></tr>
+<tr><td><font color=#ff9933>Prevent Access to Registry Editing Tools is disabled <font></td><td><div title="User Configuration\Policies\Administrative Templates\System\Prevent Access to Registry Editing Tools">HKCU:\Software\Microsoft\Windows\CurrentVersion\Policies\System\DisableRegistryTools</td></tr>
+<tr><td><font color=#ff9933>Turn on PowerShell Script Block Logging is disabled <font></td><td><div title="Computer Configuration\Policies\Administrative Templates\Windows Components\Windows PowerShell\Turn on PowerShell Script Block Logging">HKLM:\Software\Policies\Microsoft\Windows\PowerShell\ScriptBlockLogging\EnableScriptBlockLogging</td></tr>
+<tr><td><font color=#ff9933>Turn on Script Execution - Execution Policy: Allow only signed scripts is disabled <font></td><td><div title="Computer Configuration\Policies\Administrative Templates\Windows Components\Windows PowerShell\Turn on Script Execution - Execution Policy: Allow only signed scripts">HKLM:\Software\Policies\Microsoft\Windows\PowerShell\ExecutionPolicy</td></tr>
+<tr><td><font color=#ff9933>Configure Windows Defender SmartScreen (File Explorer) is set warn and allow bypass <font></td><td><div title="Computer Configuration\Policies\Administrative Templates\Windows Components\File Explorer\Configure Windows Defender SmartScreen (File Explorer)">HKLM:\Software\Policies\Microsoft\Windows\System\EnableSmartScreen</td></tr>
+<tr><td><font color=#ff9933>Configure Windows Defender SmartScreen (Windows Defender SmartScreen) is set warn and allow bypass <font></td><td><div title="Computer Configuration\Policies\Administrative Templates\Windows Components\Windows Defender SmartScreen\Explorer\Configure Windows Defender SmartScreen (Windows Defender SmartScreen)">HKLM:\Software\Policies\Microsoft\Windows\System\EnableSmartScreen</td></tr>
+<tr><td><font color=#ff9933>Allow user control over installs enabled <font></td><td><div title="Computer Configuration\Policies\Administrative Templates\Windows Components\Windows Installer\Allow user control over installs">HKLM:\Software\Policies\Microsoft\Windows\Installer\EnableUserControl</td></tr>
+<tr><td><font color=#ff9933>Always install with elevated privileges enabled <font></td><td><div title="Computer Configuration\Policies\Administrative Templates\Windows Components\Windows Installer\Always install with elevated privileges">HKLM:\Software\Policies\Microsoft\Windows\Installer\AlwaysInstallElevated</td></tr>
+<tr><td><font color=#ff9933>Always install with elevated privileges enabled <font></td><td><div title="User Configuration\Policies\Administrative Templates\Windows Components\Windows Installer\Always install with elevated privileges">HKCU:\Software\Policies\Microsoft\Windows\Installer\AlwaysInstallElevated</td></tr>
+<tr><td><font color=#ff9933>Devices: Prevent users from installing printer drivers disabled <font></td><td><div title="Computer Configuration\Policies\Windows Settings\Security Settings\Local Policies\Security Options\Devices: Prevent users from installing printer drivers">HKLM:\System\CurrentControlSet\Control\Print\Providers\LanMan Print Services\Servers\AddPrinterDrivers</td></tr>
+<tr><td><font color=#ff9933>Do not process the legacy run list disabled <font></td><td><div title="Computer Configuration\Policies\Administrative Templates\System\Logon\Do not process the legacy run list">HKLM:\Software\Microsoft\Windows\CurrentVersion\Policies\Explorer\DisableCurrentUserRun</td></tr>
+<tr><td><font color=#ff9933>Do not process the run once list disabled <font></td><td><div title="Computer Configuration\Policies\Administrative Templates\System\Logon\Do not process the run once list">HKLM:\Software\Microsoft\Windows\CurrentVersion\Policies\Explorer\DisableLocalMachineRunOnce</td></tr>
+<tr><td>Run these programs at user logon disabled</td><td><div title="Computer Configuration\Policies\Administrative Templates\System\Logon\Run these programs at user logon">HKLM:\Software\Microsoft\Windows\CurrentVersion\Policies\Explorer\Run\1</td></tr>
+<tr><td><font color=#ff9933>Do not preserve zone information in file attachments is enabled <font></td><td><div title="User Configuration\Policies\Administrative Templates\Windows Components\Attachment Manager\Do not preserve zone information in file attachments">HKCU:\Software\Microsoft\Windows\CurrentVersion\Policies\Attachments\SaveZoneInformation</td></tr>
+<tr><td><font color=#ff9933>Hide mechanisms to remove zone information is disabled <font></td><td><div title="User Configuration\Policies\Administrative Templates\Windows Components\Attachment Manager\Hide mechanisms to remove zone information">HKCU:\Software\Microsoft\Windows\CurrentVersion\Policies\Attachments\HideZoneInfoOnProperties</td></tr>
+<tr><td><font color=#ff9933>Restrict Unauthenticated RPC clients disabled - Not to be applied against DCs <font></td><td><div title="Computer Configuration\Policies\Administrative Templates\System\Remote Procedure Call\Restrict Unauthenticated RPC clients">HKLM:\Software\Policies\Microsoft\Windows NT\Rpc\RestrictRemoteClients</td></tr>
+<tr><td><font color=#ff9933>Enable RPC Endpoint Mapper Client Authentication disabled <font></td><td><div title="Computer Configuration\Policies\Administrative Templates\System\Remote Procedure Call\Enable RPC Endpoint Mapper Client Authentication">HKLM:\Software\Policies\Microsoft\Windows NT\Rpc\EnableAuthEpResolution</td></tr>
+<tr><td><font color=#ff9933>Allow Basic authentication is enabled <font></td><td><div title="Computer Configuration\Policies\Administrative Templates\Windows Components\Windows Remote Management (WinRM)\WinRM Client\Allow Basic authentication">HKLM:\Software\Policies\Microsoft\Windows\WinRM\Client\AllowBasic</td></tr>
+<tr><td><font color=#ff9933>Allow unencrypted traffic is enabled <font></td><td><div title="Computer Configuration\Policies\Administrative Templates\Windows Components\Windows Remote Management (WinRM)\WinRM Client\Allow unencrypted traffic">HKLM:\Software\Policies\Microsoft\Windows\WinRM\Client\AllowUnencryptedTraffic</td></tr>
+<tr><td><font color=#ff9933>Disallow Digest authentication is disabled <font></td><td><div title="Computer Configuration\Policies\Administrative Templates\Windows Components\Windows Remote Management (WinRM)\WinRM Client\Disallow Digest authentication">HKLM:\Software\Policies\Microsoft\Windows\WinRM\Client\AllowDigest</td></tr>
+<tr><td><font color=#ff9933>Allow Basic authentication is enabled <font></td><td><div title="Computer Configuration\Policies\Administrative Templates\Windows Components\Windows Remote Management (WinRM)\WinRM Service\Allow Basic authentication">HKLM:\Software\Policies\Microsoft\Windows\WinRM\service\AllowBasic</td></tr>
+<tr><td><font color=#ff9933>Allow unencrypted traffic is enabled <font></td><td><div title="Computer Configuration\Policies\Administrative Templates\Windows Components\Windows Remote Management (WinRM)\WinRM Service\Allow unencrypted traffic">HKLM:\Software\Policies\Microsoft\Windows\WinRM\Service\AllowUnencryptedTraffic</td></tr>
+<tr><td><font color=#ff9933>Disallow WinRM from storing RunAs credentials is disabled <font></td><td><div title="Computer Configuration\Policies\Administrative Templates\Windows Components\Windows Remote Management (WinRM)\WinRM Client\Disallow WinRM from storing RunAs credentials">HKLM:\Software\Policies\Microsoft\Windows\WinRM\Service\DisableRunAs</td></tr>
+<tr><td><font color=#ff9933>Allow Remote Shell Access is enabled <font></td><td><div title="Computer Configuration\Policies\Administrative Templates\Windows Components\Windows Remote Shell\Allow Remote Shell Access">HKLM:\Software\Policies\Microsoft\Windows\WinRM\Service\WinRS\AllowRemoteShellAccess</td></tr>
+<tr><td><font color=#ff9933>Allow Cortana is enabled <font></td><td><div title="Computer Configuration\Policies\Administrative Templates\Windows Components\Search\Allow Cortana">HKLM:\SOFTWARE\Policies\Microsoft\Windows\Windows Search\AllowCortana</td></tr>
+<tr><td><font color=#ff9933>Don’t search the web or display web results in Search is enabled <font></td><td><div title="Computer Configuration\Policies\Administrative Templates\Windows Components\Search\Don’t search the web or display web results in Search">HKLM:\SOFTWARE\Policies\Microsoft\Windows\Windows Search\ConnectedSearchUseWeb</td></tr>
+<tr><td><font color=#ff9933>Microsoft Support Diagnostic Tool: Turn on MSDT interactive communication with support provider enabled <font></td><td><div title="Computer Configuration\Policies\Administrative Templates\System\Troubleshooting and Diagnostics\Microsoft Support Diagnostic Tool\Microsoft Support Diagnostic Tool: Turn on MSDT interactive communication with support provider">HKLM:\SOFTWARE\Policies\Microsoft\Windows\ScriptedDiagnosticsProvider\Policy\DisableQueryRemoteServer</td></tr>
+<tr><td><font color=#ff9933>Turn off Inventory Collector disabled <font></td><td><div title="Computer Configuration\Policies\Administrative Templates\Windows Components\Application Compatibility\Turn off Inventory Collector">HKLM:\Software\Policies\Microsoft\Windows\AppCompat\DisableInventory</td></tr>
+<tr><td><font color=#ff9933>Turn off Steps Recorder disabled <font></td><td><div title="Computer Configuration\Policies\Administrative Templates\Windows Components\Application Compatibility\Turn off Steps Recorder">HKLM:\Software\Policies\Microsoft\Windows\AppCompat\DisableUAR</td></tr>
+<tr><td><font color=#ff9933>Prevent Access to 16-bit applications disabled <font></td><td><div title="Computer Configuration\Policies\Administrative Templates\Windows Components\Application Compatibility\Prevent Access to 16-bit applications">HKLM:\Software\Policies\Microsoft\Windows\AppCompat\VDMDisallowed</td></tr>
+<tr><td><font color=#ff9933>Allow Telemetry disabled <font></td><td><div title="Computer Configuration\Policies\Administrative Templates\Windows Components\Data Collection and Preview Builds\Allow Telemetry">HKLM:\Software\Policies\Microsoft\Windows\DataCollection\AllowTelemetry</td></tr>
+<tr><td><font color=#ff9933>Allow Telemetry disabled <font></td><td><div title="Computer Configuration\Policies\Administrative Templates\Windows Components\Data Collection and Preview Builds\Allow Telemetry">HKLM:\Software\Policies\Microsoft\Windows\DataCollection\AllowTelemetry</td></tr>
+<tr><td><font color=#ff9933>Configure Corporate Windows Error Reporting is not set <font></td><td><div title="Computer Configuration\Policies\Administrative Templates\Windows Components\Windows Error Reporting\Advanced Error Reporting Settings\Configure Corporate Windows Error Reporting">HKLM:\SOFTWARE\Policies\Microsoft\Windows\Windows Error Reporting\CorporateWerUseSSL</td></tr>
+<tr><td><font color=#ff9933>Turn off Data Execution Prevention for Explorer is disabled <font></td><td><div title="Computer Configuration\Policies\Administrative Templates\Windows Components\File Explorer\Turn off Data Execution Prevention for Explorer">HKLM:\Software\Policies\Microsoft\Windows\Explorer\NoDataExecutionPrevention</td></tr>
+<tr><td><font color=#ff9933>Enabled Structured Exception Handling Overwrite Protection (SEHOP) is disabled <font></td><td><div title="Create manually or via GPO Preferences">HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\kernel\NoDataExecutionPrevention</td></tr>
+<tr><td><font color=#ff9933>Remove Security tab - User is disabled <font></td><td><div title="User Configuration\Policies\Administrative Templates\Windows Components\File Explorer\Remove Security tab - User">HKCU:\Software\Microsoft\Windows\CurrentVersion\Policies\Explorer\NoSecurityTab</td></tr>
+<tr><td><font color=#ff9933>Turn off location is disabled <font></td><td><div title="Computer Configuration\Policies\Administrative Templates\Windows Components\Location and Sensors\Turn off location">HKLM:\Software\Policies\Microsoft\Windows\LocationAndSensors\DisableLocationScripting</td></tr>
+<tr><td><font color=#ff9933>Turn off Windows Location Provider is disabled <font></td><td><div title="Computer Configuration\Policies\Administrative Templates\Windows Components\Location and Sensors\Windows Location Provider\Turn off Windows Location Provider">HKLM:\Software\Policies\Microsoft\Windows\LocationAndSensors\DisableWindowsLocationProvider</td></tr>
+<tr><td><font color=#ff9933>Turn off Access to the Store is disabled <font></td><td><div title="Computer Configuration\Policies\Administrative Templates\System\Internet Communication Management\Internet Communication settings\Turn off Access to the Store">HKLM:\Software\Policies\Microsoft\Windows\Explorer\NoUseStoreOpenWith</td></tr>
+<tr><td><font color=#ff9933>Turn off the Store application is disabled <font></td><td><div title="Computer Configuration\Policies\Administrative Templates\Windows Components\Store\Turn off the Store application">HKLM:\Software\Policies\Microsoft\WindowsStore\RemoveWindowsStore</td></tr>
+<tr><td></td><td><div title="User Configuration\Policies\Administrative Templates\System\Group Policy\Determine if interactive users can generate Resultant Set of Policy data">HKCU:\Software\Policies\Microsoft\Windows\System\DenyRsopToInteractiveUser</td></tr>
+</table>
+<h4>These are recommended GPO settings to secure Windows by Microsoft, do NOT implement without the correct research and testing. Some settings could adversely affect your system.<br> <br>Due to the sheer number of settings, the script contains details and the equivalent GPO settings, search for RECOMMENDED SECURITY SETTINGS section<br><br>MS Security Compliance Toolkit can be found @ <br>https://admx.help/?Category=security-compliance-toolkit<br>https://www.microsoft.com/en-us/download/details.aspx?id=55319<br><br>**WindowsRegValue - Mouse over to show Reg Key to GPO path translation</h4>
+
+<h2><a name="#EdgeSSLF">MS Edge Security Recommendations</a></span></h2>
+<table>
+<colgroup><col/><col/></colgroup>
+<tr><th>EdgeGPONameSetting</th><th>EdgeRegValue</th></tr>
+<tr><td><font color=#ff9933>Allow unconfigured sites to be reloaded in Internet Explorer mode is disabled with value of  <font></td><td><div title="Computer Configuration\Policies\Administrative Templates\Microsoft Edge\Allow unconfigured sites to be reloaded in Internet Explorer mode">HKLM:\Software\Policies\Microsoft\Edge\InternetExplorerIntegrationReloadInIEModeAllowed</td></tr>
+<tr><td><font color=#ff9933>Allow users to proceed from the HTTPS warning page is disabled with value of  <font></td><td><div title="Computer Configuration\Policies\Administrative Templates\Microsoft Edge\Allow users to proceed from the HTTPS warning page">HKLM:\Software\Policies\Microsoft\Edge\SSLErrorOverrideAllowed</td></tr>
+<tr><td><font color=#ff9933>Enable 3DES cipher suites in TLS is disabled with value of  <font></td><td><div title="Computer Configuration\Policies\Administrative Templates\Microsoft Edge\Enable 3DES cipher suites in TLS">HKLM:\Software\Policies\Microsoft\Edge\TripleDESEnabled</td></tr>
+<tr><td><font color=#ff9933>Enable browser legacy extension point blocking is disabled with value of  <font></td><td><div title="Computer Configuration\Policies\Administrative Templates\Microsoft Edge\Enable browser legacy extension point blocking">HKLM:\Software\Policies\Microsoft\Edge\BrowserLegacyExtensionPointsBlockingEnabled</td></tr>
+<tr><td><font color=#ff9933>Enable site isolation for every site is disabled with value of  <font></td><td><div title="Computer Configuration\Policies\Administrative Templates\Microsoft Edge\Enable site isolation for every site">HKLM:\Software\Policies\Microsoft\Edge\SitePerProcess</td></tr>
+<tr><td><font color=#ff9933>Minimum TLS version enabled (deprecated) is disabled with value of  <font></td><td><div title="Computer Configuration\Policies\Administrative Templates\Microsoft Edge\Minimum TLS version enabled (deprecated)">HKLM:\Software\Policies\Microsoft\Edge\SSLVersionMin</td></tr>
+<tr><td><font color=#ff9933>Show the Reload in Internet Explorer mode button in the toolbar is disabled with value of  <font></td><td><div title="Computer Configuration\Policies\Administrative Templates\Microsoft Edge\Show the Reload in Internet Explorer mode button in the toolbar">HKLM:\Software\Policies\Microsoft\Edge\InternetExplorerModeToolbarButtonEnabled</td></tr>
+<tr><td><font color=#ff9933>Specifies whether SharedArrayBuffers can be used in a non cross-origin-isolated context is disabled with value of  <font></td><td><div title="Computer Configuration\Policies\Administrative Templates\Microsoft Edge\Specifies whether SharedArrayBuffers can be used in a non cross-origin-isolated context">HKLM:\Software\Policies\Microsoft\Edge\SharedArrayBufferUnrestrictedAccessAllowed</td></tr>
+<tr><td><font color=#ff9933>Specifies whether the display-capture permissions-policy is checked or skipped is disabled with value of  <font></td><td><div title="Computer Configuration\Policies\Administrative Templates\Microsoft Edge\Specifies whether the display-capture permissions-policy is checked or skipped">HKLM:\Software\Policies\Microsoft\Edge\DisplayCapturePermissionsPolicyEnabled</td></tr>
+<tr><td><font color=#ff9933>Control which extensions cannot be installed is disabled with value of  <font></td><td><div title="Computer Configuration\Policies\Administrative Templates\Microsoft Edge\Extensions\Control which extensions cannot be installed">HKLM:\Software\Policies\Microsoft\Edge\ExtensionInstallBlocklist</td></tr>
+<tr><td><font color=#ff9933>Allow Basic authentication for HTTP is disabled with value of  <font></td><td><div title="Computer Configuration\Policies\Administrative Templates\Microsoft Edge\HTTP authentication\Allow Basic authentication for HTTP">HKLM:\Software\Policies\Microsoft\Edge\BasicAuthOverHttpEnabled</td></tr>
+<tr><td><font color=#ff9933>Supported authentication schemes is disabled with value of  <font></td><td><div title="Computer Configuration\Policies\Administrative Templates\Microsoft Edge\HTTP authentication\Supported authentication schemes">HKLM:\Software\Policies\Microsoft\Edge\AuthSchemes</td></tr>
+<tr><td><font color=#ff9933>Allow user-level native messaging hosts (installed without admin permissions) is disabled with value of  <font></td><td><div title="Computer Configuration\Policies\Administrative Templates\Microsoft Edge\Native Messaging\Allow user-level native messaging hosts (installed without admin permissions)">HKLM:\Software\Policies\Microsoft\Edge\NativeMessagingUserLevelHosts</td></tr>
+<tr><td><font color=#ff9933>Enable saving Passwords to the Passord Manager is disabled with value of  <font></td><td><div title="Computer Configuration\Policies\Administrative Templates\Microsoft Edge\PassWord manager and protection\Enable saving Passwords to the Passord Manager">HKLM:\Software\Policies\Microsoft\Edge\PassWordManagerEnabled</td></tr>
+<tr><td><font color=#ff9933>Specifies whether to allow insecure websites to make requests to more-private network endpoints is disabled with value of  <font></td><td><div title="Computer Configuration\Policies\Administrative Templates\Microsoft Edge\Private Network Request Settings\Specifies whether to allow insecure websites to make requests to more-private network endpoints">HKLM:\Software\Policies\Microsoft\Edge\InsecurePrivateNetworkRequestsAllowed</td></tr>
+<tr><td><font color=#ff9933>Configure Microsoft Defender SmartScreen is disabled with value of  <font></td><td><div title="Computer Configuration\Policies\Administrative Templates\Microsoft Edge\SmartScreen settings\Configure Microsoft Defender SmartScreen">HKLM:\Software\Policies\Microsoft\Edge\SmartScreenEnabled</td></tr>
+<tr><td><font color=#ff9933>Prevent bypassing Microsoft Defender SmartScreen prompts for sites is disabled with value of  <font></td><td><div title="Computer Configuration\Policies\Administrative Templates\Microsoft Edge\SmartScreen settings\Prevent bypassing Microsoft Defender SmartScreen prompts for sites">HKLM:\Software\Policies\Microsoft\Edge\PreventSmartScreenPromptOverride</td></tr>
+<tr><td><font color=#ff9933>Prevent bypassing of Microsoft Defender SmartScreen warnings about downloads is disabled with value of  <font></td><td><div title="Computer Configuration\Policies\Administrative Templates\Microsoft Edge\SmartScreen settings\Prevent bypassing of Microsoft Defender SmartScreen warnings about downloads">HKLM:\Software\Policies\Microsoft\Edge\PreventSmartScreenPromptOverrideForFiles</td></tr>
+<tr><td><font color=#ff9933>Configure Edge TyposquattingChecker is disabled with value of  <font></td><td><div title="Computer Configuration\Policies\Administrative Templates\Microsoft Edge\TyposquattingChecker settings\Configure Edge TyposquattingChecker">HKLM:\Software\Policies\Microsoft\Edge\TyposquattingCheckerEnabled</td></tr>
+</table>
+
+<h2><a name="#OfficeSSLF">MS Office Security Recommendations</a></span></h2>
+<table>
+<colgroup><col/><col/></colgroup>
+<tr><th>OfficeGPONameSetting</th><th>OfficeRegValue</th></tr>
+<tr><td><font color=#ff9933>DataConnectionWarnings is not set or has the wrong setting with value of  <font></td><td><div title="MS Security - No GPO create Registry keys with preferences\DataConnectionWarnings">HKCU:\Software\Policies\Microsoft\Office\16.0\Excel\Security\DataConnectionWarnings</td></tr>
+<tr><td><font color=#ff9933>RichDataConnectionWarnings is not set or has the wrong setting with value of  <font></td><td><div title="MS Security - No GPO create Registry keys with preferences\RichDataConnectionWarnings">HKCU:\Software\Policies\Microsoft\Office\16.0\Excel\Security\RichDataConnectionWarnings</td></tr>
+<tr><td><font color=#ff9933>WorkbookLinkWarnings is not set or has the wrong setting with value of  <font></td><td><div title="MS Security - No GPO create Registry keys with preferences\WorkbookLinkWarnings">HKCU:\Software\Policies\Microsoft\Office\16.0\Excel\Security\WorkbookLinkWarnings</td></tr>
+<tr><td><font color=#ff9933>WorkbookLinkWarnings is not set or has the wrong setting with value of  <font></td><td><div title="MS Security - No GPO create Registry keys with preferences\WorkbookLinkWarnings">HKCU:\Software\Policies\Microsoft\Office\16.0\PowerPoint\Security\PackagerPrompt</td></tr>
+<tr><td><font color=#ff9933>WorkbookLinkWarnings is not set or has the wrong setting with value of  <font></td><td><div title="MS Security - No GPO create Registry keys with preferences\WorkbookLinkWarnings">HKCU:\Software\Policies\Microsoft\Office\16.0\Word\Security\PackagerPrompt</td></tr>
+<tr><td><font color=#ff9933>WorkbookLinkWarnings is not set or has the wrong setting with value of  <font></td><td><div title="MS Security - No GPO create Registry keys with preferences\WorkbookLinkWarnings">HKCU:\Software\Policies\Microsoft\Office\16.0\Excel\Security\PackagerPrompt</td></tr>
+<tr><td><font color=#ff9933>Disable All ActiveX is not set or has the wrong setting with value of  <font></td><td><div title="User Configuration\Policies\Administrative Templates\Microsoft Office 2016\Security Settings\Disable All ActiveX">HKCU:\Software\Policies\Microsoft\Office\common\security\disableallactivex</td></tr>
+<tr><td><font color=#ff9933>Allow users to include screenshots and attachments when they submit feedback to Microsoft is not set or has the wrong setting with value of  <font></td><td><div title="User Configuration\Policies\Administrative Templates\Microsoft Office 2016\Privacy\Trust Center\Allow users to include screenshots and attachments when they submit feedback to Microsoft">HKCU:\Software\Policies\Microsoft\Office\16.0\Common\feedback\includescreenshot</td></tr>
+<tr><td><font color=#ff9933>Automatically receive small updates to improve reliability is not set or has the wrong setting with value of  <font></td><td><div title="User Configuration\Policies\Administrative Templates\Microsoft Office 2016\Privacy\Trust Center\Automatically receive small updates to improve reliability">HKCU:\Software\Policies\Microsoft\Office\16.0\Common\updatereliabilitydata</td></tr>
+<tr><td><font color=#ff9933>Configure the level of client software diagnostic data sent by Office to Microsoft is not set or has the wrong setting with value of  <font></td><td><div title="User Configuration\Policies\Administrative Templates\Microsoft Office 2016\Privacy\Trust Center\Configure the level of client software diagnostic data sent by Office to Microsoft">HKCU:\Software\Policies\Microsoft\Office\common\clienttelemetry\sendtelemetry</td></tr>
+<tr><td><font color=#ff9933>Disable Opt-in Wizard on first run is not set or has the wrong setting with value of  <font></td><td><div title="User Configuration\Policies\Administrative Templates\Microsoft Office 2016\Privacy\Trust Center\Disable Opt-in Wizard on first run">HKCU:\Software\Policies\Microsoft\Office\16.0\Common\general\shownfirstrunoptin</td></tr>
+<tr><td><font color=#ff9933>Enable Customer Experience Improvement Program is not set or has the wrong setting with value of  <font></td><td><div title="User Configuration\Policies\Administrative Templates\Microsoft Office 2016\Privacy\Trust Center\Enable Customer Experience Improvement Program">HKCU:\Software\Policies\Microsoft\Office\16.0\Common\qmenable</td></tr>
+<tr><td><font color=#ff9933>Allow users to submit feedback to Microsoft is not set or has the wrong setting with value of  <font></td><td><div title="User Configuration\Policies\Administrative Templates\Microsoft Office 2016\Privacy\Trust Center\Allow users to submit feedback to Microsoft">HKCU:\Software\Policies\Microsoft\Office\16.0\Common\Feedback\enabled</td></tr>
+<tr><td><font color=#ff9933>Send personal information is not set or has the wrong setting with value of  <font></td><td><div title="User Configuration\Policies\Administrative Templates\Microsoft Office 2016\Privacy\Trust Center\Send personal information">HKCU:\Software\Policies\Microsoft\Office\16.0\Common\sendcustomerdata</td></tr>
+<tr><td><font color=#ff9933>ActiveX Control Initialization is not set or has the wrong setting with value of  <font></td><td><div title="User Configuration\Policies\Administrative Templates\Microsoft Office 2016\Security Settings\ActiveX Control Initialization">HKCU:\Software\Policies\Microsoft\Office\Common\Security\uficontrols</td></tr>
+<tr><td><font color=#ff9933>Allow VBA to load typelib references by path from untrusted intranet locations is not set or has the wrong setting with value of  <font></td><td><div title="User Configuration\Policies\Administrative Templates\Microsoft Office 2016\Security Settings\Allow VBA to load typelib references by path from untrusted intranet locations">HKCU:\Software\Policies\Microsoft\vba\Security\allowvbaintranetreferences</td></tr>
+<tr><td><font color=#ff9933>Automation Security is not set or has the wrong setting with value of  <font></td><td><div title="User Configuration\Policies\Administrative Templates\Microsoft Office 2016\Security Settings\Automation Security">HKCU:\Software\Policies\Microsoft\Office\Common\Security\automationsecurity</td></tr>
+<tr><td><font color=#ff9933>Disable additional security checks on VBA library references that may refer to unsafe locations on the local machine is not set or has the wrong setting with value of  <font></td><td><div title="User Configuration\Policies\Administrative Templates\Microsoft Office 2016\Security Settings\Disable additional security checks on VBA library references that may refer to unsafe locations on the local machine">HKCU:\Software\Policies\Microsoft\vba\Security\disablestrictvbarefssecurity</td></tr>
+<tr><td><font color=#ff9933>Disable all Trust Bar notifications for security issues is not set or has the wrong setting with value of  <font></td><td><div title="User Configuration\Policies\Administrative Templates\Microsoft Office 2016\Security Settings\Disable all Trust Bar notifications for security issues">HKCU:\Software\Policies\Microsoft\Office\16.0\Common\trustcenter\trustbar</td></tr>
+<tr><td><font color=#ff9933>Encryption type for password protected Office 97-2003 files is not set or has the wrong setting with value of  <font></td><td><div title="User Configuration\Policies\Administrative Templates\Microsoft Office 2016\Security Settings\Encryption type for password protected Office 97-2003 files">HKCU:\Software\Policies\Microsoft\Office\16.0\Common\Security\defaultencryption12</td></tr>
+<tr><td><font color=#ff9933>Encryption type for password protected Office Open XML files is not set or has the wrong setting with value of  <font></td><td><div title="User Configuration\Policies\Administrative Templates\Microsoft Office 2016\Security Settings\Encryption type for password protected Office Open XML files">HKCU:\Software\Policies\Microsoft\Office\16.0\Common\Security\openxmlencryption</td></tr>
+<tr><td><font color=#ff9933>Load Controls in Forms3 is not set or has the wrong setting with value of  <font></td><td><div title="User Configuration\Policies\Administrative Templates\Microsoft Office 2016\Security Settings\Load Controls in Forms3">HKCU:\Software\Policies\Microsoft\vba\Security\loadcontrolsinforms</td></tr>
+<tr><td><font color=#ff9933>Macro Runtime Scan Scope is not set or has the wrong setting with value of  <font></td><td><div title="User Configuration\Policies\Administrative Templates\Microsoft Office 2016\Security Settings\Macro Runtime Scan Scope">HKCU:\Software\Policies\Microsoft\Office\16.0\Common\Security\macroruntimescanscope</td></tr>
+<tr><td><font color=#ff9933>Protect document metadata for rights managed Office Open XML Files is not set or has the wrong setting with value of  <font></td><td><div title="User Configuration\Policies\Administrative Templates\Microsoft Office 2016\Security Settings\Protect document metadata for rights managed Office Open XML Files">HKCU:\Software\Policies\Microsoft\Office\16.0\Common\Security\drmencryptproperty</td></tr>
+<tr><td><font color=#ff9933>Allow mix of policy and user locations is not set or has the wrong setting with value of  <font></td><td><div title="User Configuration\Policies\Administrative Templates\Microsoft Office 2016\Security Settings\Trust Center\Allow mix of policy and user locations">HKCU:\Software\Policies\Microsoft\Office\16.0\Common\Security\Trusted Locations\allow user locations</td></tr>
+<tr><td><font color=#ff9933>Disable the Office client from polling the SharePoint Server for published links is not set or has the wrong setting with value of  <font></td><td><div title="User Configuration\Policies\Administrative Templates\Microsoft Office 2016\Server Settings\Disable the Office client from polling the SharePoint Server for published links">HKCU:\Software\Policies\Microsoft\Office\16.0\Common\portal\linkpublishingdisabled</td></tr>
+<tr><td><font color=#ff9933>Disable Smart Document&#39;s use of manifests is not set or has the wrong setting with value of  <font></td><td><div title="User Configuration\Policies\Administrative Templates\Microsoft Office 2016\Smart Documents (Word  Excel)\Disable Smart Document&#39;s use of manifests">HKCU:\Software\Policies\Microsoft\Office\Common\smart tag\neverloadmanifests</td></tr>
+<tr><td><font color=#ff9933>Block macros from running in Office files from the Internet is not set or has the wrong setting with value of  <font></td><td><div title="User Configuration\Policies\Administrative Templates\Microsoft Access 2016\Application Settings\Security\Trust Center\Block macros from running in Office files from the Internet">HKCU:\Software\Policies\Microsoft\Office\16.0\Access\Security\blockcontentexecutionfrominternet</td></tr>
+<tr><td><font color=#ff9933>Turn off trusted documents is not set or has the wrong setting with value of  <font></td><td><div title="User Configuration\Policies\Administrative Templates\Microsoft Access 2016\Access Options\Security\Trust Center\Turn off trusted documents">HKCU:\software\policies\microsoft\office\16.0\access\security\trusted documents\disabletrusteddocuments</td></tr>
+<tr><td><font color=#ff9933>Turn off Trusted Documents on the network is not set or has the wrong setting with value of  <font></td><td><div title="User Configuration\Policies\Administrative Templates\Microsoft Access 2016\Excel Options\Security\Trust Center\Turn off Trusted Documents on the network">HKCU:\software\policies\microsoft\office\16.0\Access\security\trusted documents\disablenetworktrusteddocuments</td></tr>
+<tr><td><font color=#ff9933>Allow Trusted Locations on the network is not set or has the wrong setting with value of  <font></td><td><div title="User Configuration\Policies\Administrative Templates\Microsoft Access 2016\Application Settings\Security\Trust Center\Trusted Locations\Allow Trusted Locations on the network">HKCU:\Software\Policies\Microsoft\Office\16.0\Access\Security\Trusted Locations\allownetworklocations</td></tr>
+<tr><td><font color=#ff9933>Update automatic links at Open is not set or has the wrong setting with value of  <font></td><td><div title="User Configuration\Policies\Administrative Templates\Microsoft Word 2016\Word Options\Advanced\Update automatic links at Open">HKCU:\Software\Policies\Microsoft\Office\16.0\Word\options\dontupdatelinks</td></tr>
+<tr><td><font color=#ff9933>Block macros from running in Office files from the Internet is not set or has the wrong setting with value of  <font></td><td><div title="User Configuration\Policies\Administrative Templates\Microsoft Word 2016\Word Options\Security\Trust Center\Block macros from running in Office files from the Internet">HKCU:\Software\Policies\Microsoft\Office\16.0\Word\Security\blockcontentexecutionfrominternet</td></tr>
+<tr><td><font color=#ff9933>VBA Macro Notification Settings is not set or has the wrong setting with value of  <font></td><td><div title="User Configuration\Policies\Administrative Templates\Microsoft Access 2016\Application Settings\Security\Trust Center\VBA Macro Notification Settings">HKCU:\Software\Policies\Microsoft\Office\16.0\Access\Security\vbawarnings</td></tr>
+<tr><td><font color=#ff9933>VBA Macro Notification Settings is not set or has the wrong setting with value of  <font></td><td><div title="User Configuration\Policies\Administrative Templates\Microsoft Word 2016\Word Options\Security\Trust Center\VBA Macro Notification Settings">HKCU:\Software\Policies\Microsoft\Office\16.0\Word\Security\vbawarnings</td></tr>
+<tr><td><font color=#ff9933>Dynamic Data Exchange is not set or has the wrong setting with value of  <font></td><td><div title="User Configuration\Policies\Administrative Templates\Microsoft Word 2016\Word Options\Security\Trust Center\Dynamic Data Exchange">HKCU:\Software\Policies\Microsoft\Office\16.0\Word\Security\allowdde</td></tr>
+<tr><td><font color=#ff9933>Disable Trust Bar Notification for unsigned application add-ins and block them is not set or has the wrong setting with value of  <font></td><td><div title="User Configuration\Policies\Administrative Templates\Microsoft Word 2016\Word Options\Security\Trust Center\Disable Trust Bar Notification for unsigned application add-ins and block them">HKCU:\Software\Policies\Microsoft\Office\16.0\Word\Security\notbpromptunsignedaddin</td></tr>
+<tr><td><font color=#ff9933>Require that application add-ins are signed by Trusted Publisher is not set or has the wrong setting with value of  <font></td><td><div title="User Configuration\Policies\Administrative Templates\Microsoft Word 2016\Word Options\Security\Trust Center\Require that application add-ins are signed by Trusted Publisher">HKCU:\Software\Policies\Microsoft\Office\16.0\Word\Security\requireaddinsig</td></tr>
+<tr><td><font color=#ff9933>Set default file block behavior is not set or has the wrong setting with value of  <font></td><td><div title="User Configuration\Policies\Administrative Templates\Microsoft Word 2016\Word Options\Security\Trust Center\File Block Settings\Set default file block behavior">HKCU:\Software\Policies\Microsoft\Office\16.0\Word\Security\fileblock\openinprotectedview</td></tr>
+<tr><td><font color=#ff9933>Word 2 and earlier binary documents and templates is not set or has the wrong setting with value of  <font></td><td><div title="User Configuration\Policies\Administrative Templates\Microsoft Word 2016\Word Options\Security\Trust Center\File Block Settings\Word 2 and earlier binary documents and templates">HKCU:\Software\Policies\Microsoft\Office\16.0\Word\Security\fileblock\Word2files</td></tr>
+<tr><td><font color=#ff9933>Word 2000 binary documents and templates is not set or has the wrong setting with value of  <font></td><td><div title="User Configuration\Policies\Administrative Templates\Microsoft Word 2016\Word Options\Security\Trust Center\File Block Settings\Word 2000 binary documents and templates">HKCU:\Software\Policies\Microsoft\Office\16.0\Word\Security\fileblock\Word2000files</td></tr>
+<tr><td><font color=#ff9933>Word 2003 binary documents and templates is not set or has the wrong setting with value of  <font></td><td><div title="User Configuration\Policies\Administrative Templates\Microsoft Word 2016\Word Options\Security\Trust Center\File Block Settings\Word 2003 binary documents and templates">HKCU:\Software\Policies\Microsoft\Office\16.0\Word\Security\fileblock\Word2003files</td></tr>
+<tr><td><font color=#ff9933>Word 2007 and later binary documents and templates is not set or has the wrong setting with value of  <font></td><td><div title="User Configuration\Policies\Administrative Templates\Microsoft Word 2016\Word Options\Security\Trust Center\File Block Settings\Word 2007 and later binary documents and templates">HKCU:\Software\Policies\Microsoft\Office\16.0\Word\Security\fileblock\Word2007files</td></tr>
+<tr><td><font color=#ff9933>Word 6.0 binary documents and templates is not set or has the wrong setting with value of  <font></td><td><div title="User Configuration\Policies\Administrative Templates\Microsoft Word 2016\Word Options\Security\Trust Center\File Block Settings\Word 6.0 binary documents and templates">HKCU:\Software\Policies\Microsoft\Office\16.0\Word\Security\fileblock\Word60files</td></tr>
+<tr><td><font color=#ff9933>Word 95 binary documents and templates is not set or has the wrong setting with value of  <font></td><td><div title="User Configuration\Policies\Administrative Templates\Microsoft Word 2016\Word Options\Security\Trust Center\File Block Settings\Word 95 binary documents and templates">HKCU:\Software\Policies\Microsoft\Office\16.0\Word\Security\fileblock\Word95files</td></tr>
+<tr><td><font color=#ff9933>Word 97 binary documents and templates is not set or has the wrong setting with value of  <font></td><td><div title="User Configuration\Policies\Administrative Templates\Microsoft Word 2016\Word Options\Security\Trust Center\File Block Settings\Word 97 binary documents and templates">HKCU:\Software\Policies\Microsoft\Office\16.0\Word\Security\fileblock\Word97files</td></tr>
+<tr><td><font color=#ff9933>Word XP binary documents and templates is not set or has the wrong setting with value of  <font></td><td><div title="User Configuration\Policies\Administrative Templates\Microsoft Word 2016\Word Options\Security\Trust Center\File Block Settings\Word XP binary documents and templates">HKCU:\Software\Policies\Microsoft\Office\16.0\Word\Security\fileblock\Wordxpfiles</td></tr>
+<tr><td><font color=#ff9933>Turn off file validation is not set or has the wrong setting with value of  <font></td><td><div title="User Configuration\Policies\Administrative Templates\Microsoft Word 2016\Word Options\Security\Turn off file validation">HKCU:\Software\Policies\Microsoft\Office\16.0\Word\Security\filevalidation\enableonload</td></tr>
+<tr><td><font color=#ff9933>Do not open files from the Internet zone in Protected View is not set or has the wrong setting with value of  <font></td><td><div title="User Configuration\Policies\Administrative Templates\Microsoft Word 2016\Word Options\Security\Trust Center\Protected View\Do not open files from the Internet zone in Protected View">HKCU:\Software\Policies\Microsoft\Office\16.0\Word\Security\protectedview\disableinternetfilesinpv</td></tr>
+<tr><td><font color=#ff9933>Do not open files in unsafe locations in Protected View is not set or has the wrong setting with value of  <font></td><td><div title="User Configuration\Policies\Administrative Templates\Microsoft Word 2016\Word Options\Security\Trust Center\Protected View\Do not open files in unsafe locations in Protected View">HKCU:\Software\Policies\Microsoft\Office\16.0\Word\Security\protectedview\disableunsafelocationsinpv</td></tr>
+<tr><td><font color=#ff9933>Turn off Protected View for attachments opened from Outlook is not set or has the wrong setting with value of  <font></td><td><div title="User Configuration\Policies\Administrative Templates\Microsoft Word 2016\Word Options\Security\Trust Center\Protected View\Turn off Protected View for attachments opened from Outlook">HKCU:\Software\Policies\Microsoft\Office\16.0\Word\Security\protectedview\disableattachmentsinpv</td></tr>
+<tr><td><font color=#ff9933>Set document behaviour if file validation fails is not set or has the wrong setting with value of  <font></td><td><div title="User Configuration\Policies\Administrative Templates\Microsoft Word 2016\Powerpoint Options\Security\Trust Center\Protected View\Set document behaviour if file validation fails">HKCU:\Software\Policies\Microsoft\office\16.0\Word\security\filevalidation\openinprotectedview</td></tr>
+<tr><td><font color=#ff9933>Make hidden markup visible is not set or has the wrong setting with value of  <font></td><td><div title="User Configuration\Policies\Administrative Templates\Microsoft Word 2016\Word Options\Security\Make hidden markup visible">HKCU:\Software\Policies\Microsoft\Office\16.0\Word\options\showmarkupopensave</td></tr>
+<tr><td><font color=#ff9933>Turn off trusted documents is not set or has the wrong setting with value of  <font></td><td><div title="User Configuration\Policies\Administrative Templates\Microsoft Word 2016\PowerPoint Options\Security\Trust Center\Turn off trusted documents">HKCU:\software\policies\microsoft\office\16.0\Visio\security\trusted documents\disabletrusteddocuments</td></tr>
+<tr><td><font color=#ff9933>Turn off Trusted Documents on the network is not set or has the wrong setting with value of  <font></td><td><div title="User Configuration\Policies\Administrative Templates\Microsoft Word 2016\PowerPoint Options\Security\Trust Center\Turn off Trusted Documents on the network">HKCU:\software\policies\microsoft\office\16.0\Word\security\trusted documents\disablenetworktrusteddocuments</td></tr>
+<tr><td><font color=#ff9933>Scan encrypted macros in Word Open XML documents is not set or has the wrong setting with value of  <font></td><td><div title="User Configuration\Policies\Administrative Templates\Microsoft Word 2016\Word Options\Security\Trust Center\Scan encrypted macros in Word Open XML documents">HKCU:\Software\Policies\Microsoft\Office\16.0\Word\Security\Wordbypassencryptedmacroscan</td></tr>
+<tr><td><font color=#ff9933>Allow Trusted Locations on the network is not set or has the wrong setting with value of  <font></td><td><div title="User Configuration\Policies\Administrative Templates\Microsoft Word 2016\Word Options\Security\Trust Center\Trusted Locations\Allow Trusted Locations on the network">HKCU:\Software\Policies\Microsoft\Office\16.0\Word\Security\Trusted Locations\allownetworklocations</td></tr>
+<tr><td><font color=#ff9933>Always prevent untrusted Microsoft Query files from opening is not set or has the wrong setting with value of  <font></td><td><div title="User Configuration\Policies\Administrative Templates\Microsoft Excel 2016\Excel Options\Security\Trust Center\External Content\Always prevent untrusted Microsoft Query files from opening">HKCU:\Software\Policies\Microsoft\Office\16.0\Excel\Security\external content\enableblockunsecurequeryfiles</td></tr>
+<tr><td><font color=#ff9933>Don’t allow Dynamic Data Exchange (DDE) server launch in Excel is not set or has the wrong setting with value of  <font></td><td><div title="User Configuration\Policies\Administrative Templates\Microsoft Excel 2016\Excel Options\Security\Trust Center\External Content\Don’t allow Dynamic Data Exchange (DDE) server launch in Excel">HKCU:\Software\Policies\Microsoft\Office\16.0\Excel\Security\external content\disableddeserverlaunch</td></tr>
+<tr><td><font color=#ff9933>Don’t allow Dynamic Data Exchange (DDE) server lookup in Excel is not set or has the wrong setting with value of  <font></td><td><div title="User Configuration\Policies\Administrative Templates\Microsoft Excel 2016\Excel Options\Security\Trust Center\External Content\Don’t allow Dynamic Data Exchange (DDE) server lookup in Excel">HKCU:\Software\Policies\Microsoft\Office\16.0\Excel\Security\external content\disableddeserverlookup</td></tr>
+<tr><td><font color=#ff9933>Block macros from running in Office files from the Internet is not set or has the wrong setting with value of  <font></td><td><div title="User Configuration\Policies\Administrative Templates\Microsoft Excel 2016\Excel Options\Security\Trust Center\Block macros from running in Office files from the Internet">HKCU:\Software\Policies\Microsoft\Office\16.0\Excel\Security\blockcontentexecutionfrominternet</td></tr>
+<tr><td><font color=#ff9933>Disable Trust Bar Notification for unsigned application add-ins and block them is not set or has the wrong setting with value of  <font></td><td><div title="User Configuration\Policies\Administrative Templates\Microsoft Excel 2016\Excel Options\Security\Trust Center\Disable Trust Bar Notification for unsigned application add-ins and block them">HKCU:\Software\Policies\Microsoft\Office\16.0\Excel\Security\notbpromptunsignedaddin</td></tr>
+<tr><td><font color=#ff9933>Require that application add-ins are signed by Trusted Publisher is not set or has the wrong setting with value of  <font></td><td><div title="User Configuration\Policies\Administrative Templates\Microsoft Excel 2016\Excel Options\Security\Trust Center\Require that application add-ins are signed by Trusted Publisher">HKCU:\Software\Policies\Microsoft\Office\16.0\Excel\Security\requireaddinsig</td></tr>
+<tr><td><font color=#ff9933>Force file extension to match file type is not set or has the wrong setting with value of  <font></td><td><div title="User Configuration\Policies\Administrative Templates\Microsoft Excel 2016\Excel Options\Security\Force file extension to match file type">HKCU:\Software\Policies\Microsoft\Office\16.0\Excel\Security\extensionhardening</td></tr>
+<tr><td><font color=#ff9933>dBase III / IV files is not set or has the wrong setting with value of  <font></td><td><div title="User Configuration\Policies\Administrative Templates\Microsoft Excel 2016\Excel Options\Security\Trust Center\File Block Settings\dBase III / IV files">HKCU:\Software\Policies\Microsoft\Office\16.0\Excel\Security\fileblock\dbasefiles</td></tr>
+<tr><td><font color=#ff9933>Dif and Sylk files is not set or has the wrong setting with value of  <font></td><td><div title="User Configuration\Policies\Administrative Templates\Microsoft Excel 2016\Excel Options\Security\Trust Center\File Block Settings\Dif and Sylk files">HKCU:\Software\Policies\Microsoft\Office\16.0\Excel\Security\fileblock\difandsylkfiles</td></tr>
+<tr><td><font color=#ff9933>Excel 2 macrosheets and add-in files is not set or has the wrong setting with value of  <font></td><td><div title="User Configuration\Policies\Administrative Templates\Microsoft Excel 2016\Excel Options\Security\Trust Center\File Block Settings\Excel 2 macrosheets and add-in files">HKCU:\Software\Policies\Microsoft\Office\16.0\Excel\Security\fileblock\xl2macros</td></tr>
+<tr><td><font color=#ff9933>Excel 2 worksheets is not set or has the wrong setting with value of  <font></td><td><div title="User Configuration\Policies\Administrative Templates\Microsoft Excel 2016\Excel Options\Security\Trust Center\File Block Settings\Excel 2 worksheets">HKCU:\Software\Policies\Microsoft\Office\16.0\Excel\Security\fileblock\xl2worksheets</td></tr>
+<tr><td><font color=#ff9933>Excel 3 macrosheets and add-in files is not set or has the wrong setting with value of  <font></td><td><div title="User Configuration\Policies\Administrative Templates\Microsoft Excel 2016\Excel Options\Security\Trust Center\File Block Settings\Excel 3 macrosheets and add-in files">HKCU:\Software\Policies\Microsoft\Office\16.0\Excel\Security\fileblock\xl3macros</td></tr>
+<tr><td><font color=#ff9933>Excel 3 worksheets is not set or has the wrong setting with value of  <font></td><td><div title="User Configuration\Policies\Administrative Templates\Microsoft Excel 2016\Excel Options\Security\Trust Center\File Block Settings\Excel 3 worksheets">HKCU:\Software\Policies\Microsoft\Office\16.0\Excel\Security\fileblock\xl3worksheets</td></tr>
+<tr><td><font color=#ff9933>Excel 4 macrosheets and add-in files is not set or has the wrong setting with value of  <font></td><td><div title="User Configuration\Policies\Administrative Templates\Microsoft Excel 2016\Excel Options\Security\Trust Center\File Block Settings\Excel 4 macrosheets and add-in files">HKCU:\Software\Policies\Microsoft\Office\16.0\Excel\Security\fileblock\xl4macros</td></tr>
+<tr><td><font color=#ff9933>Excel 4 workbooks is not set or has the wrong setting with value of  <font></td><td><div title="User Configuration\Policies\Administrative Templates\Microsoft Excel 2016\Excel Options\Security\Trust Center\File Block Settings\Excel 4 workbooks">HKCU:\Software\Policies\Microsoft\Office\16.0\Excel\Security\fileblock\xl4workbooks</td></tr>
+<tr><td><font color=#ff9933>Excel 4 worksheets is not set or has the wrong setting with value of  <font></td><td><div title="User Configuration\Policies\Administrative Templates\Microsoft Excel 2016\Excel Options\Security\Trust Center\File Block Settings\Excel 4 worksheets">HKCU:\Software\Policies\Microsoft\Office\16.0\Excel\Security\fileblock\xl4worksheets</td></tr>
+<tr><td><font color=#ff9933>Excel 95 workbooks is not set or has the wrong setting with value of  <font></td><td><div title="User Configuration\Policies\Administrative Templates\Microsoft Excel 2016\Excel Options\Security\Trust Center\File Block Settings\Excel 95 workbooks">HKCU:\Software\Policies\Microsoft\Office\16.0\Excel\Security\fileblock\xl95workbooks</td></tr>
+<tr><td><font color=#ff9933>Excel 95-97 workbooks and templates is not set or has the wrong setting with value of  <font></td><td><div title="User Configuration\Policies\Administrative Templates\Microsoft Excel 2016\Excel Options\Security\Trust Center\File Block Settings\Excel 95-97 workbooks and templates">HKCU:\Software\Policies\Microsoft\Office\16.0\Excel\Security\fileblock\xl9597workbooksandtemplates</td></tr>
+<tr><td><font color=#ff9933>Excel 97-2003 workbooks and templates is not set or has the wrong setting with value of  <font></td><td><div title="User Configuration\Policies\Administrative Templates\Microsoft Excel 2016\Excel Options\Security\Trust Center\File Block Settings\Excel 97-2003 workbooks and templates">HKCU:\Software\Policies\Microsoft\Office\16.0\Excel\Security\fileblock\xl97workbooksandtemplates</td></tr>
+<tr><td><font color=#ff9933>Set default file block behavior is not set or has the wrong setting with value of  <font></td><td><div title="User Configuration\Policies\Administrative Templates\Microsoft Excel 2016\Excel Options\Security\Trust Center\File Block Settings\Set default file block behavior">HKCU:\Software\Policies\Microsoft\Office\16.0\Excel\Security\fileblock\openinprotectedview</td></tr>
+<tr><td><font color=#ff9933>Web pages and Excel 2003 XML spreadsheets is not set or has the wrong setting with value of  <font></td><td><div title="User Configuration\Policies\Administrative Templates\Microsoft Excel 2016\Excel Options\Security\Trust Center\File Block Settings\Web pages and Excel 2003 XML spreadsheets">HKCU:\Software\Policies\Microsoft\Office\16.0\Excel\Security\fileblock\htmlandxmlssfiles</td></tr>
+<tr><td><font color=#ff9933>Turn off file validation is not set or has the wrong setting with value of  <font></td><td><div title="User Configuration\Policies\Administrative Templates\Microsoft Excel 2016\Excel Options\Security\Turn off file validation">HKCU:\Software\Policies\Microsoft\Office\16.0\Excel\Security\Filevalidation\enableonload</td></tr>
+<tr><td><font color=#ff9933>Always open untrusted database files in Protected View is not set or has the wrong setting with value of  <font></td><td><div title="User Configuration\Policies\Administrative Templates\Microsoft Excel 2016\Excel Options\Security\Trust Center\Protected View\Always open untrusted database files in Protected View">HKCU:\Software\Policies\Microsoft\Office\16.0\Excel\Security\protectedview\enabledatabasefileprotectedview</td></tr>
+<tr><td><font color=#ff9933>Do not open files from the Internet zone in Protected View is not set or has the wrong setting with value of  <font></td><td><div title="User Configuration\Policies\Administrative Templates\Microsoft Excel 2016\Excel Options\Security\Trust Center\Protected View\Do not open files from the Internet zone in Protected View">HKCU:\Software\Policies\Microsoft\Office\16.0\Excel\Security\protectedview\disableinternetfilesinpv</td></tr>
+<tr><td><font color=#ff9933>Do not open files in unsafe locations in Protected View is not set or has the wrong setting with value of  <font></td><td><div title="User Configuration\Policies\Administrative Templates\Microsoft Excel 2016\Excel Options\Security\Trust Center\Protected View\Do not open files in unsafe locations in Protected View">HKCU:\Software\Policies\Microsoft\Office\16.0\Excel\Security\protectedview\disableunsafelocationsinpv</td></tr>
+<tr><td><font color=#ff9933>Turn off Protected View for attachments opened from Outlook is not set or has the wrong setting with value of  <font></td><td><div title="User Configuration\Policies\Administrative Templates\Microsoft Excel 2016\Excel Options\Security\Trust Center\Protected View\Turn off Protected View for attachments opened from Outlook">HKCU:\Software\Policies\Microsoft\Office\16.0\Excel\Security\protectedview\disableattachmentsinpv</td></tr>
+<tr><td><font color=#ff9933>Set document behaviour if file validation fails is not set or has the wrong setting with value of  <font></td><td><div title="User Configuration\Policies\Administrative Templates\Microsoft Excel 2016\Powerpoint Options\Security\Trust Center\Protected View\Set document behaviour if file validation fails">HKCU:\Software\Policies\Microsoft\office\16.0\excel\security\filevalidation\openinprotectedview</td></tr>
+<tr><td><font color=#ff9933>Turn off trusted documents is not set or has the wrong setting with value of  <font></td><td><div title="User Configuration\Policies\Administrative Templates\Microsoft Excel 2016\Excel Options\Security\Trust Center\Turn off trusted documents">HKCU:\software\policies\microsoft\office\16.0\excel\security\trusted documents\disabletrusteddocuments</td></tr>
+<tr><td><font color=#ff9933>Turn off Trusted Documents on the network is not set or has the wrong setting with value of  <font></td><td><div title="User Configuration\Policies\Administrative Templates\Microsoft Excel 2016\Excel Options\Security\Trust Center\Turn off Trusted Documents on the network">HKCU:\software\policies\microsoft\office\16.0\excel\security\trusted documents\disablenetworktrusteddocuments</td></tr>
+<tr><td><font color=#ff9933>Load pictures from Web pages not created in Excel is not set or has the wrong setting with value of  <font></td><td><div title="User Configuration\Policies\Administrative Templates\Microsoft Excel 2016\Excel Options\Advanced\Web Options...\General\Load pictures from Web pages not created in Excel">HKCU:\Software\Policies\Microsoft\Office\16.0\Excel\internet\donotloadpictures</td></tr>
+<tr><td><font color=#ff9933>Disable AutoRepublish is not set or has the wrong setting with value of  <font></td><td><div title="User Configuration\Policies\Administrative Templates\Microsoft Excel 2016\Excel Options\Save\Disable AutoRepublish">HKCU:\Software\Policies\Microsoft\Office\16.0\Excel\options\disableautorepublish</td></tr>
+<tr><td><font color=#ff9933>Do not show AutoRepublish warning alert is not set or has the wrong setting with value of  <font></td><td><div title="User Configuration\Policies\Administrative Templates\Microsoft Excel 2016\Excel Options\Save\Do not show AutoRepublish warning alert">HKCU:\Software\Policies\Microsoft\Office\16.0\Excel\options\disableautorepublish<font></td></tr>
+<tr><td><font color=#ff9933>Scan encrypted macros in Excel Open XML workbooks is not set or has the wrong setting with value of  <font></td><td><div title="User Configuration\Policies\Administrative Templates\Microsoft Excel 2016\Excel Options\Security\Scan encrypted macros in Excel Open XML workbooks">HKCU:\Software\Policies\Microsoft\Office\16.0\Excel\Security\Excelbypassencryptedmacroscan</td></tr>
+<tr><td><font color=#ff9933>WEBSERVICE Function Notification Settings is not set or has the wrong setting with value of  <font></td><td><div title="User Configuration\Policies\Administrative Templates\Microsoft Excel 2016\Excel Options\Security\WEBSERVICE Function Notification Settings">HKCU:\Software\Policies\Microsoft\Office\16.0\Excel\Security\webservicefunctionwarnings</td></tr>
+<tr><td><font color=#ff9933>Prevent Excel from running XLM macros is not set or has the wrong setting with value of  <font></td><td><div title="User Configuration\Policies\Administrative Templates\Microsoft Excel 2016\Excel Options\Security\Trust Center\Prevent Excel from running XLM macros">HKCU:\Software\Policies\Microsoft\Office\16.0\Excel\Security\xl4macrooff</td></tr>
+<tr><td><font color=#ff9933>Allow Trusted Locations on the network is not set or has the wrong setting with value of  <font></td><td><div title="User Configuration\Policies\Administrative Templates\Microsoft Excel 2016\Excel Options\Security\Trust Center\Trusted Locations\Allow Trusted Locations on the network">HKCU:\Software\Policies\Microsoft\Office\16.0\Excel\Security\Trusted Locations\allownetworklocations</td></tr>
+<tr><td><font color=#ff9933>Do not show data extraction options when opening corrupt workbooks is not set or has the wrong setting with value of  <font></td><td><div title="User Configuration\Policies\Administrative Templates\Microsoft Excel 2016\Data Recovery\Do not show data extraction options when opening corrupt workbooks">HKCU:\Software\Policies\Microsoft\Office\16.0\Excel\options\extractdatadisableui</td></tr>
+<tr><td><font color=#ff9933>Ask to update automatic links is not set or has the wrong setting with value of  <font></td><td><div title="User Configuration\Policies\Administrative Templates\Microsoft Excel 2016\Excel Options\Advanced\Ask to update automatic links">HKCU:\Software\Policies\Microsoft\Office\16.0\Excel\options\binaryoptions\fupdateext_78_1</td></tr>
+<tr><td><font color=#ff9933>Block macros from running in Office files from the Internet is not set or has the wrong setting with value of  <font></td><td><div title="User Configuration\Policies\Administrative Templates\Microsoft PowerPoint 2016\Powerpoint Options\Security\Trust Center\Block macros from running in Office files from the Internet">HKCU:\Software\Policies\Microsoft\Office\16.0\Powerpoint\Security\blockcontentexecutionfrominternet</td></tr>
+<tr><td><font color=#ff9933>VBA Macro Notification Settings is not set or has the wrong setting with value of  <font></td><td><div title="User Configuration\Policies\Administrative Templates\Microsoft PowerPoint 2016\Powerpoint Options\Security\Trust Center\VBA Macro Notification Settings">HKCU:\Software\Policies\Microsoft\Office\16.0\Powerpoint\Security\vbawarnings</td></tr>
+<tr><td><font color=#ff9933>Disable Trust Bar Notification for unsigned application add-ins and block them is not set or has the wrong setting with value of  <font></td><td><div title="User Configuration\Policies\Administrative Templates\Microsoft PowerPoint 2016\Powerpoint Options\Security\Trust Center\Disable Trust Bar Notification for unsigned application add-ins and block them">HKCU:\Software\Policies\Microsoft\Office\16.0\Powerpoint\Security\notbpromptunsignedaddin</td></tr>
+<tr><td><font color=#ff9933>Require that application add-ins are signed by Trusted Publisher is not set or has the wrong setting with value of  <font></td><td><div title="User Configuration\Policies\Administrative Templates\Microsoft PowerPoint 2016\Powerpoint Options\Security\Trust Center\Require that application add-ins are signed by Trusted Publisher">HKCU:\Software\Policies\Microsoft\Office\16.0\Powerpoint\Security\requireaddinsig</td></tr>
+<tr><td><font color=#ff9933>PowerPoint 97-2003 presentations  shows  templates and add-in files is not set or has the wrong setting with value of  <font></td><td><div title="User Configuration\Policies\Administrative Templates\Microsoft PowerPoint 2016\Powerpoint Options\Security\Trust Center\File Block Settings\PowerPoint 97-2003 presentations  shows  templates and add-in files">HKCU:\Software\Policies\Microsoft\Office\16.0\Powerpoint\Security\fileblock\binaryfiles</td></tr>
+<tr><td><font color=#ff9933>Set default file block behavior is not set or has the wrong setting with value of  <font></td><td><div title="User Configuration\Policies\Administrative Templates\Microsoft PowerPoint 2016\Powerpoint Options\Security\Trust Center\File Block Settings\Set default file block behavior">HKCU:\Software\Policies\Microsoft\Office\16.0\Powerpoint\Security\fileblock\openinprotectedview</td></tr>
+<tr><td><font color=#ff9933>Turn off file validation is not set or has the wrong setting with value of  <font></td><td><div title="User Configuration\Policies\Administrative Templates\Microsoft PowerPoint 2016\Powerpoint Options\Security\Turn off file validation">HKCU:\Software\Policies\Microsoft\Office\16.0\Powerpoint\Security\filevalidation\enableonload</td></tr>
+<tr><td><font color=#ff9933>Run Programs is not set or has the wrong setting with value of  <font></td><td><div title="User Configuration\Policies\Administrative Templates\Microsoft PowerPoint 2016\Powerpoint Options\Security\Run Programs">HKCU:\Software\Policies\Microsoft\Office\16.0\Powerpoint\Security\runprograms</td></tr>
+<tr><td><font color=#ff9933>Do not open files from the Internet zone in Protected View is not set or has the wrong setting with value of  <font></td><td><div title="User Configuration\Policies\Administrative Templates\Microsoft PowerPoint 2016\Powerpoint Options\Security\Trust Center\Protected View\Do not open files from the Internet zone in Protected View">HKCU:\Software\Policies\Microsoft\Office\16.0\Powerpoint\Security\protectedview\disableinternetfilesinpv</td></tr>
+<tr><td><font color=#ff9933>Do not open files in unsafe locations in Protected View is not set or has the wrong setting with value of  <font></td><td><div title="User Configuration\Policies\Administrative Templates\Microsoft PowerPoint 2016\Powerpoint Options\Security\Trust Center\Protected View\Do not open files in unsafe locations in Protected View">HKCU:\Software\Policies\Microsoft\Office\16.0\Powerpoint\Security\protectedview\disableunsafelocationsinpv</td></tr>
+<tr><td><font color=#ff9933>Turn off Protected View for attachments opened from Outlook is not set or has the wrong setting with value of  <font></td><td><div title="User Configuration\Policies\Administrative Templates\Microsoft PowerPoint 2016\Powerpoint Options\Security\Trust Center\Protected View\Turn off Protected View for attachments opened from Outlook">HKCU:\Software\Policies\Microsoft\Office\16.0\Powerpoint\Security\protectedview\disableattachmentsinpv</td></tr>
+<tr><td><font color=#ff9933>Set document behaviour if file validation fails is not set or has the wrong setting with value of  <font></td><td><div title="User Configuration\Policies\Administrative Templates\Microsoft PowerPoint 2016\Powerpoint Options\Security\Trust Center\Protected View\Set document behaviour if file validation fails">HKCU:\Software\Policies\Microsoft\office\16.0\Powerpoint\security\filevalidation\openinprotectedview</td></tr>
+<tr><td><font color=#ff9933>Make hidden markup visible is not set or has the wrong setting with value of  <font></td><td><div title="User Configuration\Policies\Administrative Templates\Microsoft PowerPoint 2016\PowerPoint Options\Security\Make hidden markup visible">HKCU:\Software\Policies\Microsoft\Office\16.0\powerpoint\options\markupopensave</td></tr>
+<tr><td><font color=#ff9933>Turn off trusted documents is not set or has the wrong setting with value of  <font></td><td><div title="User Configuration\Policies\Administrative Templates\Microsoft PowerPoint 2016\PowerPoint Options\Security\Trust Center\Turn off trusted documents">HKCU:\software\policies\microsoft\office\16.0\Powerpoint\security\trusted documents\disabletrusteddocuments</td></tr>
+<tr><td><font color=#ff9933>Turn off Trusted Documents on the network is not set or has the wrong setting with value of  <font></td><td><div title="User Configuration\Policies\Administrative Templates\Microsoft PowerPoint 2016\PowerPoint Options\Security\Trust Center\Turn off Trusted Documents on the network">HKCU:\software\policies\microsoft\office\16.0\Powerpoint\security\trusted documents\disablenetworktrusteddocuments</td></tr>
+<tr><td><font color=#ff9933>Scan encrypted macros in PowerPoint Open XML presentations is not set or has the wrong setting with value of  <font></td><td><div title="User Configuration\Policies\Administrative Templates\Microsoft PowerPoint 2016\Powerpoint Options\Security\Scan encrypted macros in PowerPoint Open XML presentations">HKCU:\Software\Policies\Microsoft\Office\16.0\Powerpoint\Security\powerpointbypassencryptedmacroscan</td></tr>
+<tr><td><font color=#ff9933>Allow Trusted Locations on the network is not set or has the wrong setting with value of  <font></td><td><div title="User Configuration\Policies\Administrative Templates\Microsoft PowerPoint 2016\Powerpoint Options\Security\Trust Center\Trusted Locations\Allow Trusted Locations on the network">HKCU:\Software\Policies\Microsoft\Office\16.0\Powerpoint\Security\Trusted Locations\allownetworklocations</td></tr>
+<tr><td><font color=#ff9933>Authentication with Exchange Server is not set or has the wrong setting with value of  <font></td><td><div title="User Configuration\Policies\Administrative Templates\Microsoft Outlook 2016\Account Settings\Exchange\Authentication with Exchange Server">HKCU:\Software\Policies\Microsoft\Office\16.0\Outlook\Security\authenticationservice</td></tr>
+<tr><td><font color=#ff9933>Enable RPC encryption is not set or has the wrong setting with value of  <font></td><td><div title="User Configuration\Policies\Administrative Templates\Microsoft Outlook 2016\Account Settings\Exchange\Enable RPC encryption">HKCU:\Software\Policies\Microsoft\Office\16.0\Outlook\rpc\enablerpcencryption</td></tr>
+<tr><td><font color=#ff9933>Do not allow Outlook object model scripts to run for public folders is not set or has the wrong setting with value of  <font></td><td><div title="User Configuration\Policies\Administrative Templates\Microsoft Outlook 2016\Outlook Options\Other\Advanced\Do not allow Outlook object model scripts to run for public folders">HKCU:\Software\Policies\Microsoft\Office\16.0\Outlook\Security\publicfolderscript</td></tr>
+<tr><td><font color=#ff9933>Do not allow Outlook object model scripts to run for shared folders is not set or has the wrong setting with value of  <font></td><td><div title="User Configuration\Policies\Administrative Templates\Microsoft Outlook 2016\Outlook Options\Other\Advanced\Do not allow Outlook object model scripts to run for shared folders">HKCU:\Software\Policies\Microsoft\Office\16.0\Outlook\Security\sharedfolderscript</td></tr>
+<tr><td><font color=#ff9933>Use Unicode format when dragging e-mail message to file system is not set or has the wrong setting with value of  <font></td><td><div title="User Configuration\Policies\Administrative Templates\Microsoft Outlook 2016\Outlook Options\Other\Advanced\Use Unicode format when dragging e-mail message to file system">HKCU:\Software\Policies\Microsoft\Office\16.0\Outlook\options\general\msgformat</td></tr>
+<tr><td><font color=#ff9933>Junk E-mail protection level is not set or has the wrong setting with value of  <font></td><td><div title="User Configuration\Policies\Administrative Templates\Microsoft Outlook 2016\Outlook Options\Preferences\Junk E-mail\Junk E-mail protection level">HKCU:\Software\Policies\Microsoft\Office\16.0\Outlook\options\mail\junkmailprotection</td></tr>
+<tr><td><font color=#ff9933>Allow Active X One Off Forms is not set or has the wrong setting with value of  <font></td><td><div title="User Configuration\Policies\Administrative Templates\Microsoft Outlook 2016\Security\Allow Active X One Off Forms">HKCU:\Software\Policies\Microsoft\Office\16.0\Outlook\Security\allowactivexoneoffforms</td></tr>
+<tr><td><font color=#ff9933>Prevent users from customizing attachment security settings is not set or has the wrong setting with value of  <font></td><td><div title="User Configuration\Policies\Administrative Templates\Microsoft Outlook 2016\Security\Prevent users from customizing attachment security settings">HKCU:\Software\Policies\Microsoft\Office\16.0\Outlook\disallowattachmentcustomization</td></tr>
+<tr><td><font color=#ff9933>Include Internet in Safe Zones for Automatic Picture Download is not set or has the wrong setting with value of  <font></td><td><div title="User Configuration\Policies\Administrative Templates\Microsoft Outlook 2016\Security\Automatic Picture Download Settings\Include Internet in Safe Zones for Automatic Picture Download">HKCU:\Software\Policies\Microsoft\Office\16.0\Outlook\options\mail\internet</td></tr>
+<tr><td><font color=#ff9933>Minimum encryption settings is not set or has the wrong setting with value of  <font></td><td><div title="User Configuration\Policies\Administrative Templates\Microsoft Outlook 2016\Security\Cryptography\Minimum encryption settings">HKCU:\Software\Policies\Microsoft\Office\16.0\Outlook\Security\minenckey</td></tr>
+<tr><td><font color=#ff9933>Signature Warning is not set or has the wrong setting with value of  <font></td><td><div title="User Configuration\Policies\Administrative Templates\Microsoft Outlook 2016\Security\Cryptography\Signature Warning">HKCU:\Software\Policies\Microsoft\Office\16.0\Outlook\Security\warnaboutinvalid</td></tr>
+<tr><td><font color=#ff9933>Retrieving CRLs (Certificate Revocation Lists) is not set or has the wrong setting with value of  <font></td><td><div title="User Configuration\Policies\Administrative Templates\Microsoft Outlook 2016\Security\Cryptography\Signature Status dialog box\Retrieving CRLs (Certificate Revocation Lists)">HKCU:\Software\Policies\Microsoft\Office\16.0\Outlook\Security\usecrlchasing</td></tr>
+<tr><td><font color=#ff9933>Outlook Security Mode is not set or has the wrong setting with value of  <font></td><td><div title="User Configuration\Policies\Administrative Templates\Microsoft Outlook 2016\Security\Security Form Settings\Outlook Security Mode">HKCU:\Software\Policies\Microsoft\Office\16.0\Outlook\Security\adminsecuritymode</td></tr>
+<tr><td><font color=#ff9933>Allow users to demote attachments to Level 2 is not set or has the wrong setting with value of  <font></td><td><div title="User Configuration\Policies\Administrative Templates\Microsoft Outlook 2016\Security\Security Form Settings\Attachment Security\Allow users to demote attachments to Level 2">HKCU:\Software\Policies\Microsoft\Office\16.0\Outlook\Security\allowuserstolowerattachments</td></tr>
+<tr><td><font color=#ff9933>Display Level 1 attachments is not set or has the wrong setting with value of  <font></td><td><div title="User Configuration\Policies\Administrative Templates\Microsoft Outlook 2016\Security\Security Form Settings\Attachment Security\Display Level 1 attachments">HKCU:\Software\Policies\Microsoft\Office\16.0\Outlook\Security\showlevel1attach</td></tr>
+<tr><td><font color=#ff9933>Remove file extensions blocked as Level 1 is not set or has the wrong setting with value of  <font></td><td><div title="User Configuration\Policies\Administrative Templates\Microsoft Outlook 2016\Security\Security Form Settings\Attachment Security\Remove file extensions blocked as Level 1">HKCU:\Software\Policies\Microsoft\Office\16.0\Outlook\Security\fileextensionsremovelevel1</td></tr>
+<tr><td><font color=#ff9933>Remove file extensions blocked as Level 2 is not set or has the wrong setting with value of  <font></td><td><div title="User Configuration\Policies\Administrative Templates\Microsoft Outlook 2016\Security\Security Form Settings\Attachment Security\Remove file extensions blocked as Level 2">HKCU:\Software\Policies\Microsoft\Office\16.0\Outlook\Security\fileextensionsremovelevel2</td></tr>
+<tr><td><font color=#ff9933>Allow scripts in one-off Outlook forms is not set or has the wrong setting with value of  <font></td><td><div title="User Configuration\Policies\Administrative Templates\Microsoft Outlook 2016\Security\Security Form Settings\Custom Form Security\Allow scripts in one-off Outlook forms">HKCU:\Software\Policies\Microsoft\Office\16.0\Outlook\Security\enableoneoffformscripts</td></tr>
+<tr><td><font color=#ff9933>Set Outlook object model custom actions execution prompt is not set or has the wrong setting with value of  <font></td><td><div title="User Configuration\Policies\Administrative Templates\Microsoft Outlook 2016\Security\Security Form Settings\Custom Form Security\Set Outlook object model custom actions execution prompt">HKCU:\Software\Policies\Microsoft\Office\16.0\Outlook\Security\promptoomcustomaction</td></tr>
+<tr><td><font color=#ff9933>Configure Outlook object model prompt when Accessing an address book is not set or has the wrong setting with value of  <font></td><td><div title="User Configuration\Policies\Administrative Templates\Microsoft Outlook 2016\Security\Security Form Settings\Programmatic Security\Configure Outlook object model prompt when Accessing an address book">HKCU:\Software\Policies\Microsoft\Office\16.0\Outlook\Security\promptoomaddressbookAccess</td></tr>
+<tr><td><font color=#ff9933>Configure Outlook object model prompt When Accessing the Formula property of a UserProperty object is not set or has the wrong setting with value of  <font></td><td><div title="User Configuration\Policies\Administrative Templates\Microsoft Outlook 2016\Security\Security Form Settings\Programmatic Security\Configure Outlook object model prompt When Accessing the Formula property of a UserProperty object">HKCU:\Software\Policies\Microsoft\Office\16.0\Outlook\Security\promptoomformulaAccess</td></tr>
+<tr><td><font color=#ff9933>Configure Outlook object model prompt when executing Save As is not set or has the wrong setting with value of  <font></td><td><div title="User Configuration\Policies\Administrative Templates\Microsoft Outlook 2016\Security\Security Form Settings\Programmatic Security\Configure Outlook object model prompt when executing Save As">HKCU:\Software\Policies\Microsoft\Office\16.0\Outlook\Security\promptoomsaveas</td></tr>
+<tr><td><font color=#ff9933>Configure Outlook object model prompt when reading address information is not set or has the wrong setting with value of  <font></td><td><div title="User Configuration\Policies\Administrative Templates\Microsoft Outlook 2016\Security\Security Form Settings\Programmatic Security\Configure Outlook object model prompt when reading address information">HKCU:\Software\Policies\Microsoft\Office\16.0\Outlook\Security\promptoomaddressinformationAccess</td></tr>
+<tr><td><font color=#ff9933>Configure Outlook object model prompt when responding to meeting and task requests is not set or has the wrong setting with value of  <font></td><td><div title="User Configuration\Policies\Administrative Templates\Microsoft Outlook 2016\Security\Security Form Settings\Programmatic Security\Configure Outlook object model prompt when responding to meeting and task requests">HKCU:\Software\Policies\Microsoft\Office\16.0\Outlook\Security\promptoommeetingtaskrequestresponse</td></tr>
+<tr><td><font color=#ff9933>Configure Outlook object model prompt when sending mail is not set or has the wrong setting with value of  <font></td><td><div title="User Configuration\Policies\Administrative Templates\Microsoft Outlook 2016\Security\Security Form Settings\Programmatic Security\Configure Outlook object model prompt when sending mail">HKCU:\Software\Policies\Microsoft\Office\16.0\Outlook\Security\promptoomsend</td></tr>
+<tr><td><font color=#ff9933>Allow hyperlinks in suspected phishing e-mail messages is not set or has the wrong setting with value of  <font></td><td><div title="User Configuration\Policies\Administrative Templates\Microsoft Outlook 2016\Security\Trust Center\Allow hyperlinks in suspected phishing e-mail messages">HKCU:\Software\Policies\Microsoft\Office\16.0\Outlook\options\mail\junkmailenablelinks</td></tr>
+<tr><td><font color=#ff9933>Security setting for macros is not set or has the wrong setting with value of  <font></td><td><div title="User Configuration\Policies\Administrative Templates\Microsoft Outlook 2016\Security\Trust Center\Security setting for macros">HKCU:\Software\Policies\Microsoft\Office\16.0\Outlook\Security\level</td></tr>
+<tr><td><font color=#ff9933>VBA Macro Notification Settings is not set or has the wrong setting with value of  <font></td><td><div title="User Configuration\Policies\Administrative Templates\Microsoft Publisher 2016\Security\Trust Center\VBA Macro Notification Settings">HKCU:\Software\Policies\Microsoft\Office\16.0\publisher\Security\vbawarnings</td></tr>
+<tr><td><font color=#ff9933>Disable Trust Bar Notification for unsigned application add-ins is not set or has the wrong setting with value of  <font></td><td><div title="User Configuration\Policies\Administrative Templates\Microsoft Publisher 2016\Security\Trust Center\Disable Trust Bar Notification for unsigned application add-ins">HKCU:\Software\Policies\Microsoft\Office\16.0\publisher\Security\notbpromptunsignedaddin</td></tr>
+<tr><td><font color=#ff9933>Require that application add-ins are signed by Trusted Publisher is not set or has the wrong setting with value of  <font></td><td><div title="User Configuration\Policies\Administrative Templates\Microsoft Publisher 2016\Security\Trust Center\Require that application add-ins are signed by Trusted Publisher">HKCU:\Software\Policies\Microsoft\office\16.0\publisher\security\requireaddinsig</td></tr>
+<tr><td><font color=#ff9933>Publisher Automation Security Level is not set or has the wrong setting with value of  <font></td><td><div title="User Configuration\Policies\Administrative Templates\Microsoft Publisher 2016\Security\Publisher Automation Security Level">HKCU:\Software\Policies\Microsoft\Office\Common\Security\automationsecuritypublisher</td></tr>
+<tr><td><font color=#ff9933>VBA Macro Notification Settings is not set or has the wrong setting with value of  <font></td><td><div title="User Configuration\Policies\Administrative Templates\Microsoft Project 2016\Project Options\Security\Trust Center\VBA Macro Notification Settings">HKCU:\Software\Policies\Microsoft\Office\16.0\MS Project\Security\vbawarnings</td></tr>
+<tr><td><font color=#ff9933>Disable Trust Bar Notification for unsigned application add-ins and block them is not set or has the wrong setting with value of  <font></td><td><div title="User Configuration\Policies\Administrative Templates\Microsoft Project 2016\Project Options\Security\Trust Center\Disable Trust Bar Notification for unsigned application add-ins and block them">HKCU:\Software\Policies\Microsoft\Office\16.0\MS Project\Security\notbpromptunsignedaddin</td></tr>
+<tr><td><font color=#ff9933>Require that application add-ins are signed by Trusted Publisher is not set or has the wrong setting with value of  <font></td><td><div title="User Configuration\Policies\Administrative Templates\Microsoft Project 2016\Project Options\Security\Trust Center\Require that application add-ins are signed by Trusted Publisher">HKCU:\Software\Policies\Microsoft\Office\16.0\MS Project\Security\requireaddinsig</td></tr>
+<tr><td><font color=#ff9933>Allow Trusted Locations on the network is not set or has the wrong setting with value of  <font></td><td><div title="User Configuration\Policies\Administrative Templates\Microsoft Project 2016\Project Options\Security\Trust Center\Allow Trusted Locations on the network">HKCU:\Software\Policies\Microsoft\Office\16.0\MS Project\Security\Trusted Locations\allownetworklocations</td></tr>
+<tr><td><font color=#ff9933>Block macros from running in Office files from the Internet is not set or has the wrong setting with value of  <font></td><td><div title="User Configuration\Policies\Administrative Templates\Microsoft Visio 2016\Visio Options\Security\Trust Center\Block macros from running in Office files from the Internet">HKCU:\Software\Policies\Microsoft\Office\16.0\Visio\Security\blockcontentexecutionfrominternet</td></tr>
+<tr><td><font color=#ff9933>VBA Macro Notification Settings is not set or has the wrong setting with value of  <font></td><td><div title="User Configuration\Policies\Administrative Templates\Microsoft Visio 2016\Visio Options\Security\Trust Center\VBA Macro Notification Settings">HKCU:\Software\Policies\Microsoft\Office\16.0\Visio\Security\vbawarnings</td></tr>
+<tr><td><font color=#ff9933>Disable Trust Bar Notification for unsigned application add-ins and block them is not set or has the wrong setting with value of  <font></td><td><div title="User Configuration\Policies\Administrative Templates\Microsoft Visio 2016\Visio Options\Security\Trust Center\Disable Trust Bar Notification for unsigned application add-ins and block them">HKCU:\Software\Policies\Microsoft\Office\16.0\Visio\Security\notbpromptunsignedaddin</td></tr>
+<tr><td><font color=#ff9933>Require that application add-ins are signed by Trusted Publisher is not set or has the wrong setting with value of  <font></td><td><div title="User Configuration\Policies\Administrative Templates\Microsoft Visio 2016\Visio Options\Security\Trust Center\Require that application add-ins are signed by Trusted Publisher">HKCU:\Software\Policies\Microsoft\Office\16.0\Visio\Security\requireaddinsig</td></tr>
+<tr><td><font color=#ff9933>Visio 2000-2002 Binary Drawings  Templates and Stencils is not set or has the wrong setting with value of  <font></td><td><div title="User Configuration\Policies\Administrative Templates\Microsoft Visio 2016\Visio Options\Security\Trust Center\File Block Settings\Visio 2000-2002 Binary Drawings  Templates and Stencils">HKCU:\Software\Policies\Microsoft\Office\16.0\Visio\Security\fileblock\Visio2000files</td></tr>
+<tr><td><font color=#ff9933>Visio 2003-2010 Binary Drawings  Templates and Stencils is not set or has the wrong setting with value of  <font></td><td><div title="User Configuration\Policies\Administrative Templates\Microsoft Visio 2016\Visio Options\Security\Trust Center\File Block Settings\Visio 2003-2010 Binary Drawings  Templates and Stencils">HKCU:\Software\Policies\Microsoft\Office\16.0\Visio\Security\fileblock\Visio2003files</td></tr>
+<tr><td><font color=#ff9933>Visio 5.0 or earlier Binary Drawings  Templates and Stencils is not set or has the wrong setting with value of  <font></td><td><div title="User Configuration\Policies\Administrative Templates\Microsoft Visio 2016\Visio Options\Security\Trust Center\File Block Settings\Visio 5.0 or earlier Binary Drawings  Templates and Stencils">HKCU:\Software\Policies\Microsoft\Office\16.0\Visio\Security\fileblock\Visio50andearlierfiles</td></tr>
+<tr><td><font color=#ff9933>Turn off trusted documents is not set or has the wrong setting with value of  <font></td><td><div title="User Configuration\Policies\Administrative Templates\Microsoft Visio 2016\PowerPoint Options\Security\Trust Center\Turn off trusted documents">HKCU:\software\policies\microsoft\office\16.0\Visio\security\trusted documents\disabletrusteddocuments</td></tr>
+<tr><td><font color=#ff9933>Turn off Trusted Documents on the network is not set or has the wrong setting with value of  <font></td><td><div title="User Configuration\Policies\Administrative Templates\Microsoft Visio 2016\PowerPoint Options\Security\Trust Center\Turn off Trusted Documents on the network">HKCU:\software\policies\microsoft\office\16.0\Visio\security\trusted documents\disablenetworktrusteddocuments</td></tr>
+<tr><td><font color=#ff9933>Allow Trusted Locations on the network is not set or has the wrong setting with value of  <font></td><td><div title="User Configuration\Policies\Administrative Templates\Microsoft Visio 2016\Visio Options\Security\Trust Center\Allow Trusted Locations on the network">HKCU:\Software\Policies\Microsoft\Office\16.0\Visio\Security\Trusted Locations\allownetworklocations</td></tr>
+<tr><td><font color=#ff9933>Configure SIP security mode is not set or has the wrong setting with value of  <font></td><td><div title="Computer Configuration\Policies\Administrative Templates\Skype for Business 2016\Microsoft Lync Feature Policies\Configure SIP security mode">HKLM:\Software\Policies\Microsoft\Office\16.0\Lync\enablesiphighsecuritymode</td></tr>
+<tr><td><font color=#ff9933>Disable HTTP fallback for SIP connection is not set or has the wrong setting with value of  <font></td><td><div title="Computer Configuration\Policies\Administrative Templates\Skype for Business 2016\Microsoft Lync Feature Policies\Disable HTTP fallback for SIP connection">HKLM:\Software\Policies\Microsoft\Office\16.0\Lync\disablehttpconnect</td></tr>
+</table>
+<h4>These are recommended GPO settings to secure Office 2016-365 by Microsoft, do NOT implement without the correct research and testing. Some settings could adversely affect your system.<br> Its recommended that Attack Surface Reduction (ASR) is enabled but requires Windows Defender Real-Time Antivirus and works in conjunction with Exploit Guard to prevent malware abusing legitimate MS Office functionality</h4>
+
+<h2><a name="#FirewallProf">Firewall Profile</a></span></h2>
+<table>
+<colgroup><col/><col/><col/><col/></colgroup>
+<tr><th>Name</th><th>Enabled</th><th>Inbound</th><th>Outbound</th></tr>
+<tr><td>Domain</td><td>True</td><td>Block</td><td>Allow</td></tr>
+<tr><td>Private</td><td>True</td><td>Block</td><td>Allow</td></tr>
+<tr><td>Public</td><td>True</td><td>Block</td><td>Allow</td></tr>
+</table>
+<h4>Firewalls should always block inbound and exceptions should be to a named IP and Port.<br> <br>Further  information can be found @ https://www.tenaka.net/whyhbfirewallsneeded<br></h4>
+
+<h2><a name="#InFirewall">Enabled Firewall Rules</a></span></h2>
+<table>
+<colgroup><col/><col/><col/><col/><col/><col/><col/><col/></colgroup>
+<tr><th>DisplayName</th><th>Direction</th><th>Protocol</th><th>LocalIP</th><th>LocalPort</th><th>RemoteIP</th><th>RemotePort</th><th>Program</th></tr>
+<tr><td>WFD Driver-only (TCP-In)</td><td>Inbound</td><td>TCP</td><td>Any</td><td></td><td>Any</td><td>Any</td><td>System</td></tr>
+<tr><td>Cast to Device streaming server (RTCP-Streaming-In)</td><td>Inbound</td><td>UDP</td><td>Any</td><td></td><td>Any</td><td>Any</td><td>%SystemRoot%\system32\mdeserver.exe</td></tr>
+<tr><td>Cast to Device streaming server (RTCP-Streaming-In)</td><td>Inbound</td><td>UDP</td><td>Any</td><td></td><td>Any</td><td>Any</td><td>%SystemRoot%\system32\mdeserver.exe</td></tr>
+<tr><td>Cast to Device streaming server (RTCP-Streaming-In)</td><td>Inbound</td><td>UDP</td><td>Any</td><td></td><td>Any</td><td>Any</td><td>%SystemRoot%\system32\mdeserver.exe</td></tr>
+<tr><td>Cast to Device streaming server (HTTP-Streaming-In)</td><td>Inbound</td><td>TCP</td><td>Any</td><td></td><td>10246</td><td>Any</td><td>System</td></tr>
+<tr><td>Cast to Device streaming server (HTTP-Streaming-In)</td><td>Inbound</td><td>TCP</td><td>Any</td><td></td><td>10246</td><td>Any</td><td>System</td></tr>
+<tr><td>Cast to Device streaming server (HTTP-Streaming-In)</td><td>Inbound</td><td>TCP</td><td>Any</td><td></td><td>10246</td><td>Any</td><td>System</td></tr>
+<tr><td>WFD ASP Coordination Protocol (UDP-In)</td><td>Inbound</td><td>UDP</td><td>Any</td><td></td><td>7235</td><td>7235</td><td>%systemroot%\system32\svchost.exe</td></tr>
+<tr><td>@FirewallAPI.dll</td><td>-80206</td><td>Inbound</td><td>UDP</td><td>Any</td><td></td><td>5000-5020</td><td>Any</td></tr>
+<tr><td>@FirewallAPI.dll</td><td>-80201</td><td>Inbound</td><td>TCP</td><td>Any</td><td></td><td>System.Object[]</td><td>Any</td></tr>
+<tr><td>Remote Assistance (PNRP-In)</td><td>Inbound</td><td>UDP</td><td>Any</td><td></td><td>3540</td><td>Any</td><td>%systemroot%\system32\svchost.exe</td></tr>
+<tr><td>Remote Assistance (SSDP TCP-In)</td><td>Inbound</td><td>TCP</td><td>Any</td><td></td><td>2869</td><td>Any</td><td>System</td></tr>
+<tr><td>Remote Assistance (SSDP UDP-In)</td><td>Inbound</td><td>UDP</td><td>Any</td><td></td><td>1900</td><td>Any</td><td>%SystemRoot%\system32\svchost.exe</td></tr>
+<tr><td>Remote Assistance (TCP-In)</td><td>Inbound</td><td>TCP</td><td>Any</td><td></td><td>Any</td><td>Any</td><td>%SystemRoot%\system32\msra.exe</td></tr>
+<tr><td>Remote Assistance (DCOM-In)</td><td>Inbound</td><td>TCP</td><td>Any</td><td></td><td>135</td><td>Any</td><td>%SystemRoot%\system32\svchost.exe</td></tr>
+<tr><td>Remote Assistance (RA Server TCP-In)</td><td>Inbound</td><td>TCP</td><td>Any</td><td></td><td>Any</td><td>Any</td><td>%SystemRoot%\system32\raserver.exe</td></tr>
+<tr><td>DIAL protocol server (HTTP-In)</td><td>Inbound</td><td>TCP</td><td>Any</td><td></td><td>10247</td><td>Any</td><td>System</td></tr>
+<tr><td>DIAL protocol server (HTTP-In)</td><td>Inbound</td><td>TCP</td><td>Any</td><td></td><td>10247</td><td>Any</td><td>System</td></tr>
+<tr><td>Wireless Display Infrastructure Back Channel (TCP-In)</td><td>Inbound</td><td>TCP</td><td>Any</td><td></td><td>7250</td><td>Any</td><td>%systemroot%\system32\CastSrv.exe</td></tr>
+<tr><td>Wireless Display (TCP-In)</td><td>Inbound</td><td>TCP</td><td>Any</td><td></td><td>Any</td><td>Any</td><td>%systemroot%\system32\WUDFHost.exe</td></tr>
+<tr><td>Cast to Device streaming server (RTSP-Streaming-In)</td><td>Inbound</td><td>TCP</td><td>Any</td><td></td><td>System.Object[]</td><td>Any</td><td>%SystemRoot%\system32\mdeserver.exe</td></tr>
+<tr><td>Wi-Fi Direct Scan Service Use (In)</td><td>Inbound</td><td>Any</td><td>Any</td><td></td><td>Any</td><td>Any</td><td>%SystemRoot%\system32\svchost.exe</td></tr>
+<tr><td>Cast to Device streaming server (RTSP-Streaming-In)</td><td>Inbound</td><td>TCP</td><td>Any</td><td></td><td>System.Object[]</td><td>Any</td><td>%SystemRoot%\system32\mdeserver.exe</td></tr>
+<tr><td>Cast to Device SSDP Discovery (UDP-In)</td><td>Inbound</td><td>UDP</td><td>Any</td><td></td><td>PlayToDiscovery</td><td>Any</td><td>%SystemRoot%\system32\svchost.exe</td></tr>
+<tr><td>Microsoft Edge</td><td>Inbound</td><td>Any</td><td>Any</td><td></td><td>Any</td><td>Any</td><td>Any</td></tr>
+<tr><td>Windows Search</td><td>Inbound</td><td>Any</td><td>Any</td><td></td><td>Any</td><td>Any</td><td>Any</td></tr>
+<tr><td>Start</td><td>Inbound</td><td>Any</td><td>Any</td><td></td><td>Any</td><td>Any</td><td>Any</td></tr>
+<tr><td>Work or school account</td><td>Inbound</td><td>Any</td><td>Any</td><td></td><td>Any</td><td>Any</td><td>Any</td></tr>
+<tr><td>Your account</td><td>Inbound</td><td>Any</td><td>Any</td><td></td><td>Any</td><td>Any</td><td>Any</td></tr>
+<tr><td>Microsoft Edge</td><td>Inbound</td><td>Any</td><td>Any</td><td></td><td>Any</td><td>Any</td><td>Any</td></tr>
+<tr><td>Windows Search</td><td>Inbound</td><td>Any</td><td>Any</td><td></td><td>Any</td><td>Any</td><td>Any</td></tr>
+<tr><td>Start</td><td>Inbound</td><td>Any</td><td>Any</td><td></td><td>Any</td><td>Any</td><td>Any</td></tr>
+<tr><td>Work or school account</td><td>Inbound</td><td>Any</td><td>Any</td><td></td><td>Any</td><td>Any</td><td>Any</td></tr>
+<tr><td>Your account</td><td>Inbound</td><td>Any</td><td>Any</td><td></td><td>Any</td><td>Any</td><td>Any</td></tr>
+<tr><td>Microsoft Edge</td><td>Inbound</td><td>Any</td><td>Any</td><td></td><td>Any</td><td>Any</td><td>Any</td></tr>
+<tr><td>Windows Search</td><td>Inbound</td><td>Any</td><td>Any</td><td></td><td>Any</td><td>Any</td><td>Any</td></tr>
+<tr><td>Start</td><td>Inbound</td><td>Any</td><td>Any</td><td></td><td>Any</td><td>Any</td><td>Any</td></tr>
+<tr><td>Work or school account</td><td>Inbound</td><td>Any</td><td>Any</td><td></td><td>Any</td><td>Any</td><td>Any</td></tr>
+<tr><td>Your account</td><td>Inbound</td><td>Any</td><td>Any</td><td></td><td>Any</td><td>Any</td><td>Any</td></tr>
+<tr><td>Microsoft Edge (mDNS-In)</td><td>Inbound</td><td>UDP</td><td>Any</td><td></td><td>5353</td><td>Any</td><td>C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe</td></tr>
+<tr><td>Cast to Device functionality (qWave-TCP-In)</td><td>Inbound</td><td>TCP</td><td>Any</td><td></td><td>2177</td><td>Any</td><td>%SystemRoot%\system32\svchost.exe</td></tr>
+<tr><td>Cast to Device functionality (qWave-UDP-In)</td><td>Inbound</td><td>UDP</td><td>Any</td><td></td><td>2177</td><td>Any</td><td>%SystemRoot%\system32\svchost.exe</td></tr>
+<tr><td>Cast to Device UPnP Events (TCP-In)</td><td>Inbound</td><td>TCP</td><td>Any</td><td></td><td>2869</td><td>Any</td><td>System</td></tr>
+<tr><td>Cast to Device streaming server (RTSP-Streaming-In)</td><td>Inbound</td><td>TCP</td><td>Any</td><td></td><td>System.Object[]</td><td>Any</td><td>%SystemRoot%\system32\mdeserver.exe</td></tr>
+<tr><td>Desktop App Web Viewer</td><td>Inbound</td><td>Any</td><td>Any</td><td></td><td>Any</td><td>Any</td><td>Any</td></tr>
+<tr><td>Wi-Fi Direct Spooler Use (In)</td><td>Inbound</td><td>Any</td><td>Any</td><td></td><td>Any</td><td>Any</td><td>%SystemRoot%\system32\spoolsv.exe</td></tr>
+<tr><td>AllJoyn Router (UDP-In)</td><td>Inbound</td><td>UDP</td><td>Any</td><td></td><td>Any</td><td>Any</td><td>%SystemRoot%\system32\svchost.exe</td></tr>
+<tr><td>Core Networking - Destination Unreachable Fragmentation Needed (ICMPv4-In)</td><td>Inbound</td><td>ICMPv4</td><td>Any</td><td></td><td>RPC</td><td>Any</td><td>System</td></tr>
+<tr><td>Core Networking - Multicast Listener Done (ICMPv6-In)</td><td>Inbound</td><td>ICMPv6</td><td>Any</td><td></td><td>RPC</td><td>Any</td><td>System</td></tr>
+<tr><td>Core Networking - Multicast Listener Report v2 (ICMPv6-In)</td><td>Inbound</td><td>ICMPv6</td><td>Any</td><td></td><td>RPC</td><td>Any</td><td>System</td></tr>
+<tr><td>Core Networking - Multicast Listener Report (ICMPv6-In)</td><td>Inbound</td><td>ICMPv6</td><td>Any</td><td></td><td>RPC</td><td>Any</td><td>System</td></tr>
+<tr><td>Core Networking - Multicast Listener Query (ICMPv6-In)</td><td>Inbound</td><td>ICMPv6</td><td>Any</td><td></td><td>RPC</td><td>Any</td><td>System</td></tr>
+<tr><td>Core Networking - Router Solicitation (ICMPv6-In)</td><td>Inbound</td><td>ICMPv6</td><td>Any</td><td></td><td>RPC</td><td>Any</td><td>System</td></tr>
+<tr><td>Core Networking - Router Advertisement (ICMPv6-In)</td><td>Inbound</td><td>ICMPv6</td><td>Any</td><td></td><td>RPC</td><td>Any</td><td>System</td></tr>
+<tr><td>Core Networking - Neighbor Discovery Advertisement (ICMPv6-In)</td><td>Inbound</td><td>ICMPv6</td><td>Any</td><td></td><td>RPC</td><td>Any</td><td>System</td></tr>
+<tr><td>Core Networking - Neighbor Discovery Solicitation (ICMPv6-In)</td><td>Inbound</td><td>ICMPv6</td><td>Any</td><td></td><td>RPC</td><td>Any</td><td>System</td></tr>
+<tr><td>Core Networking - Parameter Problem (ICMPv6-In)</td><td>Inbound</td><td>ICMPv6</td><td>Any</td><td></td><td>RPC</td><td>Any</td><td>System</td></tr>
+<tr><td>Core Networking - Time Exceeded (ICMPv6-In)</td><td>Inbound</td><td>ICMPv6</td><td>Any</td><td></td><td>RPC</td><td>Any</td><td>System</td></tr>
+<tr><td>Core Networking - Packet Too Big (ICMPv6-In)</td><td>Inbound</td><td>ICMPv6</td><td>Any</td><td></td><td>RPC</td><td>Any</td><td>System</td></tr>
+<tr><td>Core Networking - Destination Unreachable (ICMPv6-In)</td><td>Inbound</td><td>ICMPv6</td><td>Any</td><td></td><td>RPC</td><td>Any</td><td>System</td></tr>
+<tr><td>Connected Devices Platform - Wi-Fi Direct Transport (TCP-In)</td><td>Inbound</td><td>TCP</td><td>Any</td><td></td><td>Any</td><td>Any</td><td>%SystemRoot%\system32\svchost.exe</td></tr>
+<tr><td>Connected Devices Platform (TCP-In)</td><td>Inbound</td><td>TCP</td><td>Any</td><td></td><td>Any</td><td>Any</td><td>%SystemRoot%\system32\svchost.exe</td></tr>
+<tr><td>Connected Devices Platform (UDP-In)</td><td>Inbound</td><td>UDP</td><td>Any</td><td></td><td>Any</td><td>Any</td><td>%SystemRoot%\system32\svchost.exe</td></tr>
+<tr><td>Delivery Optimization (UDP-In)</td><td>Inbound</td><td>UDP</td><td>Any</td><td></td><td>7680</td><td>Any</td><td>%SystemRoot%\system32\svchost.exe</td></tr>
+<tr><td>Delivery Optimization (TCP-In)</td><td>Inbound</td><td>TCP</td><td>Any</td><td></td><td>7680</td><td>Any</td><td>%SystemRoot%\system32\svchost.exe</td></tr>
+<tr><td>WFD Driver-only (UDP-In)</td><td>Inbound</td><td>UDP</td><td>Any</td><td></td><td>Any</td><td>Any</td><td>System</td></tr>
+<tr><td>Core Networking - Internet Group Management Protocol (IGMP-In)</td><td>Inbound</td><td>2</td><td>Any</td><td></td><td>Any</td><td>Any</td><td>System</td></tr>
+<tr><td>Wi-Fi Direct Network Discovery (In)</td><td>Inbound</td><td>Any</td><td>Any</td><td></td><td>Any</td><td>Any</td><td>%SystemRoot%\system32\dashost.exe</td></tr>
+<tr><td>Core Networking - Dynamic Host Configuration Protocol (DHCP-In)</td><td>Inbound</td><td>UDP</td><td>Any</td><td></td><td>68</td><td>67</td><td>%SystemRoot%\system32\svchost.exe</td></tr>
+<tr><td>Core Networking - Teredo (UDP-In)</td><td>Inbound</td><td>UDP</td><td>Any</td><td></td><td>Teredo</td><td>Any</td><td>%SystemRoot%\system32\svchost.exe</td></tr>
+<tr><td>AllJoyn Router (TCP-In)</td><td>Inbound</td><td>TCP</td><td>Any</td><td></td><td>9955</td><td>Any</td><td>%SystemRoot%\system32\svchost.exe</td></tr>
+<tr><td>mDNS (UDP-In)</td><td>Inbound</td><td>UDP</td><td>Any</td><td></td><td>5353</td><td>Any</td><td>%SystemRoot%\system32\svchost.exe</td></tr>
+<tr><td>mDNS (UDP-In)</td><td>Inbound</td><td>UDP</td><td>Any</td><td></td><td>5353</td><td>Any</td><td>%SystemRoot%\system32\svchost.exe</td></tr>
+<tr><td>mDNS (UDP-In)</td><td>Inbound</td><td>UDP</td><td>Any</td><td></td><td>5353</td><td>Any</td><td>%SystemRoot%\system32\svchost.exe</td></tr>
+<tr><td>Network Discovery for Teredo (UPnP-In)</td><td>Inbound</td><td>TCP</td><td>Any</td><td></td><td>Any</td><td>Any</td><td>System</td></tr>
+<tr><td>Network Discovery for Teredo (SSDP-In)</td><td>Inbound</td><td>UDP</td><td>Any</td><td></td><td>Any</td><td>Any</td><td>%SystemRoot%\system32\svchost.exe</td></tr>
+<tr><td>Network Discovery (WSD Events-In)</td><td>Inbound</td><td>TCP</td><td>Any</td><td></td><td>5357</td><td>Any</td><td>System</td></tr>
+<tr><td>Network Discovery (WSD EventsSecure-In)</td><td>Inbound</td><td>TCP</td><td>Any</td><td></td><td>5358</td><td>Any</td><td>System</td></tr>
+<tr><td>Network Discovery (Pub-WSD-In)</td><td>Inbound</td><td>UDP</td><td>Any</td><td></td><td>3702</td><td>Any</td><td>%SystemRoot%\system32\svchost.exe</td></tr>
+<tr><td>Network Discovery (LLMNR-UDP-In)</td><td>Inbound</td><td>UDP</td><td>Any</td><td></td><td>5355</td><td>Any</td><td>%SystemRoot%\system32\svchost.exe</td></tr>
+<tr><td>Network Discovery (WSD-In)</td><td>Inbound</td><td>UDP</td><td>Any</td><td></td><td>3702</td><td>Any</td><td>%SystemRoot%\system32\dashost.exe</td></tr>
+<tr><td>Network Discovery (WSD-In)</td><td>Inbound</td><td>UDP</td><td>Any</td><td></td><td>3702</td><td>Any</td><td>%SystemRoot%\system32\svchost.exe</td></tr>
+<tr><td>Network Discovery (NB-Datagram-In)</td><td>Inbound</td><td>UDP</td><td>Any</td><td></td><td>138</td><td>Any</td><td>System</td></tr>
+<tr><td>Network Discovery (NB-Name-In)</td><td>Inbound</td><td>UDP</td><td>Any</td><td></td><td>137</td><td>Any</td><td>System</td></tr>
+<tr><td>Network Discovery (UPnP-In)</td><td>Inbound</td><td>TCP</td><td>Any</td><td></td><td>2869</td><td>Any</td><td>System</td></tr>
+<tr><td>Network Discovery (SSDP-In)</td><td>Inbound</td><td>UDP</td><td>Any</td><td></td><td>1900</td><td>Any</td><td>%SystemRoot%\system32\svchost.exe</td></tr>
+<tr><td>Proximity sharing over TCP (TCP sharing-In)</td><td>Inbound</td><td>TCP</td><td>Any</td><td></td><td>Any</td><td>Any</td><td>%SystemRoot%\system32\proximityuxhost.exe</td></tr>
+<tr><td>Core Networking - IPv6 (IPv6-In)</td><td>Inbound</td><td>41</td><td>Any</td><td></td><td>Any</td><td>Any</td><td>System</td></tr>
+<tr><td>Core Networking - IPHTTPS (TCP-In)</td><td>Inbound</td><td>TCP</td><td>Any</td><td></td><td>IPHTTPSIn</td><td>Any</td><td>System</td></tr>
+<tr><td>Core Networking - Dynamic Host Configuration Protocol for IPv6(DHCPV6-In)</td><td>Inbound</td><td>UDP</td><td>Any</td><td></td><td>546</td><td>547</td><td>%SystemRoot%\system32\svchost.exe</td></tr>
+<tr><td>Desktop App Web Viewer</td><td>Inbound</td><td>Any</td><td>Any</td><td></td><td>Any</td><td>Any</td><td>Any</td></tr>
+</table>
+
+<h3><span style=font-family:helvetica;>This script has been provided by Tenaka.net, if it's beneficial, please provide feedback and any additional feature requests gratefully received. </span></h3>
+<table>
+</table>
+
+<table>
+</table>
+</body></html>
