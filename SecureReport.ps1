@@ -8165,8 +8165,8 @@ $style = @"
     $frag_FSMO = $fragFSMO | ConvertTo-Html -As Table -fragment -PreContent "<h2>FSMO Roles</span></h2>" | Out-String 
     $frag_DomainGrps = $fragDomainGrps | ConvertTo-Html -As Table -fragment -PreContent "<h2>Members of Privilege Groups</span></h2>" -PostContent "<h4>$descripDomainPrivsGps</h4>" | Out-String 
     
-    $frag_PreAuth = $fragPreAuth | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"`#PreAuth`">Domain Accounts that DO NOT Pre-Authenticate</a></span></h2>" -PostContent "<h4>$descripPreAuth</h4>" | Out-String
-    $frag_NeverExpires = $fragNeverExpires | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"`#PassExpire`">Domain Accounts that Never Expire their Password</a></span></h2>"  | Out-String
+    $frag_PreAuth = $fragPreAuth | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"PreAuth`">Domain Accounts that DO NOT Pre-Authenticate</a></span></h2>" -PostContent "<h4>$descripPreAuth</h4>" | Out-String
+    $frag_NeverExpires = $fragNeverExpires | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"PassExpire`">Domain Accounts that Never Expire their Password</a></span></h2>"  | Out-String
     
     $FragGroupDetails =  $GroupDetails  | ConvertTo-Html -As Table -fragment -PreContent "<h2>Local System Group Members</span></h2>" | Out-String
     $FragPassPol = $PassPol | Select-Object -SkipLast 3 | ConvertTo-Html -As Table -fragment -PreContent "<h2>Local PassWord Policy</span></h2>" | Out-String
@@ -8184,46 +8184,46 @@ $style = @"
     $Frag_WinFeature = $FragWinFeature | ConvertTo-Html -As table -fragment -PreContent "<h2>Installed Windows Features</span></h2>"  | Out-String
     
     #Security Review
-    $Frag_AVStatus = $FragAVStatus | ConvertTo-Html -As Table  -fragment -PreContent "<h2><a name=`"`#AV`">AntiVirus Engine and Definition Status</a></span></h2>" -PostContent "<h4>$descripAV</h4>" | Out-String
-    $frag_BitLocker = $fragBitLocker | ConvertTo-Html -As List -fragment -PreContent "<h2><a name=`"`#Bitlockerisnotenabled`">Bitlocker and TPM Details</a></span></h2>" -PostContent "<h4>$descripBitlocker</h4>" | Out-String
-    $frag_Msinfo = $MsinfoClixml | ConvertTo-Html -As Table -fragment -PreContent "<h2><a name=`"`#VBS`">Virtualization and Secure Boot Details</a></span></h2>" -PostContent "<h4>$descripVirt</h4>"  | Out-String
-    $frag_LSAPPL = $fragLSAPPL | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"`#LSA`">LSA Protection for Stored Credentials</a></span></h2>" -PostContent "<h4>$descripLSA</h4>" | Out-String
-    $frag_DLLSafe = $fragDLLSafe | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"`#DLLSafe`">DLL Safe Search Order</a></span></h2>"  -PostContent "<h4>$descripDLL</h4>"| Out-String
-    $frag_DLLHijack = $fragDLLHijack | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"`#DLLHigh`">Loaded DLL's that are vulnerable to DLL Hijacking</a></span></h2>" | Out-String
-    $frag_DllNotSigned = $fragDllNotSigned | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"`#DLLSign`">All DLL's that aren't signed and user permissions allow write</a></span></h2>"  -PostContent "<h4>$descriptDLLHijack</h4>"| Out-String
-    $frag_Code = $fragCode | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"`#HECI`">Hypervisor Enforced Code Integrity</a></span></h2>" -PostContent "<h4>$descripHyper</h4>" | Out-String
-    $frag_PCElevate = $fragPCElevate | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"`#SoftElevation`">Automatically Elevates User Installing Software</a></span></h2>"  -PostContent "<h4>$descripElev</h4>"| Out-String
-    $frag_FilePass = $fragFilePass | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"`#FilePW`">Files that Contain the Word PASSWord</a></span></h2>" -PostContent "<h4>$descripFilePw</h4>" | Out-String
-    $frag_AutoLogon = $fragAutoLogon   | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"`#AutoLogon`">AutoLogon Credentials in Registry</a></span></h2>"  -PostContent "<h4>$descripAutoLogon</h4>"| Out-String
-    $frag_UnQu = $fragUnQuoted | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"`#unquoted`">UnQuoted Paths Attack</a></span></h2>" -PostContent "<h4>$DescripUnquoted</h4>" | Out-String
-    $frag_LegNIC = $fragLegNIC | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"`#LegNetProt`">Legacy and Vulnerable Network Protocols</a></span></h2>" -PostContent "<h4>$DescripLegacyNet</h4>" | Out-String
-    $frag_SysRegPerms = $fragReg | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"`#RegWrite`">Registry Permissions Allowing User Access - Security Risk if Exist</a></span></h2>" -PostContent "<h4>$descripRegPer</h4>" | Out-String
-    $frag_PSPass = $fragPSPass | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"`#ProcPW`">Processes where CommandLine Contains a PassWord</a></span></h2>" -PostContent "<h4>$Finish</h4>" | Out-String
-    $frag_SecOptions = $fragSecOptions | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"`#secOptions`">Security Options to Prevent MitM Attacks</a></span></h2>" -PostContent "<h4>$descripSecOptions</h4>" | Out-String
-    $frag_wFolders = $fragwFold | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"`#sysFileWrite `">Non System Folders that are Writeable - Security Risk when Executable</span></a></h2>" -PostContent "<h4>$descripNonFold</h4>"| Out-String
-    $frag_SysFolders = $fragsysFold | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"`#SysDirWrite`">Default System Folders that are Writeable - Security Risk if Exist</span></a></h2>"  -PostContent "<h4>$descripSysFold</h4>"| Out-String
-    $frag_CreateSysFold = $fragCreateSysFold | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"`#sysDirExe`">Default System Folders that Permit Users to Create Files - Security Risk if Exist</a></span></h2>"  -PostContent "<h4>$descripCreateSysFold</h4>"| Out-String
-    $frag_wFile = $fragwFile | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"`#sysFileWrite`">System Files that are Writeable - Security Risk if Exist</a></span></h2>" -PostContent "<h4>$descripFile</h4>" | Out-String
-    $frag_FWProf = $fragFWProfile | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"`#FirewallProf`">Firewall Profile</a></span></h2>"  -PostContent "<h4>$DescripFirewalls</h4>"| Out-String
-    $frag_FW = $fragFW | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"`#InFirewall`">Enabled Firewall Rules</a></span></h2>" | Out-String
-    $frag_TaskPerms =  $SchedTaskPerms | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"`#schedDir`">Scheduled Tasks that call on Files on Storage</a></span></h2>"  -PostContent "<h4>$descripTaskSchPerms</h4>" | Out-String
-    $frag_TaskListings = $SchedTaskListings | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"`#schedTask`">Scheduled Tasks that Contain something Encoded</a></span></h2>"  -PostContent "<h4>$descripTaskSchEncode</h4>" | Out-String
-    $frag_DriverQuery = $DriverQuery | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"`#drivers`">Drivers that aren't Signed</a></span></h2>" -PostContent "<h4>$descriptDriverQuery</h4>" | Out-String
-    $frag_Share = $fragShare | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"`#shares`">Shares and their Share Permissions</a></span></h2>"  | Out-String
-    $frag_AuthCodeSig = $fragAuthCodeSig | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"`#AuthentiCode`">Files with an Authenticode Signature HashMisMatch</a></span></h2>" -PostContent "<h4>$descriptAuthCodeSig</h4>"  | Out-String  
-    $frag_CredGuCFG = $fragCredGuCFG | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"`#CredGuard`">Credential Guard</a></span></h2>" -PostContent "<h4>$descripCredGu</h4>" | Out-String
-    $frag_LapsPwEna = $fragLapsPwEna | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"`#LAPS`">LAPS - Local Administrator PassWord Solution</a></span></h2>" -PostContent "<h4>$descripLAPS</h4>" | Out-String
+    $Frag_AVStatus = $FragAVStatus | ConvertTo-Html -As Table  -fragment -PreContent "<h2><a name=`"AV`">AntiVirus Engine and Definition Status</a></span></h2>" -PostContent "<h4>$descripAV</h4>" | Out-String
+    $frag_BitLocker = $fragBitLocker | ConvertTo-Html -As List -fragment -PreContent "<h2><a name=`"Bitlockerisnotenabled`">Bitlocker and TPM Details</a></span></h2>" -PostContent "<h4>$descripBitlocker</h4>" | Out-String
+    $frag_Msinfo = $MsinfoClixml | ConvertTo-Html -As Table -fragment -PreContent "<h2><a name=`"VBS`">Virtualization and Secure Boot Details</a></span></h2>" -PostContent "<h4>$descripVirt</h4>"  | Out-String
+    $frag_LSAPPL = $fragLSAPPL | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"LSA`">LSA Protection for Stored Credentials</a></span></h2>" -PostContent "<h4>$descripLSA</h4>" | Out-String
+    $frag_DLLSafe = $fragDLLSafe | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"DLLSafe`">DLL Safe Search Order</a></span></h2>"  -PostContent "<h4>$descripDLL</h4>"| Out-String
+    $frag_DLLHijack = $fragDLLHijack | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"DLLHigh`">Loaded DLL's that are vulnerable to DLL Hijacking</a></span></h2>" | Out-String
+    $frag_DllNotSigned = $fragDllNotSigned | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"DLLSign`">All DLL's that aren't signed and user permissions allow write</a></span></h2>"  -PostContent "<h4>$descriptDLLHijack</h4>"| Out-String
+    $frag_Code = $fragCode | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"HECI`">Hypervisor Enforced Code Integrity</a></span></h2>" -PostContent "<h4>$descripHyper</h4>" | Out-String
+    $frag_PCElevate = $fragPCElevate | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"SoftElevation`">Automatically Elevates User Installing Software</a></span></h2>"  -PostContent "<h4>$descripElev</h4>"| Out-String
+    $frag_FilePass = $fragFilePass | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"FilePW`">Files that Contain the Word PASSWord</a></span></h2>" -PostContent "<h4>$descripFilePw</h4>" | Out-String
+    $frag_AutoLogon = $fragAutoLogon   | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"AutoLogon`">AutoLogon Credentials in Registry</a></span></h2>"  -PostContent "<h4>$descripAutoLogon</h4>"| Out-String
+    $frag_UnQu = $fragUnQuoted | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"unquoted`">UnQuoted Paths Attack</a></span></h2>" -PostContent "<h4>$DescripUnquoted</h4>" | Out-String
+    $frag_LegNIC = $fragLegNIC | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"LegNetProt`">Legacy and Vulnerable Network Protocols</a></span></h2>" -PostContent "<h4>$DescripLegacyNet</h4>" | Out-String
+    $frag_SysRegPerms = $fragReg | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"RegWrite`">Registry Permissions Allowing User Access - Security Risk if Exist</a></span></h2>" -PostContent "<h4>$descripRegPer</h4>" | Out-String
+    $frag_PSPass = $fragPSPass | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"ProcPW`">Processes where CommandLine Contains a PassWord</a></span></h2>" -PostContent "<h4>$Finish</h4>" | Out-String
+    $frag_SecOptions = $fragSecOptions | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"secOptions`">Security Options to Prevent MitM Attacks</a></span></h2>" -PostContent "<h4>$descripSecOptions</h4>" | Out-String
+    $frag_wFolders = $fragwFold | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"sysFileWrite `">Non System Folders that are Writeable - Security Risk when Executable</span></a></h2>" -PostContent "<h4>$descripNonFold</h4>"| Out-String
+    $frag_SysFolders = $fragsysFold | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"SysDirWrite`">Default System Folders that are Writeable - Security Risk if Exist</span></a></h2>"  -PostContent "<h4>$descripSysFold</h4>"| Out-String
+    $frag_CreateSysFold = $fragCreateSysFold | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"sysDirExe`">Default System Folders that Permit Users to Create Files - Security Risk if Exist</a></span></h2>"  -PostContent "<h4>$descripCreateSysFold</h4>"| Out-String
+    $frag_wFile = $fragwFile | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"sysFileWrite`">System Files that are Writeable - Security Risk if Exist</a></span></h2>" -PostContent "<h4>$descripFile</h4>" | Out-String
+    $frag_FWProf = $fragFWProfile | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"FirewallProf`">Firewall Profile</a></span></h2>"  -PostContent "<h4>$DescripFirewalls</h4>"| Out-String
+    $frag_FW = $fragFW | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"InFirewall`">Enabled Firewall Rules</a></span></h2>" | Out-String
+    $frag_TaskPerms =  $SchedTaskPerms | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"schedDir`">Scheduled Tasks that call on Files on Storage</a></span></h2>"  -PostContent "<h4>$descripTaskSchPerms</h4>" | Out-String
+    $frag_TaskListings = $SchedTaskListings | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"schedTask`">Scheduled Tasks that Contain something Encoded</a></span></h2>"  -PostContent "<h4>$descripTaskSchEncode</h4>" | Out-String
+    $frag_DriverQuery = $DriverQuery | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"drivers`">Drivers that aren't Signed</a></span></h2>" -PostContent "<h4>$descriptDriverQuery</h4>" | Out-String
+    $frag_Share = $fragShare | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"shares`">Shares and their Share Permissions</a></span></h2>"  | Out-String
+    $frag_AuthCodeSig = $fragAuthCodeSig | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"AuthentiCode`">Files with an Authenticode Signature HashMisMatch</a></span></h2>" -PostContent "<h4>$descriptAuthCodeSig</h4>"  | Out-String  
+    $frag_CredGuCFG = $fragCredGuCFG | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"CredGuard`">Credential Guard</a></span></h2>" -PostContent "<h4>$descripCredGu</h4>" | Out-String
+    $frag_LapsPwEna = $fragLapsPwEna | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"LAPS`">LAPS - Local Administrator PassWord Solution</a></span></h2>" -PostContent "<h4>$descripLAPS</h4>" | Out-String
     $frag_URA = $fragURA | ConvertTo-Html -as Table -Fragment -PreContent "<h2>URA - Local Systems User Rights Assignments</a></span></h2>" -PostContent "<h4>$descripURA</h4>" | Out-String
-    $frag_RegPassWords = $fragRegPassWords | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"`#RegPW`">PassWords Embedded in the Registry</a></span></h2>" -PostContent "<h4>$descripRegPassWords</h4>" | Out-String
-    $frag_ASR = $fragASR | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"`#asr`">Attack Surface Reduction (ASR)</a></span></h2>" -PostContent "<h4>$descripASR</h4>" | Out-String
-    $frag_WDigestULC = $fragWDigestULC | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"`#WDigest`">WDigest</a></span></h2>" -PostContent "<h4>$descripWDigest</h4>" | Out-String
+    $frag_RegPassWords = $fragRegPassWords | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"RegPW`">PassWords Embedded in the Registry</a></span></h2>" -PostContent "<h4>$descripRegPassWords</h4>" | Out-String
+    $frag_ASR = $fragASR | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"asr`">Attack Surface Reduction (ASR)</a></span></h2>" -PostContent "<h4>$descripASR</h4>" | Out-String
+    $frag_WDigestULC = $fragWDigestULC | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"WDigest`">WDigest</a></span></h2>" -PostContent "<h4>$descripWDigest</h4>" | Out-String
     
-    ########$frag_Certificates = $fragCertificates | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"`#Certs`">Installed Certificates</a></span></h2>" -PostContent "<h4>$descripWDigest</h4>" | Out-String
+    ########$frag_Certificates = $fragCertificates | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"Certs`">Installed Certificates</a></span></h2>" -PostContent "<h4>$descripWDigest</h4>" | Out-String
       
     #MS Recommended Secuirty settings (SSLF)
-    $frag_WindowsOSVal = $fragWindowsOSVal | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"`#WinSSLF`">Windows OS Security Recommendations</a></span></h2>" -PostContent "<h4>$descripWindowsOS</h4>" | Out-String
-    $frag_EdgeVal = $fragEdgeVal | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"`#EdgeSSLF`">MS Edge Security Recommendations</a></span></h2>" | Out-String
-    $frag_OfficeVal = $fragOfficeVal | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"`#OfficeSSLF`">MS Office Security Recommendations</a></span></h2>" -PostContent "<h4>$descripOffice2016</h4>" | Out-String
+    $frag_WindowsOSVal = $fragWindowsOSVal | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"WinSSLF`">Windows OS Security Recommendations</a></span></h2>" -PostContent "<h4>$descripWindowsOS</h4>" | Out-String
+    $frag_EdgeVal = $fragEdgeVal | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"EdgeSSLF`">MS Edge Security Recommendations</a></span></h2>" | Out-String
+    $frag_OfficeVal = $fragOfficeVal | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"OfficeSSLF`">MS Office Security Recommendations</a></span></h2>" -PostContent "<h4>$descripOffice2016</h4>" | Out-String
     
     #Quick and dirty tidy up and removal of Frags that are $null
     if ($fragAuthCodeSig -eq $null){$frag_AuthCodeSig = ""}
@@ -8530,4 +8530,3 @@ Progress bars or screen output will remain limited, each time an output is writt
 
 
 #>
- 
