@@ -129,6 +129,7 @@
 <tr><td><a href="#LSA">LSA is Disabled</a></td><td><font color=#ff471a>High Risk</td></tr>
 <tr><td><a href="#CredGuard">Credential Guard is Disabled</a></td><td><font color=#ff471a>High Risk</td></tr>
 <tr><td><a href="#LAPS">LAPS is not Configured</a></td><td><font color=#ff471a>High Risk</td></tr>
+<tr><td><a href="#AV">There are issues with AntiVirus</a></td><td><font color=#ff471a>High Risk</td></tr>
 <tr><td><a href="#DLLSafe">DLL Safe Search is not Enabled</a></td><td><font color=#ff471a>High Risk</td></tr>
 <tr><td><a href="#unquoted">Unquoted Paths Vulnerability</a></td><td><font color=#e60000>Very High Risk</td></tr>
 <tr><td><a href="#shares">There are System Shares available</a></td><td><font color=#80ff80>Informational</td></tr>
@@ -192,7 +193,7 @@
 <tr><td>Mac:</td><td>00-15-5D-00-38-04</td></tr>
 </table>
 
-<h2><a name="#shares">Shares and their Share Permissions</a></span></h2>
+<h2><a name="shares">Shares and their Share Permissions</a></span></h2>
 <table>
 <colgroup><col/><col/><col/></colgroup>
 <tr><th>Name</th><th>Path</th><th>Perms</th></tr>
@@ -354,7 +355,16 @@
 <tr><td>Internet-Explorer-Optional-amd64
 </td><td>Enabled
   </td></tr>
+<tr><td>Internet-Explorer-Optional-amd64
+</td><td>Enabled
+  </td></tr>
 <tr><td>MediaPlayback
+</td><td>Enabled
+  </td></tr>
+<tr><td>MediaPlayback
+</td><td>Enabled
+  </td></tr>
+<tr><td>MicrosoftWindowsPowerShellV2
 </td><td>Enabled
   </td></tr>
 <tr><td>MicrosoftWindowsPowerShellV2
@@ -363,7 +373,16 @@
 <tr><td>MicrosoftWindowsPowerShellV2Root
 </td><td>Enabled
   </td></tr>
+<tr><td>MicrosoftWindowsPowerShellV2Root
+</td><td>Enabled
+  </td></tr>
 <tr><td>MSRDC-Infrastructure
+</td><td>Enabled
+  </td></tr>
+<tr><td>MSRDC-Infrastructure
+</td><td>Enabled
+  </td></tr>
+<tr><td>NetFx4-AdvSrvs
 </td><td>Enabled
   </td></tr>
 <tr><td>NetFx4-AdvSrvs
@@ -372,7 +391,16 @@
 <tr><td>Printing-Foundation-Features
 </td><td>Enabled
   </td></tr>
+<tr><td>Printing-Foundation-Features
+</td><td>Enabled
+  </td></tr>
 <tr><td>Printing-Foundation-InternetPrinting-Client
+</td><td>Enabled
+  </td></tr>
+<tr><td>Printing-Foundation-InternetPrinting-Client
+</td><td>Enabled
+  </td></tr>
+<tr><td>Printing-PrintToPDFServices-Features
 </td><td>Enabled
   </td></tr>
 <tr><td>Printing-PrintToPDFServices-Features
@@ -381,7 +409,16 @@
 <tr><td>Printing-XPSServices-Features
 </td><td>Enabled
   </td></tr>
+<tr><td>Printing-XPSServices-Features
+</td><td>Enabled
+  </td></tr>
 <tr><td>SearchEngine-Client-Package
+</td><td>Enabled
+  </td></tr>
+<tr><td>SearchEngine-Client-Package
+</td><td>Enabled
+  </td></tr>
+<tr><td>SmbDirect
 </td><td>Enabled
   </td></tr>
 <tr><td>SmbDirect
@@ -390,13 +427,28 @@
 <tr><td>WCF-Services45
 </td><td>Enabled
   </td></tr>
+<tr><td>WCF-Services45
+</td><td>Enabled
+  </td></tr>
+<tr><td>WCF-TCP-PortSharing45
+</td><td>Enabled
+  </td></tr>
 <tr><td>WCF-TCP-PortSharing45
 </td><td>Enabled
   </td></tr>
 <tr><td>Windows-Defender-Default-Definitions
 </td><td>Enabled
   </td></tr>
+<tr><td>Windows-Defender-Default-Definitions
+</td><td>Enabled
+  </td></tr>
 <tr><td>WindowsMediaPlayer
+</td><td>Enabled
+  </td></tr>
+<tr><td>WindowsMediaPlayer
+</td><td>Enabled
+  </td></tr>
+<tr><td>WorkFolders-Client
 </td><td>Enabled
   </td></tr>
 <tr><td>WorkFolders-Client
@@ -430,15 +482,15 @@
 <tr><td></td><td></td><td></td><td></td></tr>
 </table>
 
-<h2><a name="#AV">AntiVirus Engine and Definition Status</a></span></h2>
+<h2><a name="AV">AntiVirus Engine and Definition Status</a></span></h2>
 <table>
 <colgroup><col/><col/><col/><col/><col/></colgroup>
 <tr><th>AVName</th><th>AVProduct</th><th>AVPathtoExecute</th><th>AVStatus</th><th>AVEngine</th></tr>
-<tr><td>Windows Defender</td><td>windowsdefender://</td><td>%ProgramFiles%\Windows Defender\MsMpeng.exe</td><td>Up to date</td><td>Enabled</td></tr>
+<tr><td>Windows Defender</td><td>windowsdefender://</td><td>%ProgramFiles%\Windows Defender\MsMpeng.exe</td><td><font color=#ff9933>Out of date</td><td>Enabled</td></tr>
 </table>
 <h4></h4>
 
-<h2><a name="#unquoted">UnQuoted Paths Attack</a></span></h2>
+<h2><a name="unquoted">UnQuoted Paths Attack</a></span></h2>
 <table>
 <colgroup><col/><col/></colgroup>
 <tr><th>ServiceName</th><th>Path</th></tr>
@@ -447,7 +499,7 @@
 </table>
 <h4>The Unquoted paths vulnerability is when a Windows Service's 'Path to Executable' contains spaces and not wrapped in double-quotes providing a route to System. <br> <br>Further information can be found @ https://www.tenaka.net/unquotedpaths<br></h4>
 
-<h2><a name="#VBS">Virtualization and Secure Boot Details</a></span></h2>
+<h2><a name="VBS">Virtualization and Secure Boot Details</a></span></h2>
 <table>
 <colgroup><col/><col/></colgroup>
 <tr><th>Virtualization</th><th>On\Off</th></tr>
@@ -461,7 +513,7 @@
 </table>
 <h4>Secure Boot is a security standard to ensure only trusted OEM software is allowed at boot. At startup the UEFi and boot software's digital signatures are validated preventing rootkits. <br> <br>More on Secure Boot can be found here @ https://media.defense.gov/2020/Sep/15/2002497594/-1/-1/0/CTR-UEFI-SECURE-BOOT-CUSTOMIZATION-20200915.PDF/CTR-UEFI-SECURE-BOOT-CUSTOMIZATION-20200915.PDF<br></h4>
 
-<h2><a name="#Bitlockerisnotenabled">Bitlocker and TPM Details</a></span></h2>
+<h2><a name="Bitlockerisnotenabled">Bitlocker and TPM Details</a></span></h2>
 <table>
 <tr><td>*:</td><td><font color=#ff9933>Bitlocker is disabled <font></td></tr>
 </table>
@@ -471,7 +523,7 @@
 </table>
 <h4>Virtualization-based security (VBS), isolates core system resources to create secure regions of memory. Enabling VBS allows for Hypervisor-Enforced Code Integrity (HVCI), Device Guard and Credential Guard. <br> <br>Further information can be found @ https://docs.microsoft.com/en-us/windows-hardware/design/device-experiences/oem-vbs<br> <br>https://www.tenaka.net/deviceguard-vs-rce and https://www.tenaka.net/pass-the-hash <br></h4>
 
-<h2><a name="#HECI">Hypervisor Enforced Code Integrity</a></span></h2>
+<h2><a name="HECI">Hypervisor Enforced Code Integrity</a></span></h2>
 <table>
 <colgroup><col/><col/></colgroup>
 <tr><th>CodeSetting</th><th>CodeValue</th></tr>
@@ -479,7 +531,7 @@
 </table>
 <h4>Hypervisor Enforced Code Integrity prevents the loading of unsigned kernel-mode drivers and system binaries from being loaded into system memory. <br> <br>Further information can be found @ https://docs.microsoft.com/en-us/windows/security/threat-protection/device-guard/enable-virtualization-based-protection-of-code-integrity<br></h4>
 
-<h2><a name="#LSA">LSA Protection for Stored Credentials</a></span></h2>
+<h2><a name="LSA">LSA Protection for Stored Credentials</a></span></h2>
 <table>
 <colgroup><col/><col/></colgroup>
 <tr><th>LSASetting</th><th>LSARegValue</th></tr>
@@ -487,7 +539,7 @@
 </table>
 <h4>Enabling RunAsPPL for LSA Protection allows only digitally signed binaries to load as a protected process preventing credential theft and Access by code injection and memory Access by processes that aren’t signed. <br> <br>Further information can be found @ https://docs.microsoft.com/en-us/windows-server/security/credentials-protection-and-management/configuring-additional-lsa-protection<br></h4>
 
-<h2><a name="#WDigest">WDigest</a></span></h2>
+<h2><a name="WDigest">WDigest</a></span></h2>
 <table>
 <colgroup><col/><col/></colgroup>
 <tr><th>WDigestSetting</th><th>WDigestRegValue</th></tr>
@@ -495,7 +547,7 @@
 </table>
 <h4>WDigest was introduced with Windows XP\2003 and has been enabled by default until and including Windows 8 and Server 2012. Enabling allows clear text passwords to be recoverable from LSASS with Mimikatz</h4>
 
-<h2><a name="#CredGuard">Credential Guard</a></span></h2>
+<h2><a name="CredGuard">Credential Guard</a></span></h2>
 <table>
 <colgroup><col/><col/></colgroup>
 <tr><th>CredentialGuardSetting</th><th>CredentialGuardRegValue</th></tr>
@@ -503,7 +555,7 @@
 </table>
 <h4>Credential Guard securely isolating the LSA process preventing the recovery of domain hashes from memory. Credential Guard only works for Domain joined clients and servers.<br> <br>Further information can be found @ https://www.tenaka.net/pass-the-hash<br></h4>
 
-<h2><a name="#LAPS">LAPS - Local Administrator PassWord Solution</a></span></h2>
+<h2><a name="LAPS">LAPS - Local Administrator PassWord Solution</a></span></h2>
 <table>
 <colgroup><col/><col/></colgroup>
 <tr><th>LAPSPassWordEnabled</th><th>LAPSPassWordReg</th></tr>
@@ -511,7 +563,7 @@
 </table>
 <h4>Local Administrator PassWord Solution (LAPS) is a small program with some GPO settings that randomly sets the local administrator password for clients and servers across the estate. Domain Admins have default permission to view the local administrator password via DSA.MSC. Access to the LAPS passwords may be delegated unintentionally, this could lead to a serious security breach, leaking all local admin accounts passwords for all computer objects to those that shouldn't have Access. <br> <br>Installation guide can be found @ https://www.tenaka.net/post/local-admin-passwords. <br> <br>Security related issue details can be found @ https://www.tenaka.net/post/laps-leaks-local-admin-passwords<br></h4>
 
-<h2><a name="#DLLSafe">DLL Safe Search Order</a></span></h2>
+<h2><a name="DLLSafe">DLL Safe Search Order</a></span></h2>
 <table>
 <colgroup><col/><col/><col/></colgroup>
 <tr><th>DLLSafeSetting</th><th>DLLSafeValue</th><th>DLLSafeComment</th></tr>
@@ -519,16 +571,11 @@
 </table>
 <h4>Loading DLL's default behaviour is to call the dll from the current working directory of the application, then the directories listed in the environmental variable. Setting ‘DLL Safe Search’ mitigates the risk by moving CWD to later in the search order. <br> <br>Further information can be found @ https://docs.microsoft.com/en-us/windows/win32/dlls/dynamic-link-library-search-order<br></h4>
 
-<h2><a name="#DLLHigh">Loaded DLL's that are vulnerable to DLL Hijacking</a></span></h2>
+<h2><a name="DLLHigh">Loaded DLL's that are vulnerable to DLL Hijacking</a></span></h2>
 <table>
 </table>
 
-<h2><a name="#DLLSign">All DLL's that aren't signed and user permissions allow write</a></span></h2>
-<table>
-</table>
-<h4>DLL Hijacking is when a malicious dll replaces a legitimate dll due to a path vulnerability. A program or service makes a call on that dll gaining the privileges of that program or service. Additionally missing dll’s presents a risk where a malicious dll is dropped into a path where no current dll exists but the program or service is making a call to that non-existent dll. This audit is reliant on programs being launched so that DLL’s are loaded. Each process’s loaded dll’s are checked for permissions issues and whether they are signed. The DLL hijacking audit does not currently check for missing dll’s being called. Process Monitor filtered for ‘NAME NOT FOUND’ and path ends with ‘DLL’ will.</h4>
-
-<h2><a name="#SoftElevation">Automatically Elevates User Installing Software</a></span></h2>
+<h2><a name="SoftElevation">Automatically Elevates User Installing Software</a></span></h2>
 <table>
 <colgroup><col/><col/></colgroup>
 <tr><th>AlwaysElevateSetting</th><th>AlwaysElevateRegistry</th></tr>
@@ -537,18 +584,18 @@
 </table>
 <h4>Auto Elevate User is a setting that elevates users allowing them to install software without being an administrator. </h4>
 
-<h2><a name="#ProcPW">Processes where CommandLine Contains a PassWord</a></span></h2>
+<h2><a name="ProcPW">Processes where CommandLine Contains a PassWord</a></span></h2>
 <table>
 </table>
 <h4>This script has been provided by Tenaka.net, if it's beneficial, please provide feedback and any additional feature requests gratefully received. </h4>
 
 
-<h2><a name="#RegPW">PassWords Embedded in the Registry</a></span></h2>
+<h2><a name="RegPW">PassWords Embedded in the Registry</a></span></h2>
 <table>
 </table>
 <h4>Searches HKLM and HKCU for the Words 'password' and 'passwd', then displays the password value in the report.<br><br>The search will work with VNC encrypted passwords stored in the registry, from Kali run the following command<br> <br>echo -n PassWordHere | xxd -r -p | openssl enc -des-cbc --nopad --nosalt -K e84ad660c4721ae0 -iv 0000000000000000 -d | hexdump -Cv<br></h4>
 
-<h2><a name="#AutoLogon">AutoLogon Credentials in Registry</a></span></h2>
+<h2><a name="AutoLogon">AutoLogon Credentials in Registry</a></span></h2>
 <table>
 <colgroup><col/><col/><col/></colgroup>
 <tr><th>AutoLogonUsername</th><th>AutoLogonPassWord</th><th>AutoLogonRegistry</th></tr>
@@ -556,12 +603,12 @@
 </table>
 <h4>MECM\SCCM\MDT could leave Autologon credentials including a clear text password in the Registry.</h4>
 
-<h2><a name="#schedDir">Scheduled Tasks that call on Files on Storage</a></span></h2>
+<h2><a name="schedDir">Scheduled Tasks that call on Files on Storage</a></span></h2>
 <table>
 </table>
 <h4>Checks for Scheduled Tasks excluding any that reference System32 as a directory. These potential user-created tasks are checked for scripts and their directory permissions are validated. No user should be allowed to Access the script and make amendments, this is a privilege escalation route.</h4>
 
-<h2><a name="#schedTask">Scheduled Tasks that Contain something Encoded</a></span></h2>
+<h2><a name="schedTask">Scheduled Tasks that Contain something Encoded</a></span></h2>
 <table>
 <colgroup><col/><col/><col/></colgroup>
 <tr><th>TaskName</th><th>TaskExe</th><th>TaskArguments</th></tr>
@@ -576,95 +623,17 @@
 </table>
 <h4>Checks for encoded scripts, PowerShell or exe's that make calls off box or run within Task Scheduler</h4>
 
-<h2><a name="#RegWrite">Registry Permissions Allowing User Access - Security Risk if Exist</a></span></h2>
-<table>
-</table>
-<h4>Weak Registry permissions allowing users to change the path to launch malicious software.<br> <br>Further information can be found @ https://www.tenaka.net/unquotedpaths</h4>
-
-<h2><a name="#SysDirWrite">Default System Folders that are Writeable - Security Risk if Exist</span></a></h2>
+<h2><a name="drivers">Drivers that aren't Signed</a></span></h2>
 <table>
 <colgroup><col/></colgroup>
 <tr><th>*</th></tr>
-<tr><td>C:\Windows\System32\LogFiles\WMI</td></tr>
-<tr><td>C:\Windows\System32\Microsoft\Crypto\RSA\MachineKeys</td></tr>
-<tr><td>C:\Windows\System32\Tasks</td></tr>
-<tr><td>C:\Windows\System32\Tasks\Microsoft\Windows\RemoteApp and Desktop Connections Update</td></tr>
-<tr><td>C:\Windows\SysWOW64\Tasks</td></tr>
-<tr><td>C:\Windows\SysWOW64\Tasks\Microsoft\Windows\RemoteApp and Desktop Connections Update</td></tr>
-<tr><td>C:\Windows\tracing</td></tr>
-</table>
-<h4>Default System Folders that allow a User the Write permissions. These can be abused by creating content in some of the allowable default locations. Prevent by applying Execution controls eg Applocker.<br> <br> Further information can be found @ https://www.tenaka.net/unquotedpaths<br></h4>
-
-<h2><a name="#sysDirExe">Default System Folders that Permit Users to Create Files - Security Risk if Exist</a></span></h2>
-<table>
-<colgroup><col/></colgroup>
-<tr><th>*</th></tr>
-<tr><td>C:\Windows\PLA\Reports</td></tr>
-<tr><td>C:\Windows\PLA\Reports\en-US</td></tr>
-<tr><td>C:\Windows\PLA\Rules</td></tr>
-<tr><td>C:\Windows\PLA\Rules\en-US</td></tr>
-<tr><td>C:\Windows\PLA\Templates</td></tr>
-<tr><td>C:\Windows\Registration\CRMLog</td></tr>
-<tr><td>C:\Windows\System32\Com\dmp</td></tr>
-<tr><td>C:\Windows\System32\spool\drivers\color</td></tr>
-<tr><td>C:\Windows\System32\spool\PRINTERS</td></tr>
-<tr><td>C:\Windows\System32\spool\SERVERS</td></tr>
-<tr><td>C:\Windows\SysWOW64\Com\dmp</td></tr>
-<tr><td>C:\Windows\SysWOW64\Tasks\Microsoft\Windows\PLA</td></tr>
-<tr><td>C:\Windows\Tasks</td></tr>
-<tr><td>C:\Windows\Temp</td></tr>
-<tr><td>C:\Windows\Temp\MsEdgeCrashpad</td></tr>
-<tr><td>C:\Windows\Temp\MsEdgeCrashpad\reports</td></tr>
-</table>
-<h4>Default System Folders that allows a User the CreateFile permissions. These can be abused by creating content in some of the allowable default locations. Prevent by applying Execution controls eg Applocker.<br> <br>Further information can be found @ https://www.tenaka.net/unquotedpaths<br></h4>
-
-<h2><a name="#sysFileWrite ">Non System Folders that are Writeable - Security Risk when Executable</span></a></h2>
-<table>
-<colgroup><col/></colgroup>
-<tr><th>*</th></tr>
-<tr><td>C:\dsc</td></tr>
-<tr><td>C:\dsc\cert</td></tr>
-<tr><td>C:\Secure10</td></tr>
-<tr><td>C:\Secure10\output</td></tr>
-<tr><td>C:\Secure10\output\UnQuoted</td></tr>
-<tr><td>C:\SecureReport</td></tr>
-<tr><td>C:\SecureReport\output</td></tr>
-<tr><td>C:\SecureReport\output\DriverQuery</td></tr>
-<tr><td>C:\SecureReport\output\firewall</td></tr>
-<tr><td>C:\SecureReport\output\llmnr</td></tr>
-<tr><td>C:\SecureReport\output\MSInfo</td></tr>
-<tr><td>C:\SecureReport\output\UnQuoted</td></tr>
-<tr><td>C:\SecureReport\output\URA</td></tr>
-<tr><td>C:\SecureReport\output\WindowsFeatures</td></tr>
-<tr><td>C:\SecureReport\output\WriteableFiles</td></tr>
-<tr><td>C:\SecureReport\output\WriteableFolders</td></tr>
-<tr><td>C:\SecureReport\output\WriteableReg</td></tr>
-</table>
-<h4>A vulnerability exists when enterprise software has been installed on the root of C:\. The default permissions allow a user to replace approved software binaries with malicious binaries. <br> <br>Further information can be found @ https://www.tenaka.net/unquotedpaths<br></h4>
-
-<h2><a name="#sysFileWrite">System Files that are Writeable - Security Risk if Exist</a></span></h2>
-<table>
-</table>
-<h4>System files that allow users to write can be swapped out for malicious software binaries. <br> <br>Further  information can be found @ https://www.tenaka.net/unquotedpaths<br></h4>
-
-<h2><a name="#drivers">Drivers that aren't Signed</a></span></h2>
-<table>
-<colgroup><col/></colgroup>
-<tr><th>*</th></tr>
+<tr><td><font color=#ff9933>Microsoft Remote Display Adapt rdpidd.inf    FALSE    Microsoft                 <font></td></tr>
 <tr><td><font color=#ff9933>Microsoft Remote Display Adapt rdpidd.inf    FALSE    Microsoft                 <font></td></tr>
 </table>
 <h4>All Drivers should be signed with a digital signature to verify the integrity of the packages. 64bit kernel Mode drivers must be signed without exception</h4>
 
 
-<h2><a name="#asr">Attack Surface Reduction (ASR)</a></span></h2>
-<table>
-<colgroup><col/><col/><col/></colgroup>
-<tr><th>ASRGuid</th><th>ASRSetting</th><th>ASRDescription</th></tr>
-<tr><td><font color=#ff9933>ASR Guid ASPPolicyisnotset is not set <font></td><td><font color=#ff9933>ASR is disabled <font></td><td></td></tr>
-</table>
-<h4>Attack Surface Reduction (ASR) requires Windows Defender Real-Time Antivirus and works in conjunction with Exploit Guard to prevent malware abusing legitimate MS Office functionality<br> <br>Further information can be found @ https://docs.microsoft.com/en-us/microsoft-365/security/defender-endpoint/overview-attack-surface-reduction?view=o365-worldwide<br></h4>
-
-<h2><a name="#LegNetProt">Legacy and Vulnerable Network Protocols</a></span></h2>
+<h2><a name="LegNetProt">Legacy and Vulnerable Network Protocols</a></span></h2>
 <table>
 <colgroup><col/><col/></colgroup>
 <tr><th>LegacyProtocol</th><th>LegacyPath</th></tr>
@@ -689,7 +658,7 @@
 </table>
 <h4>LLMNR and other legacy network protocols can be used to steal password hashes. <br> <br>Further information can be found @https://www.tenaka.net/responder<br></h4>
 
-<h2><a name="#secOptions">Security Options to Prevent MitM Attacks</a></span></h2>
+<h2><a name="secOptions">Security Options to Prevent MitM Attacks</a></span></h2>
 <table>
 <colgroup><col/></colgroup>
 <tr><th>*</th></tr>
@@ -712,7 +681,15 @@
 </table>
 <h4><br>GPO settings can be found @ Computer Configuration\Windows Settings\Security Settings\Local Policies\Security Options<br><br>Prevent credential relay with Impacket and Man in the Middle by Digitally Signing for SMB and LDAP connections enforcement. <br> <br>Further information can be found @ https://www.tenaka.net/smb-relay-attack<br></h4>
 
-<h2><a name="#WinSSLF">Windows OS Security Recommendations</a></span></h2>
+<h2><a name="asr">Attack Surface Reduction (ASR)</a></span></h2>
+<table>
+<colgroup><col/><col/><col/></colgroup>
+<tr><th>ASRGuid</th><th>ASRSetting</th><th>ASRDescription</th></tr>
+<tr><td><font color=#ff9933>ASR Guid ASPPolicyisnotset is not set <font></td><td><font color=#ff9933>ASR is disabled <font></td><td></td></tr>
+</table>
+<h4>Attack Surface Reduction (ASR) requires Windows Defender Real-Time Antivirus and works in conjunction with Exploit Guard to prevent malware abusing legitimate MS Office functionality<br> <br>Further information can be found @ https://docs.microsoft.com/en-us/microsoft-365/security/defender-endpoint/overview-attack-surface-reduction?view=o365-worldwide<br></h4>
+
+<h2><a name="WinSSLF">Windows OS Security Recommendations</a></span></h2>
 <table>
 <colgroup><col/><col/></colgroup>
 <tr><th>WindowsSetting</th><th>WindowsRegValue</th></tr>
@@ -810,7 +787,7 @@
 </table>
 <h4>These are recommended GPO settings to secure Windows by Microsoft, do NOT implement without the correct research and testing. Some settings could adversely affect your system.<br> <br>Due to the sheer number of settings, the script contains details and the equivalent GPO settings, search for RECOMMENDED SECURITY SETTINGS section<br><br>MS Security Compliance Toolkit can be found @ <br>https://admx.help/?Category=security-compliance-toolkit<br>https://www.microsoft.com/en-us/download/details.aspx?id=55319<br><br>**WindowsRegValue - Mouse over to show Reg Key to GPO path translation</h4>
 
-<h2><a name="#EdgeSSLF">MS Edge Security Recommendations</a></span></h2>
+<h2><a name="EdgeSSLF">MS Edge Security Recommendations</a></span></h2>
 <table>
 <colgroup><col/><col/></colgroup>
 <tr><th>EdgeGPONameSetting</th><th>EdgeRegValue</th></tr>
@@ -835,7 +812,7 @@
 <tr><td><font color=#ff9933>Configure Edge TyposquattingChecker is disabled with value of  <font></td><td><div title="Computer Configuration\Policies\Administrative Templates\Microsoft Edge\TyposquattingChecker settings\Configure Edge TyposquattingChecker">HKLM:\Software\Policies\Microsoft\Edge\TyposquattingCheckerEnabled</td></tr>
 </table>
 
-<h2><a name="#OfficeSSLF">MS Office Security Recommendations</a></span></h2>
+<h2><a name="OfficeSSLF">MS Office Security Recommendations</a></span></h2>
 <table>
 <colgroup><col/><col/></colgroup>
 <tr><th>OfficeGPONameSetting</th><th>OfficeRegValue</th></tr>
@@ -1001,7 +978,7 @@
 </table>
 <h4>These are recommended GPO settings to secure Office 2016-365 by Microsoft, do NOT implement without the correct research and testing. Some settings could adversely affect your system.<br> Its recommended that Attack Surface Reduction (ASR) is enabled but requires Windows Defender Real-Time Antivirus and works in conjunction with Exploit Guard to prevent malware abusing legitimate MS Office functionality</h4>
 
-<h2><a name="#FirewallProf">Firewall Profile</a></span></h2>
+<h2><a name="FirewallProf">Firewall Profile</a></span></h2>
 <table>
 <colgroup><col/><col/><col/><col/></colgroup>
 <tr><th>Name</th><th>Enabled</th><th>Inbound</th><th>Outbound</th></tr>
@@ -1011,7 +988,7 @@
 </table>
 <h4>Firewalls should always block inbound and exceptions should be to a named IP and Port.<br> <br>Further  information can be found @ https://www.tenaka.net/whyhbfirewallsneeded<br></h4>
 
-<h2><a name="#InFirewall">Enabled Firewall Rules</a></span></h2>
+<h2><a name="InFirewall">Enabled Firewall Rules</a></span></h2>
 <table>
 <colgroup><col/><col/><col/><col/><col/><col/><col/><col/></colgroup>
 <tr><th>DisplayName</th><th>Direction</th><th>Protocol</th><th>LocalIP</th><th>LocalPort</th><th>RemoteIP</th><th>RemotePort</th><th>Program</th></tr>
