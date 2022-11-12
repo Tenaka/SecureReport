@@ -308,7 +308,7 @@ YYMMDD
 221106.3 - Removed the 'Warning -' makes report look neater.
 221106.4 - Removed <span style='color:$titleCol'>, not required as CSS applies colour schemes
 221112.1 - Fixed issues with href a ID's - Summary links now work
-
+221112.2 - Fixed issue with MSInfo and out-file added additional spaces which translated into spaces in the html output - Out-File $msinfoPathcsv -Encoding utf8 
 
 #>
 
@@ -642,9 +642,7 @@ finally
 
 }
 
-
-
-<#Priv Groups
+<#Priv Groups - using Net Group - deprecated in favour of dsquery
 #Formatting output is a little pernickety - aka a royal pain in the ..... expecting display issues
 $ngAdmins = Net localgroup “Administrators” /domain 
 $ngDA = Net group “Domain Admins” /domain
@@ -695,8 +693,7 @@ $fragDomainGrps=@()
         $newObjDomainGrps = New-Object -TypeName PSObject
         Add-Member -InputObject $newObjDomainGrps -Type NoteProperty -Name GroupName -Value $gpName
         Add-Member -InputObject $newObjDomainGrps -Type NoteProperty -Name GroupMembers -Value $gpMembers
-        $fragDomainGrps += $newObjDomainGrps
-
+       $fragDomainGrps += $newObjDomainGrps
 }
 #>
 
@@ -714,8 +711,6 @@ $fragPreAuth=@()
 foreach ($preAuth in $dsQuery)
     {
         $preAuth = $preAuth.trim("").Split(" ",[System.StringSplitOptions]::RemoveEmptyEntries)
-           
-
         $preAuthSam = "Warning - " + $preAuth[0] + " warning" 
         $preAuthOu = "Warning - " +$preAuth[1]  + " warning" 
         $preAuthUac = "Warning - " +$preAuth[2]  + " warning" 
@@ -738,8 +733,6 @@ $fragNeverExpires=@()
 foreach ($NeverExpires in $dsQueryNexpires)
     {
         $NeverExpires = $NeverExpires.trim("").Split(" ",[System.StringSplitOptions]::RemoveEmptyEntries)
-           
-
         $NeverExpiresSam = "Warning - " + $NeverExpires[0] + " warning" 
         $NeverExpiresOu = "Warning - " +$NeverExpires[1]  + " warning" 
         $NeverExpiresUac = "Warning - " +$NeverExpires[2]  + " warning" 
@@ -750,7 +743,6 @@ foreach ($NeverExpires in $dsQueryNexpires)
         Add-Member -InputObject $newObjNeverExpires -Type NoteProperty -Name NeverExpires-UACValue -Value $NeverExpiresUac
         $fragNeverExpires += $newObjNeverExpires
     }
-
 
 Write-Host " "
 Write-Host "Completed Gathering Host and Account Details" -foregroundColor Green
@@ -1189,30 +1181,21 @@ sleep 5
     #>
 
     Set-Content -Path $msinfoPathcsv -Value 'Virtualization;On\Off'
-    ($getMsinfo | Select-String "Secure Boot State") -replace "off",";off" -replace "on",";on" |Out-File $msinfoPathcsv -Append
-
-    ($getMsinfo | Select-String "Kernel DMA Protection") -replace "off",";off" -replace " on",";on"  |Out-File $msinfoPathcsv -Append
-
-    ($getMsinfo | Select-String "Guard Virtualization based") -replace "security	Run","security;	Run" |Out-File $msinfoPathcsv -Append
-
-    ($getMsinfo | Select-String "Required Security Properties") -replace "Required Security Properties","Required Security Properties;" |Out-File $msinfoPathcsv -Append
-   
-    ($getMsinfo | Select-String "Available Security Properties") -replace "Available Security Properties","Available Security Properties;" |Out-File $msinfoPathcsv -Append 
-   
-    ($getMsinfo | Select-String "based security services configured") -replace "based security services configured","based security services configured;"  |Out-File $msinfoPathcsv -Append
-   
-    ($getMsinfo | Select-String "based security services running") -replace "based security services running","based security services running;" |Out-File $msinfoPathcsv -Append
-    
-    ($getMsinfo | Select-String "Application Control Policy") -replace "policy	Enforced","policy;	Enforced" -replace "Policy  Audit","Policy;  Audit"|Out-File $msinfoPathcsv -Append 
-    
-    ($getMsinfo | Select-String "Application Control User") -replace "off",";off" -replace " on",";on" -replace "policy	Enforced","policy;	Enforced"  -replace "Policy  Audit","Policy;  Audit" |Out-File $msinfoPathcsv -Append 
-    
-    ($getMsinfo | Select-String "Device Encryption Support") -replace "Encryption Support","Encryption Support;" |Out-File $msinfoPathcsv -Append
+    ($getMsinfo | Select-String "Secure Boot State") -replace "off",";off" -replace "on",";on" |Out-File $msinfoPathcsv -Encoding utf8 -Append
+    ($getMsinfo | Select-String "Kernel DMA Protection") -replace "off",";off" -replace " on",";on"  |Out-File $msinfoPathcsv -Encoding utf8 -Append
+    ($getMsinfo | Select-String "Guard Virtualization based") -replace "security	Run","security;	Run" |Out-File $msinfoPathcsv -Encoding utf8 -Append
+    ($getMsinfo | Select-String "Required Security Properties") -replace "Required Security Properties","Required Security Properties;" |Out-File $msinfoPathcsv -Encoding utf8 -Append
+    ($getMsinfo | Select-String "Available Security Properties") -replace "Available Security Properties","Available Security Properties;" |Out-File $msinfoPathcsv -Encoding utf8 -Append 
+    ($getMsinfo | Select-String "based security services configured") -replace "based security services configured","based security services configured;"  |Out-File $msinfoPathcsv -Encoding utf8 -Append
+    ($getMsinfo | Select-String "based security services running") -replace "based security services running","based security services running;" |Out-File $msinfoPathcsv -Encoding utf8 -Append
+    ($getMsinfo | Select-String "Application Control Policy") -replace "policy	Enforced","policy;	Enforced" -replace "Policy  Audit","Policy;  Audit"|Out-File $msinfoPathcsv -Encoding utf8 -Append 
+    ($getMsinfo | Select-String "Application Control User") -replace "off",";off" -replace " on",";on" -replace "policy	Enforced","policy;	Enforced"  -replace "Policy  Audit","Policy;  Audit" |Out-File $msinfoPathcsv -Encoding utf8 -Append 
+    ($getMsinfo | Select-String "Device Encryption Support") -replace "Encryption Support","Encryption Support;" |Out-File $msinfoPathcsv -Encoding utf8 -Append
 
     Import-Csv $msinfoPathcsv -Delimiter ";" | Export-Clixml $msinfoPathXml
     $MsinfoClixml = Import-Clixml $msinfoPathXml 
 
-    Get-Content $msinfoPathXml 
+    #Get-Content $msinfoPathXml 
 
 Write-Host " "
 Write-Host "Finished Collecting MSInfo32 data for VBS" -foregroundColor Green
