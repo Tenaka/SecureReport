@@ -307,6 +307,7 @@ YYMMDD
 221106.2 - Fixed issues with various links to with Summary
 221106.3 - Removed the 'Warning -' makes report look neater.
 221106.4 - Removed <span style='color:$titleCol'>, not required as CSS applies colour schemes
+221112.1 - Fixed issues with href a ID's - Summary links now work
 
 
 #>
