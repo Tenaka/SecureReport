@@ -310,6 +310,10 @@ YYMMDD
 221112.1 - Fixed issues with href a ID's - Summary links now work
 221112.2 - Fixed issue with MSInfo and out-file added additional spaces which translated into spaces in the html output - Out-File $msinfoPathcsv -Encoding utf8 
 221112.3 - Added Top to A href, summary links will return to top of page now.
+221121.1 - Added Certificate Audit - There is a naughty list that requires key words being added eg a less that desirable company
+221123.1 - Fixed issues with MS recommended settings
+
+
 #>
 
 #Remove any DVD from client
@@ -470,6 +474,7 @@ sleep 5
         Add-Member -InputObject $newObjPassPol -Type NoteProperty -Name Value -Value $PWSet
         $PassPol += $newObjPassPol
     }
+
     #Accounts
     $getAcc = Get-LocalUser
     $AccountDetails=@()
@@ -642,60 +647,6 @@ finally
 
 }
 
-<#Priv Groups - using Net Group - deprecated in favour of dsquery
-#Formatting output is a little pernickety - aka a royal pain in the ..... expecting display issues
-$ngAdmins = Net localgroup “Administrators” /domain 
-$ngDA = Net group “Domain Admins” /domain
-$ngScAd = Net group “Schema Admins” /domain
-$ngEA = Net group “Enterprise Admins” /domain
-$ngBA = Net localgroup “Backup Operators” /domain
-$ngDNS = Net localgroup “DnsAdmins” /domain
-$ngDHCP = Net localgroup “DHCP Administrators” /domain
-$ngSrvA = Net localgroup “Server Operators” /domain
-$ngAO = Net localgroup “Account Operators” /domain
-$ngGuests = Net localgroup “Guests” /domain
-$ngDomGue = Net group “Domain Guests” /domain
-
-$ngGroups = $ngAdmins,$ngDA,$ngScAd,$ngEA,$ngBA,$ngDNS,$ngDHCP ,$ngSrvA,$ngAO,$ngGuests,$ngDomGue
-
-$fqdn = ((Get-CimInstance -ClassName win32_computersystem).Domain) + "."
-$fragDomainGrps=@()
-    foreach ($ngGrp in $ngGroups){
-
-        $removetxt = ($ngGrp -replace("-","") `
-         -replace("The command completed successfully.","") `
-         -replace("Alias name","") `
-         -replace("Comment","")`
-         -replace("Administrators have complete and unrestricted access to the computer/domain","") `
-         -replace("Members","") `
-         -replace("The request will be processed at a domain controller for domain","") `
-         -replace("Group name","") `
-         -replace("Domain Admins Enterprise","") `
-         -replace("Designated administrators of the domain","") `
-         -replace("Designated administrators of the schema","") `
-         -replace("Designated administrators of the enterprise","") `
-         -replace("Backup Operators can override security restrictions for the sole purpose of backing up or restoring files","") `
-         -replace("DNS Administrators Group","") `
-         -replace("who have administrative access to the DHCP Service","") `
-         -replace("can administer domain servers","") `
-         -replace("can administer domain user and group accounts","") `
-         -replace("who have administrative access to the DHCP Service","") `
-         -replace("All domain guests","") `
-         -replace("Guests have the same access as  of the Users group by default, except for the Guest account which is further restricted","") `
-         -replace("               ",",") `
-         -replace("$fqdn","") `
-         ).trim()
-
-        $AdminGp = (($removetxt| Where-Object {$_}) -join ", ").split(",").trim() 
-        $gpName = $AdminGp | Select-Object -First 1
-        $gpMembers = ($AdminGp.trim()  | Select-Object -Skip 1) -join ", "
-
-        $newObjDomainGrps = New-Object -TypeName PSObject
-        Add-Member -InputObject $newObjDomainGrps -Type NoteProperty -Name GroupName -Value $gpName
-        Add-Member -InputObject $newObjDomainGrps -Type NoteProperty -Name GroupMembers -Value $gpMembers
-       $fragDomainGrps += $newObjDomainGrps
-}
-#>
 
 ################################################
 ########  PRE-AUTHENTICATION  ##################
@@ -1075,7 +1026,6 @@ sleep 5
             $FragAVStatus += $newObjAVStatus
         }
 
- 
 ################################################
 ############  UNQUOTED PATHS  ##################
 ################################################
@@ -1139,7 +1089,6 @@ sleep 7
             Add-Member -InputObject $newObjSvc -Type NoteProperty -Name ServiceName -Value "Warning - $($SvcReg.PSChildName) warning"
             Add-Member -InputObject $newObjSvc -Type NoteProperty -Name Path -Value "Warning - $($SvcReg.ImagePath) warning"
             $fragUnQuoted += $newObjSvc
-
         }
     }
 
@@ -1236,8 +1185,6 @@ sleep 5
         Add-Member -InputObject $newObjDriverQuery -Type NoteProperty -Name DriverName -Value $drvQryItem 
         $DriverQuery += $newObjDriverQuery
     }
-
-
 
 Write-Host " "
 Write-Host "Finished Collectiong DriverQuery data for VBS" -foregroundColor Green
@@ -1408,7 +1355,7 @@ sleep 5
         $CredGuReg = "HKLM:\SYSTEM\CurrentControlSet\Control\LSA\"
         $CredGuCom = "Credential Guard is enabled with UEFI persistance."
     }
-    if ($getCredGuCFG -eq "2")
+    elseif ($getCredGuCFG -eq "2")
     {
         $CredGuSet = "Credential Guard is enabled, the LsaCfgFlags value is set to $getCredGuCFG" 
         $CredGuReg = "HKLM:\SYSTEM\CurrentControlSet\Control\LSA\"
@@ -1464,7 +1411,6 @@ sleep 5
         Add-Member -InputObject $newObjLapsPw -Type NoteProperty -Name LAPSPassWordReg -Value $LapsPwReg 
         #Add-Member -InputObject $newObjLapsPw -Type NoteProperty -Name LapsPwComment -Value $LapsPwCom
         $fragLapsPwEna += $newObjLapsPw
-
     }
 
        
@@ -1959,7 +1905,6 @@ sleep 5
     Add-Member -InputObject $newObjLegNIC -Type NoteProperty -Name LegacyPath -Value $legReg
     $fragLegNIC += $newObjLegNIC
 
-
 ################################################
 ############  SECURITY OPTIONS  ################
 ################################################ 
@@ -2252,13 +2197,10 @@ sleep 5
     Add-Member -InputObject $newObjSecOptions -Type NoteProperty -Name SecurityOptions -Value $SecOptName
     $fragSecOptions +=  $newObjSecOptions
 
-
-
 #Network Access: Restrict anonymous Access to Named Pipes and Shares
 #Network security: Do not store LAN Manager hash value on next password change
 Write-Host " "
 Write-Host "Finished Auditing Various Registry Settings" -foregroundColor Green
-
 
 ################################################
 ############  FIREWALL DETAILS  ################
@@ -2296,7 +2238,6 @@ sleep 5
                 Add-Member -InputObject $newObjFWProf  -Type NoteProperty -Name Outbound -Value $fwProfileOut
                 $fragFWProfile += $newObjFWProf 
         }
-
     }
 
     #Firewall Rules
@@ -2469,7 +2410,6 @@ foreach ($shTask in $getScTask | where {$_.Actions.execute -notlike "*system32*"
 Write-Host " "
 Write-Host "Completed Scheduled Tasks" -foregroundColor Green
 
-
 ################################################
 ##########  FILES, FOLDERS, REG AUDITS  ########
 ################################################
@@ -2640,7 +2580,6 @@ sleep 7
         }
    }
 
-
 Write-Host " "
 Write-Host "Finished Searching for Writeable Registry Hive Vulnerabilities" -foregroundColor Green
 
@@ -2732,8 +2671,7 @@ sleep 7
             Add-Member -InputObject $newObjwFold -Type NoteProperty -Name FolderWeakness -Value $wFoldItems
             $fragwFold += $newObjwFold
             #Write-Host $wFoldItems -ForegroundColor Gray
-        }
-        
+        }       
     }
      
 Write-Host " "
@@ -2830,8 +2768,7 @@ sleep 7
             #Write-Host $sysFoldItems -ForegroundColor White
         }
     }
-
-  
+ 
 Write-Host " "
 Write-Host "Finished Searching for Writeable System Folder Vulnerabilities" -foregroundColor Green
 
@@ -2986,14 +2923,12 @@ Write-Host "Finised Searching for CreateFile Permissions Vulnerabilities" -foreg
         $fragDllNotSigned += $newObjDllNotSigned
     }  
 
-
 ###########################################################################################################################
 ###########################################################################################################################
 ###########################################################################################################################
 
 #END OF IF
 }
-
 
 ################################################
 ########  AUTHENTICODE SIGNATURE  ##############
@@ -3046,6 +2981,73 @@ Write-Host " "
 Write-Host "Completed searching for authenticode signature hashmismatch" -foregroundColor Green
 #END OF IF
 }
+################################################
+##########  CERTIFICATE DETAILS  ###############
+################################################
+    $getCert = (Get-ChildItem Cert:\currentuser).Name
+    $fragCertificates=@()
+    $certIssuer=@()
+    $dateToday = get-date
+    foreach($certItem in $getCert)
+    {
+    $getCertItems = (Get-ChildItem "Cert:\currentuser\$($certItem)" )#| where {$_.Subject -notlike "*microsoft*"}) 
+
+        foreach ($allCertInfo in $getCertItems)
+        {
+            $certThumb = $allCertInfo.Thumbprint
+            $certPath = ($allCertInfo.PSPath).replace("Microsoft.PowerShell.Security\Certificate::","").replace("$certThumb","")
+            $certIssuer = $allCertInfo.Issuer
+            $count = ($certIssuer.split(",")).count
+            $certDns = $allCertInfo.DnsNameList
+            $certSub = $allCertInfo.Subject
+            $certExpire = $allCertInfo.NotAfter
+            $certName = $allCertInfo.FriendlyName
+            $certKey = $allCertInfo.HasPrivateKey
+
+            $dateDiff = (get-date $certExpire) -lt (get-date $dateToday)
+            $dateShort = $certExpire.ToShortDateString()
+
+            #Added for a naughty list of CN=, Domain Names or words
+            $newObjCertificates = New-Object -TypeName PSObject
+            Add-Member -InputObject $newObjCertificates -Type NoteProperty -Name CertIssuer -Value $certIssuer
+            Add-Member -InputObject $newObjCertificates -Type NoteProperty -Name CertExpired -Value $dateShort
+            Add-Member -InputObject $newObjCertificates -Type NoteProperty -Name CertIssuer -Value False 
+            Add-Member -InputObject $newObjCertificates -Type NoteProperty -Name CertSelfSigned -Value False
+            
+            if 
+            (
+                $certDns -like "*somexxx*" `
+                -or $certDns -like "*thingxxx*" 
+            )
+            {
+                Add-Member -InputObject $newObjCertificates -Type NoteProperty -Name CertDNS -Value "Warning - $($certDns) warning" -Force             
+            }
+
+            if
+            (
+                $certIssuer -like "*somexxx*" `
+                -or $certIssuer -like "*thingxxx*" 
+             )
+            {
+                Add-Member -InputObject $newObjCertificates -Type NoteProperty -Name CertIssuer -Value "Warning - $($certIssuer) warning" -Force
+            }
+
+            if ($dateDiff -eq "false")
+            {
+                Add-Member -InputObject $newObjCertificates -Type NoteProperty -Name CertExpired -Value "Expired - $($dateShort) expired" -Force
+            }
+
+            if ($certSub -eq $certIssuer -and $count -eq 1)
+            {
+                Add-Member -InputObject $newObjCertificates -Type NoteProperty -Name CertSelfSigned -Value "SelfSigned - True SelfSigned" -force
+            }
+                        
+             #Add-Member -InputObject $newObjCertificates -Type NoteProperty -Name CertIssuer -Value $certIssuer
+             #Add-Member -InputObject $newObjCertificates -Type NoteProperty -Name CertExpired -Value $certExpire
+             #add-Member -InputObject $newObjCertificates -Type NoteProperty -Name CertDNS -Value $certDns
+             $fragCertificates += $newObjCertificates
+        }
+    }
 
 ################################################
 ##############  SHARES AND PERMS  ##############
@@ -3159,7 +3161,6 @@ if ($embeddedpw -eq "y")
 
 Write-Host " "
 Write-Host "Finished Searching for Embedded PassWord in Files" -foregroundColor Green
-
 
 ################################################
 #####  SEARCHING FOR REGISTRY PASSWordS   ######
@@ -3369,7 +3370,6 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
            $fragASR += $newObjASR
         }
 }
-
 
 ################################################
 ##########  DOMAIN USER DETAILS  ###############
@@ -4285,19 +4285,19 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     $gpopath ="Computer Configuration\Policies\Administrative Templates\Windows Components\Windows Logon Options\$WindowsOSDescrip"
     $RegKey = 'HKLM:\Software\Microsoft\Windows\CurrentVersion\Policies\System\'
     $WindowsOSVal=@()
-    $WindowsOSVal = "	DisableAutomaticRestartSignOn"
+    $WindowsOSVal = "DisableAutomaticRestartSignOn"
     $getWindowsOSVal=@()
     $getWindowsOS = Get-Item $RegKey -ErrorAction SilentlyContinue
     $getWindowsOSVal = $getWindowsOS.GetValue("$WindowsOSVal") 
 
     if ($getWindowsOSVal -eq "1" -or $getWindowsOSVal -eq $null)
     {
-        $WindowsOSSet = "Warning - $WindowsOSDescrip is disabled or not Set Warning" 
+        $WindowsOSSet = "$WindowsOSDescrip is enabled or not Set Warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
     }
     else
     {
-        $WindowsOSSet = "$WindowsOSDescrip is enabled " 
+        $WindowsOSSet = "Warning - $WindowsOSDescrip is disabled warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
     }
 
@@ -4503,7 +4503,7 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     $getWindowsOS = Get-Item $RegKey -ErrorAction SilentlyContinue
     $getWindowsOSVal = $getWindowsOS.GetValue("$WindowsOSVal") 
 
-    if ($getWindowsOSVal -eq "1")
+    if ($getWindowsOSVal -eq "0")
     {
         $WindowsOSSet = "$WindowsOSDescrip is enabled" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
@@ -4650,7 +4650,7 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     $getWindowsOS = Get-Item $RegKey -ErrorAction SilentlyContinue
     $getWindowsOSVal = $getWindowsOS.GetValue("$WindowsOSVal") 
 
-    if ($getWindowsOSVal -eq "1")
+    if ($getWindowsOSVal -eq "0")
     {
         $WindowsOSSet = "$WindowsOSDescrip is enabled" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
@@ -4963,12 +4963,12 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
 
     if ($getWindowsOSVal -eq "1")
     {
-        $WindowsOSSet = "Warning - $WindowsOSDescrip is enabled Warning" 
+        $WindowsOSSet = "$WindowsOSDescrip is enabled" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
     }
     else
     {
-        $WindowsOSSet = "$WindowsOSDescrip is disabled" 
+        $WindowsOSSet = "Warning - $WindowsOSDescrip is disabled warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
     }
 
@@ -6473,7 +6473,7 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     $getWindowsOS = Get-Item $RegKey -ErrorAction SilentlyContinue
     $getWindowsOSVal = $getWindowsOS.GetValue("$WindowsOSVal") 
 
-    if ($getWindowsOSVal -eq "1")
+    if ($getWindowsOSVal -eq "0")
     {
         $WindowsOSSet = "$WindowsOSDescrip is enabled" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
@@ -6506,7 +6506,7 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     $gpopath ="Create manually or via GPO Preferences"
     $RegKey = 'HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\kernel\'
     $WindowsOSVal=@()
-    $WindowsOSVal = "NoDataExecutionPrevention"  
+    $WindowsOSVal = "DisableExceptionChainValidation"  
     $getWindowsOSVal=@()
     $getWindowsOS = Get-Item $RegKey -ErrorAction SilentlyContinue
     $getWindowsOSVal = $getWindowsOS.GetValue("$WindowsOSVal") 
@@ -6526,6 +6526,7 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsSetting -Value  $WindowsOSSet
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsRegValue -Value $WindowsOSReg 
     $fragWindowsOSVal += $newObjWindowsOS
+
 
     <#
     Remove Security tab
@@ -7215,11 +7216,11 @@ foreach ($OfficePolItems in $OfficePolicies.values)
        $fragSummary += $newObjSummary
    } 
 
-   if ($fragCertificates -like "*Warning*")
+   if ($fragCertificates -like "*Warning*" -or $fragCertificates -like "*selfsigned*" -or $fragCertificates -like "*Expired*")
    {
        $newObjSummary = New-Object psObject
-       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value '<a href="#Certs">Installed Certificates that are either Self-Signed or from a Undesirable Country</a>'
-       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Risk -Value "Medium to High Risk"
+       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value '<a href="#Certs">Installed Certificate Issues</a>'
+       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Risk -Value "Medium Risk"
        $fragSummary += $newObjSummary
    }
 
@@ -8127,6 +8128,8 @@ $style = @"
 
     $descripDomainPrivsGps = "Review and minimise members of privileged groups and delegate as much as possible. Don't nest groups into Domain Admins, add direct user accounts only. Deploy User Rights Assignments to explicitly prevent Domain Admins from logging on to Member Servers and Clients more information can be found here @<br><br>https://www.tenaka.net/post/deny-domain-admins-logon-to-workstations<br><br>Dont add privilged groups to Guests or Domain Guests and yes I've seen Domain Guests added to Domain Admins"
 
+    $descripCerts = ""
+
 ################################################
 ################  FRAGMENTS  ###################
 ################################################
@@ -8144,14 +8147,11 @@ $style = @"
     $frag_Host = $fragHost | ConvertTo-Html -As List -Property Name,Domain,Model -fragment -PreContent "<h2>Host Details</span></h2>"  | Out-String
     $fragOS = $OS | ConvertTo-Html -As List -property Caption,Version,OSArchitecture,InstallDate -fragment -PreContent "<h2>Windows Details</span></h2>" | Out-String
     $FragAccountDetails = $AccountDetails  | ConvertTo-Html -As Table -fragment -PreContent "<h2>Local Account Details</span></h2>" -PostContent "<h4>$descripLocalAccounts</h4>" | Out-String 
-    
     $frag_DCList  = $fragDCList | ConvertTo-Html -As Table -fragment -PreContent "<h2>List of Domain Controllers</span></h2>" | Out-String 
     $frag_FSMO = $fragFSMO | ConvertTo-Html -As Table -fragment -PreContent "<h2>FSMO Roles</span></h2>" | Out-String 
     $frag_DomainGrps = $fragDomainGrps | ConvertTo-Html -As Table -fragment -PreContent "<h2>Members of Privilege Groups</span></h2>" -PostContent "<h4>$descripDomainPrivsGps</h4>" | Out-String 
-    
     $frag_PreAuth = $fragPreAuth | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"PreAuth`"><a href=`"#TOP`">Domain Accounts that DO NOT Pre-Authenticate</a></span></h2>" -PostContent "<h4>$descripPreAuth</h4>" | Out-String
     $frag_NeverExpires = $fragNeverExpires | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"PassExpire`"><a href=`"#TOP`">Domain Accounts that Never Expire their Password</a></span></h2>"  | Out-String
-    
     $FragGroupDetails =  $GroupDetails  | ConvertTo-Html -As Table -fragment -PreContent "<h2>Local System Group Members</span></h2>" | Out-String
     $FragPassPol = $PassPol | Select-Object -SkipLast 3 | ConvertTo-Html -As Table -fragment -PreContent "<h2>Local PassWord Policy</span></h2>" | Out-String
     $fragInstaApps  =  $InstallApps | Sort-Object publisher,displayname -Unique  | ConvertTo-Html -As Table  -fragment -PreContent "<h2>Installed Applications</span></h2>" | Out-String
@@ -8161,10 +8161,8 @@ $style = @"
     $fragCpu = $cpu | ConvertTo-Html -As List -property Name,MaxClockSpeed,NumberOfCores,ThreadCount -fragment -PreContent "<h2>Processor Details</span></h2>" | Out-String
     $frag_whoamiGroups =  $whoamiGroups | ConvertTo-Html -As Table -fragment -PreContent "<h2>Current Users Group Membership</span></h2>" -PostContent "<h4>$descripDomainGroups</h4>" | Out-String
     $frag_whoamiPriv =  $whoamiPriv | ConvertTo-Html -As Table -fragment -PreContent "<h2>Current Users Local Privileges</span></h2>" -PostContent "<h4>$descripDomainPrivs</h4>" | Out-String
-    
     $frag_Network4 = $fragNetwork4 | ConvertTo-Html -As List -fragment -PreContent "<h2>IPv4 Address Details</span></h2>"  | Out-String
     $frag_Network6 = $fragNetwork6 | ConvertTo-Html -As List -fragment -PreContent "<h2>IPv4 Address Details</span></h2>"  | Out-String
-    
     $Frag_WinFeature = $FragWinFeature | ConvertTo-Html -As table -fragment -PreContent "<h2>Installed Windows Features</span></h2>"  | Out-String
     
     #Security Review
@@ -8201,8 +8199,7 @@ $style = @"
     $frag_RegPassWords = $fragRegPassWords | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"RegPW`"><a href=`"#TOP`">PassWords Embedded in the Registry</a></span></h2>" -PostContent "<h4>$descripRegPassWords</h4>" | Out-String
     $frag_ASR = $fragASR | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"asr`"><a href=`"#TOP`">Attack Surface Reduction (ASR)</a></span></h2>" -PostContent "<h4>$descripASR</h4>" | Out-String
     $frag_WDigestULC = $fragWDigestULC | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"WDigest`"><a href=`"#TOP`">WDigest</a></span></h2>" -PostContent "<h4>$descripWDigest</h4>" | Out-String
-    
-    ########$frag_Certificates = $fragCertificates | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"Certs`"><a href=`"#TOP`">Installed Certificates</a></span></h2>" -PostContent "<h4>$descripWDigest</h4>" | Out-String
+    $frag_Certificates = $fragCertificates | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"Certs`"><a href=`"#TOP`">Installed Certificates</a></span></h2>" -PostContent "<h4>$descripCerts</h4>" | Out-String
       
     #MS Recommended Secuirty settings (SSLF)
     $frag_WindowsOSVal = $fragWindowsOSVal | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"WinSSLF`"><a href=`"#TOP`">Windows OS Security Recommendations</a></span></h2>" -PostContent "<h4>$descripWindowsOS</h4>" | Out-String
@@ -8278,6 +8275,7 @@ if ($folders -eq "y")
     $frag_WDigestULC,
     $frag_CredGuCFG,
     $frag_LapsPwEna,
+    $frag_Certificates,
     $frag_DLLSafe,
     $frag_DLLHijack,
     $frag_DllNotSigned,
@@ -8342,6 +8340,7 @@ else
     $frag_WDigestULC,
     $frag_CredGuCFG,
     $frag_LapsPwEna,
+    $frag_Certificates,
     $frag_DLLSafe,
     $frag_DLLHijack,
     $frag_PCElevate,
@@ -8372,8 +8371,15 @@ else
     foreach {$_ -replace "<tr><th>*</th></tr>",""} | 
     foreach {$_ -replace "<tr><td> </td></tr>",""} |
 
+    foreach {$_ -replace "<td>expired","<td><font color=#ff9933>expired"} | 
+    foreach {$_ -replace "expired</td>","<font></td>"} |
+
+    foreach {$_ -replace "<td>Selfsigned","<td><font color=#ff9933>selfsigned"} | 
+    foreach {$_ -replace "selfsigned</td>","<font></td>"} |
+
     foreach {$_ -replace "<td>Warning","<td><font color=#ff9933>Warning"} | 
     foreach {$_ -replace "Warning</td>","<font></td>"} |
+
 
     foreach {$_ -replace "<td>Review","<td><font color=#ff9933>Review"} | 
     foreach {$_ -replace "Review</td>","<font></td>"}  | 
@@ -8443,6 +8449,8 @@ else
     foreach {$_ -replace '&quot;">','">'} |
 
     foreach {$_ -replace 'Warning - ',''} |
+    foreach {$_ -replace 'expired - ',''} |
+    foreach {$_ -replace 'selfsigned - ',''} |
        
     Set-Content "C:\SecureReport\FinishedReport.htm" -Force
     
@@ -8502,7 +8510,9 @@ remove powershell commands where performance is an issue, consider replacing wit
 UAC
 networks
 Updates
-Audit Settings
+
+Audit Settings - ms rec
+
 Chrome GPOs
 
 Report on Windows defender and memory protections
