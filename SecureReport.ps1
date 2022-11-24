@@ -3473,9 +3473,10 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
         $WindowsOSSet = "Warning - $WindowsOSDescrip is enabled Good, unknown and bad but critical boot-start drivers that can be initialized warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
     }
-    elseif ($getWindowsOSVal -eq "7")
+    else
     {
-        $WindowsOSSet = "Warning - $WindowsOSDescrip is enabled all only boot-start drivers that can be initialized warning" 
+        #Else assume all boot-start drivers are allowed this is normally have a value of 7
+        $WindowsOSSet = "Warning - $WindowsOSDescrip is enabled all boot-start drivers that can be initialized warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
     }
 
@@ -8399,7 +8400,6 @@ else
     foreach {$_ -replace 'expired - ',''} |
     foreach {$_ -replace 'selfsigned - ',''} |
     foreach {$_ -replace 'privateKey - ',''} |
-
     
        
     Set-Content "C:\SecureReport\FinishedReport.htm" -Force
