@@ -5896,76 +5896,6 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsRegValue -Value $WindowsOSReg 
     $fragWindowsOSVal += $newObjWindowsOS
 
-    
-    <#
-    Allow Basic authentication
-
-    Computer Configuration\Policies\Administrative Templates\Windows Components\Windows Remote Management (WinRM)\WinRM Client
-    
-    If you enable this policy setting, the WinRM client uses Basic authentication. If WinRM is configured to use HTTP transport, 
-    the user name and password are sent over the network as clear text.
-    If you disable or do not configure this policy setting, the WinRM client does not use Basic authentication
-
-    #>
-    $WindowsOSDescrip = "Allow Basic authentication"
-    $gpopath ="Computer Configuration\Policies\Administrative Templates\Windows Components\Windows Remote Management (WinRM)\WinRM Client\$WindowsOSDescrip"
-    $RegKey = 'HKLM:\Software\Policies\Microsoft\Windows\WinRM\Client\'
-    $WindowsOSVal=@()
-    $WindowsOSVal = "AllowBasic"  
-    $getWindowsOSVal=@()
-    $getWindowsOS = Get-Item $RegKey -ErrorAction SilentlyContinue
-    $getWindowsOSVal = $getWindowsOS.GetValue("$WindowsOSVal") 
-
-    if ($getWindowsOSVal -eq "0")
-    {
-        $WindowsOSSet = "$WindowsOSDescrip is disabled" 
-        $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
-    }
-    else
-    {
-        $WindowsOSSet = "Warning - $WindowsOSDescrip is enabled Warning" 
-        $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
-    }
-
-    $newObjWindowsOS = New-Object -TypeName PSObject
-    Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsSetting -Value  $WindowsOSSet
-    Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsRegValue -Value $WindowsOSReg 
-    $fragWindowsOSVal += $newObjWindowsOS
-
-    <#
-    Allow unencrypted traffic
-
-    Computer Configuration\Policies\Administrative Templates\Windows Components\Windows Remote Management (WinRM)\WinRM Client
-    
-    This policy setting allows you to manage whether the Windows Remote Management (WinRM) client sends and receives unencrypted messages over the network.
-    If you enable this policy setting, the WinRM client sends and receives unencrypted messages over the network.
-    If you disable or do not configure this policy setting, the WinRM client sends or receives only encrypted messages over the network.
-
-    #>
-    $WindowsOSDescrip = "Allow unencrypted traffic"
-    $gpopath ="Computer Configuration\Policies\Administrative Templates\Windows Components\Windows Remote Management (WinRM)\WinRM Client\$WindowsOSDescrip"
-    $RegKey = 'HKLM:\Software\Policies\Microsoft\Windows\WinRM\Client\'
-    $WindowsOSVal=@()
-    $WindowsOSVal = "AllowUnencryptedTraffic"  
-    $getWindowsOSVal=@()
-    $getWindowsOS = Get-Item $RegKey -ErrorAction SilentlyContinue
-    $getWindowsOSVal = $getWindowsOS.GetValue("$WindowsOSVal") 
-
-    if ($getWindowsOSVal -eq "0")
-    {
-        $WindowsOSSet = "$WindowsOSDescrip is disabled" 
-        $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
-    }
-    else
-    {
-        $WindowsOSSet = "Warning - $WindowsOSDescrip is enabled Warning" 
-        $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
-    }
-
-    $newObjWindowsOS = New-Object -TypeName PSObject
-    Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsSetting -Value  $WindowsOSSet
-    Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsRegValue -Value $WindowsOSReg 
-    $fragWindowsOSVal += $newObjWindowsOS
 
     <#
     Disallow Digest authentication
@@ -6193,7 +6123,7 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     #>
     $WindowsOSDescrip = "Don’t search the web or display web results in Search"
     $gpopath ="Computer Configuration\Policies\Administrative Templates\Windows Components\Search\$WindowsOSDescrip"
-    $RegKey = 'HKLM:\SOFTWARE\Policies\Microsoft\Windows\Windows Search\'
+    $RegKey = 'HKLM:\SOFTWARE\Policies\Microsoft\Windows\WindowsSearch\'
     $WindowsOSVal=@()
     $WindowsOSVal = "ConnectedSearchUseWeb"  
     $getWindowsOSVal=@()
@@ -6447,7 +6377,7 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     #>
     $WindowsOSDescrip = "Configure Corporate Windows Error Reporting"
     $gpopath ="Computer Configuration\Policies\Administrative Templates\Windows Components\Windows Error Reporting\Advanced Error Reporting Settings\$WindowsOSDescrip"
-    $RegKey = 'HKLM:\SOFTWARE\Policies\Microsoft\Windows\Windows Error Reporting\'
+    $RegKey = 'HKLM:\SOFTWARE\Policies\Microsoft\Windows\WindowsErrorReporting\'
     $WindowsOSVal=@()
     $WindowsOSVal = "CorporateWerUseSSL"   #query for SSL to be enabled
     $getWindowsOSVal=@()
@@ -6712,7 +6642,7 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     Allows user to interrogate gpos for system weaknesses
 
     #>
-    $WindowsOSDescrip = "Determine if interactive users can generate Resultant Set of Policy data"
+    $WindowsOSDescrip = "Determine if interactive users can generate RSOP"
     $gpopath ="User Configuration\Policies\Administrative Templates\System\Group Policy\$WindowsOSDescrip"
     $RegKey = 'HKCU:\Software\Policies\Microsoft\Windows\System\'
     $WindowsOSVal=@()
@@ -6733,7 +6663,7 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     }
 
     $newObjWindowsOS = New-Object -TypeName PSObject
-    Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsGPONameSetting -Value  $WindowsOSSet
+    Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsGPONameSetting -Value $WindowsOSSet
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsRegValue -Value $WindowsOSReg 
     $fragWindowsOSVal += $newObjWindowsOS
 
