@@ -3671,6 +3671,45 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     $fragWindowsOSVal += $newObjWindowsOS
 
     <#
+    This policy setting determines if the SMB client will allow insecure guest logons to an SMB server.
+    If you enable this policy setting or if you do not configure this policy setting the SMB client will 
+    allow insecure guest logons.If you disable this policy setting the SMB client will reject insecure guest logons.
+    Insecure guest logons are used by file servers to allow unauthenticated access to shared folders. While uncommon 
+    in an enterprise environment insecure guest logons are frequently used by consumer 
+    Network Attached Storage (NAS) appliances acting as file servers. Windows file servers require authentication 
+    and do not use insecure guest logons by default. Since insecure guest logons are unauthenticated important security 
+    features such as SMB Signing and SMB Encryption are disabled. As a result clients that allow insecure guest logons 
+    are vulnerable to a variety of man-in-the-middle attacks that can result in data loss data corruption and exposure to malware. 
+    Additionally any data written to a file server using an insecure guest logon is potentially accessible to anyone on the network. 
+    Microsoft recommends disabling insecure guest logons and configuring file servers to require authenticated access."      
+
+    #>
+    $WindowsOSDescrip = "Enable insecure guest logons"
+    $gpopath ="Computer Configuration\Administrative Templates\Network\Lanman Workstation\$WindowsOSDescrip"
+    $RegKey = 'HKLM:\Software\Policies\Microsoft\Windows\LanmanWorkstation\'
+    $WindowsOSVal=@()
+    $WindowsOSVal = "AllowInsecureGuestAuth"   
+    $getWindowsOSVal=@()
+    $getWindowsOS = Get-Item $RegKey -ErrorAction SilentlyContinue
+    $getWindowsOSVal = $getWindowsOS.GetValue("$WindowsOSVal") 
+
+    if ($getWindowsOSVal -eq "0")
+    {
+        $WindowsOSSet = "$WindowsOSDescrip is disabled" 
+        $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
+    }
+    else
+    {
+        $WindowsOSSet = "Warning - $WindowsOSDescrip is not set warning" 
+        $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
+    }
+
+    $newObjWindowsOS = New-Object -TypeName PSObject
+    Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsSetting -Value  $WindowsOSSet
+    Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsRegValue -Value $WindowsOSReg 
+    $fragWindowsOSVal += $newObjWindowsOS
+
+    <#
     Turn off picture password sign-in
 
     Computer Configuration\Policies\Administrative Templates\System\Logon
