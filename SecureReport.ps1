@@ -803,7 +803,6 @@ sleep 5
                    $uraDescripName = "<div title=$uraMSRecom>$uraDescripName"
 
                    $uraTrimDescrip = "<div title=$URAGPOPath>$uraItemTrim"
-
                 }
         }
        
@@ -822,7 +821,6 @@ sleep 5
            "   " + $objUserName.Value  | Out-File $secEditOutPath -Append  -encoding UTF8
 
            [string]$NameURA += $objUserName.Value + ", "
-
        }
             
        $newObjURA = New-Object -TypeName PSObject
@@ -1546,6 +1544,65 @@ sleep 5
     $llnmrpath = "C:\SecureReport\output\$OutFunc\" + "$OutFunc.log"
    
     $fragLegNIC=@()
+
+
+
+    #SMB1 Driver
+    cd HKLM:
+    $getsmb1drv = Get-ItemProperty "HKLM:\SYSTEM\CurrentControlSet\Services\MrxSmb10" -ErrorAction SilentlyContinue
+    $ensmb1drv = $getsmb1drv.Start
+
+    if ($ensmb1drv -eq "4")
+    {
+        $legProt = "SMB v1 client driver is set to $ensmb1drv in the Registry" 
+        $legReg = "HKLM:\SYSTEM\CurrentControlSet\Services\"
+    }
+    else
+    {
+        $legProt = "Warning - SMB v1 client driver is enabled Warning"
+        $legReg = "HKLM:\SYSTEM\CurrentControlSet\Services\"
+    }
+    
+    $newObjLegNIC = New-Object psObject
+    Add-Member -InputObject $newObjLegNIC -Type NoteProperty -Name LegacyProtocol -Value $legProt
+    Add-Member -InputObject $newObjLegNIC -Type NoteProperty -Name LegacyPath -Value $legReg
+    $fragLegNIC += $newObjLegNIC
+
+    #SMB v1 server
+    cd HKLM:
+    $getsmb1srv = Get-ItemProperty "HKLM:\SYSTEM\CurrentControlSet\Services\LanmanServer\Parameters\" -ErrorAction SilentlyContinue
+    $ensmb1srv = $getsmb1srv.SMB1
+
+    if ($ensmb1srv -eq "0")
+    {
+        $legProt = "SMB v1 Server is set to $ensmb1srv in the Registry" 
+        $legReg = "HKLM:\SYSTEM\CurrentControlSet\Services\LanmanServer\Parameters\"
+    }
+    else
+    {
+        $legProt = "Warning - SMB v1 Server is enabled Warning"
+        $legReg = "HKLM:\SYSTEM\CurrentControlSet\Services\LanmanServer\Parameters\"
+    }
+    
+    $newObjLegNIC = New-Object psObject
+    Add-Member -InputObject $newObjLegNIC -Type NoteProperty -Name LegacyProtocol -Value $legProt
+    Add-Member -InputObject $newObjLegNIC -Type NoteProperty -Name LegacyPath -Value $legReg
+    $fragLegNIC += $newObjLegNIC
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     #llmnr = 0 is disabled
     cd HKLM:
     $getllmnrGPO = Get-ItemProperty "HKLM:\SOFTWARE\Policies\Microsoft\Windows NT\DNSClient" -ErrorAction SilentlyContinue
@@ -2197,6 +2254,25 @@ sleep 5
     Add-Member -InputObject $newObjSecOptions -Type NoteProperty -Name SecurityOptions -Value $SecOptName
     $fragSecOptions +=  $newObjSecOptions
 
+
+    $secOpTitle17 = "Devices: Prevent users from installing printer drivers"
+    $getSecOp17 = get-item 'HKLM:\System\CurrentControlSet\Control\Print\Providers\LanMan Print Services\Servers\' -ErrorAction SilentlyContinue
+    $getSecOp17res = $getSecOp17.getvalue("AddPrinterDrivers")
+
+    if ($getSecOp17res -eq "1")
+    {
+        $SecOptName = "$secOpTitle17 - Enabled"
+    }
+    else
+    {
+        $SecOptName = "Warning - $secOpTitle17 - Disabled Warning"
+    }
+    
+    $newObjSecOptions = New-Object psObject
+    Add-Member -InputObject $newObjSecOptions -Type NoteProperty -Name SecurityOptions -Value $SecOptName
+    $fragSecOptions +=  $newObjSecOptions
+
+
 #Network Access: Restrict anonymous Access to Named Pipes and Shares
 #Network security: Do not store LAN Manager hash value on next password change
 Write-Host " "
@@ -2296,7 +2372,7 @@ Write-Host " "
 Write-Host "Finished Auditing Firewall Rules" -foregroundColor Green
 
 ################################################
-##############  SCHEDULED TAsKS  ###############
+##############  SCHEDULED TasKS  ###############
 ################################################ 
 Write-Host " "
 Write-Host "Auditing Scheduled Tasks" -foregroundColor Green
