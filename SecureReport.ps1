@@ -1687,7 +1687,7 @@ sleep 5
     $getPeer = Get-ItemProperty  "HKLM:\Software\policies\Microsoft\Peernet" -ErrorAction SilentlyContinue
     $getPeerDis = $getPeer.Disabled
     
-    if ($getPeerDis -eq "0")
+    if ($getPeerDis -eq "1")
     {
         $legProt = "Peer to Peer is set to $getPeerDis and disabled" 
         $legReg = "HKLM:\Software\policies\Microsoft\Peernet"
@@ -2984,13 +2984,13 @@ Write-Host "Completed searching for authenticode signature hashmismatch" -foregr
 ################################################
 ##########  CERTIFICATE DETAILS  ###############
 ################################################
-    $getCert = (Get-ChildItem Cert:\currentuser).Name
+    $getCert = (Get-ChildItem Cert:\LocalMachine).Name
     $fragCertificates=@()
     $certIssuer=@()
     $dateToday = get-date
     foreach($certItem in $getCert)
     {
-    $getCertItems = (Get-ChildItem "Cert:\currentuser\$($certItem)" )#| where {$_.Subject -notlike "*microsoft*"}) 
+    $getCertItems = (Get-ChildItem "Cert:\LocalMachine\$($certItem)" )#| where {$_.Subject -notlike "*microsoft*"}) 
 
         foreach ($allCertInfo in $getCertItems)
         {
@@ -3011,9 +3011,9 @@ Write-Host "Completed searching for authenticode signature hashmismatch" -foregr
             $newObjCertificates = New-Object -TypeName PSObject
             Add-Member -InputObject $newObjCertificates -Type NoteProperty -Name CertIssuer -Value $certIssuer
             Add-Member -InputObject $newObjCertificates -Type NoteProperty -Name CertExpired -Value $dateShort
-            Add-Member -InputObject $newObjCertificates -Type NoteProperty -Name CertIssuer -Value False 
             Add-Member -InputObject $newObjCertificates -Type NoteProperty -Name CertSelfSigned -Value False
-            
+            Add-Member -InputObject $newObjCertificates -Type NoteProperty -Name CertPrivateKey -Value False
+
             if 
             (
                 $certDns -like "*somexxx*" `
@@ -3022,7 +3022,6 @@ Write-Host "Completed searching for authenticode signature hashmismatch" -foregr
             {
                 Add-Member -InputObject $newObjCertificates -Type NoteProperty -Name CertDNS -Value "Warning - $($certDns) warning" -Force             
             }
-
             if
             (
                 $certIssuer -like "*somexxx*" `
@@ -3040,6 +3039,11 @@ Write-Host "Completed searching for authenticode signature hashmismatch" -foregr
             if ($certSub -eq $certIssuer -and $count -eq 1)
             {
                 Add-Member -InputObject $newObjCertificates -Type NoteProperty -Name CertSelfSigned -Value "SelfSigned - True SelfSigned" -force
+            }
+
+            if ($certKey -eq "true")
+            {
+                Add-Member -InputObject $newObjCertificates -Type NoteProperty -Name CertPrivateKey -Value "privateKey - True privatekey" -force
             }
                         
              #Add-Member -InputObject $newObjCertificates -Type NoteProperty -Name CertIssuer -Value $certIssuer
@@ -3454,14 +3458,24 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     $getWindowsOS = Get-Item $RegKey -ErrorAction SilentlyContinue
     $getWindowsOSVal = $getWindowsOS.GetValue("$WindowsOSVal") 
 
-    if ($getWindowsOSVal -eq "1")
+    if ($getWindowsOSVal -eq "8")
     {
-        $WindowsOSSet = "$WindowsOSDescrip is enabled" 
+        $WindowsOSSet = "$WindowsOSDescrip is enabled good only boot-start drivers that can be initialized" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
     }
-    else
+    elseif ($getWindowsOSVal -eq "1")
     {
-        $WindowsOSSet = "Warning - $WindowsOSDescrip is disabled Warning" 
+        $WindowsOSSet = "$WindowsOSDescrip is enabled good and unknown only boot-start drivers that can be initialized" 
+        $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
+    }
+    elseif ($getWindowsOSVal -eq "3")
+    {
+        $WindowsOSSet = "Warning - $WindowsOSDescrip is enabled Good, unknown and bad but critical boot-start drivers that can be initialized warning" 
+        $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
+    }
+    elseif ($getWindowsOSVal -eq "7")
+    {
+        $WindowsOSSet = "Warning - $WindowsOSDescrip is enabled all only boot-start drivers that can be initialized warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
     }
 
@@ -7288,7 +7302,7 @@ foreach ($OfficePolItems in $OfficePolicies.values)
        $fragSummary += $newObjSummary
    } 
 
-   if ($SchedTaskPerms -like "*warning*")
+   if ($SchedTaskPerms -ne $null)
    {
        $newObjSummary = New-Object psObject
        Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value '<a href="#schedDir">Scheduled Tasks with Scripts and Permissions are Weak</a>'
@@ -7296,7 +7310,7 @@ foreach ($OfficePolItems in $OfficePolicies.values)
        $fragSummary += $newObjSummary
    } 
 
-      if ($SchedTaskListings -like "*warning*")
+      if ($SchedTaskListings -ne $null)
    {
        $newObjSummary = New-Object psObject
        Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value '<a href="#schedTask">Scheduled Tasks Contain Base64 or Commands that Require Reviewing</a>'
@@ -8058,7 +8072,7 @@ $style = @"
 
     $descripVirt2 = "Virtualization-based security (VBS), isolates core system resources to create secure regions of memory. Enabling VBS allows for Hypervisor-Enforced Code Integrity (HVCI), Device Guard and Credential Guard. <br> <br>Further information can be found @ https://docs.microsoft.com/en-us/windows-hardware/design/device-experiences/oem-vbs<br> <br>https://www.tenaka.net/deviceguard-vs-rce and https://www.tenaka.net/pass-the-hash <br>"
 
-    $descripSecOptions = "<br>GPO settings can be found @ Computer Configuration\Windows Settings\Security Settings\Local Policies\Security Options<br><br>Prevent credential relay with Impacket and Man in the Middle by Digitally Signing for SMB and LDAP connections enforcement. <br> <br>Further information can be found @ https://www.tenaka.net/smb-relay-attack<br>"
+    $descripSecOptions = "<br>GPO settings can be found @ Computer Configuration\Windows Settings\Security Settings\Local Policies\Security Options<br><br>Prevent credential relay with Impacket and Man in the Middle by Digitally Signing for SMB and LDAP connections enforcement. <br> <br>Further information can be found @ https://www.tenaka.net/smb-relay-attack<br> <br>System cryptography: Force strong key protection for user keys stored on the computer should only be set on clients and not Servers<br>"
 
     $descripLSA = "Enabling RunAsPPL for LSA Protection allows only digitally signed binaries to load as a protected process preventing credential theft and Access by code injection and memory Access by processes that aren’t signed. <br> <br>Further information can be found @ https://docs.microsoft.com/en-us/windows-server/security/credentials-protection-and-management/configuring-additional-lsa-protection<br>"
 
@@ -8377,6 +8391,9 @@ else
     foreach {$_ -replace "<td>Selfsigned","<td><font color=#ff9933>selfsigned"} | 
     foreach {$_ -replace "selfsigned</td>","<font></td>"} |
 
+    foreach {$_ -replace "<td>privateKey","<td><font color=#ff9933>privateKey"} | 
+    foreach {$_ -replace "privateKey</td>","<font></td>"} |
+    
     foreach {$_ -replace "<td>Warning","<td><font color=#ff9933>Warning"} | 
     foreach {$_ -replace "Warning</td>","<font></td>"} |
 
@@ -8451,6 +8468,9 @@ else
     foreach {$_ -replace 'Warning - ',''} |
     foreach {$_ -replace 'expired - ',''} |
     foreach {$_ -replace 'selfsigned - ',''} |
+    foreach {$_ -replace 'privateKey - ',''} |
+
+    
        
     Set-Content "C:\SecureReport\FinishedReport.htm" -Force
     
