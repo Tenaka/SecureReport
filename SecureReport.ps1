@@ -6,11 +6,11 @@ Check for common and known security vulnerabilities and create an html report ba
 
 The report is saved to C:\Securereport\FinishedReport.htm
 
-Before everyone gets critical regarding the script formatting, some are due to how ConvertTo-HTML expects the data, most are to help those that aren’t familiar with scripting. There is a conscious decision not to use aliases or abbreviations and where possible to create variables. 
+Before everyone gets critical regarding the script formatting, some are due to how ConvertTo-HTML expects the data, most are to help those that aren't familiar with scripting. There is a conscious decision not to use aliases or abbreviations and where possible to create variables. 
 
 #List of checks and balances:
 Host Details, CPU, Bios, Windows Version
-Accounts, Groups and PassWord Policy
+Accounts, Groups and Password Policy
 Install Applications and installed Windows Updates
 Virtualization, UEFI, Secure Boot, DMA, TPM and Bitlocker Settings
 LSA, DLL Safe Search Order, Hypervisor Code Integrity
@@ -54,24 +54,24 @@ Further information can be found @
 https://www.tenaka.net/smb-relay-attack
 
 #LSA
-Enabling RunAsPPL for LSA Protection allows only digitally signed binaries to load as a protected process preventing credential theft and Access by code injection and memory Access by processes that aren’t signed.
+Enabling RunAsPPL for LSA Protection allows only digitally signed binaries to load as a protected process preventing credential theft and Access by code injection and memory Access by processes that aren't signed.
 Further information can be found @ https://docs.microsoft.com/en-us/windows-server/security/credentials-protection-and-management/configuring-additional-lsa-protection
 
 #DLL Safe Search
-When applications do not fully qualify the DLL path and instead allow searching the default behaviour is for the ‘Current Working Directory’ to be called, then system paths. This allows an easy route to call malicious DLL’s. Setting ‘DLL Safe Search’ mitigates the risk by moving CWD to later in the search order.
+When applications do not fully qualify the DLL path and instead allow searching the default behaviour is for the 'Current Working Directory' to be called, then system paths. This allows an easy route to call malicious DLL's. Setting 'DLL Safe Search' mitigates the risk by moving CWD to later in the search order.
 Further information can be found @
 https://docs.microsoft.com/en-us/windows/win32/dlls/dynamic-link-library-search-order
 
 #DLL Hijacking (Permissions)
-DLL Hijacking is when a malicious dll replaces a legitimate dll due to a path vulnerability. A program or service makes a call on that dll gaining the privileges of that program or service. Additionally missing dll’s presents a risk where a malicious dll is dropped into a path where no current dll exists but the program or service is making a call to that non-existent dll.
-This audit is reliant on programs being launched so that DLL’s are loaded. Each process’s loaded dll’s are checked for permissions issues and whether they are signed.  
-The DLL hijacking audit does not currently check for missing dll’s being called. Process Monitor filtered for ‘NAME NOT FOUND’ and path ends with ‘DLL’ will.
+DLL Hijacking is when a malicious dll replaces a legitimate dll due to a path vulnerability. A program or service makes a call on that dll gaining the privileges of that program or service. Additionally missing dll's presents a risk where a malicious dll is dropped into a path where no current dll exists but the program or service is making a call to that non-existent dll.
+This audit is reliant on programs being launched so that DLL's are loaded. Each process's loaded dll's are checked for permissions issues and whether they are signed.  
+The DLL hijacking audit does not currently check for missing dll's being called. Process Monitor filtered for 'NAME NOT FOUND' and path ends with 'DLL' will.
 
 
 #Automatically Elevate User
 Auto Elevate User is a setting that elevates users allowing them to install software without being an administrator. 
 
-#PassWord in Files
+#Password in Files
 Searches the following locations:
 C:\Users\
 C:\ProgramData\
@@ -86,7 +86,7 @@ txt, ini, .xml
 For the following Words:
 password, credential
 
-Ignore these files as they contain the Word 'PassWord' by default:
+Ignore these files as they contain the Word 'Password' by default:
 C:\Windows\system32\NarratorControlTemplates.xml
 C:\Windows\system32\DDFs\NGCProDDF_v1.2_final.xml
 C:\Windows\system32\icsxml\ipcfg.xml
@@ -94,18 +94,18 @@ C:\Windows\system32\icsxml\pppcfg.xml
 C:\Windows\system32\slmgr\0409\slmgr.ini
 C:\Windows\system32\winrm\0409\winrm.ini
 
-#PassWords in the Registry
+#Passwords in the Registry
 Searches HKLM and HKCU for the Words 'password' and 'passwd', then displays the password value in the report. 
 The search will work with VNC encrypted passwords stored in the registry, from Kali run the following command to decrypt
 
-echo -n PassWordHere | xxd -r -p | openssl enc -des-cbc --nopad --nosalt -K e84ad660c4721ae0 -iv 0000000000000000 -d | hexdump -Cv
+echo -n PasswordHere | xxd -r -p | openssl enc -des-cbc --nopad --nosalt -K e84ad660c4721ae0 -iv 0000000000000000 -d | hexdump -Cv
 
 ​
-#PassWord embedded in Processes
-Processes that contain credentials to authenticate and Access applications. Launching Task Manager, Details and add ‘Command line’ to the view.
+#Password embedded in Processes
+Processes that contain credentials to authenticate and Access applications. Launching Task Manager, Details and add 'Command line' to the view.
 ​
 #AutoLogon
-Checks "HKLM:\SOFTWARE\Microsoft\Windows NT\Currentversion\Winlogon" for any clear text credentials remaining from a MECM\SCCM\MDT deployment.
+Checks "HKLM:\Software\Microsoft\Windows NT\Currentversion\Winlogon" for any clear text credentials remaining from a MECM\SCCM\MDT deployment.
 
 #Unquoted
 The Unquoted Path vulnerability is when a Windows Service's 'Path to Executable' contains spaces and is not wrapped in double-quotes providing a route to System.
@@ -207,7 +207,7 @@ YYMMDD
 211223.1 - Added -postContent with explanations
 211223.2 - Bitlocker fixed null response
 211229.1 - Added explanations and changed colour
-211229.2 - Added .xml in PassWord in file search added further excluded directories due to the number of false-positive being returned
+211229.2 - Added .xml in Password in file search added further excluded directories due to the number of false-positive being returned
 211230.1 - Restored search for folder weaknesses in C:\Windows
 211230.2 - Added CreateFiles Audit - hashed out until testing is complete
 220107.1 - Corrected Legacy Network Netbios, incorrectly showing a warning despite being the correct setting.
@@ -231,14 +231,14 @@ YYMMDD
 220222.1 - Embedded passwords reworked to be more efficient 
 220224.1 - General cleanup of spacing and formatting purely aesthetic
 220228.1 - Multi drive support for Folder and File permission and password audits
-220411.1 - Added "HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\" to list x86 install applications
+220411.1 - Added "HKLM:\Software\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\" to list x86 install applications
 220604.1 - Added Root of drive for permission check Non System Folders
 220604.2 - Added | where {$_.displayroot -notlike "*\\*"} to get drive letters and not mounted shares
 220605.1 - Added loaded dll hijacking vulnerability scanner
 220605.2 - Added READ-HOSTS to prompt to run slow processes.
 220606.1 - Added DLL hijacking for dlls not signed and where the user can write.
 220606.2 - Tidy up and formatting of script
-220607.1 - PassWord within file search $fragFilePass=@() moved to outside loop as it was dropping previous drives and data
+220607.1 - Password within file search $fragFilePass=@() moved to outside loop as it was dropping previous drives and data
 220708.1 - Added depth to Folder and File search to give option to speed up search
 220708.2 - Moved DLL not signed and user Access, update to Folder search, not an option to run or not
 220708.3 - Added filters to Folder and File search to skip winSXS and LCU folders, time consuming and pointless  - Improves preformance 
@@ -266,7 +266,7 @@ YYMMDD
 220715.1 - Fixed issue with URA, Debug was missed off the list.  
 220716.1 - Updated Reg Search from -notlike to match   
 220718.1 - Added Filter to remove null content so its not displayed in the final report
-220718.2 - Added PassWords embedded in the Registry  
+220718.2 - Added Passwords embedded in the Registry  
 220719.1 - Added ASR    
 220719.2 - Added WDigest   
 220720.1 - Added whoami groups 
@@ -312,7 +312,8 @@ YYMMDD
 221112.3 - Added Top to A href, summary links will return to top of page now.
 221121.1 - Added Certificate Audit - There is a naughty list that requires key words being added eg a less that desirable company
 221123.1 - Fixed issues with MS recommended settings
-
+221129.1 - Added more OS GPO Recommended validation checks
+221129.2 - Swapped out “ ” ’ for ' " " - some had sneaked in whilst prepping some settings in MS Word
 
 #>
 
@@ -470,7 +471,7 @@ sleep 5
         $PWSet = $PWPol.split(":")[1]
 
         $newObjPassPol = New-Object -TypeName PSObject
-        Add-Member -InputObject $newObjPassPol -Type NoteProperty -Name PassWordPolicy -Value $PWName
+        Add-Member -InputObject $newObjPassPol -Type NoteProperty -Name PasswordPolicy -Value $PWName
         Add-Member -InputObject $newObjPassPol -Type NoteProperty -Name Value -Value $PWSet
         $PassPol += $newObjPassPol
     }
@@ -489,8 +490,8 @@ sleep 5
             $accEnabled = "Warning - Enabled Warning"
             } 
         $accLastLogon = $accounts.LastLogon
-        $accLastPass = $accounts.PassWordLastSet
-        $accPassExpired = $accounts.PassWordExpires
+        $accLastPass = $accounts.PasswordLastSet
+        $accPassExpired = $accounts.PasswordExpires
         $accSource = $accounts.PrincipalSource
 
         $newObjAccount = New-Object -TypeName PSObject
@@ -589,16 +590,16 @@ $rootdse = $Root.rootDomainNamingContext
 
 $adGroups = 
 "Administrators",
-“Backup Operators”,
-“Server Operators”,
-“Account Operators”,
-“Guests”,
-“Domain Admins”,
-“Schema Admins”,
-“Enterprise Admins”,
-“DnsAdmins”,
-“DHCP Administrators”,
-“Domain Guests”
+"Backup Operators",
+"Server Operators",
+"Account Operators",
+"Guests",
+"Domain Admins",
+"Schema Admins",
+"Enterprise Admins",
+"DnsAdmins",
+"DHCP Administrators",
+"Domain Guests"
 
 $fragDomainGrps=@()
 
@@ -860,8 +861,8 @@ sleep 5
 ##############  INSTALLED APPS  ################
 ################################################
 
-    $getUninx64 = Get-ChildItem  "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\" -ErrorAction SilentlyContinue
-    $getUninx86 = Get-ChildItem  "HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\"  -ErrorAction SilentlyContinue
+    $getUninx64 = Get-ChildItem  "HKLM:\Software\Microsoft\Windows\CurrentVersion\Uninstall\" -ErrorAction SilentlyContinue
+    $getUninx86 = Get-ChildItem  "HKLM:\Software\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\"  -ErrorAction SilentlyContinue
     $getUnin = $getUninx64 + $getUninx86
     $UninChild = $getUnin.Name.Replace("HKEY_LOCAL_MACHINE","HKLM:")
     $InstallApps =@()
@@ -891,7 +892,7 @@ sleep 5
 #Office 2019 onwards doesnt register installed KB's
 #But for Office 2016 and older installed KB's do create keys in the Uninstall 
 
-    $getUnin16 = Get-ChildItem  "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\" -ErrorAction SilentlyContinue
+    $getUnin16 = Get-ChildItem  "HKLM:\Software\Microsoft\Windows\CurrentVersion\Uninstall\" -ErrorAction SilentlyContinue
     $UninChild16 = $getUnin16.Name.Replace("HKEY_LOCAL_MACHINE","HKLM:")
     $InstallApps16 =@()
     
@@ -1059,7 +1060,7 @@ sleep 7
     foreach ($unQSvc in $vulnSvc)
     {
     $svc = $unQSvc.name
-    $SvcReg = Get-ItemProperty HKLM:\SYSTEM\CurrentControlSet\Services\$svc -ErrorAction SilentlyContinue
+    $SvcReg = Get-ItemProperty HKLM:\System\CurrentControlSet\Services\$svc -ErrorAction SilentlyContinue
     
         if ($SvcReg.imagePath -like "*.exe*")
         {
@@ -1296,20 +1297,20 @@ Write-Host "Auditing Various Registry Settings" -foregroundColor Green
 sleep 5
 
     #LSA
-    $getLSA = Get-Item 'HKLM:\SYSTEM\CurrentControlSet\Control\lsa\' -ErrorAction SilentlyContinue
+    $getLSA = Get-Item 'HKLM:\System\CurrentControlSet\Control\lsa\' -ErrorAction SilentlyContinue
     $getLSAPPL =  $getLSA.GetValue("RunAsPPL")
     $fragLSAPPL =@()
 
     if ($getLSAPPL -eq "1")
     {
         $lsaSet = "LSA is enabled the RunAsPPL is set to $getLSAPPL" 
-        $lsaReg = "HKLM:\SYSTEM\CurrentControlSet\Control\lsa\"
+        $lsaReg = "HKLM:\System\CurrentControlSet\Control\lsa\"
         $lsaCom = "Win10 and above Credential Guard should be used for Domain joined clients"
     }
     else
     {
         $lsaSet = "Warning - Secure LSA is disabled set RunAsPPL to 1 Warning" 
-        $lsaReg = "HKLM:\SYSTEM\CurrentControlSet\Control\lsa\"
+        $lsaReg = "HKLM:\System\CurrentControlSet\Control\lsa\"
         $lsaCom = "Required for Win8.1 and below"
     }
 
@@ -1320,20 +1321,20 @@ sleep 5
     $fragLSAPPL += $newObjLSA
  
     #WDigest
-    $getWDigest = Get-Item 'HKLM:\SYSTEM\CurrentControlSet\Control\SecurityProviders\WDigest\' -ErrorAction SilentlyContinue
+    $getWDigest = Get-Item 'HKLM:\System\CurrentControlSet\Control\SecurityProviders\WDigest\' -ErrorAction SilentlyContinue
     $getWDigestULC =  $getWDigest.GetValue("UseLogonCredential")
     $fragWDigestULC =@()
 
     if ($getWDigestULC -eq "1")
     {
         $WDigestSet = "Warning - WDigest is enabled and plain text passwords are stored in LSASS Warning" 
-        $WDigestReg = "HKLM:\SYSTEM\CurrentControlSet\Control\SecurityProviders\WDigest\"
+        $WDigestReg = "HKLM:\System\CurrentControlSet\Control\SecurityProviders\WDigest\"
 
     }
     else
     {
         $WDigestSet = "Secure WDigest is disabled" 
-        $WDigestReg = "HKLM:\SYSTEM\CurrentControlSet\Control\SecurityProviders\WDigest\"
+        $WDigestReg = "HKLM:\System\CurrentControlSet\Control\SecurityProviders\WDigest\"
     }
 
     $newObjWDigest = New-Object -TypeName PSObject
@@ -1343,26 +1344,26 @@ sleep 5
 
 
     #Credential Guard
-    $getCredGu = Get-Item 'HKLM:\SYSTEM\CurrentControlSet\Control\LSA\' -ErrorAction SilentlyContinue
+    $getCredGu = Get-Item 'HKLM:\System\CurrentControlSet\Control\LSA\' -ErrorAction SilentlyContinue
     $getCredGuCFG =  $getCredGu.GetValue("LsaCfgFlags")
     $fragCredGuCFG =@()
 
     if ($getCredGuCFG -eq "1")
     {
         $CredGuSet = "Credential Guard is enabled, the LsaCfgFlags value is set to $getCredGuCFG" 
-        $CredGuReg = "HKLM:\SYSTEM\CurrentControlSet\Control\LSA\"
+        $CredGuReg = "HKLM:\System\CurrentControlSet\Control\LSA\"
         $CredGuCom = "Credential Guard is enabled with UEFI persistance."
     }
     elseif ($getCredGuCFG -eq "2")
     {
         $CredGuSet = "Credential Guard is enabled, the LsaCfgFlags value is set to $getCredGuCFG" 
-        $CredGuReg = "HKLM:\SYSTEM\CurrentControlSet\Control\LSA\"
+        $CredGuReg = "HKLM:\System\CurrentControlSet\Control\LSA\"
         $CredGuCom = "Credential Guard is enable without UEFI persistence."
     }
     else
     {
         $CredGuSet = "Warning - Secure Credential Guard is disabled, LsaCfgFlags is set to 0 Warning" 
-        $CredGuReg = "HKLM:\SYSTEM\CurrentControlSet\Control\LSA\"
+        $CredGuReg = "HKLM:\System\CurrentControlSet\Control\LSA\"
         $CredGuCom = "Credential Guard requires the client to be Domain joined"
     }
 
@@ -1376,9 +1377,9 @@ sleep 5
     #LAPS is installed
     $getLapsPw = Get-Item "HKLM:\Software\Policies\Microsoft Services\AdmPwd\" -ErrorAction SilentlyContinue
     $getLapsPwEna =  $getLapsPw.GetValue("AdmPwdEnabled")
-    $getLapsPwCom =  $getLapsPw.GetValue("PassWordComplexity")
-    $getLapsPwLen =  $getLapsPw.GetValue("PassWordLength")
-    $getLapsPwDay =  $getLapsPw.GetValue("PassWordAgeDays")
+    $getLapsPwCom =  $getLapsPw.GetValue("PasswordComplexity")
+    $getLapsPwLen =  $getLapsPw.GetValue("PasswordLength")
+    $getLapsPwDay =  $getLapsPw.GetValue("PasswordAgeDays")
     $fragLapsPwEna =@()
 
     if ($getLapsPwEna -eq "1")
@@ -1390,11 +1391,11 @@ sleep 5
         $LapsPwReg = "HKLM:\Software\Policies\Microsoft Services\AdmPwd\" 
 
         $newObjLapsPw = New-Object -TypeName PSObject
-        Add-Member -InputObject $newObjLapsPw -Type NoteProperty -Name LAPSPassWordEnabled -Value $LapsPwSetena
-        Add-Member -InputObject $newObjLapsPw -Type NoteProperty -Name LAPSPassWordComplexity -Value $LapsPwSetcom 
-        Add-Member -InputObject $newObjLapsPw -Type NoteProperty -Name LAPSPassWordLength -Value $LapsPwSetlen
-        Add-Member -InputObject $newObjLapsPw -Type NoteProperty -Name LAPSPassWordDay -Value $LapsPwSetday 
-        Add-Member -InputObject $newObjLapsPw -Type NoteProperty -Name LAPSPassWordReg -Value $LapsPwReg
+        Add-Member -InputObject $newObjLapsPw -Type NoteProperty -Name LAPSPasswordEnabled -Value $LapsPwSetena
+        Add-Member -InputObject $newObjLapsPw -Type NoteProperty -Name LAPSPasswordComplexity -Value $LapsPwSetcom 
+        Add-Member -InputObject $newObjLapsPw -Type NoteProperty -Name LAPSPasswordLength -Value $LapsPwSetlen
+        Add-Member -InputObject $newObjLapsPw -Type NoteProperty -Name LAPSPasswordDay -Value $LapsPwSetday 
+        Add-Member -InputObject $newObjLapsPw -Type NoteProperty -Name LAPSPasswordReg -Value $LapsPwReg
         $fragLapsPwEna += $newObjLapsPw
 
     }
@@ -1405,8 +1406,8 @@ sleep 5
         $LapsPwCom = "LAPS is not installed or configured - Ignore if not Domain Joined"
 
         $newObjLapsPw = New-Object -TypeName PSObject
-        Add-Member -InputObject $newObjLapsPw -Type NoteProperty -Name LAPSPassWordEnabled -Value  $LapsPwSet
-        Add-Member -InputObject $newObjLapsPw -Type NoteProperty -Name LAPSPassWordReg -Value $LapsPwReg 
+        Add-Member -InputObject $newObjLapsPw -Type NoteProperty -Name LAPSPasswordEnabled -Value  $LapsPwSet
+        Add-Member -InputObject $newObjLapsPw -Type NoteProperty -Name LAPSPasswordReg -Value $LapsPwReg 
         #Add-Member -InputObject $newObjLapsPw -Type NoteProperty -Name LapsPwComment -Value $LapsPwCom
         $fragLapsPwEna += $newObjLapsPw
     }
@@ -1438,20 +1439,20 @@ sleep 5
 
 
     #Code Integrity
-    $getCode = Get-Item 'HKLM:\SYSTEM\CurrentControlSet\Control\DeviceGuard\Scenarios\HypervisorEnforcedCodeIntegrity' -ErrorAction SilentlyContinue
+    $getCode = Get-Item 'HKLM:\System\CurrentControlSet\Control\DeviceGuard\Scenarios\HypervisorEnforcedCodeIntegrity' -ErrorAction SilentlyContinue
     $getCode =  $getCode.GetValue("Enabled")
 
     $fragCode =@()
     if ($getCode -eq "1")
     {
         $CodeSet = "Hypervisor Enforced Code Integrity is enabled" 
-        $CodeReg = "HKLM:\SYSTEM\CurrentControlSet\Control\DeviceGuard\Scenarios\HypervisorEnforcedCodeIntegrity"
+        $CodeReg = "HKLM:\System\CurrentControlSet\Control\DeviceGuard\Scenarios\HypervisorEnforcedCodeIntegrity"
         $CodeCom = "Protects against credential theft"
     }
     else
     {
         $CodeSet = "Warning - Hypervisor Enforced Code Integrity is disabled set Enabled to 1 Warning" 
-        $CodeReg = "HKLM:\SYSTEM\CurrentControlSet\Control\DeviceGuard\Scenarios\HypervisorEnforcedCodeIntegrity"
+        $CodeReg = "HKLM:\System\CurrentControlSet\Control\DeviceGuard\Scenarios\HypervisorEnforcedCodeIntegrity"
         #$CodeCom = "Protects against credential theft"
     }
 
@@ -1463,8 +1464,8 @@ sleep 5
 
 
     #InstallElevated
-    $getPCInstaller = Get-Item HKLM:\SOFTWARE\Policies\Microsoft\Windows\Installer -ErrorAction SilentlyContinue
-    $getUserInstaller = Get-Item HKCU:\SOFTWARE\Policies\Microsoft\Windows\Installer -ErrorAction SilentlyContinue
+    $getPCInstaller = Get-Item HKLM:\Software\Policies\Microsoft\Windows\Installer -ErrorAction SilentlyContinue
+    $getUserInstaller = Get-Item HKCU:\Software\Policies\Microsoft\Windows\Installer -ErrorAction SilentlyContinue
     $PCElevate =  $getUserInstaller.GetValue("AlwaysInstallElevated")
     $UserElevate = $getPCInstaller.GetValue("AlwaysInstallElevated")
 
@@ -1472,12 +1473,12 @@ sleep 5
     if ($PCElevate -eq "1")
     {
         $ElevateSet = "Warning - Client setting Always Install Elevate is enabled Warning" 
-        $ElevateReg = "HKLM:\SOFTWARE\Policies\Microsoft\Windows\Installer"
+        $ElevateReg = "HKLM:\Software\Policies\Microsoft\Windows\Installer"
     }
     else
     {
         $ElevateSet = "Client setting  Always Install Elevate is disabled" 
-        $ElevateReg = "HKLM:\SOFTWARE\Policies\Microsoft\Windows\Installer"
+        $ElevateReg = "HKLM:\Software\Policies\Microsoft\Windows\Installer"
     }
 
     $newObjElevate = New-Object -TypeName PSObject
@@ -1488,12 +1489,12 @@ sleep 5
     if ($UserElevate -eq "1")
     {
         $ElevateSet = "Warning - User setting Always Install Elevate is enabled Warning" 
-        $ElevateReg = "HKCU:\SOFTWARE\Policies\Microsoft\Windows\Installer"
+        $ElevateReg = "HKCU:\Software\Policies\Microsoft\Windows\Installer"
     }
     else
     {
         $ElevateSet = "User setting Always Install Elevate is disabled" 
-        $ElevateReg = "HKCU:\SOFTWARE\Policies\Microsoft\Windows\Installer"
+        $ElevateReg = "HKCU:\Software\Policies\Microsoft\Windows\Installer"
     }
        
     $newObjElevate = New-Object -TypeName PSObject
@@ -1502,28 +1503,28 @@ sleep 5
     $fragPCElevate += $newObjElevate 
 
     #AutoLogon Details in REG inc password   
-    $getAutoLogon = Get-Item  "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon" -ErrorAction SilentlyContinue
+    $getAutoLogon = Get-Item  "HKLM:\Software\Microsoft\Windows NT\CurrentVersion\Winlogon" -ErrorAction SilentlyContinue
     $AutoLogonDefUser =  $getAutoLogon.GetValue("DefaultUserName")
-    $AutoLogonDefPass =  $getAutoLogon.GetValue("DefaultPassWord ") 
+    $AutoLogonDefPass =  $getAutoLogon.GetValue("DefaultPassword ") 
 
     $fragAutoLogon =@()
 
     if ($AutoLogonDefPass  -ne "$null")
     {
-        $AutoLPass = "There is no Default PassWord set for AutoLogon" 
+        $AutoLPass = "There is no Default Password set for AutoLogon" 
         $AutoLUser = "There is no Default User set for AutoLogon" 
-        $AutoLReg = "HKLM:\SOFTWARE\Microsoft\Windows NT\Currentversion\Winlogon"
+        $AutoLReg = "HKLM:\Software\Microsoft\Windows NT\Currentversion\Winlogon"
     }
     else
     {
         $AutoLPass = "Warning - AutoLogon default password is set with a vaule of $AutoLogonDefPass Warning" 
         $AutoLUser = "Warning - AutoLogon Default User is set with a vaule of $AutoLogonDefUser Warning" 
-        $AutoLReg = "HKLM:\SOFTWARE\Microsoft\Windows NT\Currentversion\Winlogon"
+        $AutoLReg = "HKLM:\Software\Microsoft\Windows NT\Currentversion\Winlogon"
     }
 
     $newObjAutoLogon = New-Object -TypeName PSObject
     Add-Member -InputObject $newObjAutoLogon -Type NoteProperty -Name AutoLogonUsername -Value $AutoLUser
-    Add-Member -InputObject $newObjAutoLogon -Type NoteProperty -Name AutoLogonPassWord -Value  $AutoLPass
+    Add-Member -InputObject $newObjAutoLogon -Type NoteProperty -Name AutoLogonPassword -Value  $AutoLPass
     Add-Member -InputObject $newObjAutoLogon -Type NoteProperty -Name AutoLogonRegistry -Value $AutoLReg
     $fragAutoLogon += $newObjAutoLogon
 
@@ -1545,22 +1546,20 @@ sleep 5
    
     $fragLegNIC=@()
 
-
-
     #SMB1 Driver
     cd HKLM:
-    $getsmb1drv = Get-ItemProperty "HKLM:\SYSTEM\CurrentControlSet\Services\MrxSmb10" -ErrorAction SilentlyContinue
+    $getsmb1drv = Get-ItemProperty "HKLM:\System\CurrentControlSet\Services\MrxSmb10" -ErrorAction SilentlyContinue
     $ensmb1drv = $getsmb1drv.Start
 
     if ($ensmb1drv -eq "4")
     {
         $legProt = "SMB v1 client driver is set to $ensmb1drv in the Registry" 
-        $legReg = "HKLM:\SYSTEM\CurrentControlSet\Services\"
+        $legReg = "HKLM:\System\CurrentControlSet\Services\MrxSmb10.Start"
     }
     else
     {
         $legProt = "Warning - SMB v1 client driver is enabled Warning"
-        $legReg = "HKLM:\SYSTEM\CurrentControlSet\Services\"
+        $legReg = "HKLM:\System\CurrentControlSet\Services\MrxSmb10.Start"
     }
     
     $newObjLegNIC = New-Object psObject
@@ -1570,18 +1569,18 @@ sleep 5
 
     #SMB v1 server
     cd HKLM:
-    $getsmb1srv = Get-ItemProperty "HKLM:\SYSTEM\CurrentControlSet\Services\LanmanServer\Parameters\" -ErrorAction SilentlyContinue
+    $getsmb1srv = Get-ItemProperty "HKLM:\System\CurrentControlSet\Services\LanmanServer\Parameters\" -ErrorAction SilentlyContinue
     $ensmb1srv = $getsmb1srv.SMB1
 
     if ($ensmb1srv -eq "0")
     {
         $legProt = "SMB v1 Server is set to $ensmb1srv in the Registry" 
-        $legReg = "HKLM:\SYSTEM\CurrentControlSet\Services\LanmanServer\Parameters\"
+        $legReg = "HKLM:\System\CurrentControlSet\Services\LanmanServer\Parameters.SMB1"
     }
     else
     {
         $legProt = "Warning - SMB v1 Server is enabled Warning"
-        $legReg = "HKLM:\SYSTEM\CurrentControlSet\Services\LanmanServer\Parameters\"
+        $legReg = "HKLM:\System\CurrentControlSet\Services\LanmanServer\Parameters.SMB1"
     }
     
     $newObjLegNIC = New-Object psObject
@@ -1589,34 +1588,20 @@ sleep 5
     Add-Member -InputObject $newObjLegNIC -Type NoteProperty -Name LegacyPath -Value $legReg
     $fragLegNIC += $newObjLegNIC
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     #llmnr = 0 is disabled
     cd HKLM:
-    $getllmnrGPO = Get-ItemProperty "HKLM:\SOFTWARE\Policies\Microsoft\Windows NT\DNSClient" -ErrorAction SilentlyContinue
+    $getllmnrGPO = Get-ItemProperty "HKLM:\Software\Policies\Microsoft\Windows NT\DNSClient" -ErrorAction SilentlyContinue
     $enllmnrGpo = $getllmnrgpo.EnableMulticast
 
     if ($enllmnrGpo -eq "0" -or $enllmnrReg -eq "0")
     {
         $legProt = "LLMNR (Responder) is disabled GPO = $enllmnrGpo" 
-        $legReg = "HKLM:\SOFTWARE\Policies\Microsoft\Windows NT\DNSClient.EnableMulticast"
+        $legReg = "HKLM:\Software\Policies\Microsoft\Windows NT\DNSClient.EnableMulticast"
     }
     else
     {
         $legProt = "Warning - LLMNR (Responder) is Enabled Warning" 
-        $legReg = "HKLM:\SOFTWARE\Policies\Microsoft\Windows NT\DNSClient.EnableMulticast"
+        $legReg = "HKLM:\Software\Policies\Microsoft\Windows NT\DNSClient.EnableMulticast"
     }
     
     $newObjLegNIC = New-Object psObject
@@ -1626,18 +1611,18 @@ sleep 5
     
     #NetBIOS over TCP/IP (NetBT) queries = 0 is disabled
     cd HKLM:
-    $getNetBTGPO = Get-ItemProperty "HKLM:\SOFTWARE\Policies\Microsoft\Windows NT\DNSClient" -ErrorAction SilentlyContinue
+    $getNetBTGPO = Get-ItemProperty "HKLM:\Software\Policies\Microsoft\Windows NT\DNSClient" -ErrorAction SilentlyContinue
     $enNetBTGPO = $getNetBTGPO.QueryNetBTFQDN
 
     if ($enNetBTGPO -eq "0")
     {
         $legProt = "NetBios is disabled the Registry = $enNetBTGPO" 
-        $legReg = "HKLM:\SOFTWARE\Policies\Microsoft\Windows NT\DNSClient.QueryNetBTFQDN"
+        $legReg = "HKLM:\Software\Policies\Microsoft\Windows NT\DNSClient.QueryNetBTFQDN"
     }
     else
     {
         $legProt = "Warning - NetBios is enabled Warning" 
-        $legReg = "HKLM:\SOFTWARE\Policies\Microsoft\Windows NT\DNSClient.QueryNetBTFQDN"
+        $legReg = "HKLM:\Software\Policies\Microsoft\Windows NT\DNSClient.QueryNetBTFQDN"
         $legValue = $enNetBTGPO
         $legWarn = "Incorrect"
     }
@@ -1649,18 +1634,18 @@ sleep 5
 
     #ipv6 0xff (255)
     cd HKLM:
-    $getIpv6 = get-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Services\Tcpip6\Parameters" -ErrorAction SilentlyContinue
+    $getIpv6 = get-ItemProperty -Path "HKLM:\System\CurrentControlSet\Services\Tcpip6\Parameters" -ErrorAction SilentlyContinue
     $getIpv6Int = $getIpv6.DisabledComponents
     
     if ($getIpv6Int -eq "255")
     {
         $legProt = "IPv6 is disabled the Registry = $getIpv6Int" 
-        $legReg = "HKLM:\SYSTEM\CurrentControlSet\Services\Tcpip6\Parameters.DisabledComponents"
+        $legReg = "HKLM:\System\CurrentControlSet\Services\Tcpip6\Parameters.DisabledComponents"
     }
     else
     {
         $legProt = "Warning - IPv6 is enabled Warning" 
-        $legReg = "HKLM:\SYSTEM\CurrentControlSet\Services\Tcpip6\Parameters.DisabledComponents"
+        $legReg = "HKLM:\System\CurrentControlSet\Services\Tcpip6\Parameters.DisabledComponents"
     }
     
     $newObjLegNIC = New-Object psObject
@@ -1712,7 +1697,7 @@ sleep 5
 
     #disable netbios
     cd HKLM:
-    $getNetBiosInt = Get-ChildItem "HKLM:\SYSTEM\CurrentControlSet\services\NetBT\Parameters\Interfaces" -ErrorAction SilentlyContinue
+    $getNetBiosInt = Get-ChildItem "HKLM:\System\CurrentControlSet\services\NetBT\Parameters\Interfaces" -ErrorAction SilentlyContinue
     
     foreach ($inter in $getNetBiosInt)
     {
@@ -1724,12 +1709,12 @@ sleep 5
         if ($NetBiosValue -eq "0")
         {
             $legProt = "NetBios is set to $NetBiosValue in the Registry" 
-            $legReg = "HKLM:\SYSTEM\CurrentControlSet\services\NetBT\Parameters\Interfaces.$NetBiosPath"
+            $legReg = "HKLM:\System\CurrentControlSet\services\NetBT\Parameters\Interfaces.$NetBiosPath"
         }
         else
         {
             $legProt = "Warning - NetBios is set to $NetBiosValue, its incorrect and should be set to 0 Warning"
-            $legReg = "HKLM:\SYSTEM\CurrentControlSet\services\NetBT\Parameters\Interfaces.$NetBiosPath"
+            $legReg = "HKLM:\System\CurrentControlSet\services\NetBT\Parameters\Interfaces.$NetBiosPath"
         }
     
         $newObjLegNIC = New-Object psObject
@@ -1782,7 +1767,7 @@ sleep 5
     $fragLegNIC += $newObjLegNIC
 
     #LLTD
-    $getNetLLTDInt = Get-item "HKLM:\SOFTWARE\Policies\Microsoft\Windows\LLTD" -ErrorAction SilentlyContinue
+    $getNetLLTDInt = Get-item "HKLM:\Software\Policies\Microsoft\Windows\LLTD" -ErrorAction SilentlyContinue
 
     $getLTDIO =  $getNetLLTDInt.GetValue("EnableLLTDIO")
     $getRspndr = $getNetLLTDInt.GetValue("EnableRspndr")
@@ -1797,12 +1782,12 @@ sleep 5
     if ($getLTDIO -eq "0")
     {
         $legProt = "EnableLLTDIO is set to $getLTDIO in the Registry" 
-        $legReg = "HKLM:\SOFTWARE\Policies\Microsoft\Windows\LLTD"
+        $legReg = "HKLM:\Software\Policies\Microsoft\Windows\LLTD"
     }
     else
     {
         $legProt = "Warning - EnableLLTDIO is enabled Warning"
-        $legReg = "HKLM:\SOFTWARE\Policies\Microsoft\Windows\LLTD"
+        $legReg = "HKLM:\Software\Policies\Microsoft\Windows\LLTD"
     }
     
     $newObjLegNIC = New-Object psObject
@@ -1814,12 +1799,12 @@ sleep 5
     if ($getRspndr -eq "0")
     {
         $legProt = "EnableRspndr is set to $getRspndr in the Registry" 
-        $legReg = "HKLM:\SOFTWARE\Policies\Microsoft\Windows\LLTD"
+        $legReg = "HKLM:\Software\Policies\Microsoft\Windows\LLTD"
     }
     else
     {
         $legProt = "Warning - EnableRspndr is enabled Warning"
-        $legReg = "HKLM:\SOFTWARE\Policies\Microsoft\Windows\LLTD"
+        $legReg = "HKLM:\Software\Policies\Microsoft\Windows\LLTD"
     }
     
     $newObjLegNIC = New-Object psObject
@@ -1831,12 +1816,12 @@ sleep 5
     if ($getOnDomain -eq "0")
     {
         $legProt = "AllowLLTDIOOnDomain is set to $getOnDomain in the Registry" 
-        $legReg = "HKLM:\SOFTWARE\Policies\Microsoft\Windows\LLTD"
+        $legReg = "HKLM:\Software\Policies\Microsoft\Windows\LLTD"
     }
     else
     {
         $legProt = "Warning - AllowLLTDIOOnDomain is enabled Warning"
-        $legReg = "HKLM:\SOFTWARE\Policies\Microsoft\Windows\LLTD"
+        $legReg = "HKLM:\Software\Policies\Microsoft\Windows\LLTD"
     }
     
     $newObjLegNIC = New-Object psObject
@@ -1848,12 +1833,12 @@ sleep 5
     if ($getPublicNet -eq "0")
     {
         $legProt = "AllowLLTDIOOnPublicNet is set to $getPublicNet in the Registry" 
-        $legReg = "HKLM:\SOFTWARE\Policies\Microsoft\Windows\LLTD"
+        $legReg = "HKLM:\Software\Policies\Microsoft\Windows\LLTD"
     }
     else
     {
         $legProt = "Warning - AllowLLTDIOOnPublicNet is enabled Warning"
-        $legReg = "HKLM:\SOFTWARE\Policies\Microsoft\Windows\LLTD"
+        $legReg = "HKLM:\Software\Policies\Microsoft\Windows\LLTD"
     }
     
     $newObjLegNIC = New-Object psObject
@@ -1865,12 +1850,12 @@ sleep 5
     if ($getRspOnDomain -eq "0")
     {
         $legProt = "AllowRspndrOnDomain is set to $getRspOnDomain in the Registry" 
-        $legReg = "HKLM:\SOFTWARE\Policies\Microsoft\Windows\LLTD"
+        $legReg = "HKLM:\Software\Policies\Microsoft\Windows\LLTD"
     }
     else
     {
         $legProt = "Warning - AllowRspndrOnDomain is enabled Warning"
-        $legReg = "HKLM:\SOFTWARE\Policies\Microsoft\Windows\LLTD"
+        $legReg = "HKLM:\Software\Policies\Microsoft\Windows\LLTD"
     }
     
     $newObjLegNIC = New-Object psObject
@@ -1882,12 +1867,12 @@ sleep 5
     if ($getRspPublicNet -eq "0")
     {
         $legProt = "AllowRspndrOnPublicNet is set to $getRspPublicNet in the Registry" 
-        $legReg = "HKLM:\SOFTWARE\Policies\Microsoft\Windows\LLTD"
+        $legReg = "HKLM:\Software\Policies\Microsoft\Windows\LLTD"
     }
     else
     {
         $legProt = "Warning - AllowRspndrOnPublicNet is enabled Warning"
-        $legReg = "HKLM:\SOFTWARE\Policies\Microsoft\Windows\LLTD"
+        $legReg = "HKLM:\Software\Policies\Microsoft\Windows\LLTD"
     }
     
     $newObjLegNIC = New-Object psObject
@@ -1899,12 +1884,12 @@ sleep 5
     if ($getLLnPrivateNet -eq "1")
     {
         $legProt = "ProhibitLLTDIOOnPrivateNet is set to $getLLnPrivateNet in the Registry" 
-        $legReg = "HKLM:\SOFTWARE\Policies\Microsoft\Windows\LLTD"
+        $legReg = "HKLM:\Software\Policies\Microsoft\Windows\LLTD"
     }
     else
     {
         $legProt = "Warning - ProhibitLLTDIOOnPrivateNet is enabled Warning"
-        $legReg = "HKLM:\SOFTWARE\Policies\Microsoft\Windows\LLTD"
+        $legReg = "HKLM:\Software\Policies\Microsoft\Windows\LLTD"
     }
     
     $newObjLegNIC = New-Object psObject
@@ -1916,12 +1901,12 @@ sleep 5
     if ($getRspPrivateNet -eq "1")
     {
         $legProt = "ProhibitLLTDIOOnPrivateNet is set to $getRspPrivateNet in the Registry" 
-        $legReg = "HKLM:\SOFTWARE\Policies\Microsoft\Windows\LLTD"
+        $legReg = "HKLM:\Software\Policies\Microsoft\Windows\LLTD"
     }
     else
     {
         $legProt = "Warning - ProhibitLLTDIOOnPrivateNet is enabled Warning"
-        $legReg = "HKLM:\SOFTWARE\Policies\Microsoft\Windows\LLTD"
+        $legReg = "HKLM:\Software\Policies\Microsoft\Windows\LLTD"
     }
     
     $newObjLegNIC = New-Object psObject
@@ -1935,7 +1920,7 @@ sleep 5
 
     The Web Proxy Auto Discovery (WPAD) protocol assists with the automatic detection of proxy settings for web browsers. 
     Unfortunately, WPAD has suffered from a number of severe security vulnerabilities. Organisations that do not rely on 
-    the use of the WPAD protocol should disable it. This can be achieved by modifying each workstation’s host file at
+    the use of the WPAD protocol should disable it. This can be achieved by modifying each workstation's host file at
 
     %SystemDrive%\Windows\System32\Drivers\etc\hosts to create the following entry: 255.255.255.255 wpad
 
@@ -1967,7 +1952,7 @@ sleep 5
 ################################################ 
     $fragSecOptions=@()
     $secOpTitle1 = "Domain member: Digitally encrypt or sign secure channel data (always)" # = 1
-    $getSecOp1 = get-item 'HKLM:\SYSTEM\CurrentControlSet\Services\Netlogon\Parameters' -ErrorAction SilentlyContinue
+    $getSecOp1 = get-item 'HKLM:\System\CurrentControlSet\Services\Netlogon\Parameters' -ErrorAction SilentlyContinue
     $getSecOp1res = $getSecOp1.getvalue("RequireSignOrSeal")
 
     if ($getSecOp1res -eq "1")
@@ -1984,7 +1969,7 @@ sleep 5
     $fragSecOptions +=  $newObjSecOptions 
     
     $secOpTitle2 = "Microsoft network client: Digitally sign communications (always)" # = 1
-    $getSecOp2 = get-item 'HKLM:\SYSTEM\CurrentControlSet\Services\LanmanWorkstation\Parameters' -ErrorAction SilentlyContinue
+    $getSecOp2 = get-item 'HKLM:\System\CurrentControlSet\Services\LanmanWorkstation\Parameters' -ErrorAction SilentlyContinue
     $getSecOp2res = $getSecOp2.getvalue("RequireSecuritySignature")
 
     if ($getSecOp2res -eq "1")
@@ -2001,7 +1986,7 @@ sleep 5
     $fragSecOptions +=  $newObjSecOptions 
 
     $secOpTitle3 = "Microsoft network server: Digitally sign communications (always)" # = 1
-    $getSecOp3 = get-item 'HKLM:\SYSTEM\CurrentControlSet\Services\LanmanServer\Parameters' -ErrorAction SilentlyContinue
+    $getSecOp3 = get-item 'HKLM:\System\CurrentControlSet\Services\LanmanServer\Parameters' -ErrorAction SilentlyContinue
     $getSecOp3res = $getSecOp3.getvalue("RequireSecuritySignature")
 
     if ($getSecOp3res -eq "1")
@@ -2018,8 +2003,8 @@ sleep 5
     $fragSecOptions +=  $newObjSecOptions 
 
     $secOpTitle4 = "Microsoft network client: Send unencrypted password to connect to third-party SMB servers" #  = 0
-    $getSecOp4 = get-item 'HKLM:\SYSTEM\CurrentControlSet\Services\LanmanWorkstation\Parameters' -ErrorAction SilentlyContinue
-    $getSecOp4res = $getSecOp4.getvalue("EnablePlainTextPassWord")
+    $getSecOp4 = get-item 'HKLM:\System\CurrentControlSet\Services\LanmanWorkstation\Parameters' -ErrorAction SilentlyContinue
+    $getSecOp4res = $getSecOp4.getvalue("EnablePlainTextPassword")
 
     if ($getSecOp4res -eq "0")
     {
@@ -2035,7 +2020,7 @@ sleep 5
     $fragSecOptions +=  $newObjSecOptions 
 
     $secOpTitle5 = "Network security: Do not store LAN Manager hash value on next password change" #  = 1
-    $getSecOp5 = get-item 'HKLM:\SYSTEM\CurrentControlSet\Control\Lsa\' -ErrorAction SilentlyContinue
+    $getSecOp5 = get-item 'HKLM:\System\CurrentControlSet\Control\Lsa\' -ErrorAction SilentlyContinue
     $getSecOp5res = $getSecOp5.getvalue("NoLmHash")
 
     if ($getSecOp5res -eq "1")
@@ -2052,7 +2037,7 @@ sleep 5
     $fragSecOptions +=  $newObjSecOptions
 
     $secOpTitle6 = "Network security: LAN Manager authentication level (Send NTLMv2 response only\refuse LM & NTLM)" #  = 5
-    $getSecOp6 = get-item 'HKLM:\SYSTEM\CurrentControlSet\Control\Lsa\' -ErrorAction SilentlyContinue
+    $getSecOp6 = get-item 'HKLM:\System\CurrentControlSet\Control\Lsa\' -ErrorAction SilentlyContinue
     $getSecOp6res = $getSecOp6.getvalue("lmcompatibilitylevel")
 
     if ($getSecOp6res -eq "5")
@@ -2069,7 +2054,7 @@ sleep 5
     $fragSecOptions +=  $newObjSecOptions
 
     $secOpTitle7 = "Network Access: Do not allow anonymous enumeration of SAM accounts" #  = 1
-    $getSecOp7 = get-item 'HKLM:\SYSTEM\CurrentControlSet\Control\Lsa\' -ErrorAction SilentlyContinue
+    $getSecOp7 = get-item 'HKLM:\System\CurrentControlSet\Control\Lsa\' -ErrorAction SilentlyContinue
     $getSecOp7res = $getSecOp7.getvalue("restrictanonymoussam")
 
     if ($getSecOp7res -eq "1")
@@ -2086,7 +2071,7 @@ sleep 5
     $fragSecOptions +=  $newObjSecOptions
 
     $secOpTitle8 = "Network Access: Do not allow anonymous enumeration of SAM accounts and shares" #  = 1
-    $getSecOp8 = get-item 'HKLM:\SYSTEM\CurrentControlSet\Control\Lsa\' -ErrorAction SilentlyContinue
+    $getSecOp8 = get-item 'HKLM:\System\CurrentControlSet\Control\Lsa\' -ErrorAction SilentlyContinue
     $getSecOp8res = $getSecOp8.getvalue("restrictanonymous")
 
     if ($getSecOp8res -eq "1")
@@ -2103,7 +2088,7 @@ sleep 5
     $fragSecOptions +=  $newObjSecOptions
 
     $secOpTitle9 = "Network Access: Let Everyone permissions apply to anonymous users" # = 0
-    $getSecOp9 = get-item 'HKLM:\SYSTEM\CurrentControlSet\Control\Lsa\' -ErrorAction SilentlyContinue
+    $getSecOp9 = get-item 'HKLM:\System\CurrentControlSet\Control\Lsa\' -ErrorAction SilentlyContinue
     $getSecOp9res = $getSecOp9.getvalue("everyoneincludesanonymous")
 
     if ($getSecOp9res -eq "0")
@@ -2120,7 +2105,7 @@ sleep 5
     $fragSecOptions +=  $newObjSecOptions
 
     $secOpTitle10 = "Network security: LDAP client signing requirements" # = 2 Required
-    $getSecOp10 = get-item 'HKLM:\SYSTEM\CurrentControlSet\Services\NTDS\parameters' -ErrorAction SilentlyContinue
+    $getSecOp10 = get-item 'HKLM:\System\CurrentControlSet\Services\NTDS\parameters' -ErrorAction SilentlyContinue
     $getSecOp10res = $getSecOp10.getvalue("ldapserverintegrity")
 
     if ($getSecOp10res -eq "2")
@@ -2136,7 +2121,7 @@ sleep 5
     $fragSecOptions +=  $newObjSecOptions
 
         $secOpTitle15 = "Network security: Minimum session security for NTLM SSP based (including secure RPC) clients" 
-    $getSecOp15 = get-item 'HKLM:\SYSTEM\CurrentControlSet\Control\Lsa\MSV1_0\' -ErrorAction SilentlyContinue
+    $getSecOp15 = get-item 'HKLM:\System\CurrentControlSet\Control\Lsa\MSV1_0\' -ErrorAction SilentlyContinue
     $getSecOp15res = $getSecOp15.getvalue("NTLMMinClientSec")
 
     if ($getSecOp15res -eq "537395200")
@@ -2154,7 +2139,7 @@ sleep 5
 
 
     $secOpTitle16 = "Network security: Minimum session security for NTLM SSP based (including secure RPC) servers" 
-    $getSecOp16 = get-item 'HKLM:\SYSTEM\CurrentControlSet\Control\Lsa\MSV1_0\' -ErrorAction SilentlyContinue
+    $getSecOp16 = get-item 'HKLM:\System\CurrentControlSet\Control\Lsa\MSV1_0\' -ErrorAction SilentlyContinue
     $getSecOp16res = $getSecOp16.getvalue("NtlmMinServerSec")
 
     if ($getSecOp16res -eq "537395200")
@@ -2184,7 +2169,7 @@ sleep 5
     #>
     
     $secOpTitle12 = "Domain member: Require strong (Windows 2000 or later) session key" 
-    $getSecOp12 = get-item 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System\Kerberos\Parameters\' -ErrorAction SilentlyContinue
+    $getSecOp12 = get-item 'HKLM:\Software\Microsoft\Windows\CurrentVersion\Policies\System\Kerberos\Parameters\' -ErrorAction SilentlyContinue
     $getSecOp12res = $getSecOp12.getvalue("supportedencryptiontypes")
 
     if ($getSecOp12res -eq "2147483640")
@@ -2221,7 +2206,7 @@ sleep 5
 
 
     $secOpTitle13 = "System cryptography: Force strong key protection for user keys stored on the computer" 
-    $getSecOp13 = get-item 'HKLM:\SOFTWARE\Policies\Microsoft\Cryptography\' -ErrorAction SilentlyContinue
+    $getSecOp13 = get-item 'HKLM:\Software\Policies\Microsoft\Cryptography\' -ErrorAction SilentlyContinue
     $getSecOp13res = $getSecOp13.getvalue("ForceKeyProtection")
 
     if ($getSecOp13res -eq "2")
@@ -2238,7 +2223,7 @@ sleep 5
     $fragSecOptions +=  $newObjSecOptions
 
     $secOpTitle14 = "System cryptography: Use FIPS compliant algorithms for encryption, hashing, and signing" 
-    $getSecOp14 = get-item 'HKLM:\SYSTEM\CurrentControlSet\Control\Lsa\FIPSAlgorithmPolicy\' -ErrorAction SilentlyContinue
+    $getSecOp14 = get-item 'HKLM:\System\CurrentControlSet\Control\Lsa\FIPSAlgorithmPolicy\' -ErrorAction SilentlyContinue
     $getSecOp14res = $getSecOp14.getvalue("Enabled")
 
     if ($getSecOp14res -eq "1")
@@ -2603,7 +2588,7 @@ sleep 7
     $rpath = "C:\SecureReport\output\$OutFunc\" + "$OutFunc.log"
 
     #Registry Permissions
-    $HKLMSvc = 'HKLM:\SYSTEM\CurrentControlSet\Services'
+    $HKLMSvc = 'HKLM:\System\CurrentControlSet\Services'
     $HKLMSoft = 'HKLM:\Software'
     $HKLMCheck = $HKLMSoft,$HKLMSvc
 
@@ -2661,7 +2646,7 @@ Write-Host "Finished Searching for Writeable Registry Hive Vulnerabilities" -for
 
 ################################################
 #############  WRITEABLE FOLDERS  ##############
-############  NON SYSTEM FOLDERS  ##############
+############  NON System FOLDERS  ##############
 ################################################
 Write-Host " "
 Write-Host "Now progress will slow whilst the script enumerates all folders and their permissions, be patient" -foregroundColor Green
@@ -2755,7 +2740,7 @@ Write-Host "Finisehd Searching for Writeable Folder Vulnerabilities" -foreground
  
 ################################################
 #############  WRITEABLE FOLDERS  ##############
-###############  SYSTEM FOLDERS  ###############
+###############  System FOLDERS  ###############
 ################################################
 Write-Host " "
 Write-Host "Now progress will slow whilst the script enumerates all folders and their permissions, be patient" -foregroundColor Green
@@ -2850,7 +2835,7 @@ Write-Host "Finished Searching for Writeable System Folder Vulnerabilities" -for
 
 ################################################
 #################  CREATEFILES  ################
-###############  SYSTEM FOLDERS  ###############
+###############  System FOLDERS  ###############
 ################################################
 Write-Host " "
 Write-Host "Now progress will slow whilst the script enumerates all folders and their permissions, be patient" -foregroundColor Green
@@ -3174,10 +3159,10 @@ Write-Host "Finised Auditing Shares and permissions" -foregroundColor Green
 Write-Host " "
 Write-Host "Now progress will slow whilst the script enumerates all files for passwords, be patient" -foregroundColor Green
 Write-Host " "
-Write-Host "Searching for Embedded PassWord in Files" -foregroundColor Green
+Write-Host "Searching for Embedded Password in Files" -foregroundColor Green
 sleep 7
   
-#PassWords in Processes
+#Passwords in Processes
     #$getPSPass = gwmi win32_process -ErrorAction SilentlyContinue | 
 
     $getPSPass = Get-CimInstance win32_process -ErrorAction SilentlyContinue |
@@ -3227,12 +3212,12 @@ if ($embeddedpw -eq "y")
             foreach ($PassFile in $getUserFolder)
             {
                 #Write-Host $PassFile.fullname -ForegroundColor Yellow
-                $SelectPassWord  = Get-Content $PassFile.FullName |  Select-String -Pattern password, credential
+                $SelectPassword  = Get-Content $PassFile.FullName |  Select-String -Pattern password, credential
  
-            if ($SelectPassWord -like "*password*")
+            if ($SelectPassword -like "*password*")
             {
                 $newObjFilePass = New-Object -TypeName PSObject
-                Add-Member -InputObject $newObjFilePass -Type NoteProperty -Name FilesContainingPassWord -Value  $PassFile.FullName 
+                Add-Member -InputObject $newObjFilePass -Type NoteProperty -Name FilesContainingPassword -Value  $PassFile.FullName 
                 $fragFilePass += $newObjFilePass
             }
         }
@@ -3240,17 +3225,17 @@ if ($embeddedpw -eq "y")
     }
 
 Write-Host " "
-Write-Host "Finished Searching for Embedded PassWord in Files" -foregroundColor Green
+Write-Host "Finished Searching for Embedded Password in Files" -foregroundColor Green
 
 ################################################
 #####  SEARCHING FOR REGISTRY PASSWordS   ######
 ################################################
 Write-Host " "
-Write-Host "Auditing Registry PassWords" -foregroundColor Green
+Write-Host "Auditing Registry Passwords" -foregroundColor Green
 sleep 5
 
     $VulnReport = "C:\SecureReport"
-    $OutFunc = "RegPassWords" 
+    $OutFunc = "RegPasswords" 
                 
     $tpSec10 = Test-Path "C:\SecureReport\output\$OutFunc\"
     
@@ -3266,12 +3251,12 @@ sleep 5
 
     foreach ($regSearchItems in $regSearchWords){
         #swapped to native tool, Powershell is too slow
-        reg query HKLM\SOFTWARE /f $regSearchItems /t REG_SZ /s >> $secEditPath
-        reg query HKCU\SOFTWARE /f $regSearchItems /t REG_SZ /s >> $secEditPath
+        reg query HKLM\Software /f $regSearchItems /t REG_SZ /s >> $secEditPath
+        reg query HKCU\Software /f $regSearchItems /t REG_SZ /s >> $secEditPath
 }
 
 $getRegPassCon = (get-content $secEditPath | where {$_ -notmatch "classes" -and $_ -notmatch "ClickToRun" -and $_ -notmatch "microsoft" -and $_ -notmatch "default"} | Select-String -Pattern "hkey_")
-$fragRegPassWords=@()
+$fragRegPasswords=@()
 foreach ($getRegPassItem in $getRegPassCon)
 {
     foreach ($regSearchItems in $regSearchWords)
@@ -3282,19 +3267,19 @@ foreach ($getRegPassItem in $getRegPassCon)
             #$regPassValue | write-host -ForegroundColor yellow
             $regPassPath = $regPassValue.PSPath.Replace("Microsoft.PowerShell.Core\Registry::","") 
         
-            $regPassWord = $regPassValue.$regSearchItems
+            $regPassword = $regPassValue.$regSearchItems
          
-            $newObjRegPassWords = New-Object -TypeName PSObject
-            Add-Member -InputObject $newObjRegPassWords -Type NoteProperty -Name RegistryPath -Value "Warning - $($regPassPath) warning"
-            Add-Member -InputObject $newObjRegPassWords -Type NoteProperty -Name RegistryValue -Value "Warning - $($regSearchItems) warning"
-            Add-Member -InputObject $newObjRegPassWords -Type NoteProperty -Name RegistryPassWord -Value "Warning - $($regPassWord) warning"
-            $fragRegPassWords += $newObjRegPassWords
+            $newObjRegPasswords = New-Object -TypeName PSObject
+            Add-Member -InputObject $newObjRegPasswords -Type NoteProperty -Name RegistryPath -Value "Warning - $($regPassPath) warning"
+            Add-Member -InputObject $newObjRegPasswords -Type NoteProperty -Name RegistryValue -Value "Warning - $($regSearchItems) warning"
+            Add-Member -InputObject $newObjRegPasswords -Type NoteProperty -Name RegistryPassword -Value "Warning - $($regPassword) warning"
+            $fragRegPasswords += $newObjRegPasswords
         }
     }
 }
 
 Write-Host " "
-Write-Host "Finished Searching for Embedded PassWord in the Registry" -foregroundColor Green
+Write-Host "Finished Searching for Embedded Password in the Registry" -foregroundColor Green
 
 ################################################
 ###############  DLL HIJACKING  ################
@@ -3357,7 +3342,7 @@ if ($tpSec10 -eq $false)
 }
 
 $ASRPathtxt = "C:\SecureReport\output\$OutFunc\" + "$OutFunc.txt"
-$getASRGuids = Get-ItemProperty "HKLM:\SOFTWARE\Policies\Microsoft\Windows Defender\Windows Defender Exploit Guard\ASR\Rules" -ErrorAction SilentlyContinue
+$getASRGuids = Get-ItemProperty "HKLM:\Software\Policies\Microsoft\Windows Defender\Windows Defender Exploit Guard\ASR\Rules" -ErrorAction SilentlyContinue
 
 if ($getASRGuids -eq $null)
     {
@@ -3573,7 +3558,7 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     #>
     $WindowsOSDescrip = "Prevent SafeMode for Non Admins"
     $gpopath ="Computer Configuration\Policies\Administrative Templates\Windows Components\Windows Error Reporting\Advanced Error Reporting Settings\$WindowsOSDescrip"
-    $RegKey = 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System\'
+    $RegKey = 'HKLM:\Software\Microsoft\Windows\CurrentVersion\Policies\System\'
     $WindowsOSVal=@()
     $WindowsOSVal = "SafeModeBlockNonAdmins"   
     $getWindowsOSVal=@()
@@ -3724,7 +3709,7 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     $gpopath ="Computer Configuration\Policies\Administrative Templates\System\Logon\$WindowsOSDescrip"
     $RegKey = 'HKLM:\Software\Policies\Microsoft\Windows\System\'
     $WindowsOSVal=@()
-    $WindowsOSVal = "BlockDomainPicturePassWord"
+    $WindowsOSVal = "BlockDomainPicturePassword"
     $getWindowsOSVal=@()
     $getWindowsOS = Get-Item $RegKey -ErrorAction SilentlyContinue
     $getWindowsOSVal = $getWindowsOS.GetValue("$WindowsOSVal") 
@@ -3984,12 +3969,12 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     $fragWindowsOSVal += $newObjWindowsOS
 
     <#
-    PassWord protect the screen saver
+    Password protect the screen saver
 
     User Configuration\Policies\Administrative Templates\Control Panel\Personalization
 
     #>
-    $WindowsOSDescrip = "PassWord protect the screen saver"
+    $WindowsOSDescrip = "Password protect the screen saver"
     $gpopath ="User Configuration\Policies\Administrative Templates\Control Panel\Personalization\$WindowsOSDescrip"
     $RegKey = 'HKCU:\Software\Policies\Microsoft\Windows\Control Panel\Desktop\'
     $WindowsOSVal=@()
@@ -4055,7 +4040,7 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     #>
     $WindowsOSDescrip = "Turn off toast notifications on the lock screen"
     $gpopath ="User Configuration\Policies\Administrative Templates\Start Menu and Taskbar\Notifications\$WindowsOSDescrip"
-    $RegKey = 'HKCU:\SOFTWARE\Policies\Microsoft\Windows\CurrentVersion\PushNotifications\'
+    $RegKey = 'HKCU:\Software\Policies\Microsoft\Windows\CurrentVersion\PushNotifications\'
     $WindowsOSVal=@()
     $WindowsOSVal = "NoToastApplicationNotificationOnLockScreen"
     $getWindowsOSVal=@()
@@ -4227,7 +4212,7 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     $gpopath ="Computer Configuration\Policies\Administrative Templates\System\Logon\$WindowsOSDescrip"
     $RegKey = 'HKLM:\Software\Policies\Microsoft\Windows\CredUI\'
     $WindowsOSVal=@()
-    $WindowsOSVal = "DisablePassWordReveal"
+    $WindowsOSVal = "DisablePasswordReveal"
     $getWindowsOS = Get-Item $RegKey -ErrorAction SilentlyContinue
     $getWindowsOSVal=@()
     $getWindowsOSVal = $getWindowsOS.GetValue("$WindowsOSVal")
@@ -4332,7 +4317,7 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     $gpopath ="Computer Configuration\Policies\Administrative Templates\Windows Components\Credential User Interface\$WindowsOSDescrip"
     $RegKey = 'HKLM:\Software\Policies\Microsoft\Windows\System\'
     $WindowsOSVal=@()
-    $WindowsOSVal = "NoLocalPassWordResetQuestions"
+    $WindowsOSVal = "NoLocalPasswordResetQuestions"
     $getWindowsOSVal=@()
     $getWindowsOS = Get-Item $RegKey -ErrorAction SilentlyContinue
     $getWindowsOSVal = $getWindowsOS.GetValue("$WindowsOSVal") 
@@ -4459,7 +4444,7 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
 
     $WindowsOSDescrip = "Interactive logon: Do not require CTRL+ALT+DEL"
     $gpopath ="Computer Configuration\Windows Settings\Security Settings\Local Policies\Security Options\Windows Logon Options\$WindowsOSDescrip"
-    $RegKey = 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System\'
+    $RegKey = 'HKLM:\Software\Microsoft\Windows\CurrentVersion\Policies\System\'
     $WindowsOSVal=@()
     $WindowsOSVal = "disablecad"
     $getWindowsOSVal=@()
@@ -4530,7 +4515,7 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
 
     $WindowsOSDescrip = "Interactive logon: Number of previous logons to cache"
     $gpopath ="Computer Configuration\Windows Settings\Security Settings\Local Policies\Security Options\Windows Logon Options\$WindowsOSDescrip"
-    $RegKey = 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon\'
+    $RegKey = 'HKLM:\Software\Microsoft\Windows NT\CurrentVersion\Winlogon\'
     $WindowsOSVal=@()
     $WindowsOSVal = "CachedLogonsCount"
     $getWindowsOSVal=@()
@@ -4580,7 +4565,7 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     #>
     $WindowsOSDescrip = "Network Access: Do not allow storage of passwords and credentials for network authentication"
     $gpopath ="Computer Configuration\Windows Settings\Security Settings\Local Policies\Security Options\Windows Logon Options\$WindowsOSDescrip"
-    $RegKey = 'HKLM:\SYSTEM\CurrentControlSet\Control\Lsa\'
+    $RegKey = 'HKLM:\System\CurrentControlSet\Control\Lsa\'
     $WindowsOSVal=@()
     $WindowsOSVal = "disabledomaincreds"
     $getWindowsOSVal=@()
@@ -4626,7 +4611,7 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     #>
     $WindowsOSDescrip = "Apply UAC restrictions to local accounts on network logons"
     $gpopath ="No GPO Setting available"
-    $RegKey = 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System\'
+    $RegKey = 'HKLM:\Software\Microsoft\Windows\CurrentVersion\Policies\System\'
     $WindowsOSVal=@()
     $WindowsOSVal = "LocalAccountTokenFilterPolicy"
     $getWindowsOSVal=@()
@@ -4699,7 +4684,7 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     #>
     $WindowsOSDescrip = "Configure registry policy processing"
     $gpopath ="Computer Configuration\Policies\Administrative Templates\System\Group Policy\$WindowsOSDescrip"
-    $RegKey = 'HKLM:\SOFTWARE\Policies\Microsoft\Windows\Group Policy\{35378EAC-683F-11D2-A89A-00C04FBBCFA2}\'
+    $RegKey = 'HKLM:\Software\Policies\Microsoft\Windows\Group Policy\{35378EAC-683F-11D2-A89A-00C04FBBCFA2}\'
     $WindowsOSVal=@()
     $WindowsOSVal = "NoGPOListChanges"  
     $getWindowsOSVal=@()
@@ -5157,7 +5142,7 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     $gpopath ="Computer Configuration\Policies\Windows Settings\Security Settings\Local Policies\Security Options\$WindowsOSDescrip"
     $RegKey = 'HKLM:\System\CurrentControlSet\Control\Lsa\'
     $WindowsOSVal=@()
-    $WindowsOSVal = "LimitBlankPassWordUse"
+    $WindowsOSVal = "LimitBlankPasswordUse"
     $getWindowsOSVal=@()
     $getWindowsOS = Get-Item $RegKey -ErrorAction SilentlyContinue
     $getWindowsOSVal = $getWindowsOS.GetValue("$WindowsOSVal") 
@@ -6119,13 +6104,83 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     $fragWindowsOSVal += $newObjWindowsOS
 
     <#
+    Allow Basic authentication
+
+    Computer Configuration\Policies\Administrative Templates\Windows Components\Windows Remote Management (WinRM)\WinRM Client
+    
+    This policy setting allows you to manage whether the Windows Remote Management (WinRM) service accepts Basic authentication from a remote client.
+    If you enable this policy setting, the WinRM service accepts Basic authentication from a remote client.
+    If you disable or do not configure this policy setting, the WinRM service does not accept Basic authentication from a remote client.
+
+    #>
+    $WindowsOSDescrip = "Allow Basic authentication"
+    $gpopath ="Computer Configuration\Policies\Administrative Templates\Windows Components\Windows Remote Management (WinRM)\WinRM Client\$WindowsOSDescrip"
+    $RegKey = 'HKLM:\Software\Policies\Microsoft\Windows\WinRM\Client\'
+    $WindowsOSVal=@()
+    $WindowsOSVal = "AllowBasic"  
+    $getWindowsOSVal=@()
+    $getWindowsOS = Get-Item $RegKey -ErrorAction SilentlyContinue
+    $getWindowsOSVal = $getWindowsOS.GetValue("$WindowsOSVal") 
+
+    if ($getWindowsOSVal -eq "0")
+    {
+        $WindowsOSSet = "$WindowsOSDescrip is disabled" 
+        $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
+    }
+    else
+    {
+        $WindowsOSSet = "Warning - $WindowsOSDescrip is enabled Warning" 
+        $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
+    }
+
+    $newObjWindowsOS = New-Object -TypeName PSObject
+    Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsSetting -Value  $WindowsOSSet
+    Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsRegValue -Value $WindowsOSReg 
+    $fragWindowsOSVal += $newObjWindowsOS
+
+    <#
+    Allow unencrypted traffic
+
+    Computer Configuration\Policies\Administrative Templates\Windows Components\Windows Remote Management (WinRM)\WinRM Client
+    
+    This policy setting allows you to manage whether the Windows Remote Management (WinRM) service sends and receives unencrypted messages over the network.
+    If you enable this policy setting, the WinRM client sends and receives unencrypted messages over the network.
+    If you disable or do not configure this policy setting, the WinRM client sends or receives only encrypted messages over the network.
+
+    #>
+    $WindowsOSDescrip = "Allow unencrypted traffic"
+    $gpopath ="Computer Configuration\Policies\Administrative Templates\Windows Components\Windows Remote Management (WinRM)\WinRM Client\$WindowsOSDescrip"
+    $RegKey = 'HKLM:\Software\Policies\Microsoft\Windows\WinRM\Client\'
+    $WindowsOSVal=@()
+    $WindowsOSVal = "AllowUnencryptedTraffic"  
+    $getWindowsOSVal=@()
+    $getWindowsOS = Get-Item $RegKey -ErrorAction SilentlyContinue
+    $getWindowsOSVal = $getWindowsOS.GetValue("$WindowsOSVal") 
+
+    if ($getWindowsOSVal -eq "0")
+    {
+        $WindowsOSSet = "$WindowsOSDescrip is disabled" 
+        $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
+    }
+    else
+    {
+        $WindowsOSSet = "Warning - $WindowsOSDescrip is enabled Warning" 
+        $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
+    }
+
+    $newObjWindowsOS = New-Object -TypeName PSObject
+    Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsSetting -Value  $WindowsOSSet
+    Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsRegValue -Value $WindowsOSReg 
+    $fragWindowsOSVal += $newObjWindowsOS
+
+    <#
     Disallow WinRM from storing RunAs credentials
 
     Computer Configuration\Policies\Administrative Templates\Windows Components\Windows Remote Management (WinRM)\WinRM Service
     
     This policy setting allows you to manage whether the Windows Remote Management (WinRM) service will not allow RunAs credentials to be stored for any plug-ins.
-    If you enable this policy setting, the WinRM service will not allow the RunAsUser or RunAsPassWord configuration values to be set for any plug-ins. If a plug-in 
-    has already set the RunAsUser and RunAsPassWord configuration values, the RunAsPassWord configuration value will be erased from the credential store on this 
+    If you enable this policy setting, the WinRM service will not allow the RunAsUser or RunAsPassword configuration values to be set for any plug-ins. If a plug-in 
+    has already set the RunAsUser and RunAsPassword configuration values, the RunAsPassword configuration value will be erased from the credential store on this 
     computer
 
     #>
@@ -6155,14 +6210,14 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     $fragWindowsOSVal += $newObjWindowsOS
 
 
-        <#
+    <#
     Allow Remote Shell Access
 
     Computer Configuration\Policies\Administrative Templates\Windows Components\Windows Remote Shell
     
     This policy setting configures Access to remote shells.
     If you enable or do not configure this policy setting, new remote shell connections are accepted by the server.
-    If you set this policy to ‘disabled', new remote shell connections are rejected by the server.
+    If you set this policy to 'disabled', new remote shell connections are rejected by the server.
 
     #>
     $WindowsOSDescrip = "Allow Remote Shell Access"
@@ -6190,6 +6245,227 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsRegValue -Value $WindowsOSReg 
     $fragWindowsOSVal += $newObjWindowsOS
 
+
+    <#
+    Prohibit connection to non-domain networks when connected to domain authenticated network
+
+    "Computer Configuration\Administrative Templates\Network\Windows Connection Manager\"
+
+    This policy setting prevents computers from connecting to both a domain based network and a non-domain based network 
+    at the same time.If this policy setting is enabled the computer responds to automatic and manual network connection 
+    attempts based on the following circumstances:Automatic connection attempts- When the computer is already connected 
+    to a domain based network all automatic connection attempts to non-domain networks are blocked.- When the computer 
+    is already connected to a non-domain based network automatic connection attempts to domain based networks are blocked.
+    Manual connection attempts- When the computer is already connected to either a non-domain based network or a domain based 
+    network over media other than Ethernet and a user attempts to create a manual connection to an additional network in 
+    violation of this policy setting the existing network connection is disconnected and the manual connection is allowed.- 
+    When the computer is already connected to either a non-domain based network or a domain based network over Ethernet 
+    and a user attempts to create a manual connection to an additional network in violation of this policy setting the 
+    existing Ethernet connection is maintained and the manual connection attempt is blocked.If this policy setting is 
+    not configured or is disabled computers are allowed to connect simultaneously to both domain and non-domain networks.      
+    
+    #>
+    $WindowsOSDescrip = "Prohibit connection to non-domain networks when connected to domain authenticated network"
+    $gpopath ="Computer Configuration\Administrative Templates\Network\Windows Connection Manager\$WindowsOSDescrip"
+    $RegKey = 'HKLM:\Software\Policies\Microsoft\Windows\WcmSvc\GroupPolicy\'
+    $WindowsOSVal=@()
+    $WindowsOSVal = "fBlockNonDomain"  
+    $getWindowsOSVal=@()
+    $getWindowsOS = Get-Item $RegKey -ErrorAction SilentlyContinue
+    $getWindowsOSVal = $getWindowsOS.GetValue("$WindowsOSVal") 
+
+    if ($getWindowsOSVal -eq "1")
+    {
+        $WindowsOSSet = "$WindowsOSDescrip is enabled" 
+        $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
+    }
+    else
+    {
+        $WindowsOSSet = "Warning - $WindowsOSDescrip is disbled Warning" 
+        $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
+    }
+
+    $newObjWindowsOS = New-Object -TypeName PSObject
+    Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsSetting -Value  $WindowsOSSet
+    Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsRegValue -Value $WindowsOSReg 
+    $fragWindowsOSVal += $newObjWindowsOS
+
+
+    <#
+    Prohibit use of Internet Connection Sharing on your DNS domain network
+
+    "Computer Configuration\Administrative Templates\Network\Network Connections"
+
+    Determines whether administrators can enable and configure the Internet Connection Sharing (ICS) feature of an Internet 
+    connection and if the ICS service can run on the computer.ICS lets administrators configure their system as an Internet 
+    gateway for a small network and provides network services such as name resolution and addressing through DHCP to the local 
+    private network.If you enable this setting ICS cannot be enabled or configured by administrators and the ICS service cannot 
+    run on the computer. The Advanced tab in the Properties dialog box for a LAN or remote access connection is removed. The Internet 
+    Connection Sharing page is removed from the New Connection Wizard. The Network Setup Wizard is disabled.If you disable this setting 
+    or do not configure it and have two or more connections administrators can enable ICS. The Advanced tab in the properties dialog 
+    box for a LAN or remote access connection is available. In addition the user is presented with the option to enable Internet Connection 
+    Sharing in the Network Setup Wizard and Make New Connection Wizard. (The Network Setup Wizard is available only in Windows XP 
+    Professional.)By default ICS is disabled when you create a remote access connection but administrators can use the Advanced tab to 
+    enable it. When running the New Connection Wizard or Network Setup Wizard administrators can choose to enable ICS.Note: Internet 
+    Connection Sharing is only available when two or more network connections are present.Note: When the "Prohibit access to properties 
+    of a LAN connection" "Ability to change properties of an all user remote access connection" or "Prohibit changing properties of a 
+    private remote access connection" settings are set to deny access to the Connection Properties dialog box the Advanced tab for the 
+    connection is blocked.Note: Nonadministrators are already prohibited from configuring Internet Connection Sharing regardless of this 
+    setting.Note: Disabling this setting does not prevent Wireless Hosted Networking from using the ICS service for DHCP services. 
+    To prevent the ICS service from running on the Network Permissions tab in the network's policy properties select the "Don't use 
+    hosted networks" check box.
+    
+    #>
+
+    $WindowsOSDescrip = "Prohibit use of Internet Connection Sharing on your DNS domain network"
+    $gpopath ="Computer Configuration\Administrative Templates\Network\Network Connections\$WindowsOSDescrip"
+    $RegKey = 'HKLM:\Software\Policies\Microsoft\Windows\Network Connections\'
+    $WindowsOSVal=@()
+    $WindowsOSVal = "NC_ShowSharedAccessUI"  
+    $getWindowsOSVal=@()
+    $getWindowsOS = Get-Item $RegKey -ErrorAction SilentlyContinue
+    $getWindowsOSVal = $getWindowsOS.GetValue("$WindowsOSVal") 
+
+    if ($getWindowsOSVal -eq "0")
+    {
+        $WindowsOSSet = "$WindowsOSDescrip is enabled" 
+        $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
+    }
+    else
+    {
+        $WindowsOSSet = "Warning - $WindowsOSDescrip is disabled Warning" 
+        $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
+    }
+
+    $newObjWindowsOS = New-Object -TypeName PSObject
+    Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsSetting -Value  $WindowsOSSet
+    Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsRegValue -Value $WindowsOSReg 
+    $fragWindowsOSVal += $newObjWindowsOS
+
+ 
+    <#
+    Allow Windows to automatically connect to suggested open hotspots to networks shared by contacts and to hotspots offering paid services
+    
+    "Computer Configuration\Administrative Templates\Network\WLAN Service\WLAN SettingsAllow Windows to automatically connect to suggested open hotspots to networks shared by contacts and to hotspots offering paid services"
+
+    This policy setting determines whether users can enable the following WLAN settings: "Connect to suggested open hotspots" 
+    "Connect to networks shared by my contacts" and "Enable paid services"."Connect to suggested open hotspots" enables Windows 
+    to automatically connect users to open hotspots it knows about by crowdsourcing networks that other people using Windows have 
+    connected to."Connect to networks shared by my contacts" enables Windows to automatically connect to networks that the user's 
+    contacts have shared with them and enables users on this device to share networks with their contacts."Enable paid services" 
+    enables Windows to temporarily connect to open hotspots to determine if paid services are available.If this policy setting is 
+    disabled both "Connect to suggested open hotspots" "Connect to networks shared by my contacts" and "Enable paid services" will 
+    be turned off and users on this device will be prevented from enabling them.If this policy setting is not configured or is enabled 
+    users can choose to enable or disable either "Connect to suggested open hotspots"  or "Connect to networks shared by my contacts".      
+    #>
+
+    $WindowsOSDescrip = "Allow Windows to automatically connect to suggested open hotspots to networks shared by contacts and to hotspots offering paid services"
+    $gpopath ="Computer Configuration\Administrative Templates\Network\WLAN Service\WLAN Settings\$WindowsOSDescrip"
+    $RegKey = 'HKLM:\Software\Microsoft\wcmsvc\wifinetworkmanager\config\'
+    $WindowsOSVal=@()
+    $WindowsOSVal = "AutoConnectAllowedOEM"  
+    $getWindowsOSVal=@()
+    $getWindowsOS = Get-Item $RegKey -ErrorAction SilentlyContinue
+    $getWindowsOSVal = $getWindowsOS.GetValue("$WindowsOSVal") 
+
+    if ($getWindowsOSVal -eq "0")
+    {
+        $WindowsOSSet = "$WindowsOSDescrip is disabled" 
+        $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
+    }
+    else
+    {
+        $WindowsOSSet = "Warning - $WindowsOSDescrip is enabled Warning" 
+        $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
+    }
+
+    $newObjWindowsOS = New-Object -TypeName PSObject
+    Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsSetting -Value  $WindowsOSSet
+    Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsRegValue -Value $WindowsOSReg 
+    $fragWindowsOSVal += $newObjWindowsOS
+
+    <#
+    Remote host allows delegation of non-exportable credentials
+    
+    "Computer Configuration\Administrative Templates\System\Credentials Delegation\Remote host allows delegation of non-exportable credentials"
+
+    Remote host allows delegation of non-exportable credentialsWhen using credential delegation devices provide an exportable version of 
+    credentials to the remote host. This exposes users to the risk of credential theft from attackers on the remote host.If you enable 
+    this policy setting the host supports Restricted Admin or Remote Credential Guard mode.If you disable or do not configure this policy 
+    setting Restricted Administration and Remote Credential Guard mode are not supported. User will always need to pass their credentials 
+    to the host.   
+    #>
+
+    $WindowsOSDescrip = "Remote host allows delegation of non-exportable credentials"
+    $gpopath ="Computer Configuration\Administrative Templates\System\Credentials Delegation\$WindowsOSDescrip"
+    $RegKey = 'HKLM:\Software\Policies\Microsoft\Windows\CredentialsDelegation\'
+    $WindowsOSVal=@()
+    $WindowsOSVal = "AllowProtectedCreds"  
+    $getWindowsOSVal=@()
+    $getWindowsOS = Get-Item $RegKey -ErrorAction SilentlyContinue
+    $getWindowsOSVal = $getWindowsOS.GetValue("$WindowsOSVal") 
+
+    if ($getWindowsOSVal -eq "1")
+    {
+        $WindowsOSSet = "$WindowsOSDescrip is enabled" 
+        $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
+    }
+    else
+    {
+        $WindowsOSSet = "Warning - $WindowsOSDescrip is disabled Warning" 
+        $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
+    }
+
+    $newObjWindowsOS = New-Object -TypeName PSObject
+    Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsSetting -Value  $WindowsOSSet
+    Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsRegValue -Value $WindowsOSReg 
+    $fragWindowsOSVal += $newObjWindowsOS
+
+
+    <#
+    Encryption Oracle Remediation
+        
+    "Computer Configuration\Administrative Templates\System\Credentials Delegation"
+
+    Encryption Oracle RemediationThis policy setting applies to applications using the CredSSP component (for example: Remote Desktop Connection).
+    Some versions of the CredSSP protocol are vulnerable to an encryption oracle attack against the client.  This policy controls 
+    compatibility with vulnerable clients and servers.  This policy allows you to set the level of protection desired for the 
+    encryption oracle vulnerability.If you enable this policy setting CredSSP version support will be selected based on the 
+    following options:Force Updated Clients: Client applications which use CredSSP will not be able to fall back to the insecure 
+    versions and services using CredSSP will not accept unpatched clients. Note: this setting should not be deployed until all 
+    remote hosts support the newest version.Mitigated: Client applications which use CredSSP will not be able to fall back to the 
+    insecure version but services using CredSSP will accept unpatched clients. See the link below for important information about 
+    the risk posed by remaining unpatched clients.Vulnerable: Client applications which use CredSSP will expose the remote servers to 
+    attacks by supporting fall back to the insecure versions and services using CredSSP will accept unpatched clients.For more information 
+    about the vulnerability and servicing requirements for protection see https://go.microsoft.com/fwlink/?linkid=866660   
+    #>
+
+    $WindowsOSDescrip = "Encryption Oracle Remediation"
+    $gpopath ="Computer Configuration\Administrative Templates\System\Credentials Delegation\$WindowsOSDescrip"
+    $RegKey = 'HKLM:\Software\Microsoft\Windows\CurrentVersion\Policies\System\CredSSP\Parameters\'
+    $WindowsOSVal=@()
+    $WindowsOSVal = "AllowEncryptionOracle"  
+    $getWindowsOSVal=@()
+    $getWindowsOS = Get-Item $RegKey -ErrorAction SilentlyContinue
+    $getWindowsOSVal = $getWindowsOS.GetValue("$WindowsOSVal") 
+
+    if ($getWindowsOSVal -eq "0")
+    {
+        $WindowsOSSet = "$WindowsOSDescrip is enabled Force Updated Clients" 
+        $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
+    }
+    else
+    {
+        $WindowsOSSet = "Warning - $WindowsOSDescrip is disabled Warning" 
+        $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
+    }
+
+    $newObjWindowsOS = New-Object -TypeName PSObject
+    Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsSetting -Value  $WindowsOSSet
+    Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsRegValue -Value $WindowsOSReg 
+    $fragWindowsOSVal += $newObjWindowsOS
+
+
   
       <#
     Allow Cortana
@@ -6202,7 +6478,7 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     #>
     $WindowsOSDescrip = "Allow Cortana"
     $gpopath ="Computer Configuration\Policies\Administrative Templates\Windows Components\Search\$WindowsOSDescrip"
-    $RegKey = 'HKLM:\SOFTWARE\Policies\Microsoft\Windows\Windows Search\'
+    $RegKey = 'HKLM:\Software\Policies\Microsoft\Windows\Windows Search\'
     $WindowsOSVal=@()
     $WindowsOSVal = "AllowCortana"  
     $getWindowsOSVal=@()
@@ -6227,7 +6503,7 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
 
 
     <#
-    Don’t search the web or display web results in Search
+    Don't search the web or display web results in Search
 
     Computer Configuration\Policies\Administrative Templates\Windows Components\Search
     
@@ -6237,9 +6513,9 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     If you don't configure this policy setting, a user can choose whether or not Search can perform queries on the web, and if the web results are displayed in Search
 
     #>
-    $WindowsOSDescrip = "Don’t search the web or display web results in Search"
+    $WindowsOSDescrip = "Don't search the web or display web results in Search"
     $gpopath ="Computer Configuration\Policies\Administrative Templates\Windows Components\Search\$WindowsOSDescrip"
-    $RegKey = 'HKLM:\SOFTWARE\Policies\Microsoft\Windows\WindowsSearch\'
+    $RegKey = 'HKLM:\Software\Policies\Microsoft\Windows\WindowsSearch\'
     $WindowsOSVal=@()
     $WindowsOSVal = "ConnectedSearchUseWeb"  
     $getWindowsOSVal=@()
@@ -6271,7 +6547,7 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     #>
     $WindowsOSDescrip = "Microsoft Support Diagnostic Tool: Turn on MSDT interactive communication with support provider"
     $gpopath ="Computer Configuration\Policies\Administrative Templates\System\Troubleshooting and Diagnostics\Microsoft Support Diagnostic Tool\$WindowsOSDescrip"
-    $RegKey = 'HKLM:\SOFTWARE\Policies\Microsoft\Windows\ScriptedDiagnosticsProvider\Policy\'
+    $RegKey = 'HKLM:\Software\Policies\Microsoft\Windows\ScriptedDiagnosticsProvider\Policy\'
     $WindowsOSVal=@()
     $WindowsOSVal = "DisableQueryRemoteServer"
     $getWindowsOSVal=@()
@@ -6493,7 +6769,7 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     #>
     $WindowsOSDescrip = "Configure Corporate Windows Error Reporting"
     $gpopath ="Computer Configuration\Policies\Administrative Templates\Windows Components\Windows Error Reporting\Advanced Error Reporting Settings\$WindowsOSDescrip"
-    $RegKey = 'HKLM:\SOFTWARE\Policies\Microsoft\Windows\WindowsErrorReporting\'
+    $RegKey = 'HKLM:\Software\Policies\Microsoft\Windows\WindowsErrorReporting\'
     $WindowsOSVal=@()
     $WindowsOSVal = "CorporateWerUseSSL"   #query for SSL to be enabled
     $getWindowsOSVal=@()
@@ -6564,7 +6840,7 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     #>
     $WindowsOSDescrip = "Enabled Structured Exception Handling Overwrite Protection (SEHOP)"
     $gpopath ="Create manually or via GPO Preferences"
-    $RegKey = 'HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\kernel\'
+    $RegKey = 'HKLM:\System\CurrentControlSet\Control\Session Manager\kernel\'
     $WindowsOSVal=@()
     $WindowsOSVal = "DisableExceptionChainValidation"  
     $getWindowsOSVal=@()
@@ -6805,7 +7081,7 @@ $EdgePolicies =[ordered]@{
 "BasicAuthOverHttpEnabled" = "Computer Configuration\Policies\Administrative Templates\Microsoft Edge\HTTP authentication\","Allow Basic authentication for HTTP","Disabled","HKLM:\Software\Policies\Microsoft\Edge\","BasicAuthOverHttpEnabled","If you enable this policy or leave it unset Basic authentication challenges received over non-secure HTTP will be allowed.If you disable this policy  non-secure HTTP requests from the Basic authentication scheme are blocked and only secure HTTPS is allowed.This policy setting is ignored (and Basic is always forbidden) if the 'AuthSchemes' (Supported authentication schemes) policy is set and does not include Basic."
 "AuthSchemes" = "Computer Configuration\Policies\Administrative Templates\Microsoft Edge\HTTP authentication\","Supported authentication schemes","ntlm,negotiate","HKLM:\Software\Policies\Microsoft\Edge\","AuthSchemes","Specifies which HTTP authentication schemes are supported.You can configure the policy by using these values: 'basic' 'digest' 'ntlm' and 'negotiate'. Separate multiple values with commas.If you don't configure this policy all four schemes are used.Example value: basicdigestntlmnegotiate"
 "NativeMessagingUserLevelHosts" = "Computer Configuration\Policies\Administrative Templates\Microsoft Edge\Native Messaging\","Allow user-level native messaging hosts (installed without admin permissions)","Disabled","HKLM:\Software\Policies\Microsoft\Edge\","NativeMessagingUserLevelHosts","If you set this policy to Enabled or leave it unset Microsoft Edge can use native messaging hosts installed at the user level.If you set this policy to Disabled Microsoft Edge can only use these hosts if they're installed at the system level."
-"PassWordManagerEnabled" = "Computer Configuration\Policies\Administrative Templates\Microsoft Edge\PassWord manager and protection\","Enable saving Passwords to the Passord Manager","Disabled","HKLM:\Software\Policies\Microsoft\Edge\","PassWordManagerEnabled","Enable Microsoft Edge to save user passwords.If you enable this policy users can save their passwords in Microsoft Edge. The next time they visit the site Microsoft Edge will enter the password automatically.If you disable this policy users can't save new passwords but they can still use previously saved passwords.If you enable or disable this policy users can't change or override it in Microsoft Edge. If you don't configure it users can save passwords as well as turn this feature off."
+"PasswordManagerEnabled" = "Computer Configuration\Policies\Administrative Templates\Microsoft Edge\Password manager and protection\","Enable saving Passwords to the Passord Manager","Disabled","HKLM:\Software\Policies\Microsoft\Edge\","PasswordManagerEnabled","Enable Microsoft Edge to save user passwords.If you enable this policy users can save their passwords in Microsoft Edge. The next time they visit the site Microsoft Edge will enter the password automatically.If you disable this policy users can't save new passwords but they can still use previously saved passwords.If you enable or disable this policy users can't change or override it in Microsoft Edge. If you don't configure it users can save passwords as well as turn this feature off."
 "InsecurePrivateNetworkRequestsAllowed" = "Computer Configuration\Policies\Administrative Templates\Microsoft Edge\Private Network Request Settings\","Specifies whether to allow insecure websites to make requests to more-private network endpoints","Disabled","HKLM:\Software\Policies\Microsoft\Edge\","InsecurePrivateNetworkRequestsAllowed","Controls whether insecure websites are allowed to make requests to more-private network endpoints.This policy relates to the Private Network Access specification. See https://wicg.github.io/private-network-Access/ for more details.A network endpoint is more private than another if:1) Its IP address is localhost and the other is not.2) Its IP address is private and the other is public.In the future depending on spec evolution this policy might apply to all cross-origin requests directed at private IPs or localhost.A website is deemed secure if it meets the definition of a secure context in https://developer.mozilla.org/en-US/docs/Web/Security/Secure_Contexts. Otherwise it will be treated as an insecure context.When this policy is either not set or set to false the default behavior for requests from insecure contexts to more-private network endpoints will depend on the user's personal configuration for the BlockInsecurePrivateNetworkRequests feature which may be set by a field trial or on the command line.When this policy is set to true insecure websites are allowed to make requests to any network endpoint subject to other cross-origin checks."
 "SmartScreenEnabled" = "Computer Configuration\Policies\Administrative Templates\Microsoft Edge\SmartScreen settings\","Configure Microsoft Defender SmartScreen","Enabled","HKLM:\Software\Policies\Microsoft\Edge\","SmartScreenEnabled","This policy setting lets you configure whether to turn on Microsoft Defender SmartScreen. Microsoft Defender SmartScreen provides warning messages to help protect your users from potential phishing scams and malicious software. By default Microsoft Defender SmartScreen is turned on.If you enable this setting Microsoft Defender SmartScreen is turned on.If you disable this setting Microsoft Defender SmartScreen is turned off.If you don't configure this setting users can choose whether to use Microsoft Defender SmartScreen.This policy is available only on Windows instances that are joined to a Microsoft Active Directory domain Windows 10 Pro or Enterprise instances that enrolled for device management or macOS instances that are that are managed via MDM or joined to a domain via MCX."
 "PreventSmartScreenPromptOverride" = "Computer Configuration\Policies\Administrative Templates\Microsoft Edge\SmartScreen settings\","Prevent bypassing Microsoft Defender SmartScreen prompts for sites","Enabled","HKLM:\Software\Policies\Microsoft\Edge\","PreventSmartScreenPromptOverride","This policy setting lets you decide whether users can override the Microsoft Defender SmartScreen warnings about potentially malicious websites.If you enable this setting users can't ignore Microsoft Defender SmartScreen warnings and they are blocked from continuing to the site.If you disable or don't configure this setting users can ignore Microsoft Defender SmartScreen warnings and continue to the site.This policy is available only on Windows instances that are joined to a Microsoft Active Directory domain Windows 10 Pro or Enterprise instances that enrolled for device management or macOS instances that are that are managed via MDM or joined to a domain via MCX."
@@ -6940,8 +7216,8 @@ $OfficePolicies =[ordered]@{
 
 #excel
 "enableblockunsecurequeryfiles"="User Configuration\Policies\Administrative Templates\Microsoft Excel 2016\Excel Options\Security\Trust Center\External Content","Always prevent untrusted Microsoft Query files from opening","1","HKCU:\Software\Policies\Microsoft\Office\16.0\Excel\Security\external content","enableblockunsecurequeryfiles"
-"disableddeserverlaunch"="User Configuration\Policies\Administrative Templates\Microsoft Excel 2016\Excel Options\Security\Trust Center\External Content","Don’t allow Dynamic Data Exchange (DDE) server launch in Excel","1","HKCU:\Software\Policies\Microsoft\Office\16.0\Excel\Security\external content","disableddeserverlaunch"
-"disableddeserverlookup"="User Configuration\Policies\Administrative Templates\Microsoft Excel 2016\Excel Options\Security\Trust Center\External Content","Don’t allow Dynamic Data Exchange (DDE) server lookup in Excel","1","HKCU:\Software\Policies\Microsoft\Office\16.0\Excel\Security\external content","disableddeserverlookup"
+"disableddeserverlaunch"="User Configuration\Policies\Administrative Templates\Microsoft Excel 2016\Excel Options\Security\Trust Center\External Content","Don't allow Dynamic Data Exchange (DDE) server launch in Excel","1","HKCU:\Software\Policies\Microsoft\Office\16.0\Excel\Security\external content","disableddeserverlaunch"
+"disableddeserverlookup"="User Configuration\Policies\Administrative Templates\Microsoft Excel 2016\Excel Options\Security\Trust Center\External Content","Don't allow Dynamic Data Exchange (DDE) server lookup in Excel","1","HKCU:\Software\Policies\Microsoft\Office\16.0\Excel\Security\external content","disableddeserverlookup"
 "Execblockcontentexecutionfrominternet"="User Configuration\Policies\Administrative Templates\Microsoft Excel 2016\Excel Options\Security\Trust Center","Block macros from running in Office files from the Internet","1","HKCU:\Software\Policies\Microsoft\Office\16.0\Excel\Security","blockcontentexecutionfrominternet"
 "notbpromptunsignedaddin"="User Configuration\Policies\Administrative Templates\Microsoft Excel 2016\Excel Options\Security\Trust Center","Disable Trust Bar Notification for unsigned application add-ins and block them","1","HKCU:\Software\Policies\Microsoft\Office\16.0\Excel\Security","notbpromptunsignedaddin"
 "requireaddinsig"="User Configuration\Policies\Administrative Templates\Microsoft Excel 2016\Excel Options\Security\Trust Center","Require that application add-ins are signed by Trusted Publisher","1","HKCU:\Software\Policies\Microsoft\Office\16.0\Excel\Security","requireaddinsig"
@@ -7220,10 +7496,10 @@ foreach ($OfficePolItems in $OfficePolicies.values)
        $fragSummary += $newObjSummary
    }  
 
-   if ($fragRegPassWords -like "*Warning*")
+   if ($fragRegPasswords -like "*Warning*")
    {
        $newObjSummary = New-Object psObject
-       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value '<a href="#RegPW">Found Embedded PassWords in the Registry</a>'
+       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value '<a href="#RegPW">Found Embedded Passwords in the Registry</a>'
        Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Risk -Value "Medium Risk"
        $fragSummary += $newObjSummary
    } 
@@ -8120,9 +8396,9 @@ $style = @"
 
     $descripSecOptions = "<br>GPO settings can be found @ Computer Configuration\Windows Settings\Security Settings\Local Policies\Security Options<br><br>Prevent credential relay with Impacket and Man in the Middle by Digitally Signing for SMB and LDAP connections enforcement. <br> <br>Further information can be found @ https://www.tenaka.net/smb-relay-attack<br> <br>System cryptography: Force strong key protection for user keys stored on the computer should only be set on clients and not Servers<br>"
 
-    $descripLSA = "Enabling RunAsPPL for LSA Protection allows only digitally signed binaries to load as a protected process preventing credential theft and Access by code injection and memory Access by processes that aren’t signed. <br> <br>Further information can be found @ https://docs.microsoft.com/en-us/windows-server/security/credentials-protection-and-management/configuring-additional-lsa-protection<br>"
+    $descripLSA = "Enabling RunAsPPL for LSA Protection allows only digitally signed binaries to load as a protected process preventing credential theft and Access by code injection and memory Access by processes that aren't signed. <br> <br>Further information can be found @ https://docs.microsoft.com/en-us/windows-server/security/credentials-protection-and-management/configuring-additional-lsa-protection<br>"
 
-    $descripDLL = "Loading DLL's default behaviour is to call the dll from the current working directory of the application, then the directories listed in the environmental variable. Setting ‘DLL Safe Search’ mitigates the risk by moving CWD to later in the search order. <br> <br>Further information can be found @ https://docs.microsoft.com/en-us/windows/win32/dlls/dynamic-link-library-search-order<br>"
+    $descripDLL = "Loading DLL's default behaviour is to call the dll from the current working directory of the application, then the directories listed in the environmental variable. Setting 'DLL Safe Search' mitigates the risk by moving CWD to later in the search order. <br> <br>Further information can be found @ https://docs.microsoft.com/en-us/windows/win32/dlls/dynamic-link-library-search-order<br>"
 
     $descripHyper = "Hypervisor Enforced Code Integrity prevents the loading of unsigned kernel-mode drivers and system binaries from being loaded into system memory. <br> <br>Further information can be found @ https://docs.microsoft.com/en-us/windows/security/threat-protection/device-guard/enable-virtualization-based-protection-of-code-integrity<br>"
 
@@ -8134,7 +8410,7 @@ $style = @"
 
     $descripUnquoted = "The Unquoted paths vulnerability is when a Windows Service's 'Path to Executable' contains spaces and not wrapped in double-quotes providing a route to System. <br> <br>Further information can be found @ https://www.tenaka.net/unquotedpaths<br>"
 
-    $descripProcPw = "Processes that contain credentials to authenticate and Access applications. Launching Task Manager, Details and add ‘Command line’ to the view."
+    $descripProcPw = "Processes that contain credentials to authenticate and Access applications. Launching Task Manager, Details and add 'Command line' to the view."
 
     $descripLegacyNet = "LLMNR and other legacy network protocols can be used to steal password hashes. <br> <br>Further information can be found @https://www.tenaka.net/responder<br>"
 
@@ -8158,15 +8434,15 @@ $style = @"
 
     $descriptAuthCodeSig = "Checks that digitally signed files have a valid and trusted hash. If any Hash Mis-Matches then the file could have been altered"
 
-    $descriptDLLHijack = "DLL Hijacking is when a malicious dll replaces a legitimate dll due to a path vulnerability. A program or service makes a call on that dll gaining the privileges of that program or service. Additionally missing dll’s presents a risk where a malicious dll is dropped into a path where no current dll exists but the program or service is making a call to that non-existent dll. This audit is reliant on programs being launched so that DLL’s are loaded. Each process’s loaded dll’s are checked for permissions issues and whether they are signed. The DLL hijacking audit does not currently check for missing dll’s being called. Process Monitor filtered for ‘NAME NOT FOUND’ and path ends with ‘DLL’ will."
+    $descriptDLLHijack = "DLL Hijacking is when a malicious dll replaces a legitimate dll due to a path vulnerability. A program or service makes a call on that dll gaining the privileges of that program or service. Additionally missing dll's presents a risk where a malicious dll is dropped into a path where no current dll exists but the program or service is making a call to that non-existent dll. This audit is reliant on programs being launched so that DLL's are loaded. Each process's loaded dll's are checked for permissions issues and whether they are signed. The DLL hijacking audit does not currently check for missing dll's being called. Process Monitor filtered for 'NAME NOT FOUND' and path ends with 'DLL' will."
 
     $descripCredGu = "Credential Guard securely isolating the LSA process preventing the recovery of domain hashes from memory. Credential Guard only works for Domain joined clients and servers.<br> <br>Further information can be found @ https://www.tenaka.net/pass-the-hash<br>"
 
-    $descripLAPS = "Local Administrator PassWord Solution (LAPS) is a small program with some GPO settings that randomly sets the local administrator password for clients and servers across the estate. Domain Admins have default permission to view the local administrator password via DSA.MSC. Access to the LAPS passwords may be delegated unintentionally, this could lead to a serious security breach, leaking all local admin accounts passwords for all computer objects to those that shouldn't have Access. <br> <br>Installation guide can be found @ https://www.tenaka.net/post/local-admin-passwords. <br> <br>Security related issue details can be found @ https://www.tenaka.net/post/laps-leaks-local-admin-passwords<br>"
+    $descripLAPS = "Local Administrator Password Solution (LAPS) is a small program with some GPO settings that randomly sets the local administrator password for clients and servers across the estate. Domain Admins have default permission to view the local administrator password via DSA.MSC. Access to the LAPS passwords may be delegated unintentionally, this could lead to a serious security breach, leaking all local admin accounts passwords for all computer objects to those that shouldn't have Access. <br> <br>Installation guide can be found @ https://www.tenaka.net/post/local-admin-passwords. <br> <br>Security related issue details can be found @ https://www.tenaka.net/post/laps-leaks-local-admin-passwords<br>"
 
-    $descripURA = "User Rights Assignments (URA) control what tasks a user can perform on the local client, server or Domain Controller. For example the ‘Log on as a service’ (SeServiceLogonRight) provides the rights for a service account to Logon as a Service, not Interactively. <br> <br> Access to URA can be abused and attack the system. <br> <br>Both SeImpersonatePrivilege (Impersonate a client after authentication) and SeAssignPrimaryTokenPrivilege (Replace a process level token) are commonly used by service accounts and vulnerable to escalation of privilege via Juicy Potato exploits.<br> <br>SeBackupPrivilege (Back up files and directories), read Access to all files including SAM Database, Registry and NTDS.dit (AD Database). <br> <br>SeRestorePrivilege (Restore files and directories), Write Access to all files. <br> <br>SeDebugPrivilege (Debug programs), allows the ability to dump and inject into process memory inc kernel. PassWords are stored in memory in the clear and can be dumped and easily extracted. <br> <br>SeTakeOwnershipPrivilege (Take ownership of files or other objects), take ownership of file regardless of Access.<br> <br>SeNetworkLogonRight (Access this computer from the network) allows pass-the-hash when Local Admins share the same password, remove all the default groups and apply named groups, separating client from servers.<br><br>SeCreateGlobalPrivilege (Create global objects), do not assign any user or group other than Local System as this will allow system takeover<br><br>Further details can be found @ <br>https://docs.microsoft.com/en-us/windows/security/threat-protection/security-policy-settings/user-rights-assignment<br>https://www.microsoft.com/en-us/download/details.aspx?id=55319<br><br>**UserRightAssignment-Name - Mouse over to show Microsofts recommended setting"
+    $descripURA = "User Rights Assignments (URA) control what tasks a user can perform on the local client, server or Domain Controller. For example the 'Log on as a service' (SeServiceLogonRight) provides the rights for a service account to Logon as a Service, not Interactively. <br> <br> Access to URA can be abused and attack the system. <br> <br>Both SeImpersonatePrivilege (Impersonate a client after authentication) and SeAssignPrimaryTokenPrivilege (Replace a process level token) are commonly used by service accounts and vulnerable to escalation of privilege via Juicy Potato exploits.<br> <br>SeBackupPrivilege (Back up files and directories), read Access to all files including SAM Database, Registry and NTDS.dit (AD Database). <br> <br>SeRestorePrivilege (Restore files and directories), Write Access to all files. <br> <br>SeDebugPrivilege (Debug programs), allows the ability to dump and inject into process memory inc kernel. Passwords are stored in memory in the clear and can be dumped and easily extracted. <br> <br>SeTakeOwnershipPrivilege (Take ownership of files or other objects), take ownership of file regardless of Access.<br> <br>SeNetworkLogonRight (Access this computer from the network) allows pass-the-hash when Local Admins share the same password, remove all the default groups and apply named groups, separating client from servers.<br><br>SeCreateGlobalPrivilege (Create global objects), do not assign any user or group other than Local System as this will allow system takeover<br><br>Further details can be found @ <br>https://docs.microsoft.com/en-us/windows/security/threat-protection/security-policy-settings/user-rights-assignment<br>https://www.microsoft.com/en-us/download/details.aspx?id=55319<br><br>**UserRightAssignment-Name - Mouse over to show Microsofts recommended setting"
 
-    $descripRegPassWords = "Searches HKLM and HKCU for the Words 'password' and 'passwd', then displays the password value in the report.<br><br>The search will work with VNC encrypted passwords stored in the registry, from Kali run the following command<br> <br>echo -n PassWordHere | xxd -r -p | openssl enc -des-cbc --nopad --nosalt -K e84ad660c4721ae0 -iv 0000000000000000 -d | hexdump -Cv<br>"
+    $descripRegPasswords = "Searches HKLM and HKCU for the Words 'password' and 'passwd', then displays the password value in the report.<br><br>The search will work with VNC encrypted passwords stored in the registry, from Kali run the following command<br> <br>echo -n PasswordHere | xxd -r -p | openssl enc -des-cbc --nopad --nosalt -K e84ad660c4721ae0 -iv 0000000000000000 -d | hexdump -Cv<br>"
 
     $descripASR = "Attack Surface Reduction (ASR) requires Windows Defender Real-Time Antivirus and works in conjunction with Exploit Guard to prevent malware abusing legitimate MS Office functionality<br> <br>Further information can be found @ https://docs.microsoft.com/en-us/microsoft-365/security/defender-endpoint/overview-attack-surface-reduction?view=o365-worldwide<br>"
 
@@ -8213,7 +8489,7 @@ $style = @"
     $frag_PreAuth = $fragPreAuth | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"PreAuth`"><a href=`"#TOP`">Domain Accounts that DO NOT Pre-Authenticate</a></span></h2>" -PostContent "<h4>$descripPreAuth</h4>" | Out-String
     $frag_NeverExpires = $fragNeverExpires | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"PassExpire`"><a href=`"#TOP`">Domain Accounts that Never Expire their Password</a></span></h2>"  | Out-String
     $FragGroupDetails =  $GroupDetails  | ConvertTo-Html -As Table -fragment -PreContent "<h2>Local System Group Members</span></h2>" | Out-String
-    $FragPassPol = $PassPol | Select-Object -SkipLast 3 | ConvertTo-Html -As Table -fragment -PreContent "<h2>Local PassWord Policy</span></h2>" | Out-String
+    $FragPassPol = $PassPol | Select-Object -SkipLast 3 | ConvertTo-Html -As Table -fragment -PreContent "<h2>Local Password Policy</span></h2>" | Out-String
     $fragInstaApps  =  $InstallApps | Sort-Object publisher,displayname -Unique  | ConvertTo-Html -As Table  -fragment -PreContent "<h2>Installed Applications</span></h2>" | Out-String
     $fragHotFix = $HotFix | ConvertTo-Html -As Table -property HotFixID,InstalledOn,Caption -fragment -PreContent "<h2>Latest 10 Installed Updates</span></h2>" | Out-String
     $fragInstaApps16  =  $InstallApps16 | Sort-Object publisher,displayname -Unique  | ConvertTo-Html -As Table  -fragment -PreContent "<h2>Updates to Office 2016 and older or Updates that create KB's in the Registry</span></h2>" | Out-String
@@ -8240,7 +8516,7 @@ $style = @"
     $frag_UnQu = $fragUnQuoted | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"unquoted`"><a href=`"#TOP`">UnQuoted Paths Attack</a></span></h2>" -PostContent "<h4>$DescripUnquoted</h4>" | Out-String
     $frag_LegNIC = $fragLegNIC | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"LegNetProt`"><a href=`"#TOP`">Legacy and Vulnerable Network Protocols</a></span></h2>" -PostContent "<h4>$DescripLegacyNet</h4>" | Out-String
     $frag_SysRegPerms = $fragReg | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"RegWrite`"><a href=`"#TOP`">Registry Permissions Allowing User Access - Security Risk if Exist</a></span></h2>" -PostContent "<h4>$descripRegPer</h4>" | Out-String
-    $frag_PSPass = $fragPSPass | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"ProcPW`"><a href=`"#TOP`">Processes where CommandLine Contains a PassWord</a></span></h2>" -PostContent "<h4>$Finish</h4>" | Out-String
+    $frag_PSPass = $fragPSPass | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"ProcPW`"><a href=`"#TOP`">Processes where CommandLine Contains a Password</a></span></h2>" -PostContent "<h4>$Finish</h4>" | Out-String
     $frag_SecOptions = $fragSecOptions | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"secOptions`"><a href=`"#TOP`">Security Options to Prevent MitM Attacks</a></span></h2>" -PostContent "<h4>$descripSecOptions</h4>" | Out-String
     $frag_wFolders = $fragwFold | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"sysFileWrite `"><a href=`"#TOP`">Non System Folders that are Writeable - Security Risk when Executable</span></a></h2>" -PostContent "<h4>$descripNonFold</h4>"| Out-String
     $frag_SysFolders = $fragsysFold | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"SysDirWrite`"><a href=`"#TOP`">Default System Folders that are Writeable - Security Risk if Exist</span></a></h2>"  -PostContent "<h4>$descripSysFold</h4>"| Out-String
@@ -8254,9 +8530,9 @@ $style = @"
     $frag_Share = $fragShare | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"shares`"><a href=`"#TOP`">Shares and their Share Permissions</a></span></h2>"  | Out-String
     $frag_AuthCodeSig = $fragAuthCodeSig | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"AuthentiCode`"><a href=`"#TOP`">Files with an Authenticode Signature HashMisMatch</a></span></h2>" -PostContent "<h4>$descriptAuthCodeSig</h4>"  | Out-String  
     $frag_CredGuCFG = $fragCredGuCFG | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"CredGuard`"><a href=`"#TOP`">Credential Guard</a></span></h2>" -PostContent "<h4>$descripCredGu</h4>" | Out-String
-    $frag_LapsPwEna = $fragLapsPwEna | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"LAPS`"><a href=`"#TOP`">LAPS - Local Administrator PassWord Solution</a></span></h2>" -PostContent "<h4>$descripLAPS</h4>" | Out-String
+    $frag_LapsPwEna = $fragLapsPwEna | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"LAPS`"><a href=`"#TOP`">LAPS - Local Administrator Password Solution</a></span></h2>" -PostContent "<h4>$descripLAPS</h4>" | Out-String
     $frag_URA = $fragURA | ConvertTo-Html -as Table -Fragment -PreContent "<h2>URA - Local Systems User Rights Assignments</a></span></h2>" -PostContent "<h4>$descripURA</h4>" | Out-String
-    $frag_RegPassWords = $fragRegPassWords | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"RegPW`"><a href=`"#TOP`">PassWords Embedded in the Registry</a></span></h2>" -PostContent "<h4>$descripRegPassWords</h4>" | Out-String
+    $frag_RegPasswords = $fragRegPasswords | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"RegPW`"><a href=`"#TOP`">Passwords Embedded in the Registry</a></span></h2>" -PostContent "<h4>$descripRegPasswords</h4>" | Out-String
     $frag_ASR = $fragASR | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"asr`"><a href=`"#TOP`">Attack Surface Reduction (ASR)</a></span></h2>" -PostContent "<h4>$descripASR</h4>" | Out-String
     $frag_WDigestULC = $fragWDigestULC | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"WDigest`"><a href=`"#TOP`">WDigest</a></span></h2>" -PostContent "<h4>$descripWDigest</h4>" | Out-String
     $frag_Certificates = $fragCertificates | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"Certs`"><a href=`"#TOP`">Installed Certificates</a></span></h2>" -PostContent "<h4>$descripCerts</h4>" | Out-String
@@ -8284,12 +8560,12 @@ $style = @"
     if ($SchedTaskListings -eq $null){$frag_TaskListings = ""}
     if ($InstallApps16  -eq $null){$fragInstaApps16 = ""}
     if ($fragPSPass -eq $null){$frag_PSPass = ""}
-    if ($fragRegPassWords -eq $null){$frag_RegPassWords = ""}
+    if ($fragRegPasswords -eq $null){$frag_RegPasswords = ""}
     if ($DriverQuery -eq $null){$frag_DriverQuery = ""}
     if ($SchedTaskPerms -eq $null){$frag_TaskPerms = ""}
     if ($fragPSPass -eq $null){$frag_PSPass = ""}
     if ($fragFilePass -eq $null){$frag_FilePass = ""}
-    if ($fragRegPassWords -eq $null){$frag_RegPassWords = ""}
+    if ($fragRegPasswords -eq $null){$frag_RegPasswords = ""}
     if ($fragDomainGrps -eq $null){$frag_DomainGrps = ""}
     if ($fragDCList -eq $null){$frag_DCList = ""}
     if ($fragFSMO -eq $null){$frag_FSMO = ""}
@@ -8342,7 +8618,7 @@ if ($folders -eq "y")
     $frag_PCElevate,
     $frag_PSPass,
     $frag_FilePass,
-    $frag_RegPassWords,
+    $frag_RegPasswords,
     $frag_AutoLogon,
     $frag_TaskPerms,
     $frag_TaskListings,
@@ -8406,7 +8682,7 @@ else
     $frag_PCElevate,
     $frag_PSPass,
     $frag_FilePass,
-    $frag_RegPassWords,
+    $frag_RegPasswords,
     $frag_AutoLogon,
     $frag_TaskPerms,
     $frag_TaskListings,
