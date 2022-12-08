@@ -314,6 +314,9 @@ YYMMDD
 221123.1 - Fixed issues with MS recommended settings
 221129.1 - Added more OS GPO Recommended validation checks
 221129.2 - Swapped out “ ” ’ for ' " " - some had sneaked in whilst prepping some settings in MS Word
+221208.1 - Added test path and rename to random number for C:\SecureReport if exists
+221208.2 - Updated and added further OS GPO settings testing for misconfigurations
+221208.3 - Added further Legacy network checks
 
 #>
 
@@ -335,18 +338,40 @@ else
     #Enable detection of PowerShell or ISE, enable to run from both
     #Script name has been defined and must be saved as that name.
     $VulnReport = "C:\SecureReport"
-    
+    $ptRand = Get-Random -Minimum 100 -Maximum 999
+
     if($psise -ne $null)
     {
         $ISEPath = $psise.CurrentFile.FullPath
         $ISEDisp = $psise.CurrentFile.DisplayName.Replace("*","")
         $ISEWork = $ISEPath.TrimEnd("$ISEDisp")
-        New-Item -Path C:\SecureReport -ItemType Directory -Force
+
+        $tpSecRrpt = test-path $VulnReport
+        if ($tpSecRrpt -eq $true)
+        {
+            Rename-Item $VulnReport -NewName "$VulnReport$($ptRand)" -Force
+            New-Item -Path C:\SecureReport -ItemType Directory -Force
+        }
+        else
+        {
+            New-Item -Path C:\SecureReport -ItemType Directory -Force
+        }
     }
     else
     {
         $PSWork = split-path -parent $MyInvocation.MyCommand.Path
-        New-Item -Path C:\SecureReport -ItemType Directory -Force
+        
+        $tpSecRrpt = test-path $VulnReport
+        $tpSecRrpt = $VulnReport
+        if ($tpSecRrpt -eq $true)
+        {
+            Rename-Item $VulnReport -NewName "$VulnReport$($ptRand)" -Force
+            New-Item -Path C:\SecureReport -ItemType Directory -Force
+        }
+        else
+        {
+            New-Item -Path C:\SecureReport -ItemType Directory -Force
+        }
     }
 
 function reports
@@ -358,19 +383,6 @@ function reports
     Write-Host "PowerShell version 4 is installed (Windows8.1\Server 2012 R2), the Get-ChildItem -Depth is not supported, don't waste your time selecting audit Files, Folders and Registry for permissions issues" -ForegroundColor Red
     write-host " "
     }
-
-   # $VulnReport = "C:\SecureReport"
-   # $OutFunc = "scheme" 
-                
-   # $tpScheme = Test-Path "C:\SecureReport\output\$OutFunc\"
-    
-   # if ($tpScheme -eq $false)
-   # {
-   #     New-Item -Path "C:\SecureReport\output\$OutFunc\" -ItemType Directory -Force
-   # }
-
-   # $SchemePath = "C:\SecureReport\output\$OutFunc\" + "$OutFunc.txt"
-
 
     #Start Message
     Write-Host " "
@@ -461,7 +473,7 @@ sleep 5
 ################################################
 ##############  ACCOUNT DETAILS  ###############
 ################################################
-    #PasWord Policy
+#PasWord Policy
     cd C:\
     $getPWPol = & net accounts
     $PassPol=@()
@@ -507,7 +519,6 @@ sleep 5
 ################################################
 #########  MEMBERS OF LOCAL GROUPS  ############
 ################################################
-
 #Group Members
 #Cant remove "," as looping the Split breaks HTML import...back to drawing board - to fix
     $getLGrp = Get-LocalGroup 
@@ -549,155 +560,151 @@ $dcList = $dcListQuery.split(",") | sort
 ################################################
 ################  FSMO ROLES  ##################
 ################################################
-#FSMO Roles
-$fragFSMO=@()
-[string]$fsmolist = netdom /query fsmo
-$fsmoQuery = $fsmolist.Replace("The command completed successfully.","")
+    #FSMO Roles
+    $fragFSMO=@()
+    [string]$fsmolist = netdom /query fsmo
+    $fsmoQuery = $fsmolist.Replace("The command completed successfully.","")
 
-$fsmoQry = $fsmoQuery.replace("master","master,").replace("PDC",",PDC,").Replace("Domain",",Domain").Replace("RID",",RID").Replace("Infra",",Infra").replace("manager","manager,")
-$fsmoSplit = $fsmoQry.Split(",").Trim()
+    $fsmoQry = $fsmoQuery.replace("master","master,").replace("PDC",",PDC,").Replace("Domain",",Domain").Replace("RID",",RID").Replace("Infra",",Infra").replace("manager","manager,")
+    $fsmoSplit = $fsmoQry.Split(",").Trim()
 
-$schMasterRole = $fsmoSplit[0]
-$schMasterDC = $fsmoSplit[1]
+    $schMasterRole = $fsmoSplit[0]
+    $schMasterDC = $fsmoSplit[1]
 
-$DomMasterRole = $fsmoSplit[2]
-$DomMasterDC = $fsmoSplit[3]
+    $DomMasterRole = $fsmoSplit[2]
+    $DomMasterDC = $fsmoSplit[3]
 
-$PDCRole = $fsmoSplit[4]
-$PDCDC = $fsmoSplit[5]
+    $PDCRole = $fsmoSplit[4]
+    $PDCDC = $fsmoSplit[5]
 
-$RIDRole = $fsmoSplit[6]
-$RIDDC = $fsmoSplit[7]
+    $RIDRole = $fsmoSplit[6]
+    $RIDDC = $fsmoSplit[7]
 
-$InfraRole = $fsmoSplit[8]
-$InfraDC = $fsmoSplit[9]
+    $InfraRole = $fsmoSplit[8]
+    $InfraDC = $fsmoSplit[9]
 
-$newObjFsmo = New-Object -TypeName PSObject
-Add-Member -InputObject $newObjFsmo -Type NoteProperty -Name $schMasterRole -Value $schMasterDC
-Add-Member -InputObject $newObjFsmo -Type NoteProperty -Name $DomMasterRole -Value $DomMasterDC
-Add-Member -InputObject $newObjFsmo -Type NoteProperty -Name $PDCRole -Value $PDCDC
-Add-Member -InputObject $newObjFsmo -Type NoteProperty -Name $RIDRole -Value $RIDDC
-Add-Member -InputObject $newObjFsmo -Type NoteProperty -Name $InfraRole -Value $InfraDC
-$fragFSMO += $newObjFsmo
+    $newObjFsmo = New-Object -TypeName PSObject
+    Add-Member -InputObject $newObjFsmo -Type NoteProperty -Name $schMasterRole -Value $schMasterDC
+    Add-Member -InputObject $newObjFsmo -Type NoteProperty -Name $DomMasterRole -Value $DomMasterDC
+    Add-Member -InputObject $newObjFsmo -Type NoteProperty -Name $PDCRole -Value $PDCDC
+    Add-Member -InputObject $newObjFsmo -Type NoteProperty -Name $RIDRole -Value $RIDDC
+    Add-Member -InputObject $newObjFsmo -Type NoteProperty -Name $InfraRole -Value $InfraDC
+    $fragFSMO += $newObjFsmo
 
 ################################################
 #########  DOMAIN PRIV GROUPS ##################
 ################################################
+    #Domain Priv Group members
+    $Root = [ADSI]"LDAP://RootDSE"
+    $rootdse = $Root.rootDomainNamingContext
 
-#Domain Priv Group members
-$Root = [ADSI]"LDAP://RootDSE"
-$rootdse = $Root.rootDomainNamingContext
+    $adGroups = 
+    "Administrators",
+    "Backup Operators",
+    "Server Operators",
+    "Account Operators",
+    "Guests",
+    "Domain Admins",
+    "Schema Admins",
+    "Enterprise Admins",
+    "DnsAdmins",
+    "DHCP Administrators",
+    "Domain Guests"
 
-$adGroups = 
-"Administrators",
-"Backup Operators",
-"Server Operators",
-"Account Operators",
-"Guests",
-"Domain Admins",
-"Schema Admins",
-"Enterprise Admins",
-"DnsAdmins",
-"DHCP Administrators",
-"Domain Guests"
+    $fragDomainGrps=@()
 
-$fragDomainGrps=@()
-
-foreach ($adGroup in $adGroups)
-{
-    try
-    {    
-        $gpName = [ADSI]"LDAP://CN=$adGroup,CN=Users,$($rootdse)"
-        $gpMembers = $gpName.Member    
-        $ArgpMem=@()
-        if($gpMembers -ne $null)
-        {  
-        foreach ($gpMem in $gpMembers)
-            {
-            $gpSting = $gpMem.ToString().split(",").replace("CN=","")[0]
-            $ArgpMem += $gpSting
-            }
-            $joinMem = $ArgpMem -join ", "
-
-            $newObjDomainGrps = New-Object -TypeName PSObject
-            Add-Member -InputObject $newObjDomainGrps -Type NoteProperty -Name GroupName -Value $adGroup
-            Add-Member -InputObject $newObjDomainGrps -Type NoteProperty -Name GroupMembers -Value $joinMem 
-            $fragDomainGrps += $newObjDomainGrps   
-        }
-    }
-finally
+    foreach ($adGroup in $adGroups)
     {
-        $gpName = [ADSI]"LDAP://CN=$adGroup,CN=builtin,$($rootdse)"
-        $gpMembers = $gpName.Member   
-        $ArgpMem=@()
-                if($gpMembers -ne $null)
-        {  
-        foreach ($gpMem in $gpMembers)
-            {
-            $gpSting = $gpMem.ToString().split(",").replace("CN=","")[0]
-            $ArgpMem += $gpSting
+        try
+        {    
+            $gpName = [ADSI]"LDAP://CN=$adGroup,CN=Users,$($rootdse)"
+            $gpMembers = $gpName.Member    
+            $ArgpMem=@()
+            if($gpMembers -ne $null)
+            {  
+            foreach ($gpMem in $gpMembers)
+                {
+                $gpSting = $gpMem.ToString().split(",").replace("CN=","")[0]
+                $ArgpMem += $gpSting
+                }
+                $joinMem = $ArgpMem -join ", "
+
+                $newObjDomainGrps = New-Object -TypeName PSObject
+                Add-Member -InputObject $newObjDomainGrps -Type NoteProperty -Name GroupName -Value $adGroup
+                Add-Member -InputObject $newObjDomainGrps -Type NoteProperty -Name GroupMembers -Value $joinMem 
+                $fragDomainGrps += $newObjDomainGrps   
             }
-            $joinMem = $ArgpMem -join ", "
-
-            $newObjDomainGrps = New-Object -TypeName PSObject
-            Add-Member -InputObject $newObjDomainGrps -Type NoteProperty -Name GroupName -Value $adGroup
-            Add-Member -InputObject $newObjDomainGrps -Type NoteProperty -Name GroupMembers -Value $joinMem 
-            $fragDomainGrps += $newObjDomainGrps   
         }
+    finally
+        {
+            $gpName = [ADSI]"LDAP://CN=$adGroup,CN=builtin,$($rootdse)"
+            $gpMembers = $gpName.Member   
+            $ArgpMem=@()
+                    if($gpMembers -ne $null)
+            {  
+            foreach ($gpMem in $gpMembers)
+                {
+                $gpSting = $gpMem.ToString().split(",").replace("CN=","")[0]
+                $ArgpMem += $gpSting
+                }
+                $joinMem = $ArgpMem -join ", "
+
+                $newObjDomainGrps = New-Object -TypeName PSObject
+                Add-Member -InputObject $newObjDomainGrps -Type NoteProperty -Name GroupName -Value $adGroup
+                Add-Member -InputObject $newObjDomainGrps -Type NoteProperty -Name GroupMembers -Value $joinMem 
+                $fragDomainGrps += $newObjDomainGrps   
+            }
+        }
+
     }
-
-}
-
 
 ################################################
 ########  PRE-AUTHENTICATION  ##################
 ################################################
-#DSQUERY
-#Pre-Authenticaiton enabled
+    #DSQUERY
+    #Pre-Authenticaiton enabled
+    #RSAT is requried
+    $dsQuery = & dsquery.exe * -limit 0 -filter "&(objectclass=user)(userAccountControl:1.2.840.113556.1.4.803:=4194304)" -attr samaccountname, distinguishedName, userAccountControl | select -skip 1
+    $fragPreAuth=@()
 
-#RSAT is requried
+    foreach ($preAuth in $dsQuery)
+        {
+            $preAuth = $preAuth.trim("").Split(" ",[System.StringSplitOptions]::RemoveEmptyEntries)
+            $preAuthSam = "Warning - " + $preAuth[0] + " warning" 
+            $preAuthOu = "Warning - " +$preAuth[1]  + " warning" 
+            $preAuthUac = "Warning - " +$preAuth[2]  + " warning" 
 
-$dsQuery = & dsquery.exe * -limit 0 -filter "&(objectclass=user)(userAccountControl:1.2.840.113556.1.4.803:=4194304)" -attr samaccountname, distinguishedName, userAccountControl | select -skip 1
-$fragPreAuth=@()
-
-foreach ($preAuth in $dsQuery)
-    {
-        $preAuth = $preAuth.trim("").Split(" ",[System.StringSplitOptions]::RemoveEmptyEntries)
-        $preAuthSam = "Warning - " + $preAuth[0] + " warning" 
-        $preAuthOu = "Warning - " +$preAuth[1]  + " warning" 
-        $preAuthUac = "Warning - " +$preAuth[2]  + " warning" 
-
-        $newObjPreAuth = New-Object -TypeName PSObject
-        Add-Member -InputObject $newObjPreAuth -Type NoteProperty -Name PreAuth-Account -Value $preAuthSam
-        Add-Member -InputObject $newObjPreAuth -Type NoteProperty -Name PreAuth-OUPath -Value $preAuthOu
-        Add-Member -InputObject $newObjPreAuth -Type NoteProperty -Name PreAuth-UACValue -Value $preAuthUac
-        $fragPreAuth += $newObjPreAuth
-    }
+            $newObjPreAuth = New-Object -TypeName PSObject
+            Add-Member -InputObject $newObjPreAuth -Type NoteProperty -Name PreAuth-Account -Value $preAuthSam
+            Add-Member -InputObject $newObjPreAuth -Type NoteProperty -Name PreAuth-OUPath -Value $preAuthOu
+            Add-Member -InputObject $newObjPreAuth -Type NoteProperty -Name PreAuth-UACValue -Value $preAuthUac
+            $fragPreAuth += $newObjPreAuth
+        }
 
 ################################################
 ###### PASSWORDS THAT DONT EXPIRE ##############
 ################################################
-#Accounts that never Expire
+    #Accounts that never Expire
 
-$dsQueryNexpires = & dsquery.exe * -filter "(&(objectCategory=person)(objectClass=user)(userAccountControl:1.2.840.113556.1.4.803:=65536))" -attr samaccountname, distinguishedName, userAccountControl | select -skip 1
-$fragNeverExpires=@()
+    $dsQueryNexpires = & dsquery.exe * -filter "(&(objectCategory=person)(objectClass=user)(userAccountControl:1.2.840.113556.1.4.803:=65536))" -attr samaccountname, distinguishedName, userAccountControl | select -skip 1
+    $fragNeverExpires=@()
 
-foreach ($NeverExpires in $dsQueryNexpires)
-    {
-        $NeverExpires = $NeverExpires.trim("").Split(" ",[System.StringSplitOptions]::RemoveEmptyEntries)
-        $NeverExpiresSam = "Warning - " + $NeverExpires[0] + " warning" 
-        $NeverExpiresOu = "Warning - " +$NeverExpires[1]  + " warning" 
-        $NeverExpiresUac = "Warning - " +$NeverExpires[2]  + " warning" 
+    foreach ($NeverExpires in $dsQueryNexpires)
+        {
+            $NeverExpires = $NeverExpires.trim("").Split(" ",[System.StringSplitOptions]::RemoveEmptyEntries)
+            $NeverExpiresSam = "Warning - " + $NeverExpires[0] + " warning" 
+            $NeverExpiresOu = "Warning - " +$NeverExpires[1]  + " warning" 
+            $NeverExpiresUac = "Warning - " +$NeverExpires[2]  + " warning" 
 
-        $newObjNeverExpires = New-Object -TypeName PSObject
-        Add-Member -InputObject $newObjNeverExpires -Type NoteProperty -Name NeverExpires-Account -Value $NeverExpiresSam
-        Add-Member -InputObject $newObjNeverExpires -Type NoteProperty -Name NeverExpires-OUPath -Value $NeverExpiresOu
-        Add-Member -InputObject $newObjNeverExpires -Type NoteProperty -Name NeverExpires-UACValue -Value $NeverExpiresUac
-        $fragNeverExpires += $newObjNeverExpires
-    }
+            $newObjNeverExpires = New-Object -TypeName PSObject
+            Add-Member -InputObject $newObjNeverExpires -Type NoteProperty -Name NeverExpires-Account -Value $NeverExpiresSam
+            Add-Member -InputObject $newObjNeverExpires -Type NoteProperty -Name NeverExpires-OUPath -Value $NeverExpiresOu
+            Add-Member -InputObject $newObjNeverExpires -Type NoteProperty -Name NeverExpires-UACValue -Value $NeverExpiresUac
+            $fragNeverExpires += $newObjNeverExpires
+        }
 
-Write-Host " "
-Write-Host "Completed Gathering Host and Account Details" -foregroundColor Green
+    Write-Host " "
+    Write-Host "Completed Gathering Host and Account Details" -foregroundColor Green
 
 ################################################
 #########  USER RIGHTS ASSIGNMENTS  ############
@@ -860,7 +867,6 @@ sleep 5
 ################################################
 ##############  INSTALLED APPS  ################
 ################################################
-
     $getUninx64 = Get-ChildItem  "HKLM:\Software\Microsoft\Windows\CurrentVersion\Uninstall\" -ErrorAction SilentlyContinue
     $getUninx86 = Get-ChildItem  "HKLM:\Software\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\"  -ErrorAction SilentlyContinue
     $getUnin = $getUninx64 + $getUninx86
@@ -1187,7 +1193,6 @@ sleep 5
 
 Write-Host " "
 Write-Host "Finished Collectiong DriverQuery data for VBS" -foregroundColor Green
-
 
 ################################################
 ##############  NETWORK SETTINGS  ##############
@@ -1588,6 +1593,27 @@ sleep 5
     Add-Member -InputObject $newObjLegNIC -Type NoteProperty -Name LegacyPath -Value $legReg
     $fragLegNIC += $newObjLegNIC
 
+    #Insecure logons to an SMB server must be disabled
+    cd HKLM:
+    $getsmb1srv = Get-ItemProperty "HKLM:\SOFTWARE\Policies\Microsoft\Windows\LanmanWorkstation\" -ErrorAction SilentlyContinue
+    $ensmb1srv = $getsmb1srv.AllowInsecureGuestAuth
+
+    if ($ensmb1srv -eq "0")
+    {
+        $legProt = "Insecure logons to an SMB server is set to $ensmb1srv and disabled" 
+        $legReg = "HKLM:\SOFTWARE\Policies\Microsoft\Windows\LanmanWorkstation\Parameters.AllowInsecureGuestAuth"
+    }
+    else
+    {
+        $legProt = "Warning - Insecure logons to an SMB server is enabled Warning"
+        $legReg = "HKLM:\SOFTWARE\Policies\Microsoft\Windows\LanmanWorkstation\Parameters.AllowInsecureGuestAuth"
+    }
+    
+    $newObjLegNIC = New-Object psObject
+    Add-Member -InputObject $newObjLegNIC -Type NoteProperty -Name LegacyProtocol -Value $legProt
+    Add-Member -InputObject $newObjLegNIC -Type NoteProperty -Name LegacyPath -Value $legReg
+    $fragLegNIC += $newObjLegNIC
+
     #llmnr = 0 is disabled
     cd HKLM:
     $getllmnrGPO = Get-ItemProperty "HKLM:\Software\Policies\Microsoft\Windows NT\DNSClient" -ErrorAction SilentlyContinue
@@ -1767,6 +1793,7 @@ sleep 5
     $fragLegNIC += $newObjLegNIC
 
     #LLTD
+    #https://admx.help/HKLM/Software/Policies/Microsoft/Windows/LLTD
     $getNetLLTDInt = Get-item "HKLM:\Software\Policies\Microsoft\Windows\LLTD" -ErrorAction SilentlyContinue
 
     $getLTDIO =  $getNetLLTDInt.GetValue("EnableLLTDIO")
@@ -1881,14 +1908,14 @@ sleep 5
     $fragLegNIC += $newObjLegNIC
    
     #ProhibitLLTDIOOnPrivateNe
-    if ($getLLnPrivateNet -eq "1")
+    if ($getLLnPrivateNet -eq "0")
     {
-        $legProt = "ProhibitLLTDIOOnPrivateNet is set to $getLLnPrivateNet in the Registry" 
+        $legProt = "ProhibitLLTDIOOnPrivateNet is set to $getLLnPrivateNet in the Registry - When EnableLLTDIO is enabled, 1 is the correct setting" 
         $legReg = "HKLM:\Software\Policies\Microsoft\Windows\LLTD"
     }
     else
     {
-        $legProt = "Warning - ProhibitLLTDIOOnPrivateNet is enabled Warning"
+        $legProt = "Warning - ProhibitLLTDIOOnPrivateNet is enabled - When EnableLLTDIO is enabled, 1 is the correct setting Warning"
         $legReg = "HKLM:\Software\Policies\Microsoft\Windows\LLTD"
     }
     
@@ -1898,14 +1925,14 @@ sleep 5
     $fragLegNIC += $newObjLegNIC
    
     #ProhibitRspndrOnPrivateNet      $getRspPrivateNet = $getNetLLTDInt.GetValue("ProhibitRspndrOnPrivateNet")
-    if ($getRspPrivateNet -eq "1")
+    if ($getRspPrivateNet -eq "0")
     {
-        $legProt = "ProhibitLLTDIOOnPrivateNet is set to $getRspPrivateNet in the Registry" 
+        $legProt = "ProhibitLLTDIOOnPrivateNet is set to $getRspPrivateNet in the Registry - When EnableLLTDIO is enabled, 1 is the correct setting" 
         $legReg = "HKLM:\Software\Policies\Microsoft\Windows\LLTD"
     }
     else
     {
-        $legProt = "Warning - ProhibitLLTDIOOnPrivateNet is enabled Warning"
+        $legProt = "Warning - ProhibitLLTDIOOnPrivateNet is enabled - When EnableLLTDIO is enabled, 1 is the correct setting Warning"
         $legReg = "HKLM:\Software\Policies\Microsoft\Windows\LLTD"
     }
     
@@ -1914,7 +1941,88 @@ sleep 5
     Add-Member -InputObject $newObjLegNIC -Type NoteProperty -Name LegacyPath -Value $legReg
     $fragLegNIC += $newObjLegNIC
   
-      <#
+    cd HKLM:
+    $getLMHostsReg = Get-ItemProperty "HKLM:\System\CurrentControlSet\Services\Tcpip6\Parameters\" -ErrorAction SilentlyContinue
+    $enLMHostsReg =  $getLMHostsReg.DisableIpSourceRouting
+    
+    if ($enLMHostsReg -eq "2")
+    {
+        $legProt = "IPv6 source routing must be configured to highest protection is enabled = $enLMHostsReg" 
+        $legReg = "HKLM:\System\CurrentControlSet\Services\Tcpip6\Parameters.DisableIpSourceRouting"
+    }
+    else
+    {
+        $legProt = "Warning - IPv6 source routing must be configured to highest protection is disabled or not set Warning" 
+        $legReg = "HKLM:\System\CurrentControlSet\Services\Tcpip6\Parameters.DisableIpSourceRouting"
+    }
+    
+    $newObjLegNIC = New-Object psObject
+    Add-Member -InputObject $newObjLegNIC -Type NoteProperty -Name LegacyProtocol -Value $legProt
+    Add-Member -InputObject $newObjLegNIC -Type NoteProperty -Name LegacyPath -Value $legReg
+    $fragLegNIC += $newObjLegNIC
+
+    
+    cd HKLM:
+    $getLMHostsReg = Get-ItemProperty "HKLM:\System\CurrentControlSet\Services\Tcpip\Parameters\" -ErrorAction SilentlyContinue
+    $enLMHostsReg =  $getLMHostsReg.DisableIpSourceRouting
+    
+    if ($enLMHostsReg -eq "2")
+    {
+        $legProt = "IPv4 source routing must be configured to highest protection is enabled = $enLMHostsReg" 
+        $legReg = "HKLM:\System\CurrentControlSet\Services\Tcpip\Parameters.DisableIpSourceRouting"
+    }
+    else
+    {
+        $legProt = "Warning - IPv4 source routing must be configured to highest protection is disabled or not set Warning" 
+        $legReg = "HKLM:\System\CurrentControlSet\Services\Tcpip\Parameters.DisableIpSourceRouting"
+    }
+    
+    $newObjLegNIC = New-Object psObject
+    Add-Member -InputObject $newObjLegNIC -Type NoteProperty -Name LegacyProtocol -Value $legProt
+    Add-Member -InputObject $newObjLegNIC -Type NoteProperty -Name LegacyPath -Value $legReg
+    $fragLegNIC += $newObjLegNIC
+
+    cd HKLM:
+    $getLMHostsReg = Get-ItemProperty "HKLM:\SYSTEM\CurrentControlSet\Services\Tcpip\Parameters\" -ErrorAction SilentlyContinue
+    $enLMHostsReg =  $getLMHostsReg.EnableICMPRedirect
+    
+    if ($enLMHostsReg -eq "0")
+    {
+        $legProt = "Allow ICMP redirects to override OSPF generated routes is disabled = $enLMHostsReg" 
+        $legReg = "HKLM:\System\CurrentControlSet\Services\Tcpip\Parameters.EnableICMPRedirect"
+    }
+    else
+    {
+        $legProt = "Warning - Allow ICMP redirects to override OSPF generated routes is enabled Warning" 
+        $legReg = "HKLM:\System\CurrentControlSet\Services\Tcpip\Parameters.EnableICMPRedirect"
+    }
+    
+    $newObjLegNIC = New-Object psObject
+    Add-Member -InputObject $newObjLegNIC -Type NoteProperty -Name LegacyProtocol -Value $legProt
+    Add-Member -InputObject $newObjLegNIC -Type NoteProperty -Name LegacyPath -Value $legReg
+    $fragLegNIC += $newObjLegNIC
+
+    cd HKLM:
+    $getLMHostsReg = Get-ItemProperty "HKLM:\System\CurrentControlSet\Services\Netbt\Parameters\" -ErrorAction SilentlyContinue
+    $enLMHostsReg =  $getLMHostsReg.NoNameReleaseOnDemand
+    
+    if ($enLMHostsReg -eq "1")
+    {
+        $legProt = "Allow computer to ignore NetBIOS name release requests except from WINS servers is disabled = $enLMHostsReg" 
+        $legReg = "HKLM:\System\CurrentControlSet\Services\Netbt\Parameters.NoNameReleaseOnDemand"
+    }
+    else
+    {
+        $legProt = "Warning - Allow computer to ignore NetBIOS name release requests except from WINS servers is enabled Warning" 
+        $legReg = "HKLM:\System\CurrentControlSet\Services\Netbt\Parameters.NoNameReleaseOnDemand"
+    }
+    
+    $newObjLegNIC = New-Object psObject
+    Add-Member -InputObject $newObjLegNIC -Type NoteProperty -Name LegacyProtocol -Value $legProt
+    Add-Member -InputObject $newObjLegNIC -Type NoteProperty -Name LegacyPath -Value $legReg
+    $fragLegNIC += $newObjLegNIC
+
+    <#
     WPAD
     Web Proxy Auto Discovery protocol
 
@@ -3656,6 +3764,42 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     $fragWindowsOSVal += $newObjWindowsOS
 
     <#
+    Maintaining an audit trail of system activity logs can help identify configuration errors, troubleshoot service disruptions, 
+    and analyze compromises that have occurred, as well as detect attacks. Audit logs are necessary to provide a trail of evidence 
+    in case the system or network is compromised. Collecting this data is essential for analyzing the security of information 
+    assets and detecting signs of suspicious and unexpected behavior. Enabling "Include command line data for process creation events"
+     will record the command line information with the process creation events in the log. This can provide additional detail when 
+     malware has run on a system.
+
+    Computer Configuration\Policies\Administrative Templates\Windows Components\File Explorer
+
+    #>
+    $WindowsOSDescrip = "Include command line in process creation events"
+    $gpopath ="Computer Configuration\Policies\Administrative Templates\System\Audit Process Creation\$WindowsOSDescrip"
+    $RegKey = 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System\Audit\'
+    $WindowsOSVal=@()
+    $WindowsOSVal = "ProcessCreationIncludeCmdLine_Enabled"  
+    $getWindowsOSVal=@()
+    $getWindowsOS = Get-Item $RegKey -ErrorAction SilentlyContinue
+    $getWindowsOSVal = $getWindowsOS.GetValue("$WindowsOSVal") 
+
+    if ($getWindowsOSVal -eq "1")
+    {
+        $WindowsOSSet = "$WindowsOSDescrip is enabled" 
+        $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
+    }
+    else
+    {
+        $WindowsOSSet = "Warning - $WindowsOSDescrip is disabled Warning" 
+        $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
+    }
+
+    $newObjWindowsOS = New-Object -TypeName PSObject
+    Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsSetting -Value  $WindowsOSSet
+    Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsRegValue -Value $WindowsOSReg 
+    $fragWindowsOSVal += $newObjWindowsOS
+
+    <#
     This policy setting determines if the SMB client will allow insecure guest logons to an SMB server.
     If you enable this policy setting or if you do not configure this policy setting the SMB client will 
     allow insecure guest logons.If you disable this policy setting the SMB client will reject insecure guest logons.
@@ -4253,14 +4397,14 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     $getWindowsOS = Get-Item $RegKey -ErrorAction SilentlyContinue
     $getWindowsOSVal = $getWindowsOS.GetValue("$WindowsOSVal") 
 
-    if ($getWindowsOSVal -eq "1")
+    if ($getWindowsOSVal -eq "0")
     {
-        $WindowsOSSet = "Warning - $WindowsOSDescrip is Enabled Warning" 
+        $WindowsOSSet = "$WindowsOSDescrip is disabled" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
     }
     else
     {
-        $WindowsOSSet = "$WindowsOSDescrip is Disabled" 
+        $WindowsOSSet = "Warning - $WindowsOSDescrip is enabled warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
     }
 
@@ -8855,6 +8999,7 @@ Updates
 Audit Settings - ms rec
 
 Chrome GPOs
+Add further MS Edge GPO checks
 
 Report on Windows defender and memory protections
 
