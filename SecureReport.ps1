@@ -318,6 +318,8 @@ YYMMDD
 221208.2 - Updated and added further OS GPO settings testing for misconfigurations
 221208.3 - Added further Legacy network checks
 221210.1 - Updated list of MS Edge checks 
+230626.1 - Added kernel-mode hardware-enforced stack protection
+230717.1 - Tweaked Color and size in CSS
 
 #>
 
@@ -1028,7 +1030,7 @@ sleep 5
         Else  #server and Defender cant be detected
         {
             $newObjAVStatus = New-Object -TypeName PSObject
-            Add-Member -InputObject $newObjAVStatus -Type NoteProperty -Name AVName -Value "Warning - Antivirus cant be detcted, assume the worst and its not installed warning"
+            Add-Member -InputObject $newObjAVStatus -Type NoteProperty -Name AVName -Value "Warning - Antivirus cant be detected, assume the worst and its not installed warning"
             $FragAVStatus += $newObjAVStatus
         }
 
@@ -1301,6 +1303,35 @@ $fragNetwork6 += $newObjNetwork6
 Write-Host " "
 Write-Host "Auditing Various Registry Settings" -foregroundColor Green
 sleep 5
+
+    #kernel-mode hardware-enforced stack protection
+    $getkernelMode = Get-Item 'HKLM:\System\CurrentControlSet\Control\Session Manager\Memory Management\' -ErrorAction SilentlyContinue
+    $getkernelModeVal =  $getkernelMode.GetValue("FeatureSettingsOverride")
+    $fragkernelModeVal =@()
+
+    if ($getkernelModeVal -eq "9")
+    {
+        $kernelModeSet = "Kernel-mode hardware-enforced stack protection key FeatureSettingsOverride is enabled with a value of $getkernelModeVal" 
+        $kernelModeReg = "HKLM:\System\CurrentControlSet\Control\Session Manager\Memory Management\"
+        $kernelModeCom = "Kernel-mode Hardware-enforced Stack Protection is a security feature of Windows 11 22H2"
+    }
+    else
+    {
+        $kernelModeSet = "Warning - Kernel-mode hardware-enforced stack protection key FeatureSettingsOverride is disabled with a value of $getkernelModeVal Warning" 
+        $kernelModeReg = "HKLM:\System\CurrentControlSet\Control\Session Manager\Memory Management\"
+        $kernelModeCom = "Kernel-mode Hardware-enforced Stack Protection is a security feature of Windows 11 22H2"
+    }
+
+    $newObjkernelMode = New-Object -TypeName PSObject
+    Add-Member -InputObject $newObjkernelMode -Type NoteProperty -Name KernelModeSetting -Value  $kernelModeSet
+    Add-Member -InputObject $newObjkernelMode -Type NoteProperty -Name KernelModeRegValue -Value $kernelModeReg 
+    #Add-Member -InputObject $newObjkernelMode -Type NoteProperty -Name kernelModeComment -Value $kernelModeCom
+    $fragkernelModeVal += $newObjkernelMode
+
+
+
+
+
 
     #LSA
     $getLSA = Get-Item 'HKLM:\System\CurrentControlSet\Control\lsa\' -ErrorAction SilentlyContinue
@@ -7626,6 +7657,16 @@ foreach ($OfficePolItems in $OfficePolicies.values)
        $fragSummary += $newObjSummary
     }
 
+    
+    if ($fragkernelModeVal -like "*warning*")
+    {
+       $newObjSummary = New-Object psObject
+       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value '<a href="#KernelMode">Kernel-mode Hardware-enforced Stack Protection is not enabled</a>'
+       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Risk -Value "High Risk"
+       $fragSummary += $newObjSummary
+    }
+
+
     if ($fragNeverExpires -like "*warning*")
     {
        $newObjSummary = New-Object psObject
@@ -7949,6 +7990,13 @@ foreach ($OfficePolItems in $OfficePolicies.values)
 
     #$Scheme = Get-Content $SchemePath
 
+#$font = "helvetica"
+$font = "Raleway"
+$FontTitle_H1 = "175%"
+$FontSub_H2 = "130%"
+$FontBody_H3 = "105%"
+$FontHelps_H4 = "100%"
+
 if ($Scheme -eq "Tenaka")
 {
 $titleCol = "#4682B4"
@@ -7960,8 +8008,8 @@ $style = @"
     {
         background-color:#250F00; 
         color:#B87333;
-        font-size:100%;
-        font-family:helvetica;
+        font-size:$FontBody_H3;
+        font-family:$font;
         margin:0,0,10px,0; 
         Word-break:normal; 
         Word-wrap:break-Word
@@ -7970,6 +8018,7 @@ $style = @"
     {
         border-width: 1px;
         padding: 7px;
+        font-size:$FontBody_H3;
         border-style: solid;
         border-color:#B87333;
         border-collapse:collapse;
@@ -7979,8 +8028,8 @@ $style = @"
     {
         background-color:#250F00; 
         color:#B87333;
-        font-size:150%;
-        font-family:helvetica;
+        font-size:$FontTitle_H1;
+        font-family:$font;
         margin:0,0,10px,0;
         Word-break:normal; 
         Word-wrap:break-Word
@@ -7989,8 +8038,8 @@ $style = @"
     {
         background-color:#250F00; 
         color:#4682B4
-        font-size:120%;
-        font-family:helvetica;
+        font-size:$FontSub_H2;
+        font-family:$font;
         margin:0,0,10px,0; 
         Word-break:normal; 
         Word-wrap:break-Word
@@ -7999,8 +8048,8 @@ $style = @"
     {
         background-color:#250F00; 
         color:#B87333;
-        font-size:100%;
-        font-family:helvetica;
+        font-size:$FontBody_H3;
+        font-family:$font;
         margin:0,0,10px,0; 
         Word-break:normal; 
         Word-wrap:break-Word;
@@ -8011,8 +8060,8 @@ $style = @"
     {
         background-color:#250F00; 
         color:#766A6A;
-        font-size:90%;
-        font-family:helvetica;
+        font-size:$FontHelps_H4;
+        font-family:$font;
         margin:0,0,10px,0; 
         Word-break:normal; 
         Word-wrap:break-Word;
@@ -8022,6 +8071,7 @@ $style = @"
     {
         border-width: 1px;
         padding: 7px;
+        font-size:$FontBody_H3;
         border-style: solid;
         border-color:#B87333;
         background-color:#250F00
@@ -8030,6 +8080,7 @@ $style = @"
     {
         border-width: 1px;
         padding:7px;
+        font-size:$FontBody_H3;
         border-style: solid; 
         border-style: #B87333
     }
@@ -8044,24 +8095,28 @@ $style = @"
 
     a:link {
     color:#4682B4;
+    font-size:$FontBody_H3;
     background-color: transparent;
     text-decoration: none;
     }
 
     a:visited {
     color:#ff9933;
+    font-size:$FontBody_H3;
     background-color: transparent;
     text-decoration: none;
     }
 
     a:hover {
     color:#B87333;
+    font-size:$FontBody_H3;
     background-color: transparent;
     text-decoration: none;
     }
 
     a:active {
     color:#4682B4;
+    font-size:$FontBody_H3;
     background-color: transparent;
     text-decoration: none;
     }
@@ -8081,8 +8136,8 @@ $style = @"
     {
         background-color:#06273A; 
         color:#FFF9EC;
-        font-size:100%;
-        font-family:helvetica;
+        font-size:$FontBody_H3;
+        font-family:$font;
         margin:0,0,10px,0; 
         Word-break:normal; 
         Word-wrap:break-Word
@@ -8091,6 +8146,7 @@ $style = @"
     {
         border-width: 1px;
         padding: 7px;
+        font-size:$FontBody_H3;
         border-style: solid;
         border-color:#FFF9EC;
         border-collapse:collapse;
@@ -8100,8 +8156,8 @@ $style = @"
     {
         background-color:#06273A; 
         color:#FFF9EC;
-        font-size:150%;
-        font-family:helvetica;
+        font-size:$FontTitle_H1;
+        font-family:$font;
         margin:0,0,10px,0;
         Word-break:normal; 
         Word-wrap:break-Word
@@ -8110,8 +8166,8 @@ $style = @"
     {
         background-color:#06273A; 
         color:#4682B4;
-        font-size:120%;
-        font-family:helvetica;
+        font-size:$FontSub_H2;
+        font-family:$font;
         margin:0,0,10px,0; 
         Word-break:normal; 
         Word-wrap:break-Word
@@ -8120,8 +8176,8 @@ $style = @"
     {
         background-color:#06273A; 
         color:#FFF9EC;
-        font-size:100%;
-        font-family:helvetica;
+        font-size:$FontBody_H3;
+        font-family:$font;
         margin:0,0,10px,0; 
         Word-break:normal; 
         Word-wrap:break-Word;
@@ -8132,8 +8188,8 @@ $style = @"
     {
         background-color:#06273A; 
         color:#766A6A;
-        font-size:90%;
-        font-family:helvetica;
+        font-size:$FontHelps_H4;
+        font-family:$font;
         margin:0,0,10px,0; 
         Word-break:normal; 
         Word-wrap:break-Word;
@@ -8143,6 +8199,7 @@ $style = @"
     {
         border-width: 1px;
         padding: 7px;
+        font-size:$FontBody_H3;
         border-style: solid;
         border-color:#FFF9EC;
         background-color:#06273A
@@ -8151,6 +8208,7 @@ $style = @"
     {
         border-width: 1px;
         padding:7px;
+        font-size:$FontBody_H3;
         border-style: solid; 
         border-style: #FFF9EC
     }
@@ -8165,24 +8223,28 @@ $style = @"
 
     a:link {
     color:#4682B4;
+    font-size:$FontBody_H3;
     background-color: transparent;
     text-decoration: none;
     }
 
     a:visited {
     color:#ff9933;
+    font-size:$FontBody_H3;
     background-color: transparent;
     text-decoration: none;
     }
 
     a:hover {
     color:#FFF9EC;
+    font-size:$FontBody_H3;
     background-color: transparent;
     text-decoration: none;
     }
 
     a:active {
     color:#4682B4;
+    font-size:$FontBody_H3;
     background-color: transparent;
     text-decoration: none;
     }
@@ -8202,8 +8264,8 @@ $style = @"
     {
         background-color:#EBEAE7; 
         color:#79253D;
-        font-size:100%;
-        font-family:helvetica;
+        font-size:$FontBody_H3;
+        font-family:$font;
         margin:0,0,10px,0; 
         Word-break:normal; 
         Word-wrap:break-Word
@@ -8212,6 +8274,7 @@ $style = @"
     {
         border-width: 1px;
         padding: 7px;
+        font-size:$FontBody_H3;
         border-style: solid;
         border-color:#FFF9EC;
         border-collapse:collapse;
@@ -8221,8 +8284,8 @@ $style = @"
     {
         background-color:#EBEAE7 
         color:#79253D;
-        font-size:150%;
-        font-family:helvetica;
+        font-size:$FontTitle_H1;
+        font-family:$font;
         margin:0,0,10px,0;
         Word-break:normal; 
         Word-wrap:break-Word
@@ -8231,8 +8294,8 @@ $style = @"
     {
         background-color:#EBEAE7; 
         color:#000000;
-        font-size:120%;
-        font-family:helvetica;
+        font-size:$FontSub_H2;
+        font-family:$font;
         margin:0,0,10px,0; 
         Word-break:normal; 
         Word-wrap:break-Word
@@ -8241,8 +8304,8 @@ $style = @"
     {
         background-color:#EBEAE7; 
         color:#79253D;
-        font-size:100%;
-        font-family:helvetica;
+        font-size:$FontBody_H3;
+        font-family:$font;
         margin:0,0,10px,0; 
         Word-break:normal; 
         Word-wrap:break-Word;
@@ -8253,8 +8316,8 @@ $style = @"
     {
         background-color:#EBEAE7; 
         color:#877F7D;
-        font-size:90%;
-        font-family:helvetica;
+        font-size:$FontHelps_H4;
+        font-family:$font;
         margin:0,0,10px,0; 
         Word-break:normal; 
         Word-wrap:break-Word;
@@ -8264,6 +8327,7 @@ $style = @"
     {
         border-width: 1px;
         padding: 7px;
+        font-size:$FontBody_H3;
         border-style: solid;
         border-color:#79253D;
         background-color:#EBEAE7
@@ -8272,6 +8336,7 @@ $style = @"
     {
         border-width: 1px;
         padding:7px;
+        font-size:$FontBody_H3;
         border-style: solid; 
         border-style: #79253D
     }
@@ -8286,24 +8351,28 @@ $style = @"
 
     a:link {
     color:#000000;
+    font-size:$FontBody_H3;
     background-color: transparent;
     text-decoration: none;
     }
 
     a:visited {
     color:#ff9933;
+    font-size:$FontBody_H3;
     background-color: transparent;
     text-decoration: none;
     }
 
     a:hover {
     color:#79253D;
+    font-size:$FontBody_H3;
     background-color: transparent;
     text-decoration: none;
     }
 
     a:active {
     color:#000000;
+    font-size:$FontBody_H3;
     background-color: transparent;
     text-decoration: none;
     }
@@ -8324,8 +8393,8 @@ $style = @"
     {
         background-color:#454545; 
         color:#D3BAA9;
-        font-size:100%;
-        font-family:helvetica;
+        font-size:$FontBody_H3;
+        font-family:$font;
         margin:0,0,10px,0; 
         Word-break:normal; 
         Word-wrap:break-Word
@@ -8343,8 +8412,8 @@ $style = @"
     {
         background-color:#454545; 
         color:#D3BAA9;
-        font-size:150%;
-        font-family:helvetica;
+        font-size:$FontTitle_H1;
+        font-family:$font;
         margin:0,0,10px,0;
         Word-break:normal; 
         Word-wrap:break-Word
@@ -8353,8 +8422,8 @@ $style = @"
     {
         background-color:#454545; 
         color:#D3BAA9;
-        font-size:120%;
-        font-family:helvetica;
+        font-size:$FontSub_H2;
+        font-family:$font;
         margin:0,0,10px,0; 
         Word-break:normal; 
         Word-wrap:break-Word
@@ -8363,8 +8432,8 @@ $style = @"
     {
         background-color:#454545; 
         color:#A88F7E;
-        font-size:100%;
-        font-family:helvetica;
+        font-size:$FontBody_H3;
+        font-family:$font;
         margin:0,0,10px,0; 
         Word-break:normal; 
         Word-wrap:break-Word;
@@ -8375,8 +8444,8 @@ $style = @"
     {
         background-color:#454545; 
         color:#D3BAA9;
-        font-size:90%;
-        font-family:helvetica;
+        font-size:$FontHelps_H4;
+        font-family:$font;
         margin:0,0,10px,0; 
         Word-break:normal; 
         Word-wrap:break-Word;
@@ -8386,6 +8455,7 @@ $style = @"
     {
         border-width: 1px;
         padding: 7px;
+        font-size:$FontBody_H3;
         border-style: solid;
         border-color:#D3BAA9;
         background-color:#454545
@@ -8394,6 +8464,7 @@ $style = @"
     {
         border-width: 1px;
         padding:7px;
+        font-size:$FontBody_H3;
         border-style: solid; 
         border-style: #D3BAA9
     }
@@ -8408,24 +8479,28 @@ $style = @"
 
     a:link {
     color:#D3BAA9;
+    font-size:$FontBody_H3;
     background-color: transparent;
     text-decoration: none;
     }
 
     a:visited {
     color:#ff9933;
+    font-size:$FontBody_H3;
     background-color: transparent;
     text-decoration: none;
     }
 
     a:hover {
     color:#A88F7E;
+    font-size:$FontBody_H3;
     background-color: transparent;
     text-decoration: none;
     }
 
     a:active {
     color:#D3BAA9;
+    font-size:$FontBody_H3;
     background-color: transparent;
     text-decoration: none;
     }    
@@ -8449,14 +8524,14 @@ $style = @"
     {
         background-color:#06273A; 
         color:#FFF9EC;
-        font-size:100%;
-        font-family:helvetica;
+        font-size:$FontBody_H3;
+        font-family:$font;
         margin:0,0,10px,0; 
         Word-break:normal; 
         Word-wrap:break-Word
     }
     table
-    {
+    {   
         border-width: 1px;
         padding: 7px;
         border-style: solid;
@@ -8468,8 +8543,8 @@ $style = @"
     {
         background-color:#06273A; 
         color:#FFF9EC;
-        font-size:150%;
-        font-family:helvetica;
+        font-size:$FontTitle_H1;
+        font-family:$font;
         margin:0,0,10px,0;
         Word-break:normal; 
         Word-wrap:break-Word
@@ -8478,8 +8553,8 @@ $style = @"
     {
         background-color:#06273A; 
         color:#4682B4;
-        font-size:120%;
-        font-family:helvetica;
+        font-size:$FontSub_H2;
+        font-family:$font;
         margin:0,0,10px,0; 
         Word-break:normal; 
         Word-wrap:break-Word
@@ -8488,8 +8563,8 @@ $style = @"
     {
         background-color:#06273A; 
         color:#FFF9EC;
-        font-size:100%;
-        font-family:helvetica;
+        font-size:$FontBody_H3;
+        font-family:$font;
         margin:0,0,10px,0; 
         Word-break:normal; 
         Word-wrap:break-Word;
@@ -8500,8 +8575,8 @@ $style = @"
     {
         background-color:#06273A; 
         color:#9f9696;
-        font-size:90%;
-        font-family:helvetica;
+        font-size:$FontHelps_H4;
+        font-family:$font;
         margin:0,0,10px,0; 
         Word-break:normal; 
         Word-wrap:break-Word;
@@ -8511,6 +8586,7 @@ $style = @"
     {
         border-width: 1px;
         padding: 7px;
+        font-size:$FontBody_H3;
         border-style: solid;
         border-color:#FFF9EC;
         background-color:#06273A
@@ -8519,6 +8595,7 @@ $style = @"
     {
         border-width: 1px;
         padding:7px;
+        font-size:$FontBody_H3;
         border-style: solid; 
         border-style: #FFF9EC
     }
@@ -8533,24 +8610,28 @@ $style = @"
 
     a:link {
     color:#4682B4;
+    font-size:$FontBody_H3;
     background-color: transparent;
     text-decoration: none;
     }
 
     a:visited {
     color:#ff9933;
+    font-size:$FontBody_H3;
     background-color: transparent;
     text-decoration: none;
     }
 
     a:hover {
     color:#FFF9EC;
+    font-size:$FontBody_H3;
     background-color: transparent;
     text-decoration: none;
     }
 
     a:active {
     color:#4682B4;
+    font-size:$FontBody_H3;
     background-color: transparent;
     text-decoration: none;
     }
@@ -8660,14 +8741,16 @@ $style = @"
 
     $descripCerts = ""
 
+    $descripKernelMode = "Enabed with Windwos 11 22H2 - For code running in kernel mode, the CPU confirms requested return addresses with a second copy of the address stored in the shadow stack to prevent attackers from substituting an address that runs malicious code. Not all drivers are compatiable with this security feature. More information can be found here @<br><br>https://techcommunity.microsoft.com/t5/windows-os-platform-blog/understanding-hardware-enforced-stack-protection/ba-p/1247815"
+
 ################################################
 ################  FRAGMENTS  ###################
 ################################################
   
     #Top and Tail
-    $FragDescrip1 =  $Descrip1 | ConvertTo-Html -as table -Fragment -PreContent "<h3><span style=font-family:helvetica;>$Intro</span></h3>" | Out-String
-    $FragDescrip2 =  $Descrip2 | ConvertTo-Html -as table -Fragment -PreContent "<h3><span style=font-family:helvetica;>$Intro2</span></h3>" | Out-String
-    $FragDescripFin =  $DescripFin | ConvertTo-Html -as table -Fragment -PreContent "<h3><span style=font-family:helvetica;>$Finish</span></h3>" | Out-String
+    $FragDescrip1 =  $Descrip1 | ConvertTo-Html -as table -Fragment -PreContent "<h3><span style=font-family:$font;>$Intro</span></h3>" | Out-String
+    $FragDescrip2 =  $Descrip2 | ConvertTo-Html -as table -Fragment -PreContent "<h3><span style=font-family:$font;>$Intro2</span></h3>" | Out-String
+    $FragDescripFin =  $DescripFin | ConvertTo-Html -as table -Fragment -PreContent "<h3><span style=font-family:$font;>$Finish</span></h3>" | Out-String
     $Frag_descripVirt2 = ConvertTo-Html -as table -Fragment -PostContent "<h4>$descripVirt2</h4>" | Out-String
     
     #Summary
@@ -8699,6 +8782,8 @@ $style = @"
     $Frag_AVStatus = $FragAVStatus | ConvertTo-Html -As Table  -fragment -PreContent "<h2><a name=`"AV`"><a href=`"#TOP`">AntiVirus Engine and Definition Status</a></span></h2>" -PostContent "<h4>$descripAV</h4>" | Out-String
     $frag_BitLocker = $fragBitLocker | ConvertTo-Html -As List -fragment -PreContent "<h2><a name=`"Bitlockerisnotenabled`"><a href=`"#TOP`">Bitlocker and TPM Details</a></span></h2>" -PostContent "<h4>$descripBitlocker</h4>" | Out-String
     $frag_Msinfo = $MsinfoClixml | ConvertTo-Html -As Table -fragment -PreContent "<h2><a name=`"VBS`"><a href=`"#TOP`">Virtualization and Secure Boot Details</a></span></h2>" -PostContent "<h4>$descripVirt</h4>"  | Out-String
+    
+    $frag_kernelModeVal = $fragkernelModeVal | ConvertTo-Html -As Table -fragment -PreContent "<h2><a name=`"KernelMode`"><a href=`"#TOP`">Kernel-mode Hardware-enforced Stack Protection</a></span></h2>" -PostContent "<h4>$descripKernelMode</h4>"  | Out-String
     $frag_LSAPPL = $fragLSAPPL | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"LSA`"><a href=`"#TOP`">LSA Protection for Stored Credentials</a></span></h2>" -PostContent "<h4>$descripLSA</h4>" | Out-String
     $frag_DLLSafe = $fragDLLSafe | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"DLLSafe`"><a href=`"#TOP`">DLL Safe Search Order</a></span></h2>"  -PostContent "<h4>$descripDLL</h4>"| Out-String
     $frag_DLLHijack = $fragDLLHijack | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"DLLHigh`"><a href=`"#TOP`">Loaded DLL's that are vulnerable to DLL Hijacking</a></span></h2>" | Out-String
@@ -8804,6 +8889,7 @@ if ($folders -eq "y")
     $frag_LSAPPL,
     $frag_WDigestULC,
     $frag_CredGuCFG,
+    $frag_kernelModeVal,
     $frag_LapsPwEna,
     $frag_Certificates,
     $frag_DLLSafe,
@@ -8869,6 +8955,7 @@ else
     $frag_LSAPPL,
     $frag_WDigestULC,
     $frag_CredGuCFG,
+    $frag_kernelModeVal,
     $frag_LapsPwEna,
     $frag_Certificates,
     $frag_DLLSafe,
@@ -8912,7 +8999,6 @@ else
     
     foreach {$_ -replace "<td>Warning","<td><font color=#ff9933>Warning"} | 
     foreach {$_ -replace "Warning</td>","<font></td>"} |
-
 
     foreach {$_ -replace "<td>Review","<td><font color=#ff9933>Review"} | 
     foreach {$_ -replace "Review</td>","<font></td>"}  | 
@@ -9060,3 +9146,4 @@ Progress bars or screen output will remain limited, each time an output is writt
 
 
 #>
+
