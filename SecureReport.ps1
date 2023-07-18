@@ -319,7 +319,8 @@ YYMMDD
 221208.3 - Added further Legacy network checks
 221210.1 - Updated list of MS Edge checks 
 230626.1 - Added kernel-mode hardware-enforced stack protection
-
+230717.1 - Updated look and feel, added fonts and font sizes vars for CSS
+230718.1 - Added True and False, true is compliant, false missing a setting
 
 #>
 
@@ -1314,23 +1315,22 @@ sleep 5
         $kernelModeSet = "Kernel-mode hardware-enforced stack protection key FeatureSettingsOverride is enabled with a value of $getkernelModeVal" 
         $kernelModeReg = "HKLM:\System\CurrentControlSet\Control\Session Manager\Memory Management\"
         $kernelModeCom = "Kernel-mode Hardware-enforced Stack Protection is a security feature of Windows 11 22H2"
+        $trueFalse = "True"
     }
     else
     {
         $kernelModeSet = "Warning - Kernel-mode hardware-enforced stack protection key FeatureSettingsOverride is disabled with a value of $getkernelModeVal Warning" 
         $kernelModeReg = "HKLM:\System\CurrentControlSet\Control\Session Manager\Memory Management\"
         $kernelModeCom = "Kernel-mode Hardware-enforced Stack Protection is a security feature of Windows 11 22H2"
+        $trueFalse = "False"
     }
 
     $newObjkernelMode = New-Object -TypeName PSObject
     Add-Member -InputObject $newObjkernelMode -Type NoteProperty -Name KernelModeSetting -Value  $kernelModeSet
     Add-Member -InputObject $newObjkernelMode -Type NoteProperty -Name KernelModeRegValue -Value $kernelModeReg 
+    Add-Member -InputObject $newObjKernelMode -Type NoteProperty -Name TrueIsCompliant -Value $trueFalse
     #Add-Member -InputObject $newObjkernelMode -Type NoteProperty -Name kernelModeComment -Value $kernelModeCom
     $fragkernelModeVal += $newObjkernelMode
-
-
-
-
 
 
     #LSA
@@ -1343,17 +1343,20 @@ sleep 5
         $lsaSet = "LSA is enabled the RunAsPPL is set to $getLSAPPL" 
         $lsaReg = "HKLM:\System\CurrentControlSet\Control\lsa\"
         $lsaCom = "Win10 and above Credential Guard should be used for Domain joined clients"
+        $trueFalse = "True"
     }
     else
     {
         $lsaSet = "Warning - Secure LSA is disabled set RunAsPPL to 1 Warning" 
         $lsaReg = "HKLM:\System\CurrentControlSet\Control\lsa\"
         $lsaCom = "Required for Win8.1 and below"
+        $trueFalse = "False"
     }
 
     $newObjLSA = New-Object -TypeName PSObject
     Add-Member -InputObject $newObjLSA -Type NoteProperty -Name LSASetting -Value  $lsaSet
     Add-Member -InputObject $newObjLSA -Type NoteProperty -Name LSARegValue -Value $lsaReg 
+    Add-Member -InputObject $newObjLSA -Type NoteProperty -Name TrueIsCompliant -Value $trueFalse
     #Add-Member -InputObject $newObjLSA -Type NoteProperty -Name LSAComment -Value $lsaCom
     $fragLSAPPL += $newObjLSA
  
@@ -1366,17 +1369,20 @@ sleep 5
     {
         $WDigestSet = "Warning - WDigest is enabled and plain text passwords are stored in LSASS Warning" 
         $WDigestReg = "HKLM:\System\CurrentControlSet\Control\SecurityProviders\WDigest\"
+        $trueFalse = "False"
 
     }
     else
     {
         $WDigestSet = "Secure WDigest is disabled" 
         $WDigestReg = "HKLM:\System\CurrentControlSet\Control\SecurityProviders\WDigest\"
+        $trueFalse = "True"
     }
 
     $newObjWDigest = New-Object -TypeName PSObject
     Add-Member -InputObject $newObjWDigest -Type NoteProperty -Name WDigestSetting -Value  $WDigestSet
     Add-Member -InputObject $newObjWDigest -Type NoteProperty -Name WDigestRegValue -Value $WDigestReg 
+    Add-Member -InputObject $newObjWDigest -Type NoteProperty -Name TrueIsCompliant -Value $trueFalse
     $fragWDigestULC += $newObjWDigest
 
 
@@ -1390,23 +1396,27 @@ sleep 5
         $CredGuSet = "Credential Guard is enabled, the LsaCfgFlags value is set to $getCredGuCFG" 
         $CredGuReg = "HKLM:\System\CurrentControlSet\Control\LSA\"
         $CredGuCom = "Credential Guard is enabled with UEFI persistance."
+        $trueFalse = "True"
     }
     elseif ($getCredGuCFG -eq "2")
     {
         $CredGuSet = "Credential Guard is enabled, the LsaCfgFlags value is set to $getCredGuCFG" 
         $CredGuReg = "HKLM:\System\CurrentControlSet\Control\LSA\"
         $CredGuCom = "Credential Guard is enable without UEFI persistence."
+        $trueFalse = "True"
     }
     else
     {
         $CredGuSet = "Warning - Secure Credential Guard is disabled, LsaCfgFlags is set to 0 Warning" 
         $CredGuReg = "HKLM:\System\CurrentControlSet\Control\LSA\"
         $CredGuCom = "Credential Guard requires the client to be Domain joined"
+        $trueFalse = "False"
     }
 
     $newObjCredGu = New-Object -TypeName PSObject
     Add-Member -InputObject $newObjCredGu -Type NoteProperty -Name CredentialGuardSetting -Value  $CredGuSet
     Add-Member -InputObject $newObjCredGu -Type NoteProperty -Name CredentialGuardRegValue -Value $CredGuReg 
+    Add-Member -InputObject $newObjCredGu -Type NoteProperty -Name TrueIsCompliant -Value $trueFalse
     #Add-Member -InputObject $newObjCredGu -Type NoteProperty -Name CredGuComment -Value $CredGuCom
     $fragCredGuCFG += $newObjCredGu
  
@@ -1426,6 +1436,7 @@ sleep 5
         $LapsPwSetlen = "LAPS password length value is set to $getLapsPwLen" 
         $LapsPwSetday = "LAPS password age value is to $getLapsPwDay" 
         $LapsPwReg = "HKLM:\Software\Policies\Microsoft Services\AdmPwd\" 
+        $trueFalse = "True"
 
         $newObjLapsPw = New-Object -TypeName PSObject
         Add-Member -InputObject $newObjLapsPw -Type NoteProperty -Name LAPSPasswordEnabled -Value $LapsPwSetena
@@ -1433,6 +1444,7 @@ sleep 5
         Add-Member -InputObject $newObjLapsPw -Type NoteProperty -Name LAPSPasswordLength -Value $LapsPwSetlen
         Add-Member -InputObject $newObjLapsPw -Type NoteProperty -Name LAPSPasswordDay -Value $LapsPwSetday 
         Add-Member -InputObject $newObjLapsPw -Type NoteProperty -Name LAPSPasswordReg -Value $LapsPwReg
+        Add-Member -InputObject $newObjLapsPw -Type NoteProperty -Name TrueIsCompliant -Value $trueFalse
         $fragLapsPwEna += $newObjLapsPw
 
     }
@@ -1441,10 +1453,12 @@ sleep 5
         $LapsPwSet = "Warning - LAPS is not installed or the value is set to 0 Warning" 
         $LapsPwReg = "HKLM:\Software\Policies\Microsoft Services\AdmPwd\" 
         $LapsPwCom = "LAPS is not installed or configured - Ignore if not Domain Joined"
+        $trueFalse = "False"
 
         $newObjLapsPw = New-Object -TypeName PSObject
         Add-Member -InputObject $newObjLapsPw -Type NoteProperty -Name LAPSPasswordEnabled -Value  $LapsPwSet
-        Add-Member -InputObject $newObjLapsPw -Type NoteProperty -Name LAPSPasswordReg -Value $LapsPwReg 
+        Add-Member -InputObject $newObjLapsPw -Type NoteProperty -Name LAPSPasswordReg -Value $LapsPwReg
+        Add-Member -InputObject $newObjLapsPW -Type NoteProperty -Name TrueIsCompliant -Value $trueFalse         
         #Add-Member -InputObject $newObjLapsPw -Type NoteProperty -Name LapsPwComment -Value $LapsPwCom
         $fragLapsPwEna += $newObjLapsPw
     }
@@ -1460,18 +1474,21 @@ sleep 5
         $dllSet = " DLLSafeSearch is enabled the SafeDLLSearchMode is set to $getDLLSafe" 
         $dllReg = "HKLM:\System\CurrentControlSet\Control\Session Manager"
         $dllCom = "Protects against DLL search order hijacking"
+        $trueFalse = "True"
     }
     else
     {
         $dllSet = "Warning - DLLSafeSearch is disabled set SafeDLLSearchMode to 1 Warning" 
         $dllReg = "HKLM:\System\CurrentControlSet\Control\Session Manager"
         $dllCom = "Protects against DLL search order hijacking"
+        $trueFalse = "False"
     }
 
     $newObjDLLSafe = New-Object -TypeName PSObject
     Add-Member -InputObject $newObjDLLSafe -Type NoteProperty -Name DLLSafeSetting -Value  $dllSet
     Add-Member -InputObject $newObjDLLSafe -Type NoteProperty -Name DLLSafeValue -Value $dllReg 
     Add-Member -InputObject $newObjDLLSafe -Type NoteProperty -Name DLLSafeComment -Value $dllCom
+    Add-Member -InputObject $newObjDLLSafe -Type NoteProperty -Name TrueIsCompliant -Value $trueFalse
     $fragDLLSafe += $newObjDLLSafe
 
 
@@ -1485,17 +1502,20 @@ sleep 5
         $CodeSet = "Hypervisor Enforced Code Integrity is enabled" 
         $CodeReg = "HKLM:\System\CurrentControlSet\Control\DeviceGuard\Scenarios\HypervisorEnforcedCodeIntegrity"
         $CodeCom = "Protects against credential theft"
+        $trueFalse = "True"
     }
     else
     {
         $CodeSet = "Warning - Hypervisor Enforced Code Integrity is disabled set Enabled to 1 Warning" 
         $CodeReg = "HKLM:\System\CurrentControlSet\Control\DeviceGuard\Scenarios\HypervisorEnforcedCodeIntegrity"
         #$CodeCom = "Protects against credential theft"
+        $trueFalse = "False"
     }
 
     $newObjCode = New-Object -TypeName PSObject
     Add-Member -InputObject $newObjCode -Type NoteProperty -Name CodeSetting -Value  $CodeSet
     Add-Member -InputObject $newObjCode -Type NoteProperty -Name CodeValue -Value $CodeReg 
+    Add-Member -InputObject $newObjCode -Type NoteProperty -Name TrueIsCompliant -Value $trueFalse
     #Add-Member -InputObject $newObjCode -Type NoteProperty -Name CodeComment -Value $CodeCom
     $fragCode += $newObjCode
 
@@ -1511,32 +1531,38 @@ sleep 5
     {
         $ElevateSet = "Warning - Client setting Always Install Elevate is enabled Warning" 
         $ElevateReg = "HKLM:\Software\Policies\Microsoft\Windows\Installer"
+        $trueFalse = "False"
     }
     else
     {
         $ElevateSet = "Client setting  Always Install Elevate is disabled" 
         $ElevateReg = "HKLM:\Software\Policies\Microsoft\Windows\Installer"
+        $trueFalse = "True"
     }
 
     $newObjElevate = New-Object -TypeName PSObject
     Add-Member -InputObject $newObjElevate -Type NoteProperty -Name AlwaysElevateSetting -Value  $ElevateSet
     Add-Member -InputObject $newObjElevate -Type NoteProperty -Name AlwaysElevateRegistry -Value $ElevateReg
+    Add-Member -InputObject $newObjElevate -Type NoteProperty -Name TrueIsCompliant -Value $trueFalse
     $fragPCElevate += $newObjElevate 
 
     if ($UserElevate -eq "1")
     {
         $ElevateSet = "Warning - User setting Always Install Elevate is enabled Warning" 
         $ElevateReg = "HKCU:\Software\Policies\Microsoft\Windows\Installer"
+        $trueFalse = "False"
     }
     else
     {
         $ElevateSet = "User setting Always Install Elevate is disabled" 
         $ElevateReg = "HKCU:\Software\Policies\Microsoft\Windows\Installer"
+        $trueFalse = "True"
     }
        
     $newObjElevate = New-Object -TypeName PSObject
     Add-Member -InputObject $newObjElevate -Type NoteProperty -Name AlwaysElevateSetting -Value  $ElevateSet
     Add-Member -InputObject $newObjElevate -Type NoteProperty -Name AlwaysElevateRegistry -Value $ElevateReg
+    Add-Member -InputObject $newObjElevate -Type NoteProperty -Name TrueIsCompliant -Value $trueFalse
     $fragPCElevate += $newObjElevate 
 
     #AutoLogon Details in REG inc password   
@@ -1551,18 +1577,21 @@ sleep 5
         $AutoLPass = "There is no Default Password set for AutoLogon" 
         $AutoLUser = "There is no Default User set for AutoLogon" 
         $AutoLReg = "HKLM:\Software\Microsoft\Windows NT\Currentversion\Winlogon"
+        $trueFalse = "True"
     }
     else
     {
         $AutoLPass = "Warning - AutoLogon default password is set with a vaule of $AutoLogonDefPass Warning" 
         $AutoLUser = "Warning - AutoLogon Default User is set with a vaule of $AutoLogonDefUser Warning" 
         $AutoLReg = "HKLM:\Software\Microsoft\Windows NT\Currentversion\Winlogon"
+        $trueFalse = "False"
     }
 
     $newObjAutoLogon = New-Object -TypeName PSObject
     Add-Member -InputObject $newObjAutoLogon -Type NoteProperty -Name AutoLogonUsername -Value $AutoLUser
     Add-Member -InputObject $newObjAutoLogon -Type NoteProperty -Name AutoLogonPassword -Value  $AutoLPass
     Add-Member -InputObject $newObjAutoLogon -Type NoteProperty -Name AutoLogonRegistry -Value $AutoLReg
+    Add-Member -InputObject $newObjAutoLogon -Type NoteProperty -Name TrueIsCompliant -Value $trueFalse
     $fragAutoLogon += $newObjAutoLogon
 
 
@@ -1592,16 +1621,19 @@ sleep 5
     {
         $legProt = "SMB v1 client driver is set to $ensmb1drv in the Registry" 
         $legReg = "HKLM:\System\CurrentControlSet\Services\MrxSmb10.Start"
+        $trueFalse = "True"
     }
     else
     {
         $legProt = "Warning - SMB v1 client driver is enabled Warning"
         $legReg = "HKLM:\System\CurrentControlSet\Services\MrxSmb10.Start"
+        $trueFalse = "False"
     }
     
     $newObjLegNIC = New-Object psObject
     Add-Member -InputObject $newObjLegNIC -Type NoteProperty -Name LegacyProtocol -Value $legProt
     Add-Member -InputObject $newObjLegNIC -Type NoteProperty -Name LegacyPath -Value $legReg
+    Add-Member -InputObject $newObjLegNIC -Type NoteProperty -Name TrueIsCompliant -Value $trueFalse
     $fragLegNIC += $newObjLegNIC
 
     #SMB v1 server
@@ -1613,16 +1645,19 @@ sleep 5
     {
         $legProt = "SMB v1 Server is set to $ensmb1srv in the Registry" 
         $legReg = "HKLM:\System\CurrentControlSet\Services\LanmanServer\Parameters.SMB1"
+        $trueFalse = "True"
     }
     else
     {
         $legProt = "Warning - SMB v1 Server is enabled Warning"
         $legReg = "HKLM:\System\CurrentControlSet\Services\LanmanServer\Parameters.SMB1"
+        $trueFalse = "False"
     }
     
     $newObjLegNIC = New-Object psObject
     Add-Member -InputObject $newObjLegNIC -Type NoteProperty -Name LegacyProtocol -Value $legProt
     Add-Member -InputObject $newObjLegNIC -Type NoteProperty -Name LegacyPath -Value $legReg
+    Add-Member -InputObject $newObjLegNIC -Type NoteProperty -Name TrueIsCompliant -Value $trueFalse
     $fragLegNIC += $newObjLegNIC
 
     #Insecure logons to an SMB server must be disabled
@@ -1634,16 +1669,19 @@ sleep 5
     {
         $legProt = "Insecure logons to an SMB server is set to $ensmb1srv and disabled" 
         $legReg = "HKLM:\SOFTWARE\Policies\Microsoft\Windows\LanmanWorkstation\Parameters.AllowInsecureGuestAuth"
+        $trueFalse = "True"
     }
     else
     {
         $legProt = "Warning - Insecure logons to an SMB server is enabled Warning"
         $legReg = "HKLM:\SOFTWARE\Policies\Microsoft\Windows\LanmanWorkstation\Parameters.AllowInsecureGuestAuth"
+        $trueFalse = "False"
     }
     
     $newObjLegNIC = New-Object psObject
     Add-Member -InputObject $newObjLegNIC -Type NoteProperty -Name LegacyProtocol -Value $legProt
     Add-Member -InputObject $newObjLegNIC -Type NoteProperty -Name LegacyPath -Value $legReg
+    Add-Member -InputObject $newObjLegNIC -Type NoteProperty -Name TrueIsCompliant -Value $trueFalse
     $fragLegNIC += $newObjLegNIC
 
     #llmnr = 0 is disabled
@@ -1655,16 +1693,19 @@ sleep 5
     {
         $legProt = "LLMNR (Responder) is disabled GPO = $enllmnrGpo" 
         $legReg = "HKLM:\Software\Policies\Microsoft\Windows NT\DNSClient.EnableMulticast"
+        $trueFalse = "True"
     }
     else
     {
         $legProt = "Warning - LLMNR (Responder) is Enabled Warning" 
         $legReg = "HKLM:\Software\Policies\Microsoft\Windows NT\DNSClient.EnableMulticast"
+        $trueFalse = "False"
     }
     
     $newObjLegNIC = New-Object psObject
     Add-Member -InputObject $newObjLegNIC -Type NoteProperty -Name LegacyProtocol -Value $legProt
     Add-Member -InputObject $newObjLegNIC -Type NoteProperty -Name LegacyPath -Value $legReg
+    Add-Member -InputObject $newObjLegNIC -Type NoteProperty -Name TrueIsCompliant -Value $trueFalse
     $fragLegNIC += $newObjLegNIC
     
     #NetBIOS over TCP/IP (NetBT) queries = 0 is disabled
@@ -1676,6 +1717,7 @@ sleep 5
     {
         $legProt = "NetBios is disabled the Registry = $enNetBTGPO" 
         $legReg = "HKLM:\Software\Policies\Microsoft\Windows NT\DNSClient.QueryNetBTFQDN"
+        $trueFalse = "True"
     }
     else
     {
@@ -1683,11 +1725,13 @@ sleep 5
         $legReg = "HKLM:\Software\Policies\Microsoft\Windows NT\DNSClient.QueryNetBTFQDN"
         $legValue = $enNetBTGPO
         $legWarn = "Incorrect"
+        $trueFalse = "False"
     }
     
     $newObjLegNIC = New-Object psObject
     Add-Member -InputObject $newObjLegNIC -Type NoteProperty -Name LegacyProtocol -Value $legProt
     Add-Member -InputObject $newObjLegNIC -Type NoteProperty -Name LegacyPath -Value $legReg
+    Add-Member -InputObject $newObjLegNIC -Type NoteProperty -Name TrueIsCompliant -Value $trueFalse
     $fragLegNIC += $newObjLegNIC
 
     #ipv6 0xff (255)
@@ -1699,16 +1743,19 @@ sleep 5
     {
         $legProt = "IPv6 is disabled the Registry = $getIpv6Int" 
         $legReg = "HKLM:\System\CurrentControlSet\Services\Tcpip6\Parameters.DisabledComponents"
+        $trueFalse = "True"
     }
     else
     {
         $legProt = "Warning - IPv6 is enabled Warning" 
         $legReg = "HKLM:\System\CurrentControlSet\Services\Tcpip6\Parameters.DisabledComponents"
+        $trueFalse = "False"
     }
     
     $newObjLegNIC = New-Object psObject
     Add-Member -InputObject $newObjLegNIC -Type NoteProperty -Name LegacyProtocol -Value $legProt
     Add-Member -InputObject $newObjLegNIC -Type NoteProperty -Name LegacyPath -Value $legReg
+    Add-Member -InputObject $newObjLegNIC -Type NoteProperty -Name TrueIsCompliant -Value $trueFalse
     $fragLegNIC += $newObjLegNIC
 
     #Report on LMHosts file = 1
@@ -1720,16 +1767,19 @@ sleep 5
     {
         $legProt = "LMHosts is disabled the Registry = $enLMHostsReg" 
         $legReg = "HKLM:\System\CurrentControlSet\Services\NetBT\Parameters.EnableLMHosts"
+        $trueFalse = "True"
     }
     else
     {
         $legProt = "Warning - Disable LMHosts Warning" 
         $legReg = "HKLM:\System\CurrentControlSet\Services\NetBT\Parameters.EnableLMHosts"
+        $trueFalse = "False"
     }
     
     $newObjLegNIC = New-Object psObject
     Add-Member -InputObject $newObjLegNIC -Type NoteProperty -Name LegacyProtocol -Value $legProt
     Add-Member -InputObject $newObjLegNIC -Type NoteProperty -Name LegacyPath -Value $legReg
+    Add-Member -InputObject $newObjLegNIC -Type NoteProperty -Name TrueIsCompliant -Value $trueFalse
     $fragLegNIC += $newObjLegNIC
 
     #NetBios Node Type set to 2 - Only Reg Setting
@@ -1741,16 +1791,19 @@ sleep 5
     {
         $legProt = "NetBios Node Type is set to 2 in the Registry" 
         $legReg = "HKLM:\System\CurrentControlSet\Services\NetBT\Parameters.NodeType"
+        $trueFalse = "True"
     }
     else
     {
         $legProt = "Warning - NetBios Node Type is set to $enNetBTReg is incorrect and should be set to 2 Warning"
         $legReg = "HKLM:\System\CurrentControlSet\Services\NetBT\Parameters.NodeType"
+        $trueFalse = "False"
     }
     
     $newObjLegNIC = New-Object psObject
     Add-Member -InputObject $newObjLegNIC -Type NoteProperty -Name LegacyProtocol -Value $legProt
     Add-Member -InputObject $newObjLegNIC -Type NoteProperty -Name LegacyPath -Value $legReg
+    Add-Member -InputObject $newObjLegNIC -Type NoteProperty -Name TrueIsCompliant -Value $trueFalse
     $fragLegNIC += $newObjLegNIC
 
     #disable netbios
@@ -1768,16 +1821,19 @@ sleep 5
         {
             $legProt = "NetBios is set to $NetBiosValue in the Registry" 
             $legReg = "HKLM:\System\CurrentControlSet\services\NetBT\Parameters\Interfaces.$NetBiosPath"
+            $trueFalse = "True"
         }
         else
         {
             $legProt = "Warning - NetBios is set to $NetBiosValue, its incorrect and should be set to 0 Warning"
             $legReg = "HKLM:\System\CurrentControlSet\services\NetBT\Parameters\Interfaces.$NetBiosPath"
+            $trueFalse = "False"
         }
     
         $newObjLegNIC = New-Object psObject
         Add-Member -InputObject $newObjLegNIC -Type NoteProperty -Name LegacyProtocol -Value $legProt
         Add-Member -InputObject $newObjLegNIC -Type NoteProperty -Name LegacyPath -Value $legReg
+        Add-Member -InputObject $newObjLegNIC -Type NoteProperty -Name TrueIsCompliant -Value $trueFalse
         $fragLegNIC += $newObjLegNIC
     }
 
@@ -1791,16 +1847,19 @@ sleep 5
     {
         $legProt = "Peer to Peer is set to $getPeerDis and disabled" 
         $legReg = "HKLM:\Software\policies\Microsoft\Peernet"
+        $trueFalse = "True"
     }
     else
     {
         $legProt = "Warning - Peer to Peer is enabled Warning"
         $legReg = "HKLM:\Software\policies\Microsoft\Peernet"
+        $trueFalse = "False"
     }
     
     $newObjLegNIC = New-Object psObject
     Add-Member -InputObject $newObjLegNIC -Type NoteProperty -Name LegacyProtocol -Value $legProt
     Add-Member -InputObject $newObjLegNIC -Type NoteProperty -Name LegacyPath -Value $legReg
+    Add-Member -InputObject $newObjLegNIC -Type NoteProperty -Name TrueIsCompliant -Value $trueFalse
     $fragLegNIC += $newObjLegNIC
 
     #Enable Font Providers
@@ -1812,16 +1871,19 @@ sleep 5
     {
         $legProt = "Enable Font Providers is set to $getFontPr and is disabled" 
         $legReg = "HKLM:\Software\Policies\Microsoft\Windows\System"
+        $trueFalse = "True"
     }
     else
     {
         $legProt = "Warning - Enable Font Providers is enabled Warning"
         $legReg = "HKLM:\Software\Policies\Microsoft\Windows\System"
+        $trueFalse = "False"
     }
     
     $newObjLegNIC = New-Object psObject
     Add-Member -InputObject $newObjLegNIC -Type NoteProperty -Name LegacyProtocol -Value $legProt
     Add-Member -InputObject $newObjLegNIC -Type NoteProperty -Name LegacyPath -Value $legReg
+    Add-Member -InputObject $newObjLegNIC -Type NoteProperty -Name TrueIsCompliant -Value $trueFalse
     $fragLegNIC += $newObjLegNIC
 
     #LLTD
@@ -1842,16 +1904,19 @@ sleep 5
     {
         $legProt = "EnableLLTDIO is set to $getLTDIO in the Registry" 
         $legReg = "HKLM:\Software\Policies\Microsoft\Windows\LLTD"
+        $trueFalse = "True"
     }
     else
     {
         $legProt = "Warning - EnableLLTDIO is enabled Warning"
         $legReg = "HKLM:\Software\Policies\Microsoft\Windows\LLTD"
+        $trueFalse = "False"
     }
     
     $newObjLegNIC = New-Object psObject
     Add-Member -InputObject $newObjLegNIC -Type NoteProperty -Name LegacyProtocol -Value $legProt
     Add-Member -InputObject $newObjLegNIC -Type NoteProperty -Name LegacyPath -Value $legReg
+    Add-Member -InputObject $newObjLegNIC -Type NoteProperty -Name TrueIsCompliant -Value $trueFalse
     $fragLegNIC += $newObjLegNIC
 
     #EnableRspndr
@@ -1859,16 +1924,19 @@ sleep 5
     {
         $legProt = "EnableRspndr is set to $getRspndr in the Registry" 
         $legReg = "HKLM:\Software\Policies\Microsoft\Windows\LLTD"
+        $trueFalse = "True"
     }
     else
     {
         $legProt = "Warning - EnableRspndr is enabled Warning"
         $legReg = "HKLM:\Software\Policies\Microsoft\Windows\LLTD"
+        $trueFalse = "False"
     }
     
     $newObjLegNIC = New-Object psObject
     Add-Member -InputObject $newObjLegNIC -Type NoteProperty -Name LegacyProtocol -Value $legProt
     Add-Member -InputObject $newObjLegNIC -Type NoteProperty -Name LegacyPath -Value $legReg
+    Add-Member -InputObject $newObjLegNIC -Type NoteProperty -Name TrueIsCompliant -Value $trueFalse
     $fragLegNIC += $newObjLegNIC
 
     #AllowLLTDIOOnDomain
@@ -1876,16 +1944,19 @@ sleep 5
     {
         $legProt = "AllowLLTDIOOnDomain is set to $getOnDomain in the Registry" 
         $legReg = "HKLM:\Software\Policies\Microsoft\Windows\LLTD"
+        $trueFalse = "True"
     }
     else
     {
         $legProt = "Warning - AllowLLTDIOOnDomain is enabled Warning"
         $legReg = "HKLM:\Software\Policies\Microsoft\Windows\LLTD"
+        $trueFalse = "False"
     }
     
     $newObjLegNIC = New-Object psObject
     Add-Member -InputObject $newObjLegNIC -Type NoteProperty -Name LegacyProtocol -Value $legProt
     Add-Member -InputObject $newObjLegNIC -Type NoteProperty -Name LegacyPath -Value $legReg
+    Add-Member -InputObject $newObjLegNIC -Type NoteProperty -Name TrueIsCompliant -Value $trueFalse
     $fragLegNIC += $newObjLegNIC
    
     #AllowLLTDIOOnPublicNet
@@ -1893,16 +1964,19 @@ sleep 5
     {
         $legProt = "AllowLLTDIOOnPublicNet is set to $getPublicNet in the Registry" 
         $legReg = "HKLM:\Software\Policies\Microsoft\Windows\LLTD"
+        $trueFalse = "True"
     }
     else
     {
         $legProt = "Warning - AllowLLTDIOOnPublicNet is enabled Warning"
         $legReg = "HKLM:\Software\Policies\Microsoft\Windows\LLTD"
+        $trueFalse = "False"
     }
     
     $newObjLegNIC = New-Object psObject
     Add-Member -InputObject $newObjLegNIC -Type NoteProperty -Name LegacyProtocol -Value $legProt
     Add-Member -InputObject $newObjLegNIC -Type NoteProperty -Name LegacyPath -Value $legReg
+    Add-Member -InputObject $newObjLegNIC -Type NoteProperty -Name TrueIsCompliant -Value $trueFalse
     $fragLegNIC += $newObjLegNIC
    
     #AllowRspndrOnDomain  
@@ -1910,16 +1984,19 @@ sleep 5
     {
         $legProt = "AllowRspndrOnDomain is set to $getRspOnDomain in the Registry" 
         $legReg = "HKLM:\Software\Policies\Microsoft\Windows\LLTD"
+        $trueFalse = "True"
     }
     else
     {
         $legProt = "Warning - AllowRspndrOnDomain is enabled Warning"
         $legReg = "HKLM:\Software\Policies\Microsoft\Windows\LLTD"
+        $trueFalse = "False"
     }
     
     $newObjLegNIC = New-Object psObject
     Add-Member -InputObject $newObjLegNIC -Type NoteProperty -Name LegacyProtocol -Value $legProt
     Add-Member -InputObject $newObjLegNIC -Type NoteProperty -Name LegacyPath -Value $legReg
+    Add-Member -InputObject $newObjLegNIC -Type NoteProperty -Name TrueIsCompliant -Value $trueFalse
     $fragLegNIC += $newObjLegNIC
 
     #AllowRspndrOnPublicNet    
@@ -1927,16 +2004,19 @@ sleep 5
     {
         $legProt = "AllowRspndrOnPublicNet is set to $getRspPublicNet in the Registry" 
         $legReg = "HKLM:\Software\Policies\Microsoft\Windows\LLTD"
+        $trueFalse = "True"
     }
     else
     {
         $legProt = "Warning - AllowRspndrOnPublicNet is enabled Warning"
         $legReg = "HKLM:\Software\Policies\Microsoft\Windows\LLTD"
+        $trueFalse = "False"
     }
     
     $newObjLegNIC = New-Object psObject
     Add-Member -InputObject $newObjLegNIC -Type NoteProperty -Name LegacyProtocol -Value $legProt
     Add-Member -InputObject $newObjLegNIC -Type NoteProperty -Name LegacyPath -Value $legReg
+    Add-Member -InputObject $newObjLegNIC -Type NoteProperty -Name TrueIsCompliant -Value $trueFalse
     $fragLegNIC += $newObjLegNIC
    
     #ProhibitLLTDIOOnPrivateNe
@@ -1944,16 +2024,19 @@ sleep 5
     {
         $legProt = "ProhibitLLTDIOOnPrivateNet is set to $getLLnPrivateNet in the Registry - When EnableLLTDIO is enabled, 1 is the correct setting" 
         $legReg = "HKLM:\Software\Policies\Microsoft\Windows\LLTD"
+        $trueFalse = "True"
     }
     else
     {
         $legProt = "Warning - ProhibitLLTDIOOnPrivateNet is enabled - When EnableLLTDIO is enabled, 1 is the correct setting Warning"
         $legReg = "HKLM:\Software\Policies\Microsoft\Windows\LLTD"
+        $trueFalse = "False"
     }
     
     $newObjLegNIC = New-Object psObject
     Add-Member -InputObject $newObjLegNIC -Type NoteProperty -Name LegacyProtocol -Value $legProt
     Add-Member -InputObject $newObjLegNIC -Type NoteProperty -Name LegacyPath -Value $legReg
+    Add-Member -InputObject $newObjLegNIC -Type NoteProperty -Name TrueIsCompliant -Value $trueFalse
     $fragLegNIC += $newObjLegNIC
    
     #ProhibitRspndrOnPrivateNet      $getRspPrivateNet = $getNetLLTDInt.GetValue("ProhibitRspndrOnPrivateNet")
@@ -1961,16 +2044,19 @@ sleep 5
     {
         $legProt = "ProhibitLLTDIOOnPrivateNet is set to $getRspPrivateNet in the Registry - When EnableLLTDIO is enabled, 1 is the correct setting" 
         $legReg = "HKLM:\Software\Policies\Microsoft\Windows\LLTD"
+        $trueFalse = "True"
     }
     else
     {
         $legProt = "Warning - ProhibitLLTDIOOnPrivateNet is enabled - When EnableLLTDIO is enabled, 1 is the correct setting Warning"
         $legReg = "HKLM:\Software\Policies\Microsoft\Windows\LLTD"
+        $trueFalse = "False"
     }
     
     $newObjLegNIC = New-Object psObject
     Add-Member -InputObject $newObjLegNIC -Type NoteProperty -Name LegacyProtocol -Value $legProt
     Add-Member -InputObject $newObjLegNIC -Type NoteProperty -Name LegacyPath -Value $legReg
+    Add-Member -InputObject $newObjLegNIC -Type NoteProperty -Name TrueIsCompliant -Value $trueFalse
     $fragLegNIC += $newObjLegNIC
   
     cd HKLM:
@@ -1981,16 +2067,19 @@ sleep 5
     {
         $legProt = "IPv6 source routing must be configured to highest protection is enabled = $enLMHostsReg" 
         $legReg = "HKLM:\System\CurrentControlSet\Services\Tcpip6\Parameters.DisableIpSourceRouting"
+        $trueFalse = "True"
     }
     else
     {
         $legProt = "Warning - IPv6 source routing must be configured to highest protection is disabled or not set Warning" 
         $legReg = "HKLM:\System\CurrentControlSet\Services\Tcpip6\Parameters.DisableIpSourceRouting"
+        $trueFalse = "False"
     }
     
     $newObjLegNIC = New-Object psObject
     Add-Member -InputObject $newObjLegNIC -Type NoteProperty -Name LegacyProtocol -Value $legProt
     Add-Member -InputObject $newObjLegNIC -Type NoteProperty -Name LegacyPath -Value $legReg
+    Add-Member -InputObject $newObjLegNIC -Type NoteProperty -Name TrueIsCompliant -Value $trueFalse
     $fragLegNIC += $newObjLegNIC
 
     
@@ -2002,16 +2091,19 @@ sleep 5
     {
         $legProt = "IPv4 source routing must be configured to highest protection is enabled = $enLMHostsReg" 
         $legReg = "HKLM:\System\CurrentControlSet\Services\Tcpip\Parameters.DisableIpSourceRouting"
+        $trueFalse = "True"
     }
     else
     {
         $legProt = "Warning - IPv4 source routing must be configured to highest protection is disabled or not set Warning" 
         $legReg = "HKLM:\System\CurrentControlSet\Services\Tcpip\Parameters.DisableIpSourceRouting"
+        $trueFalse = "False"
     }
     
     $newObjLegNIC = New-Object psObject
     Add-Member -InputObject $newObjLegNIC -Type NoteProperty -Name LegacyProtocol -Value $legProt
     Add-Member -InputObject $newObjLegNIC -Type NoteProperty -Name LegacyPath -Value $legReg
+    Add-Member -InputObject $newObjLegNIC -Type NoteProperty -Name TrueIsCompliant -Value $trueFalse
     $fragLegNIC += $newObjLegNIC
 
     cd HKLM:
@@ -2022,16 +2114,19 @@ sleep 5
     {
         $legProt = "Allow ICMP redirects to override OSPF generated routes is disabled = $enLMHostsReg" 
         $legReg = "HKLM:\System\CurrentControlSet\Services\Tcpip\Parameters.EnableICMPRedirect"
+        $trueFalse = "True"
     }
     else
     {
         $legProt = "Warning - Allow ICMP redirects to override OSPF generated routes is enabled Warning" 
         $legReg = "HKLM:\System\CurrentControlSet\Services\Tcpip\Parameters.EnableICMPRedirect"
+        $trueFalse = "False"
     }
     
     $newObjLegNIC = New-Object psObject
     Add-Member -InputObject $newObjLegNIC -Type NoteProperty -Name LegacyProtocol -Value $legProt
     Add-Member -InputObject $newObjLegNIC -Type NoteProperty -Name LegacyPath -Value $legReg
+    Add-Member -InputObject $newObjLegNIC -Type NoteProperty -Name TrueIsCompliant -Value $trueFalse
     $fragLegNIC += $newObjLegNIC
 
     cd HKLM:
@@ -2042,16 +2137,19 @@ sleep 5
     {
         $legProt = "Allow computer to ignore NetBIOS name release requests except from WINS servers is disabled = $enLMHostsReg" 
         $legReg = "HKLM:\System\CurrentControlSet\Services\Netbt\Parameters.NoNameReleaseOnDemand"
+        $trueFalse = "True"
     }
     else
     {
         $legProt = "Warning - Allow computer to ignore NetBIOS name release requests except from WINS servers is enabled Warning" 
         $legReg = "HKLM:\System\CurrentControlSet\Services\Netbt\Parameters.NoNameReleaseOnDemand"
+        $trueFalse = "False"
     }
     
     $newObjLegNIC = New-Object psObject
     Add-Member -InputObject $newObjLegNIC -Type NoteProperty -Name LegacyProtocol -Value $legProt
     Add-Member -InputObject $newObjLegNIC -Type NoteProperty -Name LegacyPath -Value $legReg
+    Add-Member -InputObject $newObjLegNIC -Type NoteProperty -Name TrueIsCompliant -Value $trueFalse
     $fragLegNIC += $newObjLegNIC
 
     <#
@@ -2074,17 +2172,20 @@ sleep 5
     {
         $legProt = "Warning - There is no '255.255.255.255 wpad' entry Warning" 
         $legReg = "C:\Windows\System32\Drivers\etc\hosts\"
+        $trueFalse = "False"
     }
     else
     {
         $legProt = "There's a 255.255.255.255 wpad entry" 
         $legReg = "C:\Windows\System32\Drivers\etc\hosts\"
+        $trueFalse = "True"
 
     }
     
     $newObjLegNIC = New-Object psObject
     Add-Member -InputObject $newObjLegNIC -Type NoteProperty -Name LegacyProtocol -Value $legProt
     Add-Member -InputObject $newObjLegNIC -Type NoteProperty -Name LegacyPath -Value $legReg
+    Add-Member -InputObject $newObjLegNIC -Type NoteProperty -Name TrueIsCompliant -Value $trueFalse
     $fragLegNIC += $newObjLegNIC
 
 ################################################
@@ -2098,14 +2199,17 @@ sleep 5
     if ($getSecOp1res -eq "1")
     {
         $SecOptName = "$secOpTitle1 - Enabled"
+        $trueFalse = "True"
     }
     else
     {
         $SecOptName = "Warning - $secOpTitle1 - Disabled Warning"
+        $trueFalse = "False"
     }
     
     $newObjSecOptions = New-Object psObject
     Add-Member -InputObject $newObjSecOptions -Type NoteProperty -Name SecurityOptions -Value $SecOptName
+    Add-Member -InputObject $newObjSecOptions -Type NoteProperty -Name TrueIsCompliant -Value $trueFalse
     $fragSecOptions +=  $newObjSecOptions 
     
     $secOpTitle2 = "Microsoft network client: Digitally sign communications (always)" # = 1
@@ -2115,14 +2219,17 @@ sleep 5
     if ($getSecOp2res -eq "1")
     {
         $SecOptName = "$secOpTitle2 - Enabled"
+        $trueFalse = "True"
     }
     else
     {
         $SecOptName = "Warning - $secOpTitle2 - Disabled Warning"
+        $trueFalse = "False"
     }
     
     $newObjSecOptions = New-Object psObject
     Add-Member -InputObject $newObjSecOptions -Type NoteProperty -Name SecurityOptions -Value $SecOptName
+    Add-Member -InputObject $newObjSecOptions -Type NoteProperty -Name TrueIsCompliant -Value $trueFalse
     $fragSecOptions +=  $newObjSecOptions 
 
     $secOpTitle3 = "Microsoft network server: Digitally sign communications (always)" # = 1
@@ -2132,14 +2239,17 @@ sleep 5
     if ($getSecOp3res -eq "1")
     {
         $SecOptName = "$secOpTitle3 - Enabled"
+        $trueFalse = "True"
     }
     else
     {
         $SecOptName = "Warning - $secOpTitle3 - Disabled Warning"
+        $trueFalse = "False"
     }
     
     $newObjSecOptions = New-Object psObject
     Add-Member -InputObject $newObjSecOptions -Type NoteProperty -Name SecurityOptions -Value $SecOptName
+    Add-Member -InputObject $newObjSecOptions -Type NoteProperty -Name TrueIsCompliant -Value $trueFalse
     $fragSecOptions +=  $newObjSecOptions 
 
     $secOpTitle4 = "Microsoft network client: Send unencrypted password to connect to third-party SMB servers" #  = 0
@@ -2149,14 +2259,17 @@ sleep 5
     if ($getSecOp4res -eq "0")
     {
         $SecOptName = "$secOpTitle4 - Disabled"
+        $trueFalse = "True"
     }
     else
     {
         $SecOptName = "Warning - $secOpTitle4 - Enabled Warning"
+        $trueFalse = "False"
     }
     
     $newObjSecOptions = New-Object psObject
     Add-Member -InputObject $newObjSecOptions -Type NoteProperty -Name SecurityOptions -Value $SecOptName
+    Add-Member -InputObject $newObjSecOptions -Type NoteProperty -Name TrueIsCompliant -Value $trueFalse
     $fragSecOptions +=  $newObjSecOptions 
 
     $secOpTitle5 = "Network security: Do not store LAN Manager hash value on next password change" #  = 1
@@ -2166,14 +2279,17 @@ sleep 5
     if ($getSecOp5res -eq "1")
     {
         $SecOptName = "$secOpTitle5 - Enabled"
+        $trueFalse = "True"
     }
     else
     {
         $SecOptName = "Warning - $secOpTitle5 - Disabled Warning"
+        $trueFalse = "False"
     }
     
     $newObjSecOptions = New-Object psObject
     Add-Member -InputObject $newObjSecOptions -Type NoteProperty -Name SecurityOptions -Value $SecOptName
+    Add-Member -InputObject $newObjSecOptions -Type NoteProperty -Name TrueIsCompliant -Value $trueFalse
     $fragSecOptions +=  $newObjSecOptions
 
     $secOpTitle6 = "Network security: LAN Manager authentication level (Send NTLMv2 response only\refuse LM & NTLM)" #  = 5
@@ -2183,14 +2299,17 @@ sleep 5
     if ($getSecOp6res -eq "5")
     {
         $SecOptName = "$secOpTitle6 - Enabled"
+        $trueFalse = "True"
     }
     else
     {
         $SecOptName = "Warning - $secOpTitle6 - Disabled Warning"
+        $trueFalse = "False"
     }
     
     $newObjSecOptions = New-Object psObject
     Add-Member -InputObject $newObjSecOptions -Type NoteProperty -Name SecurityOptions -Value $SecOptName
+    Add-Member -InputObject $newObjSecOptions -Type NoteProperty -Name TrueIsCompliant -Value $trueFalse
     $fragSecOptions +=  $newObjSecOptions
 
     $secOpTitle7 = "Network Access: Do not allow anonymous enumeration of SAM accounts" #  = 1
@@ -2200,14 +2319,17 @@ sleep 5
     if ($getSecOp7res -eq "1")
     {
         $SecOptName = "$secOpTitle7 - Enabled"
+        $trueFalse = "True"
     }
     else
     {
         $SecOptName = "Warning - $secOpTitle7 - Disabled Warning"
+        $trueFalse = "False"
     }
     
     $newObjSecOptions = New-Object psObject
     Add-Member -InputObject $newObjSecOptions -Type NoteProperty -Name SecurityOptions -Value $SecOptName
+    Add-Member -InputObject $newObjSecOptions -Type NoteProperty -Name TrueIsCompliant -Value $trueFalse
     $fragSecOptions +=  $newObjSecOptions
 
     $secOpTitle8 = "Network Access: Do not allow anonymous enumeration of SAM accounts and shares" #  = 1
@@ -2217,14 +2339,17 @@ sleep 5
     if ($getSecOp8res -eq "1")
     {
         $SecOptName = "$secOpTitle8 - Enabled"
+        $trueFalse = "True"
     }
     else
     {
         $SecOptName = "Warning - $secOpTitle8 - Disabled Warning"
+        $trueFalse = "False"
     }
     
     $newObjSecOptions = New-Object psObject
     Add-Member -InputObject $newObjSecOptions -Type NoteProperty -Name SecurityOptions -Value $SecOptName
+    Add-Member -InputObject $newObjSecOptions -Type NoteProperty -Name TrueIsCompliant -Value $trueFalse
     $fragSecOptions +=  $newObjSecOptions
 
     $secOpTitle9 = "Network Access: Let Everyone permissions apply to anonymous users" # = 0
@@ -2234,14 +2359,17 @@ sleep 5
     if ($getSecOp9res -eq "0")
     {
         $SecOptName = "$secOpTitle9 - Disabled"
+        $trueFalse = "True"
     }
     else
     {
         $SecOptName = "Warning - $secOpTitle9 - Enabled Warning"
+        $trueFalse = "False"
     }
     
     $newObjSecOptions = New-Object psObject
     Add-Member -InputObject $newObjSecOptions -Type NoteProperty -Name SecurityOptions -Value $SecOptName
+    Add-Member -InputObject $newObjSecOptions -Type NoteProperty -Name TrueIsCompliant -Value $trueFalse
     $fragSecOptions +=  $newObjSecOptions
 
     $secOpTitle10 = "Network security: LDAP client signing requirements" # = 2 Required
@@ -2251,30 +2379,37 @@ sleep 5
     if ($getSecOp10res -eq "2")
     {
         $SecOptName = "$secOpTitle10 - Enabled"
+        $trueFalse = "True"
     }
     else
     {
         $SecOptName = "Warning - $secOpTitle10 - Disabled Warning"
+        $trueFalse = "False"
     }
     $newObjSecOptions = New-Object psObject
     Add-Member -InputObject $newObjSecOptions -Type NoteProperty -Name SecurityOptions -Value $SecOptName
+    Add-Member -InputObject $newObjSecOptions -Type NoteProperty -Name TrueIsCompliant -Value $trueFalse
     $fragSecOptions +=  $newObjSecOptions
 
-        $secOpTitle15 = "Network security: Minimum session security for NTLM SSP based (including secure RPC) clients" 
+
+    $secOpTitle15 = "Network security: Minimum session security for NTLM SSP based (including secure RPC) clients" 
     $getSecOp15 = get-item 'HKLM:\System\CurrentControlSet\Control\Lsa\MSV1_0\' -ErrorAction SilentlyContinue
     $getSecOp15res = $getSecOp15.getvalue("NTLMMinClientSec")
 
     if ($getSecOp15res -eq "537395200")
     {
         $SecOptName = "$secOpTitle15 - Enabled (Require NTLMv2 session security and Require 128-bit encryption)"
+        $trueFalse = "True"
     }
     else
     {
         $SecOptName = "Warning - $secOpTitle15 - Disabled set Require NTLMv2 session security and Require 128-bit encryption Warning"
+        $trueFalse = "False"
     }
     
     $newObjSecOptions = New-Object psObject
     Add-Member -InputObject $newObjSecOptions -Type NoteProperty -Name SecurityOptions -Value $SecOptName
+    Add-Member -InputObject $newObjSecOptions -Type NoteProperty -Name TrueIsCompliant -Value $trueFalse
     $fragSecOptions +=  $newObjSecOptions
 
 
@@ -2285,14 +2420,17 @@ sleep 5
     if ($getSecOp16res -eq "537395200")
     {
         $SecOptName = "$secOpTitle16 - Enabled (Require NTLMv2 session security and Require 128-bit encryption)"
+        $trueFalse = "True"
     }
     else
     {
         $SecOptName = "Warning - $secOpTitle16 - Disabled set Require NTLMv2 session security and Require 128-bit encryption Warning"
+        $trueFalse = "False"
     }
     
     $newObjSecOptions = New-Object psObject
     Add-Member -InputObject $newObjSecOptions -Type NoteProperty -Name SecurityOptions -Value $SecOptName
+    Add-Member -InputObject $newObjSecOptions -Type NoteProperty -Name TrueIsCompliant -Value $trueFalse
     $fragSecOptions +=  $newObjSecOptions
 
     <#
@@ -2315,15 +2453,18 @@ sleep 5
     if ($getSecOp12res -eq "2147483640")
     {
         $SecOptName = "$secOpTitle12 - Enabled, (AES128_HMAC_SHA1,AES256_HMAC_SHA1,Future encryption types)"
+        $trueFalse = "True"
     }
     else
     {
         $SecOptName = "Warning - $secOpTitle12 - Disabled Warning"
+        $trueFalse = "False"
     }
     
 
     $newObjSecOptions = New-Object psObject
     Add-Member -InputObject $newObjSecOptions -Type NoteProperty -Name SecurityOptions -Value $SecOptName
+    Add-Member -InputObject $newObjSecOptions -Type NoteProperty -Name TrueIsCompliant -Value $trueFalse
     $fragSecOptions +=  $newObjSecOptions
 
 
@@ -2334,14 +2475,17 @@ sleep 5
     if ($getSecOp11res -eq "1")
     {
         $SecOptName = "$secOpTitle11 - Enabled"
+        $trueFalse = "True"
     }
     else
     {
         $SecOptName = "Warning - $secOpTitle11 - Disabled Warning"
+        $trueFalse = "False"
     }
     
     $newObjSecOptions = New-Object psObject
     Add-Member -InputObject $newObjSecOptions -Type NoteProperty -Name SecurityOptions -Value $SecOptName
+    Add-Member -InputObject $newObjSecOptions -Type NoteProperty -Name TrueIsCompliant -Value $trueFalse
     $fragSecOptions +=  $newObjSecOptions
 
 
@@ -2352,14 +2496,17 @@ sleep 5
     if ($getSecOp13res -eq "2")
     {
         $SecOptName = "$secOpTitle13 - Enabled"
+        $trueFalse = "True"
     }
     else
     {
         $SecOptName = "Warning - $secOpTitle13 - Disabled Warning"
+        $trueFalse = "False"
     }
     
     $newObjSecOptions = New-Object psObject
     Add-Member -InputObject $newObjSecOptions -Type NoteProperty -Name SecurityOptions -Value $SecOptName
+    Add-Member -InputObject $newObjSecOptions -Type NoteProperty -Name TrueIsCompliant -Value $trueFalse
     $fragSecOptions +=  $newObjSecOptions
 
     $secOpTitle14 = "System cryptography: Use FIPS compliant algorithms for encryption, hashing, and signing" 
@@ -2369,14 +2516,17 @@ sleep 5
     if ($getSecOp14res -eq "1")
     {
         $SecOptName = "$secOpTitle14 - Enabled"
+        $trueFalse = "True"
     }
     else
     {
         $SecOptName = "Warning - $secOpTitle14 - Disabled Warning"
+        $trueFalse = "False"
     }
     
     $newObjSecOptions = New-Object psObject
     Add-Member -InputObject $newObjSecOptions -Type NoteProperty -Name SecurityOptions -Value $SecOptName
+    Add-Member -InputObject $newObjSecOptions -Type NoteProperty -Name TrueIsCompliant -Value $trueFalse
     $fragSecOptions +=  $newObjSecOptions
 
 
@@ -2387,14 +2537,17 @@ sleep 5
     if ($getSecOp17res -eq "1")
     {
         $SecOptName = "$secOpTitle17 - Enabled"
+        $trueFalse = "True"
     }
     else
     {
         $SecOptName = "Warning - $secOpTitle17 - Disabled Warning"
+        $trueFalse = "False"
     }
     
     $newObjSecOptions = New-Object psObject
     Add-Member -InputObject $newObjSecOptions -Type NoteProperty -Name SecurityOptions -Value $SecOptName
+    Add-Member -InputObject $newObjSecOptions -Type NoteProperty -Name TrueIsCompliant -Value $trueFalse
     $fragSecOptions +=  $newObjSecOptions
 
 
@@ -3663,27 +3816,32 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     {
         $WindowsOSSet = "$WindowsOSDescrip is enabled good only boot-start drivers that can be initialized" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
+        $trueFalse = "True"
     }
     elseif ($getWindowsOSVal -eq "1")
     {
         $WindowsOSSet = "$WindowsOSDescrip is enabled good and unknown only boot-start drivers that can be initialized" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
+        $trueFalse = "True"
     }
     elseif ($getWindowsOSVal -eq "3")
     {
         $WindowsOSSet = "Warning - $WindowsOSDescrip is enabled Good, unknown and bad but critical boot-start drivers that can be initialized warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
+        $trueFalse = "False"
     }
     else
     {
         #Else assume all boot-start drivers are allowed this is normally have a value of 7
         $WindowsOSSet = "Warning - $WindowsOSDescrip is enabled all boot-start drivers that can be initialized warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
+        $trueFalse = "False"
     }
 
     $newObjWindowsOS = New-Object -TypeName PSObject
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsSetting -Value  $WindowsOSSet
-    Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsRegValue -Value $WindowsOSReg 
+    Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsRegValue -Value $WindowsOSReg
+    Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name TrueIsCompliant -Value $trueFalse 
     $fragWindowsOSVal += $newObjWindowsOS
 
     <#
@@ -3709,16 +3867,19 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     {
         $WindowsOSSet = "$WindowsOSDescrip is enabled" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
+        $trueFalse = "True"
     }
     else
     {
         $WindowsOSSet = "Warning - $WindowsOSDescrip is not set warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
+        $trueFalse = "False"
     }
 
     $newObjWindowsOS = New-Object -TypeName PSObject
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsSetting -Value  $WindowsOSSet
-    Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsRegValue -Value $WindowsOSReg 
+    Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsRegValue -Value $WindowsOSReg
+    Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name TrueIsCompliant -Value $trueFalse 
     $fragWindowsOSVal += $newObjWindowsOS
 
     <#
@@ -3746,16 +3907,19 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     {
         $WindowsOSSet = "Warning - $WindowsOSDescrip is Enabled Warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
+        $trueFalse = "False"
     }
     else
     {
         $WindowsOSSet = "$WindowsOSDescrip is disabled" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
+        $trueFalse = "True"
     }
 
     $newObjWindowsOS = New-Object -TypeName PSObject
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsSetting  -Value $WindowsOSSet
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsRegValue -Value $WindowsOSReg 
+    Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name TrueIsCompliant -Value $trueFalse
     $fragWindowsOSVal += $newObjWindowsOS
 
     
@@ -3783,16 +3947,19 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     {
         $WindowsOSSet = "Warning - $WindowsOSDescrip is Enabled Warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
+        $trueFalse = "False"
     }
     else
     {
         $WindowsOSSet = "$WindowsOSDescrip is Disabled" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
+        $trueFalse = "True"
     }
 
     $newObjWindowsOS = New-Object -TypeName PSObject
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsSetting -Value  $WindowsOSSet
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsRegValue -Value $WindowsOSReg 
+    Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name TrueIsCompliant -Value $trueFalse
     $fragWindowsOSVal += $newObjWindowsOS
 
     <#
@@ -3819,16 +3986,19 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     {
         $WindowsOSSet = "$WindowsOSDescrip is enabled" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
+        $trueFalse = "True"
     }
     else
     {
         $WindowsOSSet = "Warning - $WindowsOSDescrip is disabled Warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
+        $trueFalse = "False"
     }
 
     $newObjWindowsOS = New-Object -TypeName PSObject
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsSetting -Value  $WindowsOSSet
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsRegValue -Value $WindowsOSReg 
+    Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name TrueIsCompliant -Value $trueFalse
     $fragWindowsOSVal += $newObjWindowsOS
 
     <#
@@ -3858,16 +4028,19 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     {
         $WindowsOSSet = "$WindowsOSDescrip is disabled" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
+        $trueFalse = "True"
     }
     else
     {
         $WindowsOSSet = "Warning - $WindowsOSDescrip is not set warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
+        $trueFalse = "False"
     }
 
     $newObjWindowsOS = New-Object -TypeName PSObject
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsSetting -Value  $WindowsOSSet
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsRegValue -Value $WindowsOSReg 
+    Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name TrueIsCompliant -Value $trueFalse
     $fragWindowsOSVal += $newObjWindowsOS
 
     <#
@@ -3894,16 +4067,19 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     {
         $WindowsOSSet = "$WindowsOSDescrip is enabled" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
+        $trueFalse = "True"
     }
     else
     {
         $WindowsOSSet = "Warning - $WindowsOSDescrip disabled warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
+        $trueFalse = "False"
     }
 
     $newObjWindowsOS = New-Object -TypeName PSObject
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsSetting -Value  $WindowsOSSet
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsRegValue -Value $WindowsOSReg 
+    Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name TrueIsCompliant -Value $trueFalse
     $fragWindowsOSVal += $newObjWindowsOS
 
     <#
@@ -3931,16 +4107,19 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     {
         $WindowsOSSet = "$WindowsOSDescrip is disabled" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
+        $trueFalse = "True"
     }
     else
     {
         $WindowsOSSet = "Warning - $WindowsOSDescrip enabled warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
+        $trueFalse = "False"
     }
 
     $newObjWindowsOS = New-Object -TypeName PSObject
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsSetting -Value  $WindowsOSSet
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsRegValue -Value $WindowsOSReg 
+    Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name TrueIsCompliant -Value $trueFalse
     $fragWindowsOSVal += $newObjWindowsOS
 
  <#
@@ -3966,16 +4145,19 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     {
         $WindowsOSSet = "$WindowsOSDescrip is disabled" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
+        $trueFalse = "True"
     }
     else
     {
         $WindowsOSSet = "Warning - $WindowsOSDescrip is enabled Warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
+        $trueFalse = "False"
     }
 
     $newObjWindowsOS = New-Object -TypeName PSObject
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsSetting -Value  $WindowsOSSet
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsRegValue -Value $WindowsOSReg 
+    Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name TrueIsCompliant -Value $trueFalse
     $fragWindowsOSVal += $newObjWindowsOS
 
 
@@ -3998,16 +4180,19 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     {
         $WindowsOSSet = "$WindowsOSDescrip is enabled" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
+        $trueFalse = "True"
     }
     else
     {
         $WindowsOSSet = "Warning - $WindowsOSDescrip is disabled Warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
+        $trueFalse = "False"
     }
 
     $newObjWindowsOS = New-Object -TypeName PSObject
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsSetting -Value  $WindowsOSSet
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsRegValue -Value $WindowsOSReg 
+    Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name TrueIsCompliant -Value $trueFalse
     $fragWindowsOSVal += $newObjWindowsOS
 
 
@@ -4037,16 +4222,19 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     {
         $WindowsOSSet = "$WindowsOSDescrip is enabled" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
+        $trueFalse = "True"
     }
     else
     {
         $WindowsOSSet = "Warning - $WindowsOSDescrip is disabled Warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
+        $trueFalse = "False"
     }
 
     $newObjWindowsOS = New-Object -TypeName PSObject
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsSetting -Value  $WindowsOSSet
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsRegValue -Value $WindowsOSReg 
+    Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name TrueIsCompliant -Value $trueFalse
     $fragWindowsOSVal += $newObjWindowsOS
 
 
@@ -4069,16 +4257,19 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     {
         $WindowsOSSet = "$WindowsOSDescrip is enabled" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
+        $trueFalse = "True"
     }
     else
     {
         $WindowsOSSet = "Warning - $WindowsOSDescrip is disabled Warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
+        $trueFalse = "False"
     }
 
     $newObjWindowsOS = New-Object -TypeName PSObject
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsSetting -Value  $WindowsOSSet
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsRegValue -Value $WindowsOSReg 
+    Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name TrueIsCompliant -Value $trueFalse
     $fragWindowsOSVal += $newObjWindowsOS
 
 
@@ -4101,16 +4292,19 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     {
         $WindowsOSSet = "$WindowsOSDescrip is enabled" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
+        $trueFalse = "True"
     }
     else
     {
         $WindowsOSSet = "Warning - $WindowsOSDescrip is disabled Warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
+        $trueFalse = "False"
     }
 
     $newObjWindowsOS = New-Object -TypeName PSObject
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsSetting -Value  $WindowsOSSet
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsRegValue -Value $WindowsOSReg 
+    Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name TrueIsCompliant -Value $trueFalse
     $fragWindowsOSVal += $newObjWindowsOS
 
     <#
@@ -4132,16 +4326,19 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     {
         $WindowsOSSet = "$WindowsOSDescrip is enabled" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
+        $trueFalse = "True"
     }
     else
     {
         $WindowsOSSet = "Warning - $WindowsOSDescrip disabled warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
+        $trueFalse = "False"
     }
 
     $newObjWindowsOS = New-Object -TypeName PSObject
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsSetting -Value  $WindowsOSSet
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsRegValue -Value $WindowsOSReg 
+    Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name TrueIsCompliant -Value $trueFalse
     $fragWindowsOSVal += $newObjWindowsOS
 
     <#
@@ -4163,16 +4360,19 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     {
         $WindowsOSSet = "$WindowsOSDescrip is enabled" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
+        $trueFalse = "True"
     }
     else
     {
         $WindowsOSSet = "Warning - $WindowsOSDescrip disabled warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
+        $trueFalse = "False"
     }
 
     $newObjWindowsOS = New-Object -TypeName PSObject
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsSetting -Value  $WindowsOSSet
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsRegValue -Value $WindowsOSReg 
+    Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name TrueIsCompliant -Value $trueFalse
     $fragWindowsOSVal += $newObjWindowsOS
 
 
@@ -4195,16 +4395,19 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     {
         $WindowsOSSet = "$WindowsOSDescrip is enabled" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
+        $trueFalse = "True"
     }
     else
     {
         $WindowsOSSet = "Warning - $WindowsOSDescrip disabled warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
+        $trueFalse = "False"
     }
 
     $newObjWindowsOS = New-Object -TypeName PSObject
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsSetting -Value  $WindowsOSSet
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsRegValue -Value $WindowsOSReg 
+    Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name TrueIsCompliant -Value $trueFalse
     $fragWindowsOSVal += $newObjWindowsOS
 
 
@@ -4227,16 +4430,19 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     {
         $WindowsOSSet = "$WindowsOSDescrip is enabled" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
+        $trueFalse = "True"
     }
     else
     {
         $WindowsOSSet = "Warning - $WindowsOSDescrip disabled warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
+        $trueFalse = "False"
     }
 
     $newObjWindowsOS = New-Object -TypeName PSObject
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsSetting -Value  $WindowsOSSet
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsRegValue -Value $WindowsOSReg 
+    Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name TrueIsCompliant -Value $trueFalse
     $fragWindowsOSVal += $newObjWindowsOS
 
 
@@ -4259,16 +4465,19 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     {
         $WindowsOSSet = "$WindowsOSDescrip is enabled" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
+        $trueFalse = "True"
     }
     else
     {
         $WindowsOSSet = "Warning - $WindowsOSDescrip disabled warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
+        $trueFalse = "False"
     }
 
     $newObjWindowsOS = New-Object -TypeName PSObject
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsSetting -Value  $WindowsOSSet
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsRegValue -Value $WindowsOSReg 
+    Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name TrueIsCompliant -Value $trueFalse
     $fragWindowsOSVal += $newObjWindowsOS
 
     <#
@@ -4290,16 +4499,19 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     {
         $WindowsOSSet = "$WindowsOSDescrip is enabled" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
+        $trueFalse = "True"
     }
     else
     {
         $WindowsOSSet = "Warning - $WindowsOSDescrip is disabled Warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
+        $trueFalse = "False"
     }
 
     $newObjWindowsOS = New-Object -TypeName PSObject
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsSetting -Value  $WindowsOSSet
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsRegValue -Value $WindowsOSReg 
+    Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name TrueIsCompliant -Value $trueFalse
     $fragWindowsOSVal += $newObjWindowsOS
 
     <#
@@ -4321,16 +4533,19 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     {
         $WindowsOSSet = "$WindowsOSDescrip is enabled" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
+        $trueFalse = "True"
     }
     else
     {
         $WindowsOSSet = "Warning - $WindowsOSDescrip is disabled Warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
+        $trueFalse = "False"
     }
 
     $newObjWindowsOS = New-Object -TypeName PSObject
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsSetting -Value  $WindowsOSSet
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsRegValue -Value $WindowsOSReg 
+    Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name TrueIsCompliant -Value $trueFalse
     $fragWindowsOSVal += $newObjWindowsOS
 
 
@@ -4358,16 +4573,19 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     {
         $WindowsOSSet = "$WindowsOSDescrip is enabled" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
+        $trueFalse = "True"
     }
     else
     {
         $WindowsOSSet = "Warning - $WindowsOSDescrip is disabled Warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
+        $trueFalse = "False"
     }
 
     $newObjWindowsOS = New-Object -TypeName PSObject
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsSetting -Value  $WindowsOSSet
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsRegValue -Value $WindowsOSReg 
+    Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name TrueIsCompliant -Value $trueFalse
     $fragWindowsOSVal += $newObjWindowsOS
 
 
@@ -4397,16 +4615,19 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     {
         $WindowsOSSet = "$WindowsOSDescrip is Enabled" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
+        $trueFalse = "True"
     }
     else
     {
         $WindowsOSSet = "Warning - $WindowsOSDescrip is disabled Warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
+        $trueFalse = "False"
     }
 
     $newObjWindowsOS = New-Object -TypeName PSObject
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsSetting -Value  $WindowsOSSet
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsRegValue -Value $WindowsOSReg 
+    Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name TrueIsCompliant -Value $trueFalse
     $fragWindowsOSVal += $newObjWindowsOS
 
 
@@ -4433,16 +4654,19 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     {
         $WindowsOSSet = "$WindowsOSDescrip is disabled" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
+        $trueFalse = "True"
     }
     else
     {
         $WindowsOSSet = "Warning - $WindowsOSDescrip is enabled warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
+        $trueFalse = "False"
     }
 
     $newObjWindowsOS = New-Object -TypeName PSObject
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsSetting -Value  $WindowsOSSet
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsRegValue -Value $WindowsOSReg 
+    Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name TrueIsCompliant -Value $trueFalse
     $fragWindowsOSVal += $newObjWindowsOS
 
     <#
@@ -4469,16 +4693,19 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     {
         $WindowsOSSet = "$WindowsOSDescrip is Enabled" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
+        $trueFalse = "True"
     }
     else
     {
         $WindowsOSSet = "Warning - $WindowsOSDescrip is disabled Warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
+        $trueFalse = "False"
     }
 
     $newObjWindowsOS = New-Object -TypeName PSObject
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsSetting -Value  $WindowsOSSet
-    Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsRegValue -Value $WindowsOSReg 
+    Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsRegValue -Value $WindowsOSReg
+    Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name TrueIsCompliant -Value $trueFalse 
     $fragWindowsOSVal += $newObjWindowsOS
 
     <#
@@ -4502,16 +4729,19 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     {
         $WindowsOSSet = "$WindowsOSDescrip is Enabled" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
+        $trueFalse = "True"
     }
     else
     {
         $WindowsOSSet = "Warning - $WindowsOSDescrip is disabled Warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
+        $trueFalse = "False"
     }
 
     $newObjWindowsOS = New-Object -TypeName PSObject
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsSetting -Value  $WindowsOSSet
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsRegValue -Value $WindowsOSReg 
+    Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name TrueIsCompliant -Value $trueFalse
     $fragWindowsOSVal += $newObjWindowsOS
 
 
@@ -4545,16 +4775,19 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     {
         $WindowsOSSet = "$WindowsOSDescrip is disabled" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
+        $trueFalse = "True"
     }
     else
     {
         $WindowsOSSet = "Warning - $WindowsOSDescrip is Enabled Warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
+        $trueFalse = "False"
     }
 
     $newObjWindowsOS = New-Object -TypeName PSObject
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsSetting -Value  $WindowsOSSet
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsRegValue -Value $WindowsOSReg 
+    Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name TrueIsCompliant -Value $trueFalse
     $fragWindowsOSVal += $newObjWindowsOS
 
 
@@ -4585,16 +4818,19 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     {
         $WindowsOSSet = "$WindowsOSDescrip is enabled or not Set Warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
+        $trueFalse = "True"
     }
     else
     {
         $WindowsOSSet = "Warning - $WindowsOSDescrip is disabled warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
+        $trueFalse = "False"
     }
 
     $newObjWindowsOS = New-Object -TypeName PSObject
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsSetting -Value  $WindowsOSSet
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsRegValue -Value $WindowsOSReg 
+    Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name TrueIsCompliant -Value $trueFalse
     $fragWindowsOSVal += $newObjWindowsOS
 
 
@@ -4631,16 +4867,19 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     {
         $WindowsOSSet = "$WindowsOSDescrip is Disabled" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
+        $trueFalse = "True"
     }
     else
     {
         $WindowsOSSet = "Warning - $WindowsOSDescrip is Enabled or not defined Warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
+        $trueFalse = "False"
     }
 
     $newObjWindowsOS = New-Object -TypeName PSObject
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsSetting -Value  $WindowsOSSet
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsRegValue -Value $WindowsOSReg 
+    Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name TrueIsCompliant -Value $trueFalse
     $fragWindowsOSVal += $newObjWindowsOS
 
     <#
@@ -4662,6 +4901,7 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     {
         $WindowsOSSet = "$WindowsOSDescrip is enabled" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
+        $trueFalse = "True"
     }
     else
     {
@@ -4672,6 +4912,7 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     $newObjWindowsOS = New-Object -TypeName PSObject
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsSetting -Value  $WindowsOSSet
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsRegValue -Value $WindowsOSReg 
+    Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name TrueIsCompliant -Value $trueFalse
     $fragWindowsOSVal += $newObjWindowsOS
 
 
@@ -4702,16 +4943,19 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     {
         $WindowsOSSet = "$WindowsOSDescrip caches $getWindowsOSVal previous logons, ideally this should be set to 1" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
+        $trueFalse = "True"
     }
     else
     {
         $WindowsOSSet = "Warning - $WindowsOSDescrip is $getWindowsOSVal, ideally this should be set to 1 Warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
+        $trueFalse = "False"
     }
 
     $newObjWindowsOS = New-Object -TypeName PSObject
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsSetting -Value  $WindowsOSSet
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsRegValue -Value $WindowsOSReg 
+    Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name TrueIsCompliant -Value $trueFalse
     $fragWindowsOSVal += $newObjWindowsOS
 
 
@@ -4752,16 +4996,19 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     {
         $WindowsOSSet = "$WindowsOSDescrip is enabled" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
+        $trueFalse = "True"
     }
     else
     {
         $WindowsOSSet = "Warning - $WindowsOSDescrip is disabled Warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
+        $trueFalse = "False"
     }
 
     $newObjWindowsOS = New-Object -TypeName PSObject
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsSetting -Value  $WindowsOSSet
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsRegValue -Value $WindowsOSReg 
+    Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name TrueIsCompliant -Value $trueFalse
     $fragWindowsOSVal += $newObjWindowsOS
  
 
@@ -4798,16 +5045,19 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     {
         $WindowsOSSet = "$WindowsOSDescrip is enabled" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
+        $trueFalse = "True"
     }
     else
     {
         $WindowsOSSet = "Warning - $WindowsOSDescrip is disabled, mitigates Pass-the-Hash Warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
+        $trueFalse = "False"
     }
 
     $newObjWindowsOS = New-Object -TypeName PSObject
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsSetting -Value  $WindowsOSSet
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsRegValue -Value $WindowsOSReg 
+    Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name TrueIsCompliant -Value $trueFalse
     $fragWindowsOSVal += $newObjWindowsOS
 
        <#
@@ -4835,16 +5085,19 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     {
         $WindowsOSSet = "$WindowsOSDescrip is enabled" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
+        $trueFalse = "True"
     }
     else
     {
         $WindowsOSSet = "Warning - $WindowsOSDescrip is disabled, \\*\SYSVOL and \\*\NETLOGON are missing Warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
+        $trueFalse = "False"
     }
 
     $newObjWindowsOS = New-Object -TypeName PSObject
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsSetting -Value  $WindowsOSSet
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsRegValue -Value $WindowsOSReg 
+    Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name TrueIsCompliant -Value $trueFalse
     $fragWindowsOSVal += $newObjWindowsOS
 
     
@@ -4871,16 +5124,19 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     {
         $WindowsOSSet = "$WindowsOSDescrip is enabled" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
+        $trueFalse = "True"
     }
     else
     {
         $WindowsOSSet = "Warning - $WindowsOSDescrip is disabled Warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
+        $trueFalse = "False"
     }
 
     $newObjWindowsOS = New-Object -TypeName PSObject
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsSetting -Value  $WindowsOSSet
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsRegValue -Value $WindowsOSReg 
+    Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name TrueIsCompliant -Value $trueFalse
     $fragWindowsOSVal += $newObjWindowsOS
 
        <#
@@ -4908,16 +5164,19 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     {
         $WindowsOSSet = "$WindowsOSDescrip is enabled" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
+        $trueFalse = "True"
     }
     else
     {
         $WindowsOSSet = "Warning - $WindowsOSDescrip is disabled Warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
+        $trueFalse = "False"
     }
 
     $newObjWindowsOS = New-Object -TypeName PSObject
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsSetting -Value  $WindowsOSSet
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsRegValue -Value $WindowsOSReg 
+    Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name TrueIsCompliant -Value $trueFalse
     $fragWindowsOSVal += $newObjWindowsOS
 
 
@@ -4945,16 +5204,19 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     {
         $WindowsOSSet = "$WindowsOSDescrip is enabled" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
+        $trueFalse = "True"
     }
     else
     {
         $WindowsOSSet = "Warning - $WindowsOSDescrip is disabled Warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
+        $trueFalse = "False"
     }
 
     $newObjWindowsOS = New-Object -TypeName PSObject
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsSetting -Value  $WindowsOSSet
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsRegValue -Value $WindowsOSReg 
+    Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name TrueIsCompliant -Value $trueFalse
     $fragWindowsOSVal += $newObjWindowsOS
 
     <#
@@ -4982,16 +5244,19 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     {
         $WindowsOSSet = "$WindowsOSDescrip is enabled" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
+        $trueFalse = "True"
     }
     else
     {
         $WindowsOSSet = "Warning - $WindowsOSDescrip is disabled Warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
+        $trueFalse = "False"
     }
 
     $newObjWindowsOS = New-Object -TypeName PSObject
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsSetting -Value  $WindowsOSSet
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsRegValue -Value $WindowsOSReg 
+    Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name TrueIsCompliant -Value $trueFalse
     $fragWindowsOSVal += $newObjWindowsOS
 
     <#
@@ -5017,16 +5282,19 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     {
         $WindowsOSSet = "Warning - $WindowsOSDescrip is enabled Warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
+        $trueFalse = "True"
     }
     else
     {
         $WindowsOSSet = "$WindowsOSDescrip is disabled" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
+        $trueFalse = "False"
     }
 
     $newObjWindowsOS = New-Object -TypeName PSObject
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsSetting -Value  $WindowsOSSet
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsRegValue -Value $WindowsOSReg 
+    Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name TrueIsCompliant -Value $trueFalse
     $fragWindowsOSVal += $newObjWindowsOS
 
 
@@ -5057,6 +5325,7 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     {
         $WindowsOSSet = "Warning - $WindowsOSDescrip is enabled Warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
+        $trueFalse = "True"
     }
     else
     {
@@ -5067,6 +5336,7 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     $newObjWindowsOS = New-Object -TypeName PSObject
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsSetting -Value  $WindowsOSSet
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsRegValue -Value $WindowsOSReg 
+    Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name TrueIsCompliant -Value $trueFalse
     $fragWindowsOSVal += $newObjWindowsOS
 
     <#
@@ -5098,16 +5368,19 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     {
         $WindowsOSSet = "$WindowsOSDescrip is enabled" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
+        $trueFalse = "True"
     }
     else
     {
         $WindowsOSSet = "Warning - $WindowsOSDescrip is disabled Warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
+        $trueFalse = "False"
     }
 
     $newObjWindowsOS = New-Object -TypeName PSObject
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsSetting -Value  $WindowsOSSet
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsRegValue -Value $WindowsOSReg 
+    Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name TrueIsCompliant -Value $trueFalse
     $fragWindowsOSVal += $newObjWindowsOS
 
     <#
@@ -5139,6 +5412,7 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     {
         $WindowsOSSet = "$WindowsOSDescrip is enabled" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
+        $trueFalse = "True"
     }
     else
     {
@@ -5149,6 +5423,7 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     $newObjWindowsOS = New-Object -TypeName PSObject
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsSetting -Value  $WindowsOSSet
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsRegValue -Value $WindowsOSReg 
+    Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name TrueIsCompliant -Value $trueFalse
     $fragWindowsOSVal += $newObjWindowsOS
 
 
@@ -5180,16 +5455,19 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     {
         $WindowsOSSet = "$WindowsOSDescrip is enabled" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
+        $trueFalse = "True"
     }
     else
     {
         $WindowsOSSet = "Warning - $WindowsOSDescrip is disabled Warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
+        $trueFalse = "False"
     }
 
     $newObjWindowsOS = New-Object -TypeName PSObject
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsSetting -Value  $WindowsOSSet
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsRegValue -Value $WindowsOSReg 
+    Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name TrueIsCompliant -Value $trueFalse
     $fragWindowsOSVal += $newObjWindowsOS
 
 
@@ -5214,17 +5492,20 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     {
         $WindowsOSSet = "$WindowsOSDescrip is enabled to allow Administrator remote Access (O:BAG:BAD:(A;;RC;;;BA))" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
+        $trueFalse = "True"
 
     }
     else
     {
         $WindowsOSSet = "Warning - $WindowsOSDescrip is disabled or not set Warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
+        $trueFalse = "False"
     }
 
     $newObjWindowsOS = New-Object -TypeName PSObject
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsSetting -Value  $WindowsOSSet
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsRegValue -Value $WindowsOSReg 
+    Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name TrueIsCompliant -Value $trueFalse
     $fragWindowsOSVal += $newObjWindowsOS
 
 
@@ -5256,16 +5537,19 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     {
         $WindowsOSSet = "$WindowsOSDescrip is enabled" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
+        $trueFalse = "True"
     }
     else
     {
         $WindowsOSSet = "Warning - $WindowsOSDescrip is disabled warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
+        $trueFalse = "False"
     }
 
     $newObjWindowsOS = New-Object -TypeName PSObject
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsSetting -Value  $WindowsOSSet
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsRegValue -Value $WindowsOSReg 
+    Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name TrueIsCompliant -Value $trueFalse
     $fragWindowsOSVal += $newObjWindowsOS
 
     <#
@@ -5296,16 +5580,19 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     {
         $WindowsOSSet = "Warning - $WindowsOSDescrip is enabled Warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
+        $trueFalse = "True"
     }
     else
     {
         $WindowsOSSet = "$WindowsOSDescrip is disabled" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
+        $trueFalse = "False"
     }
 
     $newObjWindowsOS = New-Object -TypeName PSObject
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsSetting -Value  $WindowsOSSet
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsRegValue -Value $WindowsOSReg 
+    Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name TrueIsCompliant -Value $trueFalse
     $fragWindowsOSVal += $newObjWindowsOS   
 
     <#
@@ -5327,16 +5614,19 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     {
         $WindowsOSSet = "$WindowsOSDescrip is enabled" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
+        $trueFalse = "True"
     }
     else
     {
         $WindowsOSSet = "Warning - $WindowsOSDescrip disabled warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
+        $trueFalse = "False"
     }
 
     $newObjWindowsOS = New-Object -TypeName PSObject
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsSetting -Value  $WindowsOSSet
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsRegValue -Value $WindowsOSReg 
+    Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name TrueIsCompliant -Value $trueFalse
     $fragWindowsOSVal += $newObjWindowsOS
 
 
@@ -5360,16 +5650,19 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     {
         $WindowsOSSet = "$WindowsOSDescrip is enabled" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
+        $trueFalse = "True"
     }
     else
     {
         $WindowsOSSet = "Warning - $WindowsOSDescrip is disabled Warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
+        $trueFalse = "False"
     }
 
     $newObjWindowsOS = New-Object -TypeName PSObject
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsSetting -Value  $WindowsOSSet
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsRegValue -Value $WindowsOSReg 
+    Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name TrueIsCompliant -Value $trueFalse
     $fragWindowsOSVal += $newObjWindowsOS
 
     <#
@@ -5391,16 +5684,19 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     {
         $WindowsOSSet = "$WindowsOSDescrip is enabled" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
+        $trueFalse = "True"
     }
     else
     {
         $WindowsOSSet = "Warning - $WindowsOSDescrip is disabled Warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
+        $trueFalse = "False"
     }
 
     $newObjWindowsOS = New-Object -TypeName PSObject
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsSetting -Value  $WindowsOSSet
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsRegValue -Value $WindowsOSReg 
+    Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name TrueIsCompliant -Value $trueFalse
     $fragWindowsOSVal += $newObjWindowsOS
 
 
@@ -5423,6 +5719,7 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     {
         $WindowsOSSet = "$WindowsOSDescrip is enabled" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
+        $trueFalse = "True"
     }
     else
     {
@@ -5433,6 +5730,7 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     $newObjWindowsOS = New-Object -TypeName PSObject
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsSetting -Value  $WindowsOSSet
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsRegValue -Value $WindowsOSReg 
+    Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name TrueIsCompliant -Value $trueFalse
     $fragWindowsOSVal += $newObjWindowsOS
 
     <#
@@ -5454,16 +5752,19 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     {
         $WindowsOSSet = "$WindowsOSDescrip is enabled" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
+        $trueFalse = "True"
     }
     else
     {
         $WindowsOSSet = "Warning - $WindowsOSDescrip is disabled Warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
+        $trueFalse = "False"
     }
 
     $newObjWindowsOS = New-Object -TypeName PSObject
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsSetting -Value  $WindowsOSSet
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsRegValue -Value $WindowsOSReg 
+    Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name TrueIsCompliant -Value $trueFalse
     $fragWindowsOSVal += $newObjWindowsOS
 
     <#
@@ -5485,16 +5786,19 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     {
         $WindowsOSSet = "$WindowsOSDescrip is enabled" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
+        $trueFalse = "True"
     }
     else
     {
         $WindowsOSSet = "Warning - $WindowsOSDescrip is disabled Warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
+        $trueFalse = "False"
     }
 
     $newObjWindowsOS = New-Object -TypeName PSObject
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsSetting -Value  $WindowsOSSet
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsRegValue -Value $WindowsOSReg 
+    Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name TrueIsCompliant -Value $trueFalse
     $fragWindowsOSVal += $newObjWindowsOS
 
     <#
@@ -5516,16 +5820,19 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     {
         $WindowsOSSet = "$WindowsOSDescrip is enabled" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
+        $trueFalse = "True"
     }
     else
     {
         $WindowsOSSet = "Warning - $WindowsOSDescrip is disabled Warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
+        $trueFalse = "False"
     }
 
     $newObjWindowsOS = New-Object -TypeName PSObject
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsSetting -Value  $WindowsOSSet
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsRegValue -Value $WindowsOSReg 
+    Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name TrueIsCompliant -Value $trueFalse
     $fragWindowsOSVal += $newObjWindowsOS
 
 <#
@@ -5553,16 +5860,19 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     {
         $WindowsOSSet = "$WindowsOSDescrip is enabled" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
+        $trueFalse = "True"
     }
     else
     {
         $WindowsOSSet = "Warning - $WindowsOSDescrip is disabled Warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
+        $trueFalse = "False"
     }
 
     $newObjWindowsOS = New-Object -TypeName PSObject
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsSetting -Value  $WindowsOSSet
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsRegValue -Value $WindowsOSReg 
+    Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name TrueIsCompliant -Value $trueFalse
     $fragWindowsOSVal += $newObjWindowsOS
 
     <#
@@ -5584,16 +5894,19 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     {
         $WindowsOSSet = "$WindowsOSDescrip is enabled" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
+        $trueFalse = "True"
     }
     else
     {
         $WindowsOSSet = "Warning - $WindowsOSDescrip is disabled Warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
+        $trueFalse = "False"
     }
 
     $newObjWindowsOS = New-Object -TypeName PSObject
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsSetting -Value  $WindowsOSSet
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsRegValue -Value $WindowsOSReg 
+    Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name TrueIsCompliant -Value $trueFalse
     $fragWindowsOSVal += $newObjWindowsOS
 
     <#
@@ -5615,16 +5928,19 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     {
         $WindowsOSSet = "$WindowsOSDescrip is enabled" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
+        $trueFalse = "True"
     }
     else
     {
         $WindowsOSSet = "Warning - $WindowsOSDescrip is disabled warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
+        $trueFalse = "False"
     }
 
     $newObjWindowsOS = New-Object -TypeName PSObject
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsSetting -Value  $WindowsOSSet
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsRegValue -Value $WindowsOSReg 
+    Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name TrueIsCompliant -Value $trueFalse
     $fragWindowsOSVal += $newObjWindowsOS
 
     <#
@@ -5646,16 +5962,19 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     {
         $WindowsOSSet = "$WindowsOSDescrip is enabled" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
+        $trueFalse = "True"
     }
     else
     {
         $WindowsOSSet = "Warning - $WindowsOSDescrip is disabled warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
+        $trueFalse = "False"
     }
 
     $newObjWindowsOS = New-Object -TypeName PSObject
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsSetting -Value  $WindowsOSSet
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsRegValue -Value $WindowsOSReg 
+    Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name TrueIsCompliant -Value $trueFalse
     $fragWindowsOSVal += $newObjWindowsOS
 
 
@@ -5689,16 +6008,19 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     {
         $WindowsOSSet = "$WindowsOSDescrip is enabled to Warn and prevent bypass" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
+        $trueFalse = "True"
     }
     else
     {
         $WindowsOSSet = "Warning - $WindowsOSDescrip is set warn and allow bypass Warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
+        $trueFalse = "False"
     }
 
     $newObjWindowsOS = New-Object -TypeName PSObject
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsSetting -Value  $WindowsOSSet
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsRegValue -Value $WindowsOSReg 
+    Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name TrueIsCompliant -Value $trueFalse
     $fragWindowsOSVal += $newObjWindowsOS
 
     <#
@@ -5732,16 +6054,19 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     {
         $WindowsOSSet = "$WindowsOSDescrip is enabled to Warn and prevent bypass" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
+        $trueFalse = "True"
     }
     else
     {
         $WindowsOSSet = "Warning - $WindowsOSDescrip is set warn and allow bypass Warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
+        $trueFalse = "False"
     }
 
     $newObjWindowsOS = New-Object -TypeName PSObject
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsSetting -Value  $WindowsOSSet
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsRegValue -Value $WindowsOSReg 
+    Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name TrueIsCompliant -Value $trueFalse
     $fragWindowsOSVal += $newObjWindowsOS
 
     
@@ -5771,16 +6096,19 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     {
         $WindowsOSSet = "$WindowsOSDescrip is disabled" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
+        $trueFalse = "True"
     }
     else
     {
         $WindowsOSSet = "Warning - $WindowsOSDescrip enabled warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
+        $trueFalse = "False"
     }
 
     $newObjWindowsOS = New-Object -TypeName PSObject
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsSetting -Value  $WindowsOSSet
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsRegValue -Value $WindowsOSReg 
+    Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name TrueIsCompliant -Value $trueFalse
     $fragWindowsOSVal += $newObjWindowsOS
 
     <#
@@ -5812,16 +6140,19 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     {
         $WindowsOSSet = "$WindowsOSDescrip is disabled" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
+        $trueFalse = "True"
     }
     else
     {
         $WindowsOSSet = "Warning - $WindowsOSDescrip enabled warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
+        $trueFalse = "False"
     }
 
     $newObjWindowsOS = New-Object -TypeName PSObject
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsSetting -Value  $WindowsOSSet
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsRegValue -Value $WindowsOSReg 
+    Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name TrueIsCompliant -Value $trueFalse
     $fragWindowsOSVal += $newObjWindowsOS
 
     <#
@@ -5853,16 +6184,19 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     {
         $WindowsOSSet = "$WindowsOSDescrip is disabled" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
+        $trueFalse = "True"
     }
     else
     {
         $WindowsOSSet = "Warning - $WindowsOSDescrip enabled warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
+        $trueFalse = "False"
     }
 
     $newObjWindowsOS = New-Object -TypeName PSObject
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsSetting -Value  $WindowsOSSet
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsRegValue -Value $WindowsOSReg 
+    Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name TrueIsCompliant -Value $trueFalse
     $fragWindowsOSVal += $newObjWindowsOS
 
     <#
@@ -5884,16 +6218,19 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     {
         $WindowsOSSet = "$WindowsOSDescrip is enabled, only Admin can install printer drivers" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
+        $trueFalse = "True"
     }
     else
     {
         $WindowsOSSet = "Warning - $WindowsOSDescrip disabled warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
+        $trueFalse = "False"
     }
 
     $newObjWindowsOS = New-Object -TypeName PSObject
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsSetting -Value  $WindowsOSSet
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsRegValue -Value $WindowsOSReg 
+    Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name TrueIsCompliant -Value $trueFalse
     $fragWindowsOSVal += $newObjWindowsOS
 
     <#
@@ -5922,16 +6259,19 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     {
         $WindowsOSSet = "$WindowsOSDescrip is enabled" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
+        $trueFalse = "True"
     }
     else
     {
         $WindowsOSSet = "Warning - $WindowsOSDescrip disabled warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
+        $trueFalse = "False"
     }
 
     $newObjWindowsOS = New-Object -TypeName PSObject
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsSetting -Value  $WindowsOSSet
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsRegValue -Value $WindowsOSReg 
+    Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name TrueIsCompliant -Value $trueFalse
     $fragWindowsOSVal += $newObjWindowsOS
 
     <#
@@ -5960,16 +6300,19 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     {
         $WindowsOSSet = "$WindowsOSDescrip is enabled" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
+        $trueFalse = "True"
     }
     else
     {
         $WindowsOSSet = "Warning - $WindowsOSDescrip disabled warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
+        $trueFalse = "False"
     }
 
     $newObjWindowsOS = New-Object -TypeName PSObject
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsSetting -Value  $WindowsOSSet
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsRegValue -Value $WindowsOSReg 
+    Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name TrueIsCompliant -Value $trueFalse
     $fragWindowsOSVal += $newObjWindowsOS
 
 
@@ -5999,16 +6342,19 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     {
         $WindowsOSSet = "Warning - $WindowsOSDescrip is enabled warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
+        $trueFalse = "True"
     }
     else
     {
         $WindowsOSSet = "$WindowsOSDescrip disabled" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
+        $trueFalse = "False"
     }
 
     $newObjWindowsOS = New-Object -TypeName PSObject
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsSetting -Value  $WindowsOSSet
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsRegValue -Value $WindowsOSReg 
+    Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name TrueIsCompliant -Value $trueFalse
     $fragWindowsOSVal += $newObjWindowsOS
 
 <#
@@ -6038,16 +6384,19 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     {
         $WindowsOSSet = "$WindowsOSDescrip is disabled" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
+        $trueFalse = "True"
     }
     else
     {
         $WindowsOSSet = "Warning - $WindowsOSDescrip is enabled Warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
+        $trueFalse = "False"
     }
 
     $newObjWindowsOS = New-Object -TypeName PSObject
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsSetting -Value  $WindowsOSSet
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsRegValue -Value $WindowsOSReg 
+    Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name TrueIsCompliant -Value $trueFalse
     $fragWindowsOSVal += $newObjWindowsOS
 
 
@@ -6077,16 +6426,19 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     {
         $WindowsOSSet = "$WindowsOSDescrip is enabled" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
+        $trueFalse = "True"
     }
     else
     {
         $WindowsOSSet = "Warning - $WindowsOSDescrip is disabled Warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
+        $trueFalse = "False"
     }
 
     $newObjWindowsOS = New-Object -TypeName PSObject
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsSetting -Value  $WindowsOSSet
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsRegValue -Value $WindowsOSReg 
+    Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name TrueIsCompliant -Value $trueFalse
     $fragWindowsOSVal += $newObjWindowsOS
 
 
@@ -6121,16 +6473,19 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     {
         $WindowsOSSet = "$WindowsOSDescrip is enabled" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
+        $trueFalse = "True"
     }
     else
     {
         $WindowsOSSet = "Warning - $WindowsOSDescrip disabled - Not to be applied against DCs Warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
+        $trueFalse = "False"
     }
 
     $newObjWindowsOS = New-Object -TypeName PSObject
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsSetting -Value  $WindowsOSSet
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsRegValue -Value $WindowsOSReg 
+    Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name TrueIsCompliant -Value $trueFalse
     $fragWindowsOSVal += $newObjWindowsOS
 
     <#
@@ -6161,16 +6516,19 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     {
         $WindowsOSSet = "$WindowsOSDescrip is enabled" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
+        $trueFalse = "True"
     }
     else
     {
         $WindowsOSSet = "Warning - $WindowsOSDescrip disabled warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
+        $trueFalse = "False"
     }
 
     $newObjWindowsOS = New-Object -TypeName PSObject
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsSetting -Value  $WindowsOSSet
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsRegValue -Value $WindowsOSReg 
+    Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name TrueIsCompliant -Value $trueFalse
     $fragWindowsOSVal += $newObjWindowsOS
 
 
@@ -6197,16 +6555,19 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     {
         $WindowsOSSet = "$WindowsOSDescrip is enabled" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
+        $trueFalse = "True"
     }
     else
     {
         $WindowsOSSet = "Warning - $WindowsOSDescrip is disabled Warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
+        $trueFalse = "False"
     }
 
     $newObjWindowsOS = New-Object -TypeName PSObject
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsSetting -Value  $WindowsOSSet
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsRegValue -Value $WindowsOSReg 
+    Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name TrueIsCompliant -Value $trueFalse
     $fragWindowsOSVal += $newObjWindowsOS
 
 <#
@@ -6232,16 +6593,19 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     {
         $WindowsOSSet = "$WindowsOSDescrip is disabled" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
+        $trueFalse = "True"
     }
     else
     {
         $WindowsOSSet = "Warning - $WindowsOSDescrip is enabled Warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
+        $trueFalse = "False"
     }
 
     $newObjWindowsOS = New-Object -TypeName PSObject
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsSetting -Value  $WindowsOSSet
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsRegValue -Value $WindowsOSReg 
+    Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name TrueIsCompliant -Value $trueFalse
     $fragWindowsOSVal += $newObjWindowsOS
 
     <#
@@ -6267,16 +6631,19 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     {
         $WindowsOSSet = "$WindowsOSDescrip is disabled" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
+        $trueFalse = "True"
     }
     else
     {
         $WindowsOSSet = "Warning - $WindowsOSDescrip is enabled Warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
+        $trueFalse = "False"
     }
 
     $newObjWindowsOS = New-Object -TypeName PSObject
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsSetting -Value  $WindowsOSSet
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsRegValue -Value $WindowsOSReg 
+    Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name TrueIsCompliant -Value $trueFalse
     $fragWindowsOSVal += $newObjWindowsOS
 
     <#
@@ -6302,16 +6669,19 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     {
         $WindowsOSSet = "$WindowsOSDescrip is disabled" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
+        $trueFalse = "True"
     }
     else
     {
         $WindowsOSSet = "Warning - $WindowsOSDescrip is enabled Warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
+        $trueFalse = "False"
     }
 
     $newObjWindowsOS = New-Object -TypeName PSObject
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsSetting -Value  $WindowsOSSet
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsRegValue -Value $WindowsOSReg 
+    Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name TrueIsCompliant -Value $trueFalse
     $fragWindowsOSVal += $newObjWindowsOS
 
     <#
@@ -6337,16 +6707,19 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     {
         $WindowsOSSet = "$WindowsOSDescrip is disabled" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
+        $trueFalse = "True"
     }
     else
     {
         $WindowsOSSet = "Warning - $WindowsOSDescrip is enabled Warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
+        $trueFalse = "False"
     }
 
     $newObjWindowsOS = New-Object -TypeName PSObject
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsSetting -Value  $WindowsOSSet
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsRegValue -Value $WindowsOSReg 
+    Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name TrueIsCompliant -Value $trueFalse
     $fragWindowsOSVal += $newObjWindowsOS
 
     <#
@@ -6373,16 +6746,19 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     {
         $WindowsOSSet = "$WindowsOSDescrip is enabled" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
+        $trueFalse = "True"
     }
     else
     {
         $WindowsOSSet = "Warning - $WindowsOSDescrip is disabled Warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
+        $trueFalse = "False"
     }
 
     $newObjWindowsOS = New-Object -TypeName PSObject
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsSetting -Value  $WindowsOSSet
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsRegValue -Value $WindowsOSReg 
+    Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name TrueIsCompliant -Value $trueFalse
     $fragWindowsOSVal += $newObjWindowsOS
 
 
@@ -6409,16 +6785,19 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     {
         $WindowsOSSet = "$WindowsOSDescrip is disabled" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
+        $trueFalse = "True"
     }
     else
     {
         $WindowsOSSet = "Warning - $WindowsOSDescrip is enabled Warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
+        $trueFalse = "False"
     }
 
     $newObjWindowsOS = New-Object -TypeName PSObject
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsSetting -Value  $WindowsOSSet
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsRegValue -Value $WindowsOSReg 
+    Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name TrueIsCompliant -Value $trueFalse
     $fragWindowsOSVal += $newObjWindowsOS
 
 
@@ -6454,16 +6833,19 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     {
         $WindowsOSSet = "$WindowsOSDescrip is enabled" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
+        $trueFalse = "True"
     }
     else
     {
         $WindowsOSSet = "Warning - $WindowsOSDescrip is disbled Warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
+        $trueFalse = "False"
     }
 
     $newObjWindowsOS = New-Object -TypeName PSObject
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsSetting -Value  $WindowsOSSet
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsRegValue -Value $WindowsOSReg 
+    Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name TrueIsCompliant -Value $trueFalse
     $fragWindowsOSVal += $newObjWindowsOS
 
 
@@ -6506,16 +6888,19 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     {
         $WindowsOSSet = "$WindowsOSDescrip is enabled" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
+        $trueFalse = "True"
     }
     else
     {
         $WindowsOSSet = "Warning - $WindowsOSDescrip is disabled Warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
+        $trueFalse = "False"
     }
 
     $newObjWindowsOS = New-Object -TypeName PSObject
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsSetting -Value  $WindowsOSSet
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsRegValue -Value $WindowsOSReg 
+    Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name TrueIsCompliant -Value $trueFalse
     $fragWindowsOSVal += $newObjWindowsOS
 
  
@@ -6548,16 +6933,19 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     {
         $WindowsOSSet = "$WindowsOSDescrip is disabled" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
+        $trueFalse = "True"
     }
     else
     {
         $WindowsOSSet = "Warning - $WindowsOSDescrip is enabled Warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
+        $trueFalse = "False"
     }
 
     $newObjWindowsOS = New-Object -TypeName PSObject
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsSetting -Value  $WindowsOSSet
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsRegValue -Value $WindowsOSReg 
+    Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name TrueIsCompliant -Value $trueFalse
     $fragWindowsOSVal += $newObjWindowsOS
 
     <#
@@ -6585,16 +6973,19 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     {
         $WindowsOSSet = "$WindowsOSDescrip is enabled" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
+        $trueFalse = "True"
     }
     else
     {
         $WindowsOSSet = "Warning - $WindowsOSDescrip is disabled Warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
+        $trueFalse = "False"
     }
 
     $newObjWindowsOS = New-Object -TypeName PSObject
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsSetting -Value  $WindowsOSSet
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsRegValue -Value $WindowsOSReg 
+    Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name TrueIsCompliant -Value $trueFalse
     $fragWindowsOSVal += $newObjWindowsOS
 
 
@@ -6629,16 +7020,19 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     {
         $WindowsOSSet = "$WindowsOSDescrip is enabled Force Updated Clients" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
+        $trueFalse = "True"
     }
     else
     {
         $WindowsOSSet = "Warning - $WindowsOSDescrip is disabled Warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
+        $trueFalse = "False"
     }
 
     $newObjWindowsOS = New-Object -TypeName PSObject
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsSetting -Value  $WindowsOSSet
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsRegValue -Value $WindowsOSReg 
+    Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name TrueIsCompliant -Value $trueFalse
     $fragWindowsOSVal += $newObjWindowsOS
 
 
@@ -6665,16 +7059,19 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     {
         $WindowsOSSet = "$WindowsOSDescrip is disabled" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
+        $trueFalse = "True"
     }
     else
     {
         $WindowsOSSet = "Warning - $WindowsOSDescrip is enabled Warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
+        $trueFalse = "False"
     }
 
     $newObjWindowsOS = New-Object -TypeName PSObject
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsSetting -Value  $WindowsOSSet
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsRegValue -Value $WindowsOSReg 
+    Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name TrueIsCompliant -Value $trueFalse
     $fragWindowsOSVal += $newObjWindowsOS
 
 
@@ -6702,16 +7099,19 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     {
         $WindowsOSSet = "$WindowsOSDescrip is disabled" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
+        $trueFalse = "True"
     }
     else
     {
         $WindowsOSSet = "Warning - $WindowsOSDescrip is enabled Warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
+        $trueFalse = "False"
     }
 
     $newObjWindowsOS = New-Object -TypeName PSObject
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsSetting -Value  $WindowsOSSet
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsRegValue -Value $WindowsOSReg 
+    Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name TrueIsCompliant -Value $trueFalse
     $fragWindowsOSVal += $newObjWindowsOS
 
 
@@ -6734,16 +7134,19 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     {
         $WindowsOSSet = "$WindowsOSDescrip is disabled" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
+        $trueFalse = "True"
     }
     else
     {
         $WindowsOSSet = "Warning - $WindowsOSDescrip enabled warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
+        $trueFalse = "False"
     }
 
     $newObjWindowsOS = New-Object -TypeName PSObject
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsSetting -Value  $WindowsOSSet
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsRegValue -Value $WindowsOSReg 
+    Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name TrueIsCompliant -Value $trueFalse
     $fragWindowsOSVal += $newObjWindowsOS
 
     <#
@@ -6771,16 +7174,19 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     {
         $WindowsOSSet = "$WindowsOSDescrip is enabled" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
+        $trueFalse = "True"
     }
     else
     {
         $WindowsOSSet = "Warning - $WindowsOSDescrip disabled warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
+        $trueFalse = "False"
     }
 
     $newObjWindowsOS = New-Object -TypeName PSObject
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsSetting -Value  $WindowsOSSet
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsRegValue -Value $WindowsOSReg 
+    Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name TrueIsCompliant -Value $trueFalse
     $fragWindowsOSVal += $newObjWindowsOS
 
     <#
@@ -6805,16 +7211,19 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     {
         $WindowsOSSet = "$WindowsOSDescrip is enabled" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
+        $trueFalse = "True"
     }
     else
     {
         $WindowsOSSet = "Warning - $WindowsOSDescrip disabled warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
+        $trueFalse = "False"
     }
 
     $newObjWindowsOS = New-Object -TypeName PSObject
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsSetting -Value  $WindowsOSSet
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsRegValue -Value $WindowsOSReg 
+    Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name TrueIsCompliant -Value $trueFalse
     $fragWindowsOSVal += $newObjWindowsOS
 
     <#
@@ -6845,16 +7254,19 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     {
         $WindowsOSSet = "$WindowsOSDescrip is enabled" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
+        $trueFalse = "True"
     }
     else
     {
         $WindowsOSSet = "Warning - $WindowsOSDescrip disabled warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
+        $trueFalse = "False"
     }
 
     $newObjWindowsOS = New-Object -TypeName PSObject
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsSetting -Value  $WindowsOSSet
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsRegValue -Value $WindowsOSReg 
+    Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name TrueIsCompliant -Value $trueFalse
     $fragWindowsOSVal += $newObjWindowsOS
 
     <#
@@ -6882,16 +7294,19 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     {
         $WindowsOSSet = "$WindowsOSDescrip is enabled for Enterprise Only - Computer" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
+        $trueFalse = "True"
     }
     else
     {
         $WindowsOSSet = "Warning - $WindowsOSDescrip disabled warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
+        $trueFalse = "False"
     }
 
     $newObjWindowsOS = New-Object -TypeName PSObject
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsSetting -Value  $WindowsOSSet
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsRegValue -Value $WindowsOSReg 
+    Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name TrueIsCompliant -Value $trueFalse
     $fragWindowsOSVal += $newObjWindowsOS
 
 
@@ -6920,16 +7335,19 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     {
         $WindowsOSSet = "$WindowsOSDescrip is enabled for Enterprise Only - User" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
+        $trueFalse = "True"
     }
     else
     {
         $WindowsOSSet = "Warning - $WindowsOSDescrip disabled warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
+        $trueFalse = "False"
     }
 
     $newObjWindowsOS = New-Object -TypeName PSObject
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsSetting -Value  $WindowsOSSet
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsRegValue -Value $WindowsOSReg 
+    Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name TrueIsCompliant -Value $trueFalse
     $fragWindowsOSVal += $newObjWindowsOS
 
     <#
@@ -6956,16 +7374,19 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     {
         $WindowsOSSet = "$WindowsOSDescrip is enabled" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
+        $trueFalse = "True"
     }
     else
     {
         $WindowsOSSet = "Warning - $WindowsOSDescrip is not set warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
+        $trueFalse = "False"
     }
 
     $newObjWindowsOS = New-Object -TypeName PSObject
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsSetting -Value  $WindowsOSSet
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsRegValue -Value $WindowsOSReg 
+    Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name TrueIsCompliant -Value $trueFalse
     $fragWindowsOSVal += $newObjWindowsOS
 
     <#
@@ -6989,16 +7410,19 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     {
         $WindowsOSSet = "$WindowsOSDescrip is enabled" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
+        $trueFalse = "True"
     }
     else
     {
         $WindowsOSSet = "Warning - $WindowsOSDescrip is disabled Warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
+        $trueFalse = "False"
     }
 
     $newObjWindowsOS = New-Object -TypeName PSObject
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsSetting -Value  $WindowsOSSet
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsRegValue -Value $WindowsOSReg 
+    Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name TrueIsCompliant -Value $trueFalse
     $fragWindowsOSVal += $newObjWindowsOS
 
 
@@ -7027,16 +7451,19 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     {
         $WindowsOSSet = "$WindowsOSDescrip is enabled" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
+        $trueFalse = "True"
     }
     else
     {
         $WindowsOSSet = "Warning - $WindowsOSDescrip is disabled Warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
+        $trueFalse = "False"
     }
 
     $newObjWindowsOS = New-Object -TypeName PSObject
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsSetting -Value  $WindowsOSSet
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsRegValue -Value $WindowsOSReg 
+    Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name TrueIsCompliant -Value $trueFalse
     $fragWindowsOSVal += $newObjWindowsOS
 
 
@@ -7059,16 +7486,19 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     {
         $WindowsOSSet = "$WindowsOSDescrip is Enabled" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
+        $trueFalse = "True"
     }
     else
     {
         $WindowsOSSet = "Warning - $WindowsOSDescrip is disabled Warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
+        $trueFalse = "False"
     }
 
     $newObjWindowsOS = New-Object -TypeName PSObject
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsSetting -Value  $WindowsOSSet
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsRegValue -Value $WindowsOSReg 
+    Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name TrueIsCompliant -Value $trueFalse
     $fragWindowsOSVal += $newObjWindowsOS
 
    <#
@@ -7090,16 +7520,19 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     {
         $WindowsOSSet = "$WindowsOSDescrip is Enabled" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
+        $trueFalse = "True"
     }
     else
     {
         $WindowsOSSet = "Warning - $WindowsOSDescrip is disabled Warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
+        $trueFalse = "False"
     }
 
     $newObjWindowsOS = New-Object -TypeName PSObject
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsSetting -Value  $WindowsOSSet
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsRegValue -Value $WindowsOSReg 
+    Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name TrueIsCompliant -Value $trueFalse
     $fragWindowsOSVal += $newObjWindowsOS
     
 
@@ -7122,16 +7555,19 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     {
         $WindowsOSSet = "$WindowsOSDescrip is Enabled" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
+        $trueFalse = "True"
     }
     else
     {
         $WindowsOSSet = "Warning - $WindowsOSDescrip is disabled Warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
+        $trueFalse = "False"
     }
 
     $newObjWindowsOS = New-Object -TypeName PSObject
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsSetting -Value  $WindowsOSSet
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsRegValue -Value $WindowsOSReg 
+    Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name TrueIsCompliant -Value $trueFalse
     $fragWindowsOSVal += $newObjWindowsOS
 
 
@@ -7156,16 +7592,19 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     {
         $WindowsOSSet = "$WindowsOSDescrip is Enabled" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
+        $trueFalse = "True"
     }
     else
     {
         $WindowsOSSet = "Warning - $WindowsOSDescrip is disabled Warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
+        $trueFalse = "False"
     }
 
     $newObjWindowsOS = New-Object -TypeName PSObject
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsSetting -Value  $WindowsOSSet
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsRegValue -Value $WindowsOSReg 
+    Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name TrueIsCompliant -Value $trueFalse
     $fragWindowsOSVal += $newObjWindowsOS
 
 
@@ -7190,16 +7629,19 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     {
         $WindowsOSSet = "$WindowsOSDescrip is Enabled" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
+        $trueFalse = "True"
     }
     else
     {
         $WindowsOSSet = "Warning - $WindowsOSDescrip is disabled Warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
+        $trueFalse = "False"
     }
 
     $newObjWindowsOS = New-Object -TypeName PSObject
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsSetting -Value  $WindowsOSSet
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsRegValue -Value $WindowsOSReg 
+    Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name TrueIsCompliant -Value $trueFalse
     $fragWindowsOSVal += $newObjWindowsOS
 
    <#
@@ -7223,16 +7665,19 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     {
         $WindowsOSSet = "$WindowsOSDescrip is disabled" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
+        $trueFalse = "True"
     }
     else
     {
         $WindowsOSSet = "Warning - $WindowsOSDescrip is enabled Warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
+        $trueFalse = "False"
     }
 
     $newObjWindowsOS = New-Object -TypeName PSObject
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsGPONameSetting -Value $WindowsOSSet
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsRegValue -Value $WindowsOSReg 
+    Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name TrueIsCompliant -Value $trueFalse
     $fragWindowsOSVal += $newObjWindowsOS
 
 
@@ -7342,16 +7787,19 @@ $getEdgeValue = $getEdgePath.GetValue("$edgeRegName")
     {
         $EdgeSet = "$edgeGPOName is correctly set to $edgeGPOValue" 
         $EdgeReg = "<div title=$gpoPath>$regpath"
+        $edgeTrue = "True"
     }
     else
     {
         $EdgeSet = "Warning - $edgeGPOName is misconfigured with a value of $edgeGPOValue Warning" 
         $EdgeReg = "<div title=$gpoPath>$regpath"
+        $edgeTrue = "False"
     }
 
     $newObjEdge = New-Object -TypeName PSObject
     Add-Member -InputObject $newObjEdge -Type NoteProperty -Name EdgeGPONameSetting -Value  $EdgeSet
     Add-Member -InputObject $newObjEdge -Type NoteProperty -Name EdgeRegValue -Value $EdgeReg 
+    Add-Member -InputObject $newObjEdge -Type NoteProperty -Name TrueIsCompliant -Value $edgeTrue 
     $fragEdgeVal += $newObjEdge
 
 }
@@ -7608,16 +8056,19 @@ foreach ($OfficePolItems in $OfficePolicies.values)
         {
             $OfficeSet = "$OfficeGPOName is set correctly with a value of $getOfficeValue" 
             $OfficeReg = "<div title=$gpoPath>$regPath"
+            $trueFalse = "True"
         }
         else
         {
             $OfficeSet = "Warning - $OfficeGPOName is not set or has the wrong setting with value of $getOfficeValue Warning" 
             $OfficeReg = "<div title=$gpoPath>$regPath"
+            $trueFalse = "False"
         }
 
         $newObjOffice = New-Object -TypeName PSObject
         Add-Member -InputObject $newObjOffice -Type NoteProperty -Name OfficeGPONameSetting -Value  $OfficeSet
         Add-Member -InputObject $newObjOffice -Type NoteProperty -Name OfficeRegValue -Value $OfficeReg 
+        Add-Member -InputObject $newObjOffice -Type NoteProperty -Name TrueIsCompliant -Value $trueFalse
         $fragOfficeVal += $newObjOffice
 
 }
