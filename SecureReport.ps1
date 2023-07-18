@@ -319,7 +319,7 @@ YYMMDD
 221208.3 - Added further Legacy network checks
 221210.1 - Updated list of MS Edge checks 
 230626.1 - Added kernel-mode hardware-enforced stack protection
-230717.1 - Tweaked Color and size in CSS
+
 
 #>
 
@@ -8803,7 +8803,7 @@ $style = @"
     $frag_wFile = $fragwFile | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"sysFileWrite`"><a href=`"#TOP`">System Files that are Writeable - Security Risk if Exist</a></span></h2>" -PostContent "<h4>$descripFile</h4>" | Out-String
     $frag_FWProf = $fragFWProfile | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"FirewallProf`"><a href=`"#TOP`">Firewall Profile</a></span></h2>"  -PostContent "<h4>$DescripFirewalls</h4>"| Out-String
     $frag_FW = $fragFW | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"InFirewall`"><a href=`"#TOP`">Enabled Firewall Rules</a></span></h2>" | Out-String
-    $frag_TaskPerms =  $SchedTaskPerms | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"schedDir`"><a href=`"#TOP`">Scheduled Tasks that call on Files on Storage</a></span></h2>"  -PostContent "<h4>$descripTaskSchPerms</h4>" | Out-String
+    $frag_TaskPerms =  $SchedTaskPerms | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"schedDir`"><a href=`"#TOP`">Scheduled Tasks with Scripts Stored on Disk</a></span></h2>"  -PostContent "<h4>$descripTaskSchPerms</h4>" | Out-String
     $frag_TaskListings = $SchedTaskListings | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"schedTask`"><a href=`"#TOP`">Scheduled Tasks that Contain something Encoded</a></span></h2>"  -PostContent "<h4>$descripTaskSchEncode</h4>" | Out-String
     $frag_DriverQuery = $DriverQuery | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"drivers`"><a href=`"#TOP`">Drivers that aren't Signed</a></span></h2>" -PostContent "<h4>$descriptDriverQuery</h4>" | Out-String
     $frag_Share = $fragShare | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"shares`"><a href=`"#TOP`">Shares and their Share Permissions</a></span></h2>"  | Out-String
