@@ -305,7 +305,7 @@ YYMMDD
 221103.1 - Fixed issue with color schemes not applying swapped out if for ifelse
 221106.1 - Firewall profile now warns on misconfiguration
 221106.2 - Fixed issues with various links to with Summary
-221106.3 - Removed the 'Warning -' makes report look neater.
+221106.3 - Removed the 'Warning' makes report look neater.
 221106.4 - Removed <span style='color:$titleCol'>, not required as CSS applies colour schemes
 221112.1 - Fixed issues with href a ID's - Summary links now work
 221112.2 - Fixed issue with MSInfo and out-file added additional spaces which translated into spaces in the html output - Out-File $msinfoPathcsv -Encoding utf8 
@@ -321,6 +321,8 @@ YYMMDD
 230626.1 - Added kernel-mode hardware-enforced stack protection
 230717.1 - Updated look and feel, added fonts and font sizes vars for CSS
 230718.1 - Added True and False, true is compliant, false missing a setting
+230725.1 - Finised Report is named to hostname and date
+230727.1 - Removed 'Warning -'
 
 #>
 
@@ -343,6 +345,7 @@ else
     #Script name has been defined and must be saved as that name.
     $VulnReport = "C:\SecureReport"
     $ptRand = Get-Random -Minimum 100 -Maximum 999
+    #$ptRand= (Get-Date).ToString('yy/MM/dd-hh:mm').Replace("/","").Replace(":","")
 
     if($psise -ne $null)
     {
@@ -453,7 +456,7 @@ sleep 5
     }
     Else
     { 
-        $BitDisabled = "Warning - Bitlocker is disabled Warning"
+        $BitDisabled = "Warning Bitlocker is disabled Warning"
         $newObjBit = New-Object psObject
         Add-Member -InputObject $newObjBit -Type NoteProperty -Name BitLockerDisabled -Value $BitDisabled
         $fragBitLocker += $newObjBit
@@ -503,7 +506,7 @@ sleep 5
         $accEnabled = $accounts.Enabled
             if ($accEnabled -eq $true)
             {
-            $accEnabled = "Warning - Enabled Warning"
+            $accEnabled = "Warning Enabled Warning"
             } 
         $accLastLogon = $accounts.LastLogon
         $accLastPass = $accounts.PasswordLastSet
@@ -674,9 +677,9 @@ $dcList = $dcListQuery.split(",") | sort
     foreach ($preAuth in $dsQuery)
         {
             $preAuth = $preAuth.trim("").Split(" ",[System.StringSplitOptions]::RemoveEmptyEntries)
-            $preAuthSam = "Warning - " + $preAuth[0] + " warning" 
-            $preAuthOu = "Warning - " +$preAuth[1]  + " warning" 
-            $preAuthUac = "Warning - " +$preAuth[2]  + " warning" 
+            $preAuthSam = "Warning " + $preAuth[0] + " warning" 
+            $preAuthOu = "Warning " +$preAuth[1]  + " warning" 
+            $preAuthUac = "Warning " +$preAuth[2]  + " warning" 
 
             $newObjPreAuth = New-Object -TypeName PSObject
             Add-Member -InputObject $newObjPreAuth -Type NoteProperty -Name PreAuth-Account -Value $preAuthSam
@@ -696,9 +699,9 @@ $dcList = $dcListQuery.split(",") | sort
     foreach ($NeverExpires in $dsQueryNexpires)
         {
             $NeverExpires = $NeverExpires.trim("").Split(" ",[System.StringSplitOptions]::RemoveEmptyEntries)
-            $NeverExpiresSam = "Warning - " + $NeverExpires[0] + " warning" 
-            $NeverExpiresOu = "Warning - " +$NeverExpires[1]  + " warning" 
-            $NeverExpiresUac = "Warning - " +$NeverExpires[2]  + " warning" 
+            $NeverExpiresSam = "Warning " + $NeverExpires[0] + " warning" 
+            $NeverExpiresOu = "Warning " +$NeverExpires[1]  + " warning" 
+            $NeverExpiresUac = "Warning " +$NeverExpires[2]  + " warning" 
 
             $newObjNeverExpires = New-Object -TypeName PSObject
             Add-Member -InputObject $newObjNeverExpires -Type NoteProperty -Name NeverExpires-Account -Value $NeverExpiresSam
@@ -992,21 +995,21 @@ sleep 5
             #Switch to determine the status of antivirus definitions and real-time protection.
             switch ($AntiVirusProduct.productState) 
             {
-                "262144" {$defstatus = "Up to date" ;$rtstatus = "Warning - Disabled warning"}
-                "262160" {$defstatus = "Warning - Out of date warning" ;$rtstatus = "Warning - Disabled warning"}
+                "262144" {$defstatus = "Up to date" ;$rtstatus = "Warning Disabled warning"}
+                "262160" {$defstatus = "Warning Out of date warning" ;$rtstatus = "Warning Disabled warning"}
                 "266240" {$defstatus = "Up to date" ;$rtstatus = "Enabled"}
-                "266256" {$defstatus = "Warning - Out of date warning" ;$rtstatus = "Enabled"}
+                "266256" {$defstatus = "Warning Out of date warning" ;$rtstatus = "Enabled"}
                 "270336" {$defstatus = "Up to date" ;$rtstatus = "Enabled"}
-                "393216" {$defstatus = "Up to date" ;$rtstatus = "Warning - Disabled warning"}
-                "393232" {$defstatus = "Warning - Out of date" ;$rtstatus = "Warning - Disabled warning"}
-                "393488" {$defstatus = "Warning - Out of date" ;$rtstatus = "Warning - Disabled warning"}
+                "393216" {$defstatus = "Up to date" ;$rtstatus = "Warning Disabled warning"}
+                "393232" {$defstatus = "Warning Out of date" ;$rtstatus = "Warning Disabled warning"}
+                "393488" {$defstatus = "Warning Out of date" ;$rtstatus = "Warning Disabled warning"}
                 "397312" {$defstatus = "Up to date" ;$rtstatus = "Enabled"}
                 "397568" {$defstatus = "Up to date" ;$rtstatus = "Enabled"}
-                "397328" {$defstatus = "Warning - Out of date" ;$rtstatus = "Enabled"}
-                "397584" {$defstatus = "Warning - Out of date" ;$rtstatus = "Enabled"}   
-                "393472" {$defstatus = "Up to date" ;$rtstatus  = "Warning - Disabled warning"}
-                "401664" {$defstatus = "Up to date" ;$rtstatus  = "Warning - Disabled warning"}
-                default {$defstatus = "Warning - Unknown warning" ;$rtstatus = "Warning - Unknown warning"}
+                "397328" {$defstatus = "Warning Out of date" ;$rtstatus = "Enabled"}
+                "397584" {$defstatus = "Warning Out of date" ;$rtstatus = "Enabled"}   
+                "393472" {$defstatus = "Up to date" ;$rtstatus  = "Warning Disabled warning"}
+                "401664" {$defstatus = "Up to date" ;$rtstatus  = "Warning Disabled warning"}
+                default {$defstatus = "Warning Unknown warning" ;$rtstatus = "Warning Unknown warning"}
             }
 
             $avDisplay = $AntiVirusProduct.displayName
@@ -1031,7 +1034,7 @@ sleep 5
         Else  #server and Defender cant be detected
         {
             $newObjAVStatus = New-Object -TypeName PSObject
-            Add-Member -InputObject $newObjAVStatus -Type NoteProperty -Name AVName -Value "Warning - Antivirus cant be detected, assume the worst and its not installed warning"
+            Add-Member -InputObject $newObjAVStatus -Type NoteProperty -Name AVName -Value "Warning Antivirus cant be detected, assume the worst and its not installed warning"
             $FragAVStatus += $newObjAVStatus
         }
 
@@ -1081,8 +1084,8 @@ sleep 7
             $SvcReg |Select-Object PSChildName,ImagePath  | out-file $qpath -Append
                 
             $newObjSvc = New-Object psObject
-            Add-Member -InputObject $newObjSvc -Type NoteProperty -Name ServiceName -Value "Warning - $($SvcReg.PSChildName) warning"
-            Add-Member -InputObject $newObjSvc -Type NoteProperty -Name Path -Value "Warning - $($SvcReg.ImagePath) warning"
+            Add-Member -InputObject $newObjSvc -Type NoteProperty -Name ServiceName -Value "Warning $($SvcReg.PSChildName) warning"
+            Add-Member -InputObject $newObjSvc -Type NoteProperty -Name Path -Value "Warning $($SvcReg.ImagePath) warning"
             $fragUnQuoted += $newObjSvc
         }
     
@@ -1095,8 +1098,8 @@ sleep 7
             $SvcReg |Select-Object PSChildName,ImagePath  | out-file $qpath -Append
                        
             $newObjSvc = New-Object psObject
-            Add-Member -InputObject $newObjSvc -Type NoteProperty -Name ServiceName -Value "Warning - $($SvcReg.PSChildName) warning"
-            Add-Member -InputObject $newObjSvc -Type NoteProperty -Name Path -Value "Warning - $($SvcReg.ImagePath) warning"
+            Add-Member -InputObject $newObjSvc -Type NoteProperty -Name ServiceName -Value "Warning $($SvcReg.PSChildName) warning"
+            Add-Member -InputObject $newObjSvc -Type NoteProperty -Name Path -Value "Warning $($SvcReg.ImagePath) warning"
             $fragUnQuoted += $newObjSvc
         }
     }
@@ -1187,7 +1190,7 @@ sleep 5
     {
         if ($drvQryItem -match "FALSE")
         {
-            $drvQryItem = "Warning - $drvQryItem warning"
+            $drvQryItem = "Warning $drvQryItem warning"
         }
     
         $newObjDriverQuery = New-Object PSObject
@@ -1319,7 +1322,7 @@ sleep 5
     }
     else
     {
-        $kernelModeSet = "Warning - Kernel-mode hardware-enforced stack protection key FeatureSettingsOverride is disabled with a value of $getkernelModeVal Warning" 
+        $kernelModeSet = "Warning Kernel-mode hardware-enforced stack protection key FeatureSettingsOverride is disabled with a value of $getkernelModeVal Warning" 
         $kernelModeReg = "HKLM:\System\CurrentControlSet\Control\Session Manager\Memory Management\"
         $kernelModeCom = "Kernel-mode Hardware-enforced Stack Protection is a security feature of Windows 11 22H2"
         $trueFalse = "False"
@@ -1347,7 +1350,7 @@ sleep 5
     }
     else
     {
-        $lsaSet = "Warning - Secure LSA is disabled set RunAsPPL to 1 Warning" 
+        $lsaSet = "Warning Secure LSA is disabled set RunAsPPL to 1 Warning" 
         $lsaReg = "HKLM:\System\CurrentControlSet\Control\lsa\"
         $lsaCom = "Required for Win8.1 and below"
         $trueFalse = "False"
@@ -1367,7 +1370,7 @@ sleep 5
 
     if ($getWDigestULC -eq "1")
     {
-        $WDigestSet = "Warning - WDigest is enabled and plain text passwords are stored in LSASS Warning" 
+        $WDigestSet = "Warning WDigest is enabled and plain text passwords are stored in LSASS Warning" 
         $WDigestReg = "HKLM:\System\CurrentControlSet\Control\SecurityProviders\WDigest\"
         $trueFalse = "False"
 
@@ -1407,7 +1410,7 @@ sleep 5
     }
     else
     {
-        $CredGuSet = "Warning - Secure Credential Guard is disabled, LsaCfgFlags is set to 0 Warning" 
+        $CredGuSet = "Warning Secure Credential Guard is disabled, LsaCfgFlags is set to 0 Warning" 
         $CredGuReg = "HKLM:\System\CurrentControlSet\Control\LSA\"
         $CredGuCom = "Credential Guard requires the client to be Domain joined"
         $trueFalse = "False"
@@ -1450,7 +1453,7 @@ sleep 5
     }
     else
     {
-        $LapsPwSet = "Warning - LAPS is not installed or the value is set to 0 Warning" 
+        $LapsPwSet = "Warning LAPS is not installed or the value is set to 0 Warning" 
         $LapsPwReg = "HKLM:\Software\Policies\Microsoft Services\AdmPwd\" 
         $LapsPwCom = "LAPS is not installed or configured - Ignore if not Domain Joined"
         $trueFalse = "False"
@@ -1478,7 +1481,7 @@ sleep 5
     }
     else
     {
-        $dllSet = "Warning - DLLSafeSearch is disabled set SafeDLLSearchMode to 1 Warning" 
+        $dllSet = "Warning DLLSafeSearch is disabled set SafeDLLSearchMode to 1 Warning" 
         $dllReg = "HKLM:\System\CurrentControlSet\Control\Session Manager"
         $dllCom = "Protects against DLL search order hijacking"
         $trueFalse = "False"
@@ -1506,7 +1509,7 @@ sleep 5
     }
     else
     {
-        $CodeSet = "Warning - Hypervisor Enforced Code Integrity is disabled set Enabled to 1 Warning" 
+        $CodeSet = "Warning Hypervisor Enforced Code Integrity is disabled set Enabled to 1 Warning" 
         $CodeReg = "HKLM:\System\CurrentControlSet\Control\DeviceGuard\Scenarios\HypervisorEnforcedCodeIntegrity"
         #$CodeCom = "Protects against credential theft"
         $trueFalse = "False"
@@ -1529,7 +1532,7 @@ sleep 5
     $fragPCElevate =@()
     if ($PCElevate -eq "1")
     {
-        $ElevateSet = "Warning - Client setting Always Install Elevate is enabled Warning" 
+        $ElevateSet = "Warning Client setting Always Install Elevate is enabled Warning" 
         $ElevateReg = "HKLM:\Software\Policies\Microsoft\Windows\Installer"
         $trueFalse = "False"
     }
@@ -1548,7 +1551,7 @@ sleep 5
 
     if ($UserElevate -eq "1")
     {
-        $ElevateSet = "Warning - User setting Always Install Elevate is enabled Warning" 
+        $ElevateSet = "Warning User setting Always Install Elevate is enabled Warning" 
         $ElevateReg = "HKCU:\Software\Policies\Microsoft\Windows\Installer"
         $trueFalse = "False"
     }
@@ -1581,8 +1584,8 @@ sleep 5
     }
     else
     {
-        $AutoLPass = "Warning - AutoLogon default password is set with a vaule of $AutoLogonDefPass Warning" 
-        $AutoLUser = "Warning - AutoLogon Default User is set with a vaule of $AutoLogonDefUser Warning" 
+        $AutoLPass = "Warning AutoLogon default password is set with a vaule of $AutoLogonDefPass Warning" 
+        $AutoLUser = "Warning AutoLogon Default User is set with a vaule of $AutoLogonDefUser Warning" 
         $AutoLReg = "HKLM:\Software\Microsoft\Windows NT\Currentversion\Winlogon"
         $trueFalse = "False"
     }
@@ -1625,7 +1628,7 @@ sleep 5
     }
     else
     {
-        $legProt = "Warning - SMB v1 client driver is enabled Warning"
+        $legProt = "Warning SMB v1 client driver is enabled Warning"
         $legReg = "HKLM:\System\CurrentControlSet\Services\MrxSmb10.Start"
         $trueFalse = "False"
     }
@@ -1649,7 +1652,7 @@ sleep 5
     }
     else
     {
-        $legProt = "Warning - SMB v1 Server is enabled Warning"
+        $legProt = "Warning SMB v1 Server is enabled Warning"
         $legReg = "HKLM:\System\CurrentControlSet\Services\LanmanServer\Parameters.SMB1"
         $trueFalse = "False"
     }
@@ -1673,7 +1676,7 @@ sleep 5
     }
     else
     {
-        $legProt = "Warning - Insecure logons to an SMB server is enabled Warning"
+        $legProt = "Warning Insecure logons to an SMB server is enabled Warning"
         $legReg = "HKLM:\SOFTWARE\Policies\Microsoft\Windows\LanmanWorkstation\Parameters.AllowInsecureGuestAuth"
         $trueFalse = "False"
     }
@@ -1697,7 +1700,7 @@ sleep 5
     }
     else
     {
-        $legProt = "Warning - LLMNR (Responder) is Enabled Warning" 
+        $legProt = "Warning LLMNR (Responder) is Enabled Warning" 
         $legReg = "HKLM:\Software\Policies\Microsoft\Windows NT\DNSClient.EnableMulticast"
         $trueFalse = "False"
     }
@@ -1721,7 +1724,7 @@ sleep 5
     }
     else
     {
-        $legProt = "Warning - NetBios is enabled Warning" 
+        $legProt = "Warning NetBios is enabled Warning" 
         $legReg = "HKLM:\Software\Policies\Microsoft\Windows NT\DNSClient.QueryNetBTFQDN"
         $legValue = $enNetBTGPO
         $legWarn = "Incorrect"
@@ -1747,7 +1750,7 @@ sleep 5
     }
     else
     {
-        $legProt = "Warning - IPv6 is enabled Warning" 
+        $legProt = "Warning IPv6 is enabled Warning" 
         $legReg = "HKLM:\System\CurrentControlSet\Services\Tcpip6\Parameters.DisabledComponents"
         $trueFalse = "False"
     }
@@ -1771,7 +1774,7 @@ sleep 5
     }
     else
     {
-        $legProt = "Warning - Disable LMHosts Warning" 
+        $legProt = "Warning Disable LMHosts Warning" 
         $legReg = "HKLM:\System\CurrentControlSet\Services\NetBT\Parameters.EnableLMHosts"
         $trueFalse = "False"
     }
@@ -1795,7 +1798,7 @@ sleep 5
     }
     else
     {
-        $legProt = "Warning - NetBios Node Type is set to $enNetBTReg is incorrect and should be set to 2 Warning"
+        $legProt = "Warning NetBios Node Type is set to $enNetBTReg is incorrect and should be set to 2 Warning"
         $legReg = "HKLM:\System\CurrentControlSet\Services\NetBT\Parameters.NodeType"
         $trueFalse = "False"
     }
@@ -1825,7 +1828,7 @@ sleep 5
         }
         else
         {
-            $legProt = "Warning - NetBios is set to $NetBiosValue, its incorrect and should be set to 0 Warning"
+            $legProt = "Warning NetBios is set to $NetBiosValue, its incorrect and should be set to 0 Warning"
             $legReg = "HKLM:\System\CurrentControlSet\services\NetBT\Parameters\Interfaces.$NetBiosPath"
             $trueFalse = "False"
         }
@@ -1851,7 +1854,7 @@ sleep 5
     }
     else
     {
-        $legProt = "Warning - Peer to Peer is enabled Warning"
+        $legProt = "Warning Peer to Peer is enabled Warning"
         $legReg = "HKLM:\Software\policies\Microsoft\Peernet"
         $trueFalse = "False"
     }
@@ -1875,7 +1878,7 @@ sleep 5
     }
     else
     {
-        $legProt = "Warning - Enable Font Providers is enabled Warning"
+        $legProt = "Warning Enable Font Providers is enabled Warning"
         $legReg = "HKLM:\Software\Policies\Microsoft\Windows\System"
         $trueFalse = "False"
     }
@@ -1908,7 +1911,7 @@ sleep 5
     }
     else
     {
-        $legProt = "Warning - EnableLLTDIO is enabled Warning"
+        $legProt = "Warning EnableLLTDIO is enabled Warning"
         $legReg = "HKLM:\Software\Policies\Microsoft\Windows\LLTD"
         $trueFalse = "False"
     }
@@ -1928,7 +1931,7 @@ sleep 5
     }
     else
     {
-        $legProt = "Warning - EnableRspndr is enabled Warning"
+        $legProt = "Warning EnableRspndr is enabled Warning"
         $legReg = "HKLM:\Software\Policies\Microsoft\Windows\LLTD"
         $trueFalse = "False"
     }
@@ -1948,7 +1951,7 @@ sleep 5
     }
     else
     {
-        $legProt = "Warning - AllowLLTDIOOnDomain is enabled Warning"
+        $legProt = "Warning AllowLLTDIOOnDomain is enabled Warning"
         $legReg = "HKLM:\Software\Policies\Microsoft\Windows\LLTD"
         $trueFalse = "False"
     }
@@ -1968,7 +1971,7 @@ sleep 5
     }
     else
     {
-        $legProt = "Warning - AllowLLTDIOOnPublicNet is enabled Warning"
+        $legProt = "Warning AllowLLTDIOOnPublicNet is enabled Warning"
         $legReg = "HKLM:\Software\Policies\Microsoft\Windows\LLTD"
         $trueFalse = "False"
     }
@@ -1988,7 +1991,7 @@ sleep 5
     }
     else
     {
-        $legProt = "Warning - AllowRspndrOnDomain is enabled Warning"
+        $legProt = "Warning AllowRspndrOnDomain is enabled Warning"
         $legReg = "HKLM:\Software\Policies\Microsoft\Windows\LLTD"
         $trueFalse = "False"
     }
@@ -2008,7 +2011,7 @@ sleep 5
     }
     else
     {
-        $legProt = "Warning - AllowRspndrOnPublicNet is enabled Warning"
+        $legProt = "Warning AllowRspndrOnPublicNet is enabled Warning"
         $legReg = "HKLM:\Software\Policies\Microsoft\Windows\LLTD"
         $trueFalse = "False"
     }
@@ -2028,7 +2031,7 @@ sleep 5
     }
     else
     {
-        $legProt = "Warning - ProhibitLLTDIOOnPrivateNet is enabled - When EnableLLTDIO is enabled, 1 is the correct setting Warning"
+        $legProt = "Warning ProhibitLLTDIOOnPrivateNet is enabled - When EnableLLTDIO is enabled, 1 is the correct setting Warning"
         $legReg = "HKLM:\Software\Policies\Microsoft\Windows\LLTD"
         $trueFalse = "False"
     }
@@ -2048,7 +2051,7 @@ sleep 5
     }
     else
     {
-        $legProt = "Warning - ProhibitLLTDIOOnPrivateNet is enabled - When EnableLLTDIO is enabled, 1 is the correct setting Warning"
+        $legProt = "Warning ProhibitLLTDIOOnPrivateNet is enabled - When EnableLLTDIO is enabled, 1 is the correct setting Warning"
         $legReg = "HKLM:\Software\Policies\Microsoft\Windows\LLTD"
         $trueFalse = "False"
     }
@@ -2071,7 +2074,7 @@ sleep 5
     }
     else
     {
-        $legProt = "Warning - IPv6 source routing must be configured to highest protection is disabled or not set Warning" 
+        $legProt = "Warning IPv6 source routing must be configured to highest protection is disabled or not set Warning" 
         $legReg = "HKLM:\System\CurrentControlSet\Services\Tcpip6\Parameters.DisableIpSourceRouting"
         $trueFalse = "False"
     }
@@ -2095,7 +2098,7 @@ sleep 5
     }
     else
     {
-        $legProt = "Warning - IPv4 source routing must be configured to highest protection is disabled or not set Warning" 
+        $legProt = "Warning IPv4 source routing must be configured to highest protection is disabled or not set Warning" 
         $legReg = "HKLM:\System\CurrentControlSet\Services\Tcpip\Parameters.DisableIpSourceRouting"
         $trueFalse = "False"
     }
@@ -2118,7 +2121,7 @@ sleep 5
     }
     else
     {
-        $legProt = "Warning - Allow ICMP redirects to override OSPF generated routes is enabled Warning" 
+        $legProt = "Warning Allow ICMP redirects to override OSPF generated routes is enabled Warning" 
         $legReg = "HKLM:\System\CurrentControlSet\Services\Tcpip\Parameters.EnableICMPRedirect"
         $trueFalse = "False"
     }
@@ -2141,7 +2144,7 @@ sleep 5
     }
     else
     {
-        $legProt = "Warning - Allow computer to ignore NetBIOS name release requests except from WINS servers is enabled Warning" 
+        $legProt = "Warning Allow computer to ignore NetBIOS name release requests except from WINS servers is enabled Warning" 
         $legReg = "HKLM:\System\CurrentControlSet\Services\Netbt\Parameters.NoNameReleaseOnDemand"
         $trueFalse = "False"
     }
@@ -2170,7 +2173,7 @@ sleep 5
 
     if ($getwpadstring -eq $null)
     {
-        $legProt = "Warning - There is no '255.255.255.255 wpad' entry Warning" 
+        $legProt = "Warning There is no '255.255.255.255 wpad' entry Warning" 
         $legReg = "C:\Windows\System32\Drivers\etc\hosts\"
         $trueFalse = "False"
     }
@@ -2203,7 +2206,7 @@ sleep 5
     }
     else
     {
-        $SecOptName = "Warning - $secOpTitle1 - Disabled Warning"
+        $SecOptName = "Warning $secOpTitle1 - Disabled Warning"
         $trueFalse = "False"
     }
     
@@ -2223,7 +2226,7 @@ sleep 5
     }
     else
     {
-        $SecOptName = "Warning - $secOpTitle2 - Disabled Warning"
+        $SecOptName = "Warning $secOpTitle2 - Disabled Warning"
         $trueFalse = "False"
     }
     
@@ -2243,7 +2246,7 @@ sleep 5
     }
     else
     {
-        $SecOptName = "Warning - $secOpTitle3 - Disabled Warning"
+        $SecOptName = "Warning $secOpTitle3 - Disabled Warning"
         $trueFalse = "False"
     }
     
@@ -2263,7 +2266,7 @@ sleep 5
     }
     else
     {
-        $SecOptName = "Warning - $secOpTitle4 - Enabled Warning"
+        $SecOptName = "Warning $secOpTitle4 - Enabled Warning"
         $trueFalse = "False"
     }
     
@@ -2283,7 +2286,7 @@ sleep 5
     }
     else
     {
-        $SecOptName = "Warning - $secOpTitle5 - Disabled Warning"
+        $SecOptName = "Warning $secOpTitle5 - Disabled Warning"
         $trueFalse = "False"
     }
     
@@ -2303,7 +2306,7 @@ sleep 5
     }
     else
     {
-        $SecOptName = "Warning - $secOpTitle6 - Disabled Warning"
+        $SecOptName = "Warning $secOpTitle6 - Disabled Warning"
         $trueFalse = "False"
     }
     
@@ -2323,7 +2326,7 @@ sleep 5
     }
     else
     {
-        $SecOptName = "Warning - $secOpTitle7 - Disabled Warning"
+        $SecOptName = "Warning $secOpTitle7 - Disabled Warning"
         $trueFalse = "False"
     }
     
@@ -2343,7 +2346,7 @@ sleep 5
     }
     else
     {
-        $SecOptName = "Warning - $secOpTitle8 - Disabled Warning"
+        $SecOptName = "Warning $secOpTitle8 - Disabled Warning"
         $trueFalse = "False"
     }
     
@@ -2363,7 +2366,7 @@ sleep 5
     }
     else
     {
-        $SecOptName = "Warning - $secOpTitle9 - Enabled Warning"
+        $SecOptName = "Warning $secOpTitle9 - Enabled Warning"
         $trueFalse = "False"
     }
     
@@ -2383,7 +2386,7 @@ sleep 5
     }
     else
     {
-        $SecOptName = "Warning - $secOpTitle10 - Disabled Warning"
+        $SecOptName = "Warning $secOpTitle10 - Disabled Warning"
         $trueFalse = "False"
     }
     $newObjSecOptions = New-Object psObject
@@ -2403,7 +2406,7 @@ sleep 5
     }
     else
     {
-        $SecOptName = "Warning - $secOpTitle15 - Disabled set Require NTLMv2 session security and Require 128-bit encryption Warning"
+        $SecOptName = "Warning $secOpTitle15 - Disabled set Require NTLMv2 session security and Require 128-bit encryption Warning"
         $trueFalse = "False"
     }
     
@@ -2424,7 +2427,7 @@ sleep 5
     }
     else
     {
-        $SecOptName = "Warning - $secOpTitle16 - Disabled set Require NTLMv2 session security and Require 128-bit encryption Warning"
+        $SecOptName = "Warning $secOpTitle16 - Disabled set Require NTLMv2 session security and Require 128-bit encryption Warning"
         $trueFalse = "False"
     }
     
@@ -2457,7 +2460,7 @@ sleep 5
     }
     else
     {
-        $SecOptName = "Warning - $secOpTitle12 - Disabled Warning"
+        $SecOptName = "Warning $secOpTitle12 - Disabled Warning"
         $trueFalse = "False"
     }
     
@@ -2479,7 +2482,7 @@ sleep 5
     }
     else
     {
-        $SecOptName = "Warning - $secOpTitle11 - Disabled Warning"
+        $SecOptName = "Warning $secOpTitle11 - Disabled Warning"
         $trueFalse = "False"
     }
     
@@ -2500,7 +2503,7 @@ sleep 5
     }
     else
     {
-        $SecOptName = "Warning - $secOpTitle13 - Disabled Warning"
+        $SecOptName = "Warning $secOpTitle13 - Disabled Warning"
         $trueFalse = "False"
     }
     
@@ -2520,7 +2523,7 @@ sleep 5
     }
     else
     {
-        $SecOptName = "Warning - $secOpTitle14 - Disabled Warning"
+        $SecOptName = "Warning $secOpTitle14 - Disabled Warning"
         $trueFalse = "False"
     }
     
@@ -2541,7 +2544,7 @@ sleep 5
     }
     else
     {
-        $SecOptName = "Warning - $secOpTitle17 - Disabled Warning"
+        $SecOptName = "Warning $secOpTitle17 - Disabled Warning"
         $trueFalse = "False"
     }
     
@@ -2579,7 +2582,7 @@ sleep 5
                 $newObjFWProf = New-Object psObject
                 Add-Member -InputObject $newObjFWProf  -Type NoteProperty -Name Name -Value $fwProfileNa
                 Add-Member -InputObject $newObjFWProf  -Type NoteProperty -Name Enabled -Value $fwProfileEn
-                Add-Member -InputObject $newObjFWProf  -Type NoteProperty -Name Inbound -Value "Warning - $fwProfileIn warning"
+                Add-Member -InputObject $newObjFWProf  -Type NoteProperty -Name Inbound -Value "Warning $fwProfileIn warning"
                 Add-Member -InputObject $newObjFWProf  -Type NoteProperty -Name Outbound -Value $fwProfileOut
                 $fragFWProfile += $newObjFWProf 
         }
@@ -2689,21 +2692,21 @@ sleep 5
                 -or $_.Accesstostring -like "*Users Allow  Modify*" `
                 -or $_.Accesstostring -like "*Users Allow  FullControl*"})
             {
-                $taskUSerPers = "Warning - User are allowed to WRITE or MODIFY $taskArgs Warning"
+                $taskUSerPers = "Warning User are allowed to WRITE or MODIFY $taskArgs Warning"
             }
 
             if ($syfoldAcl | where {$_.Accesstostring -like "*Everyone Allow  Write*" `
                 -or $_.Accesstostring -like "*Everyone Allow  Modify*" `
                 -or $_.Accesstostring -like "*Everyone Allow  FullControl*"})
             {
-                $taskUSerPers = "Warning - Everyone are allowed to WRITE or MODIFY $taskArgs Warning"
+                $taskUSerPers = "Warning Everyone are allowed to WRITE or MODIFY $taskArgs Warning"
             }
 
             if ($syfoldAcl | where {$_.Accesstostring -like "*Authenticated Users Allow  Write*" `
                 -or $_.Accesstostring -like "*Authenticated Users Allow  Modify*" `
                 -or $_.Accesstostring -like "*Authenticated Users Allow  FullControl*"})
             {
-                $taskUSerPers = "Warning - Authenticated User are allowed to WRITE or MODIFY $taskArgs Warning"
+                $taskUSerPers = "Warning Authenticated User are allowed to WRITE or MODIFY $taskArgs Warning"
             }
                 $newObjSchedTaskPerms = New-Object -TypeName PSObject
                 Add-Member -InputObject $newObjSchedTaskPerms -Type NoteProperty -Name TaskName -Value $taskName
@@ -2850,7 +2853,7 @@ sleep 7
         foreach ($wFileItems in $wFileDetails)
         {
             $newObjwFile = New-Object -TypeName PSObject
-            Add-Member -InputObject $newObjwFile -Type NoteProperty -Name WriteableFiles -Value "Warning - $($wFileItems) warning"
+            Add-Member -InputObject $newObjwFile -Type NoteProperty -Name WriteableFiles -Value "Warning $($wFileItems) warning"
             $fragwFile += $newObjwFile
             #Write-Host $wFileItems -ForegroundColor Yellow
         }
@@ -2929,7 +2932,7 @@ sleep 7
         {
             #Write-Host $regItems -ForegroundColor DarkCyan
             $newObjReg = New-Object -TypeName PSObject
-            Add-Member -InputObject $newObjReg -Type NoteProperty -Name RegWeakness -Value "Warning - $($regItems) warning"
+            Add-Member -InputObject $newObjReg -Type NoteProperty -Name RegWeakness -Value "Warning $($regItems) warning"
             $fragReg += $newObjReg    
         }
    }
@@ -3273,7 +3276,7 @@ Write-Host "Finised Searching for CreateFile Permissions Vulnerabilities" -foreg
     foreach ($dllNotSigned in $getDllPath)
     {
         $newObjDllNotSigned = New-Object -TypeName PSObject
-        Add-Member -InputObject $newObjDllNotSigned -Type NoteProperty -Name CreateFiles -Value "Warning - $($dllNotSigned) warning"
+        Add-Member -InputObject $newObjDllNotSigned -Type NoteProperty -Name CreateFiles -Value "Warning $($dllNotSigned) warning"
         $fragDllNotSigned += $newObjDllNotSigned
     }  
 
@@ -3287,7 +3290,7 @@ Write-Host "Finised Searching for CreateFile Permissions Vulnerabilities" -foreg
 ################################################
 ########  AUTHENTICODE SIGNATURE  ##############
 ################################################
-#WARNING - Very long running process - enable only when required
+#Warning Very long running process - enable only when required
 #START OF IF
 if ($authenticode -eq "y")
 {
@@ -3324,8 +3327,8 @@ Write-Host "Searching for authenticode signature hashmismatch" -foregroundColor 
                 $authStatus = $getAuthCodeSig.status
 
                 $newObjAuthSig = New-Object -TypeName PSObject
-                Add-Member -InputObject $newObjAuthSig -Type NoteProperty -Name PathAuthCodeSig -Value "Warning - $($authPath) warning"
-                Add-Member -InputObject $newObjAuthSig -Type NoteProperty -Name StatusAuthCodeSig -Value "Warning - $($authStatus) warning"
+                Add-Member -InputObject $newObjAuthSig -Type NoteProperty -Name PathAuthCodeSig -Value "Warning $($authPath) warning"
+                Add-Member -InputObject $newObjAuthSig -Type NoteProperty -Name StatusAuthCodeSig -Value "Warning $($authStatus) warning"
                 $fragAuthCodeSig += $newObjAuthSig
             }
         }
@@ -3374,7 +3377,7 @@ Write-Host "Completed searching for authenticode signature hashmismatch" -foregr
                 -or $certDns -like "*thingxxx*" 
             )
             {
-                Add-Member -InputObject $newObjCertificates -Type NoteProperty -Name CertDNS -Value "Warning - $($certDns) warning" -Force             
+                Add-Member -InputObject $newObjCertificates -Type NoteProperty -Name CertDNS -Value "Warning $($certDns) warning" -Force             
             }
             if
             (
@@ -3382,7 +3385,7 @@ Write-Host "Completed searching for authenticode signature hashmismatch" -foregr
                 -or $certIssuer -like "*thingxxx*" 
              )
             {
-                Add-Member -InputObject $newObjCertificates -Type NoteProperty -Name CertIssuer -Value "Warning - $($certIssuer) warning" -Force
+                Add-Member -InputObject $newObjCertificates -Type NoteProperty -Name CertIssuer -Value "Warning $($certIssuer) warning" -Force
             }
 
             if ($dateDiff -eq "false")
@@ -3470,9 +3473,9 @@ sleep 7
         $PSCom = $PStems.CommandLine
 
         $newObjPSPass = New-Object -TypeName PSObject
-        Add-Member -InputObject $newObjPSPass -Type NoteProperty -Name ProcessCaption -Value "Warning - $($PSCap) - warning"
-        Add-Member -InputObject $newObjPSPass -Type NoteProperty -Name ProcessDescription -Value "Warning - $($PSDes) - warning"
-        Add-Member -InputObject $newObjPSPass -Type NoteProperty -Name ProcessCommandLine -Value "Warning - $($PSCom) - warning"
+        Add-Member -InputObject $newObjPSPass -Type NoteProperty -Name ProcessCaption -Value "Warning $($PSCap) - warning"
+        Add-Member -InputObject $newObjPSPass -Type NoteProperty -Name ProcessDescription -Value "Warning $($PSDes) - warning"
+        Add-Member -InputObject $newObjPSPass -Type NoteProperty -Name ProcessCommandLine -Value "Warning $($PSCom) - warning"
         $fragPSPass += $newObjPSPass
     }
 
@@ -3563,9 +3566,9 @@ foreach ($getRegPassItem in $getRegPassCon)
             $regPassword = $regPassValue.$regSearchItems
          
             $newObjRegPasswords = New-Object -TypeName PSObject
-            Add-Member -InputObject $newObjRegPasswords -Type NoteProperty -Name RegistryPath -Value "Warning - $($regPassPath) warning"
-            Add-Member -InputObject $newObjRegPasswords -Type NoteProperty -Name RegistryValue -Value "Warning - $($regSearchItems) warning"
-            Add-Member -InputObject $newObjRegPasswords -Type NoteProperty -Name RegistryPassword -Value "Warning - $($regPassword) warning"
+            Add-Member -InputObject $newObjRegPasswords -Type NoteProperty -Name RegistryPath -Value "Warning $($regPassPath) warning"
+            Add-Member -InputObject $newObjRegPasswords -Type NoteProperty -Name RegistryValue -Value "Warning $($regSearchItems) warning"
+            Add-Member -InputObject $newObjRegPasswords -Type NoteProperty -Name RegistryPassword -Value "Warning $($regPassword) warning"
             $fragRegPasswords += $newObjRegPasswords
         }
     }
@@ -3609,9 +3612,9 @@ foreach ($dll in $getDll)
                 $dllStatus = $getAuthCodeSig.Status
 
                 $newObjDLLHijack = New-Object psObject
-                Add-Member -InputObject $newObjDLLHijack -Type NoteProperty -Name DLLProcess -Value "Warning - $($procName) warning"
-                Add-Member -InputObject $newObjDLLHijack -Type NoteProperty -Name DLLPath -Value "Warning - $($dllPath) warning"
-                Add-Member -InputObject $newObjDLLHijack -Type NoteProperty -Name DLLSigStatus -Value "Warning - $($dllStatus) warning"
+                Add-Member -InputObject $newObjDLLHijack -Type NoteProperty -Name DLLProcess -Value "Warning $($procName) warning"
+                Add-Member -InputObject $newObjDLLHijack -Type NoteProperty -Name DLLPath -Value "Warning $($dllPath) warning"
+                Add-Member -InputObject $newObjDLLHijack -Type NoteProperty -Name DLLSigStatus -Value "Warning $($dllStatus) warning"
                 $fragDLLHijack += $newObjDLLHijack
             }              
      }
@@ -3707,7 +3710,7 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
             }
         else
             {
-            $ASRGuidObj = "Warning - ASR Guid $asrGuiditem is not set Warning" 
+            $ASRGuidObj = "Warning ASR Guid $asrGuiditem is not set Warning" 
             }
         
         if ($asrGuidSetting -eq "1")
@@ -3716,7 +3719,7 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
             }
         else
             {
-            $asrGuidSetObj = "Warning - ASR is disabled Warning"
+            $asrGuidSetObj = "Warning ASR is disabled Warning"
             }
 
            $ASRDescripObj = $asrDescription | Select-String -Pattern $asrGuid
@@ -3749,13 +3752,13 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     $HostDomain = ((Get-CimInstance -ClassName win32_computersystem).Domain).split(".")[0] + "\" 
 
     $DomA = $HostDomain + "Domain Admins"
-    $DomAWarn = "Warning - " + $HostDomain + "Domain Admins" + "  Warning"
+    $DomAWarn = "Warning " + $HostDomain + "Domain Admins" + "  Warning"
 
     $EntA = $HostDomain + "Enterprise Admins"
-    $EntAWarn = "Warning - " + $HostDomain + "Enterprise Admins" + "  Warning"
+    $EntAWarn = "Warning " + $HostDomain + "Enterprise Admins" + "  Warning"
 
     $SchA = $HostDomain + "Schema Admins"
-    $SchAWarn = "Warning - " + $HostDomain + "Schema Admins" + "  Warning"
+    $SchAWarn = "Warning " + $HostDomain + "Schema Admins" + "  Warning"
 
     #WHOAMI /User /FO CSV /NH > C:\SecureReport\output\DomainUser\User.csv
     WHOAMI /Groups /FO CSV /NH > C:\SecureReport\output\DomainUser\Groups.csv
@@ -3826,14 +3829,14 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     }
     elseif ($getWindowsOSVal -eq "3")
     {
-        $WindowsOSSet = "Warning - $WindowsOSDescrip is enabled Good, unknown and bad but critical boot-start drivers that can be initialized warning" 
+        $WindowsOSSet = "Warning $WindowsOSDescrip is enabled Good, unknown and bad but critical boot-start drivers that can be initialized warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
         $trueFalse = "False"
     }
     else
     {
         #Else assume all boot-start drivers are allowed this is normally have a value of 7
-        $WindowsOSSet = "Warning - $WindowsOSDescrip is enabled all boot-start drivers that can be initialized warning" 
+        $WindowsOSSet = "Warning $WindowsOSDescrip is enabled all boot-start drivers that can be initialized warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
         $trueFalse = "False"
     }
@@ -3871,7 +3874,7 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     }
     else
     {
-        $WindowsOSSet = "Warning - $WindowsOSDescrip is not set warning" 
+        $WindowsOSSet = "Warning $WindowsOSDescrip is not set warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
         $trueFalse = "False"
     }
@@ -3905,7 +3908,7 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
 
     if ($getWindowsOSVal -eq "1")
     {
-        $WindowsOSSet = "Warning - $WindowsOSDescrip is Enabled Warning" 
+        $WindowsOSSet = "Warning $WindowsOSDescrip is Enabled Warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
         $trueFalse = "False"
     }
@@ -3945,7 +3948,7 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
 
     if ($getWindowsOSVal -eq "1")
     {
-        $WindowsOSSet = "Warning - $WindowsOSDescrip is Enabled Warning" 
+        $WindowsOSSet = "Warning $WindowsOSDescrip is Enabled Warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
         $trueFalse = "False"
     }
@@ -3990,7 +3993,7 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     }
     else
     {
-        $WindowsOSSet = "Warning - $WindowsOSDescrip is disabled Warning" 
+        $WindowsOSSet = "Warning $WindowsOSDescrip is disabled Warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
         $trueFalse = "False"
     }
@@ -4032,7 +4035,7 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     }
     else
     {
-        $WindowsOSSet = "Warning - $WindowsOSDescrip is not set warning" 
+        $WindowsOSSet = "Warning $WindowsOSDescrip is not set warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
         $trueFalse = "False"
     }
@@ -4071,7 +4074,7 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     }
     else
     {
-        $WindowsOSSet = "Warning - $WindowsOSDescrip disabled warning" 
+        $WindowsOSSet = "Warning $WindowsOSDescrip disabled warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
         $trueFalse = "False"
     }
@@ -4111,7 +4114,7 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     }
     else
     {
-        $WindowsOSSet = "Warning - $WindowsOSDescrip enabled warning" 
+        $WindowsOSSet = "Warning $WindowsOSDescrip enabled warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
         $trueFalse = "False"
     }
@@ -4149,7 +4152,7 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     }
     else
     {
-        $WindowsOSSet = "Warning - $WindowsOSDescrip is enabled Warning" 
+        $WindowsOSSet = "Warning $WindowsOSDescrip is enabled Warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
         $trueFalse = "False"
     }
@@ -4184,7 +4187,7 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     }
     else
     {
-        $WindowsOSSet = "Warning - $WindowsOSDescrip is disabled Warning" 
+        $WindowsOSSet = "Warning $WindowsOSDescrip is disabled Warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
         $trueFalse = "False"
     }
@@ -4226,7 +4229,7 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     }
     else
     {
-        $WindowsOSSet = "Warning - $WindowsOSDescrip is disabled Warning" 
+        $WindowsOSSet = "Warning $WindowsOSDescrip is disabled Warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
         $trueFalse = "False"
     }
@@ -4261,7 +4264,7 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     }
     else
     {
-        $WindowsOSSet = "Warning - $WindowsOSDescrip is disabled Warning" 
+        $WindowsOSSet = "Warning $WindowsOSDescrip is disabled Warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
         $trueFalse = "False"
     }
@@ -4296,7 +4299,7 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     }
     else
     {
-        $WindowsOSSet = "Warning - $WindowsOSDescrip is disabled Warning" 
+        $WindowsOSSet = "Warning $WindowsOSDescrip is disabled Warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
         $trueFalse = "False"
     }
@@ -4330,7 +4333,7 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     }
     else
     {
-        $WindowsOSSet = "Warning - $WindowsOSDescrip disabled warning" 
+        $WindowsOSSet = "Warning $WindowsOSDescrip disabled warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
         $trueFalse = "False"
     }
@@ -4364,7 +4367,7 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     }
     else
     {
-        $WindowsOSSet = "Warning - $WindowsOSDescrip disabled warning" 
+        $WindowsOSSet = "Warning $WindowsOSDescrip disabled warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
         $trueFalse = "False"
     }
@@ -4399,7 +4402,7 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     }
     else
     {
-        $WindowsOSSet = "Warning - $WindowsOSDescrip disabled warning" 
+        $WindowsOSSet = "Warning $WindowsOSDescrip disabled warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
         $trueFalse = "False"
     }
@@ -4434,7 +4437,7 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     }
     else
     {
-        $WindowsOSSet = "Warning - $WindowsOSDescrip disabled warning" 
+        $WindowsOSSet = "Warning $WindowsOSDescrip disabled warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
         $trueFalse = "False"
     }
@@ -4469,7 +4472,7 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     }
     else
     {
-        $WindowsOSSet = "Warning - $WindowsOSDescrip disabled warning" 
+        $WindowsOSSet = "Warning $WindowsOSDescrip disabled warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
         $trueFalse = "False"
     }
@@ -4503,7 +4506,7 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     }
     else
     {
-        $WindowsOSSet = "Warning - $WindowsOSDescrip is disabled Warning" 
+        $WindowsOSSet = "Warning $WindowsOSDescrip is disabled Warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
         $trueFalse = "False"
     }
@@ -4537,7 +4540,7 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     }
     else
     {
-        $WindowsOSSet = "Warning - $WindowsOSDescrip is disabled Warning" 
+        $WindowsOSSet = "Warning $WindowsOSDescrip is disabled Warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
         $trueFalse = "False"
     }
@@ -4577,7 +4580,7 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     }
     else
     {
-        $WindowsOSSet = "Warning - $WindowsOSDescrip is disabled Warning" 
+        $WindowsOSSet = "Warning $WindowsOSDescrip is disabled Warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
         $trueFalse = "False"
     }
@@ -4619,7 +4622,7 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     }
     else
     {
-        $WindowsOSSet = "Warning - $WindowsOSDescrip is disabled Warning" 
+        $WindowsOSSet = "Warning $WindowsOSDescrip is disabled Warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
         $trueFalse = "False"
     }
@@ -4658,7 +4661,7 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     }
     else
     {
-        $WindowsOSSet = "Warning - $WindowsOSDescrip is enabled warning" 
+        $WindowsOSSet = "Warning $WindowsOSDescrip is enabled warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
         $trueFalse = "False"
     }
@@ -4697,7 +4700,7 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     }
     else
     {
-        $WindowsOSSet = "Warning - $WindowsOSDescrip is disabled Warning" 
+        $WindowsOSSet = "Warning $WindowsOSDescrip is disabled Warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
         $trueFalse = "False"
     }
@@ -4733,7 +4736,7 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     }
     else
     {
-        $WindowsOSSet = "Warning - $WindowsOSDescrip is disabled Warning" 
+        $WindowsOSSet = "Warning $WindowsOSDescrip is disabled Warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
         $trueFalse = "False"
     }
@@ -4779,7 +4782,7 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     }
     else
     {
-        $WindowsOSSet = "Warning - $WindowsOSDescrip is Enabled Warning" 
+        $WindowsOSSet = "Warning $WindowsOSDescrip is Enabled Warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
         $trueFalse = "False"
     }
@@ -4822,7 +4825,7 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     }
     else
     {
-        $WindowsOSSet = "Warning - $WindowsOSDescrip is disabled warning" 
+        $WindowsOSSet = "Warning $WindowsOSDescrip is disabled warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
         $trueFalse = "False"
     }
@@ -4871,7 +4874,7 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     }
     else
     {
-        $WindowsOSSet = "Warning - $WindowsOSDescrip is Enabled or not defined Warning" 
+        $WindowsOSSet = "Warning $WindowsOSDescrip is Enabled or not defined Warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
         $trueFalse = "False"
     }
@@ -4905,7 +4908,7 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     }
     else
     {
-        $WindowsOSSet = "Warning - $WindowsOSDescrip disabled warning" 
+        $WindowsOSSet = "Warning $WindowsOSDescrip disabled warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
     }
 
@@ -4947,7 +4950,7 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     }
     else
     {
-        $WindowsOSSet = "Warning - $WindowsOSDescrip is $getWindowsOSVal, ideally this should be set to 1 Warning" 
+        $WindowsOSSet = "Warning $WindowsOSDescrip is $getWindowsOSVal, ideally this should be set to 1 Warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
         $trueFalse = "False"
     }
@@ -5000,7 +5003,7 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     }
     else
     {
-        $WindowsOSSet = "Warning - $WindowsOSDescrip is disabled Warning" 
+        $WindowsOSSet = "Warning $WindowsOSDescrip is disabled Warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
         $trueFalse = "False"
     }
@@ -5049,7 +5052,7 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     }
     else
     {
-        $WindowsOSSet = "Warning - $WindowsOSDescrip is disabled, mitigates Pass-the-Hash Warning" 
+        $WindowsOSSet = "Warning $WindowsOSDescrip is disabled, mitigates Pass-the-Hash Warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
         $trueFalse = "False"
     }
@@ -5089,7 +5092,7 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     }
     else
     {
-        $WindowsOSSet = "Warning - $WindowsOSDescrip is disabled, \\*\SYSVOL and \\*\NETLOGON are missing Warning" 
+        $WindowsOSSet = "Warning $WindowsOSDescrip is disabled, \\*\SYSVOL and \\*\NETLOGON are missing Warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
         $trueFalse = "False"
     }
@@ -5128,7 +5131,7 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     }
     else
     {
-        $WindowsOSSet = "Warning - $WindowsOSDescrip is disabled Warning" 
+        $WindowsOSSet = "Warning $WindowsOSDescrip is disabled Warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
         $trueFalse = "False"
     }
@@ -5168,7 +5171,7 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     }
     else
     {
-        $WindowsOSSet = "Warning - $WindowsOSDescrip is disabled Warning" 
+        $WindowsOSSet = "Warning $WindowsOSDescrip is disabled Warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
         $trueFalse = "False"
     }
@@ -5208,7 +5211,7 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     }
     else
     {
-        $WindowsOSSet = "Warning - $WindowsOSDescrip is disabled Warning" 
+        $WindowsOSSet = "Warning $WindowsOSDescrip is disabled Warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
         $trueFalse = "False"
     }
@@ -5248,7 +5251,7 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     }
     else
     {
-        $WindowsOSSet = "Warning - $WindowsOSDescrip is disabled Warning" 
+        $WindowsOSSet = "Warning $WindowsOSDescrip is disabled Warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
         $trueFalse = "False"
     }
@@ -5280,7 +5283,7 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
 
     if ($getWindowsOSVal -eq "1")
     {
-        $WindowsOSSet = "Warning - $WindowsOSDescrip is enabled Warning" 
+        $WindowsOSSet = "Warning $WindowsOSDescrip is enabled Warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
         $trueFalse = "True"
     }
@@ -5323,7 +5326,7 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
 
     if ($getWindowsOSVal -eq "1")
     {
-        $WindowsOSSet = "Warning - $WindowsOSDescrip is enabled Warning" 
+        $WindowsOSSet = "Warning $WindowsOSDescrip is enabled Warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
         $trueFalse = "True"
     }
@@ -5372,7 +5375,7 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     }
     else
     {
-        $WindowsOSSet = "Warning - $WindowsOSDescrip is disabled Warning" 
+        $WindowsOSSet = "Warning $WindowsOSDescrip is disabled Warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
         $trueFalse = "False"
     }
@@ -5416,7 +5419,7 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     }
     else
     {
-        $WindowsOSSet = "Warning - $WindowsOSDescrip is disabled Warning" 
+        $WindowsOSSet = "Warning $WindowsOSDescrip is disabled Warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
     }
 
@@ -5459,7 +5462,7 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     }
     else
     {
-        $WindowsOSSet = "Warning - $WindowsOSDescrip is disabled Warning" 
+        $WindowsOSSet = "Warning $WindowsOSDescrip is disabled Warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
         $trueFalse = "False"
     }
@@ -5497,7 +5500,7 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     }
     else
     {
-        $WindowsOSSet = "Warning - $WindowsOSDescrip is disabled or not set Warning" 
+        $WindowsOSSet = "Warning $WindowsOSDescrip is disabled or not set Warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
         $trueFalse = "False"
     }
@@ -5541,7 +5544,7 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     }
     else
     {
-        $WindowsOSSet = "Warning - $WindowsOSDescrip is disabled warning" 
+        $WindowsOSSet = "Warning $WindowsOSDescrip is disabled warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
         $trueFalse = "False"
     }
@@ -5578,7 +5581,7 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
 
     if ($getWindowsOSVal -eq "1")
     {
-        $WindowsOSSet = "Warning - $WindowsOSDescrip is enabled Warning" 
+        $WindowsOSSet = "Warning $WindowsOSDescrip is enabled Warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
         $trueFalse = "True"
     }
@@ -5618,7 +5621,7 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     }
     else
     {
-        $WindowsOSSet = "Warning - $WindowsOSDescrip disabled warning" 
+        $WindowsOSSet = "Warning $WindowsOSDescrip disabled warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
         $trueFalse = "False"
     }
@@ -5654,7 +5657,7 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     }
     else
     {
-        $WindowsOSSet = "Warning - $WindowsOSDescrip is disabled Warning" 
+        $WindowsOSSet = "Warning $WindowsOSDescrip is disabled Warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
         $trueFalse = "False"
     }
@@ -5688,7 +5691,7 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     }
     else
     {
-        $WindowsOSSet = "Warning - $WindowsOSDescrip is disabled Warning" 
+        $WindowsOSSet = "Warning $WindowsOSDescrip is disabled Warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
         $trueFalse = "False"
     }
@@ -5723,7 +5726,7 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     }
     else
     {
-        $WindowsOSSet = "Warning - $WindowsOSDescrip is disabled Warning" 
+        $WindowsOSSet = "Warning $WindowsOSDescrip is disabled Warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
     }
 
@@ -5756,7 +5759,7 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     }
     else
     {
-        $WindowsOSSet = "Warning - $WindowsOSDescrip is disabled Warning" 
+        $WindowsOSSet = "Warning $WindowsOSDescrip is disabled Warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
         $trueFalse = "False"
     }
@@ -5790,7 +5793,7 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     }
     else
     {
-        $WindowsOSSet = "Warning - $WindowsOSDescrip is disabled Warning" 
+        $WindowsOSSet = "Warning $WindowsOSDescrip is disabled Warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
         $trueFalse = "False"
     }
@@ -5824,7 +5827,7 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     }
     else
     {
-        $WindowsOSSet = "Warning - $WindowsOSDescrip is disabled Warning" 
+        $WindowsOSSet = "Warning $WindowsOSDescrip is disabled Warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
         $trueFalse = "False"
     }
@@ -5864,7 +5867,7 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     }
     else
     {
-        $WindowsOSSet = "Warning - $WindowsOSDescrip is disabled Warning" 
+        $WindowsOSSet = "Warning $WindowsOSDescrip is disabled Warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
         $trueFalse = "False"
     }
@@ -5898,7 +5901,7 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     }
     else
     {
-        $WindowsOSSet = "Warning - $WindowsOSDescrip is disabled Warning" 
+        $WindowsOSSet = "Warning $WindowsOSDescrip is disabled Warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
         $trueFalse = "False"
     }
@@ -5932,7 +5935,7 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     }
     else
     {
-        $WindowsOSSet = "Warning - $WindowsOSDescrip is disabled warning" 
+        $WindowsOSSet = "Warning $WindowsOSDescrip is disabled warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
         $trueFalse = "False"
     }
@@ -5966,7 +5969,7 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     }
     else
     {
-        $WindowsOSSet = "Warning - $WindowsOSDescrip is disabled warning" 
+        $WindowsOSSet = "Warning $WindowsOSDescrip is disabled warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
         $trueFalse = "False"
     }
@@ -6012,7 +6015,7 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     }
     else
     {
-        $WindowsOSSet = "Warning - $WindowsOSDescrip is set warn and allow bypass Warning" 
+        $WindowsOSSet = "Warning $WindowsOSDescrip is set warn and allow bypass Warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
         $trueFalse = "False"
     }
@@ -6058,7 +6061,7 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     }
     else
     {
-        $WindowsOSSet = "Warning - $WindowsOSDescrip is set warn and allow bypass Warning" 
+        $WindowsOSSet = "Warning $WindowsOSDescrip is set warn and allow bypass Warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
         $trueFalse = "False"
     }
@@ -6100,7 +6103,7 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     }
     else
     {
-        $WindowsOSSet = "Warning - $WindowsOSDescrip enabled warning" 
+        $WindowsOSSet = "Warning $WindowsOSDescrip enabled warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
         $trueFalse = "False"
     }
@@ -6144,7 +6147,7 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     }
     else
     {
-        $WindowsOSSet = "Warning - $WindowsOSDescrip enabled warning" 
+        $WindowsOSSet = "Warning $WindowsOSDescrip enabled warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
         $trueFalse = "False"
     }
@@ -6188,7 +6191,7 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     }
     else
     {
-        $WindowsOSSet = "Warning - $WindowsOSDescrip enabled warning" 
+        $WindowsOSSet = "Warning $WindowsOSDescrip enabled warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
         $trueFalse = "False"
     }
@@ -6222,7 +6225,7 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     }
     else
     {
-        $WindowsOSSet = "Warning - $WindowsOSDescrip disabled warning" 
+        $WindowsOSSet = "Warning $WindowsOSDescrip disabled warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
         $trueFalse = "False"
     }
@@ -6263,7 +6266,7 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     }
     else
     {
-        $WindowsOSSet = "Warning - $WindowsOSDescrip disabled warning" 
+        $WindowsOSSet = "Warning $WindowsOSDescrip disabled warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
         $trueFalse = "False"
     }
@@ -6304,7 +6307,7 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     }
     else
     {
-        $WindowsOSSet = "Warning - $WindowsOSDescrip disabled warning" 
+        $WindowsOSSet = "Warning $WindowsOSDescrip disabled warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
         $trueFalse = "False"
     }
@@ -6340,7 +6343,7 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
 
     if ($getWindowsOSVal -eq 1)
     {
-        $WindowsOSSet = "Warning - $WindowsOSDescrip is enabled warning" 
+        $WindowsOSSet = "Warning $WindowsOSDescrip is enabled warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
         $trueFalse = "True"
     }
@@ -6388,7 +6391,7 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     }
     else
     {
-        $WindowsOSSet = "Warning - $WindowsOSDescrip is enabled Warning" 
+        $WindowsOSSet = "Warning $WindowsOSDescrip is enabled Warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
         $trueFalse = "False"
     }
@@ -6430,7 +6433,7 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     }
     else
     {
-        $WindowsOSSet = "Warning - $WindowsOSDescrip is disabled Warning" 
+        $WindowsOSSet = "Warning $WindowsOSDescrip is disabled Warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
         $trueFalse = "False"
     }
@@ -6477,7 +6480,7 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     }
     else
     {
-        $WindowsOSSet = "Warning - $WindowsOSDescrip disabled - Not to be applied against DCs Warning" 
+        $WindowsOSSet = "Warning $WindowsOSDescrip disabled - Not to be applied against DCs Warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
         $trueFalse = "False"
     }
@@ -6520,7 +6523,7 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     }
     else
     {
-        $WindowsOSSet = "Warning - $WindowsOSDescrip disabled warning" 
+        $WindowsOSSet = "Warning $WindowsOSDescrip disabled warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
         $trueFalse = "False"
     }
@@ -6559,7 +6562,7 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     }
     else
     {
-        $WindowsOSSet = "Warning - $WindowsOSDescrip is disabled Warning" 
+        $WindowsOSSet = "Warning $WindowsOSDescrip is disabled Warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
         $trueFalse = "False"
     }
@@ -6597,7 +6600,7 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     }
     else
     {
-        $WindowsOSSet = "Warning - $WindowsOSDescrip is enabled Warning" 
+        $WindowsOSSet = "Warning $WindowsOSDescrip is enabled Warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
         $trueFalse = "False"
     }
@@ -6635,7 +6638,7 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     }
     else
     {
-        $WindowsOSSet = "Warning - $WindowsOSDescrip is enabled Warning" 
+        $WindowsOSSet = "Warning $WindowsOSDescrip is enabled Warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
         $trueFalse = "False"
     }
@@ -6673,7 +6676,7 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     }
     else
     {
-        $WindowsOSSet = "Warning - $WindowsOSDescrip is enabled Warning" 
+        $WindowsOSSet = "Warning $WindowsOSDescrip is enabled Warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
         $trueFalse = "False"
     }
@@ -6711,7 +6714,7 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     }
     else
     {
-        $WindowsOSSet = "Warning - $WindowsOSDescrip is enabled Warning" 
+        $WindowsOSSet = "Warning $WindowsOSDescrip is enabled Warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
         $trueFalse = "False"
     }
@@ -6750,7 +6753,7 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     }
     else
     {
-        $WindowsOSSet = "Warning - $WindowsOSDescrip is disabled Warning" 
+        $WindowsOSSet = "Warning $WindowsOSDescrip is disabled Warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
         $trueFalse = "False"
     }
@@ -6789,7 +6792,7 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     }
     else
     {
-        $WindowsOSSet = "Warning - $WindowsOSDescrip is enabled Warning" 
+        $WindowsOSSet = "Warning $WindowsOSDescrip is enabled Warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
         $trueFalse = "False"
     }
@@ -6837,7 +6840,7 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     }
     else
     {
-        $WindowsOSSet = "Warning - $WindowsOSDescrip is disbled Warning" 
+        $WindowsOSSet = "Warning $WindowsOSDescrip is disbled Warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
         $trueFalse = "False"
     }
@@ -6892,7 +6895,7 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     }
     else
     {
-        $WindowsOSSet = "Warning - $WindowsOSDescrip is disabled Warning" 
+        $WindowsOSSet = "Warning $WindowsOSDescrip is disabled Warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
         $trueFalse = "False"
     }
@@ -6937,7 +6940,7 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     }
     else
     {
-        $WindowsOSSet = "Warning - $WindowsOSDescrip is enabled Warning" 
+        $WindowsOSSet = "Warning $WindowsOSDescrip is enabled Warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
         $trueFalse = "False"
     }
@@ -6977,7 +6980,7 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     }
     else
     {
-        $WindowsOSSet = "Warning - $WindowsOSDescrip is disabled Warning" 
+        $WindowsOSSet = "Warning $WindowsOSDescrip is disabled Warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
         $trueFalse = "False"
     }
@@ -7024,7 +7027,7 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     }
     else
     {
-        $WindowsOSSet = "Warning - $WindowsOSDescrip is disabled Warning" 
+        $WindowsOSSet = "Warning $WindowsOSDescrip is disabled Warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
         $trueFalse = "False"
     }
@@ -7063,7 +7066,7 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     }
     else
     {
-        $WindowsOSSet = "Warning - $WindowsOSDescrip is enabled Warning" 
+        $WindowsOSSet = "Warning $WindowsOSDescrip is enabled Warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
         $trueFalse = "False"
     }
@@ -7103,7 +7106,7 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     }
     else
     {
-        $WindowsOSSet = "Warning - $WindowsOSDescrip is enabled Warning" 
+        $WindowsOSSet = "Warning $WindowsOSDescrip is enabled Warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
         $trueFalse = "False"
     }
@@ -7138,7 +7141,7 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     }
     else
     {
-        $WindowsOSSet = "Warning - $WindowsOSDescrip enabled warning" 
+        $WindowsOSSet = "Warning $WindowsOSDescrip enabled warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
         $trueFalse = "False"
     }
@@ -7178,7 +7181,7 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     }
     else
     {
-        $WindowsOSSet = "Warning - $WindowsOSDescrip disabled warning" 
+        $WindowsOSSet = "Warning $WindowsOSDescrip disabled warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
         $trueFalse = "False"
     }
@@ -7215,7 +7218,7 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     }
     else
     {
-        $WindowsOSSet = "Warning - $WindowsOSDescrip disabled warning" 
+        $WindowsOSSet = "Warning $WindowsOSDescrip disabled warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
         $trueFalse = "False"
     }
@@ -7258,7 +7261,7 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     }
     else
     {
-        $WindowsOSSet = "Warning - $WindowsOSDescrip disabled warning" 
+        $WindowsOSSet = "Warning $WindowsOSDescrip disabled warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
         $trueFalse = "False"
     }
@@ -7298,7 +7301,7 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     }
     else
     {
-        $WindowsOSSet = "Warning - $WindowsOSDescrip disabled warning" 
+        $WindowsOSSet = "Warning $WindowsOSDescrip disabled warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
         $trueFalse = "False"
     }
@@ -7339,7 +7342,7 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     }
     else
     {
-        $WindowsOSSet = "Warning - $WindowsOSDescrip disabled warning" 
+        $WindowsOSSet = "Warning $WindowsOSDescrip disabled warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
         $trueFalse = "False"
     }
@@ -7378,7 +7381,7 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     }
     else
     {
-        $WindowsOSSet = "Warning - $WindowsOSDescrip is not set warning" 
+        $WindowsOSSet = "Warning $WindowsOSDescrip is not set warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
         $trueFalse = "False"
     }
@@ -7414,7 +7417,7 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     }
     else
     {
-        $WindowsOSSet = "Warning - $WindowsOSDescrip is disabled Warning" 
+        $WindowsOSSet = "Warning $WindowsOSDescrip is disabled Warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
         $trueFalse = "False"
     }
@@ -7455,7 +7458,7 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     }
     else
     {
-        $WindowsOSSet = "Warning - $WindowsOSDescrip is disabled Warning" 
+        $WindowsOSSet = "Warning $WindowsOSDescrip is disabled Warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
         $trueFalse = "False"
     }
@@ -7490,7 +7493,7 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     }
     else
     {
-        $WindowsOSSet = "Warning - $WindowsOSDescrip is disabled Warning" 
+        $WindowsOSSet = "Warning $WindowsOSDescrip is disabled Warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
         $trueFalse = "False"
     }
@@ -7524,7 +7527,7 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     }
     else
     {
-        $WindowsOSSet = "Warning - $WindowsOSDescrip is disabled Warning" 
+        $WindowsOSSet = "Warning $WindowsOSDescrip is disabled Warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
         $trueFalse = "False"
     }
@@ -7559,7 +7562,7 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     }
     else
     {
-        $WindowsOSSet = "Warning - $WindowsOSDescrip is disabled Warning" 
+        $WindowsOSSet = "Warning $WindowsOSDescrip is disabled Warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
         $trueFalse = "False"
     }
@@ -7596,7 +7599,7 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     }
     else
     {
-        $WindowsOSSet = "Warning - $WindowsOSDescrip is disabled Warning" 
+        $WindowsOSSet = "Warning $WindowsOSDescrip is disabled Warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
         $trueFalse = "False"
     }
@@ -7633,7 +7636,7 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     }
     else
     {
-        $WindowsOSSet = "Warning - $WindowsOSDescrip is disabled Warning" 
+        $WindowsOSSet = "Warning $WindowsOSDescrip is disabled Warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
         $trueFalse = "False"
     }
@@ -7669,7 +7672,7 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     }
     else
     {
-        $WindowsOSSet = "Warning - $WindowsOSDescrip is enabled Warning" 
+        $WindowsOSSet = "Warning $WindowsOSDescrip is enabled Warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
         $trueFalse = "False"
     }
@@ -7791,7 +7794,7 @@ $getEdgeValue = $getEdgePath.GetValue("$edgeRegName")
     }
     else
     {
-        $EdgeSet = "Warning - $edgeGPOName is misconfigured with a value of $edgeGPOValue Warning" 
+        $EdgeSet = "Warning $edgeGPOName is misconfigured with a value of $edgeGPOValue Warning" 
         $EdgeReg = "<div title=$gpoPath>$regpath"
         $edgeTrue = "False"
     }
@@ -8060,7 +8063,7 @@ foreach ($OfficePolItems in $OfficePolicies.values)
         }
         else
         {
-            $OfficeSet = "Warning - $OfficeGPOName is not set or has the wrong setting with value of $getOfficeValue Warning" 
+            $OfficeSet = "Warning $OfficeGPOName is not set or has the wrong setting with value of $getOfficeValue Warning" 
             $OfficeReg = "<div title=$gpoPath>$regPath"
             $trueFalse = "False"
         }
@@ -9432,8 +9435,7 @@ else
 }
 
     $HostDomain = ((Get-CimInstance -ClassName win32_computersystem).Domain) + "\" 
-
-    $repDate = (date).Date.ToString("yy-MM-dd:hh:mm").Replace(":","_")
+    $repDate = (Get-Date).Date.ToString("yy-MM-dd").Replace(":","_")
 
     Get-Content $Report | 
     foreach {$_ -replace "<tr><th>*</th></tr>",""} | 
@@ -9449,6 +9451,7 @@ else
     foreach {$_ -replace "privateKey</td>","<font></td>"} |
     
     foreach {$_ -replace "<td>Warning","<td><font color=#ff9933>Warning"} | 
+    foreach {$_ -replace "#ff9933>Warning ","#ff9933>"} |
     foreach {$_ -replace "Warning</td>","<font></td>"} |
 
     foreach {$_ -replace "<td>Review","<td><font color=#ff9933>Review"} | 
@@ -9518,13 +9521,12 @@ else
     foreach {$_ -replace '&lt;/a">','</a>'} |
     foreach {$_ -replace '&quot;">','">'} |
 
-    foreach {$_ -replace 'Warning - ',''} |
+    foreach {$_ -replace 'Warning ',''} |
     foreach {$_ -replace 'expired - ',''} |
     foreach {$_ -replace 'selfsigned - ',''} |
     foreach {$_ -replace 'privateKey - ',''} |
-    
-       
-    Set-Content "C:\SecureReport\FinishedReport.htm" -Force
+           
+    Set-Content "C:\SecureReport\$($repDate)-$($env:COMPUTERNAME)-Report.htm" -Force
     
     invoke-item 'C:\SecureReport'   
 
