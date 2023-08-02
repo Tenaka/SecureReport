@@ -323,6 +323,7 @@ YYMMDD
 230718.1 - Added True and False, true is compliant, false missing a setting
 230725.1 - Finised Report is named to hostname and date
 230727.1 - Removed 'Warning -'
+230802.1 - Certs now warns on Sha1
 
 #>
 
@@ -3338,6 +3339,7 @@ Write-Host " "
 Write-Host "Completed searching for authenticode signature hashmismatch" -foregroundColor Green
 #END OF IF
 }
+
 ################################################
 ##########  CERTIFICATE DETAILS  ###############
 ################################################
@@ -3347,7 +3349,7 @@ Write-Host "Completed searching for authenticode signature hashmismatch" -foregr
     $dateToday = get-date
     foreach($certItem in $getCert)
     {
-    $getCertItems = (Get-ChildItem "Cert:\LocalMachine\$($certItem)" )#| where {$_.Subject -notlike "*microsoft*"}) 
+    $getCertItems = (Get-ChildItem "Cert:\LocalMachine\$($certItem)" )  #| where {$_.Subject -notlike "*microsoft*"}) 
 
         foreach ($allCertInfo in $getCertItems)
         {
@@ -3360,6 +3362,8 @@ Write-Host "Completed searching for authenticode signature hashmismatch" -foregr
             $certExpire = $allCertInfo.NotAfter
             $certName = $allCertInfo.FriendlyName
             $certKey = $allCertInfo.HasPrivateKey
+            $certkeysize = $allCertInfo.PublicKey.Key.KeySize
+            $certSigAlgor =  $allCertInfo.SignatureAlgorithm.FriendlyName
 
             $dateDiff = (get-date $certExpire) -lt (get-date $dateToday)
             $dateShort = $certExpire.ToShortDateString()
@@ -3367,9 +3371,11 @@ Write-Host "Completed searching for authenticode signature hashmismatch" -foregr
             #Added for a naughty list of CN=, Domain Names or words
             $newObjCertificates = New-Object -TypeName PSObject
             Add-Member -InputObject $newObjCertificates -Type NoteProperty -Name CertIssuer -Value $certIssuer
+            Add-Member -InputObject $newObjCertificates -Type NoteProperty -Name CertSha1 -Value "$certSigAlgor" -force
             Add-Member -InputObject $newObjCertificates -Type NoteProperty -Name CertExpired -Value $dateShort
             Add-Member -InputObject $newObjCertificates -Type NoteProperty -Name CertSelfSigned -Value False
             Add-Member -InputObject $newObjCertificates -Type NoteProperty -Name CertPrivateKey -Value False
+
 
             if 
             (
@@ -3388,6 +3394,11 @@ Write-Host "Completed searching for authenticode signature hashmismatch" -foregr
                 Add-Member -InputObject $newObjCertificates -Type NoteProperty -Name CertIssuer -Value "Warning $($certIssuer) warning" -Force
             }
 
+            if ($certSigAlgor -match "sha1")
+            {
+                Add-Member -InputObject $newObjCertificates -Type NoteProperty -Name CertSha1 -Value "Warning $($certSigAlgor) Warning" -force
+            }
+
             if ($dateDiff -eq "false")
             {
                 Add-Member -InputObject $newObjCertificates -Type NoteProperty -Name CertExpired -Value "Expired - $($dateShort) expired" -Force
@@ -3402,7 +3413,8 @@ Write-Host "Completed searching for authenticode signature hashmismatch" -foregr
             {
                 Add-Member -InputObject $newObjCertificates -Type NoteProperty -Name CertPrivateKey -Value "privateKey - True privatekey" -force
             }
-                        
+
+                       
              #Add-Member -InputObject $newObjCertificates -Type NoteProperty -Name CertIssuer -Value $certIssuer
              #Add-Member -InputObject $newObjCertificates -Type NoteProperty -Name CertExpired -Value $certExpire
              #add-Member -InputObject $newObjCertificates -Type NoteProperty -Name CertDNS -Value $certDns
