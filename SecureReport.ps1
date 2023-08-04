@@ -324,7 +324,10 @@ YYMMDD
 230725.1 - Finised Report is named to hostname and date
 230727.1 - Removed 'Warning -'
 230802.1 - Certs now warns on Sha1
-
+230802.1 - Updated Installed Apps to warn when installed date is more than 6 months. 
+230803.1 - Updated BIOS to warn when installed date is more than 6 months. 
+230804.1 - Updated looks and feel of report.
+230804.2 - Updated Windows Updates to alert when they are more than 6 months out of date.
 #>
 
 #Remove any DVD from client
@@ -475,8 +478,28 @@ sleep 5
     #OS Details
     $fragHost = Get-CimInstance -ClassName win32_computersystem 
     $OS = Get-CimInstance -ClassName win32_operatingsystem 
-    $bios = Get-CimInstance -ClassName win32_bios
+    $bios = Get-CimInstance -ClassName win32_bios | Select-Object Name,Manufacturer,SerialNumber,SMBIOSBIOSVersion,ReleaseDate
     $cpu = Get-CimInstance -ClassName win32_processor
+
+    $BiosUEFI=@()
+
+    $BiosName = $bios.Name
+    $BiosManufacturer = $bios.Manufacturer
+    $BiosSerial = $bios.SerialNumber
+    $BiosSMBVersion = $bios.SMBIOSBIOSVersion
+    $ReleaseDate = $bios.ReleaseDate
+
+    $date180days = (Get-Date).AddDays(-180)
+
+    if ($date180days -gt $ReleaseDate){$ReleaseDate = "Warning $($ReleaseDate) Warning"}
+
+    $newObjBiosUEFI = New-Object -TypeName PSObject
+    Add-Member -InputObject $newObjBiosUEFI -Type NoteProperty -Name BiosName -Value $BiosName
+    Add-Member -InputObject $newObjBiosUEFI -Type NoteProperty -Name BiosManufacturer -Value $BiosManufacturer
+    Add-Member -InputObject $newObjBiosUEFI -Type NoteProperty -Name BiosSerial -Value $BiosSerial
+    Add-Member -InputObject $newObjBiosUEFI -Type NoteProperty -Name BiosSMBVersion -Value $BiosSMBVersion
+    Add-Member -InputObject $newObjBiosUEFI -Type NoteProperty -Name ReleaseDate -Value $ReleaseDate
+    $BiosUEFI += $newObjBiosUEFI
 
 ################################################
 ##############  ACCOUNT DETAILS  ###############
@@ -663,7 +686,6 @@ $dcList = $dcListQuery.split(",") | sort
                 $fragDomainGrps += $newObjDomainGrps   
             }
         }
-
     }
 
 ################################################
@@ -856,6 +878,8 @@ Write-Host " "
 Write-Host "Gathering Windows Update and Installed Application Information" -foregroundColor Green
 sleep 5
 
+$date180days = (Get-Date).AddDays(-180).toString("yyyyMMdd")
+
     $HotFix=@()
     $getHF = Get-HotFix -ErrorAction SilentlyContinue  | Select-Object HotFixID,InstalledOn,Caption 
 
@@ -863,12 +887,22 @@ sleep 5
     {
         $hfid = $hfitem.hotfixid
         $hfdate = $hfitem.installedon
+        $hfdate = ($hfdate).Date.ToString("yyyyMMdd")
         $hfurl = $hfitem.caption
+        $trueFalse = "True"
+
+        if ($date180days -gt $hfdate)
+            {
+                $hfdate = "Warning $($hfdate) Warning"
+                $trueFalse = "False"
+            }
 
         $newObjHF = New-Object psObject
         Add-Member -InputObject $newObjHF -Type NoteProperty -Name HotFixID -Value $hfid
-        Add-Member -InputObject $newObjHF -Type NoteProperty -Name InstalledOn -Value ($hfdate).Date.ToString("dd-MM-yyyy")
-        Add-Member -InputObject $newObjHF -Type NoteProperty -Name Caption -Value $hfurl 
+        Add-Member -InputObject $newObjHF -Type NoteProperty -Name InstalledOn -Value $hfdate
+        Add-Member -InputObject $newObjHF -Type NoteProperty -Name Caption -Value $hfurl
+        Add-Member -InputObject $newObjHF -Type NoteProperty -Name TrueIsCompliant -Value $trueFalse         
+        
         $HotFix += $newObjHF
     }
 
@@ -880,6 +914,8 @@ sleep 5
     $getUnin = $getUninx64 + $getUninx86
     $UninChild = $getUnin.Name.Replace("HKEY_LOCAL_MACHINE","HKLM:")
     $InstallApps =@()
+    $date180days = (Get-Date).AddDays(-180).toString("yyyyMMdd")
+
     
     foreach ($uninItem in  $UninChild)
     {
@@ -889,13 +925,23 @@ sleep 5
         $UninDisN = $getUninItem.DisplayName -replace "$null",""
         $UninDisVer = $getUninItem.DisplayVersion -replace "$null",""
         $UninPub = $getUninItem.Publisher -replace "$null",""
+        $UninDisIcon = ($getUninItem.DisplayIcon -replace "$null","").split(",")[0]
         $UninDate = $getUninItem.InstallDate -replace "$null",""
+        $trueFalse = "True"
+
+        if ($date180days -gt $UninDate)
+            {
+                $UninDate = "Warning $($UninDate) Warning"
+                $trueFalse = "False"
+            }
     
         $newObjInstApps = New-Object -TypeName PSObject
         Add-Member -InputObject $newObjInstApps -Type NoteProperty -Name Publisher -Value  $UninPub 
-        Add-Member -InputObject $newObjInstApps -Type NoteProperty -Name DisplayName -Value  $UninDisN
-        Add-Member -InputObject $newObjInstApps -Type NoteProperty -Name DisplayVersion -Value  $UninDisVer
-        Add-Member -InputObject $newObjInstApps -Type NoteProperty -Name InstallDate -Value   $UninDate
+        Add-Member -InputObject $newObjInstApps -Type NoteProperty -Name DisplayName -Value $UninDisN
+        Add-Member -InputObject $newObjInstApps -Type NoteProperty -Name DisplayVersion -Value $UninDisVer
+        Add-Member -InputObject $newObjInstApps -Type NoteProperty -Name DisplayIcon -Value $UninDisIcon
+        Add-Member -InputObject $newObjInstApps -Type NoteProperty -Name InstallDate -Value $UninDate
+        Add-Member -InputObject $newObjInstApps -Type NoteProperty -Name TrueIsCompliant -Value $trueFalse 
         $InstallApps += $newObjInstApps
     }
   
@@ -972,7 +1018,7 @@ sleep 5
             {
                 $newObjWinFeature = New-Object -TypeName PSObject
                 Add-Member -InputObject $newObjWinFeature -Type NoteProperty -Name WindowsFeature -Value $featureItem.DisplayName 
-                Add-Member -InputObject $newObjWinFeature -Type NoteProperty -Name InstallState -Value $featureItem.Installed
+                #Add-Member -InputObject $newObjWinFeature -Type NoteProperty -Name InstallState -Value $featureItem.Installed
                 $FragWinFeature += $newObjWinFeature
             }
         }
@@ -7901,7 +7947,6 @@ $OfficePolicies =[ordered]@{
 "Wordbypassencryptedmacroscan"="User Configuration\Policies\Administrative Templates\Microsoft Word 2016\Word Options\Security\Trust Center","Scan encrypted macros in Word Open XML documents","0","HKCU:\Software\Policies\Microsoft\Office\16.0\Word\Security","Wordbypassencryptedmacroscan"
 "woallownetworklocations"="User Configuration\Policies\Administrative Templates\Microsoft Word 2016\Word Options\Security\Trust Center\Trusted Locations","Allow Trusted Locations on the network","0","HKCU:\Software\Policies\Microsoft\Office\16.0\Word\Security\Trusted Locations","allownetworklocations"
 
-
 #excel
 "enableblockunsecurequeryfiles"="User Configuration\Policies\Administrative Templates\Microsoft Excel 2016\Excel Options\Security\Trust Center\External Content","Always prevent untrusted Microsoft Query files from opening","1","HKCU:\Software\Policies\Microsoft\Office\16.0\Excel\Security\external content","enableblockunsecurequeryfiles"
 "disableddeserverlaunch"="User Configuration\Policies\Administrative Templates\Microsoft Excel 2016\Excel Options\Security\Trust Center\External Content","Don't allow Dynamic Data Exchange (DDE) server launch in Excel","1","HKCU:\Software\Policies\Microsoft\Office\16.0\Excel\Security\external content","disableddeserverlaunch"
@@ -7965,7 +8010,6 @@ $OfficePolicies =[ordered]@{
 "powerpointbypassencryptedmacroscan"="User Configuration\Policies\Administrative Templates\Microsoft PowerPoint 2016\Powerpoint Options\Security","Scan encrypted macros in PowerPoint Open XML presentations","0","HKCU:\Software\Policies\Microsoft\Office\16.0\Powerpoint\Security","powerpointbypassencryptedmacroscan"
 "ppallownetworklocations"="User Configuration\Policies\Administrative Templates\Microsoft PowerPoint 2016\Powerpoint Options\Security\Trust Center\Trusted Locations","Allow Trusted Locations on the network","0","HKCU:\Software\Policies\Microsoft\Office\16.0\Powerpoint\Security\Trusted Locations","allownetworklocations"
 
-
 #outlook
 "authenticationservice"="User Configuration\Policies\Administrative Templates\Microsoft Outlook 2016\Account Settings\Exchange","Authentication with Exchange Server","16","HKCU:\Software\Policies\Microsoft\Office\16.0\Outlook\Security","authenticationservice"
 "enablerpcencryption"="User Configuration\Policies\Administrative Templates\Microsoft Outlook 2016\Account Settings\Exchange","Enable RPC encryption","1","HKCU:\Software\Policies\Microsoft\Office\16.0\Outlook\rpc","enablerpcencryption"
@@ -7995,20 +8039,17 @@ $OfficePolicies =[ordered]@{
 "junkmailenablelinks"="User Configuration\Policies\Administrative Templates\Microsoft Outlook 2016\Security\Trust Center","Allow hyperlinks in suspected phishing e-mail messages","0","HKCU:\Software\Policies\Microsoft\Office\16.0\Outlook\options\mail","junkmailenablelinks"
 "level"="User Configuration\Policies\Administrative Templates\Microsoft Outlook 2016\Security\Trust Center","Security setting for macros","3","HKCU:\Software\Policies\Microsoft\Office\16.0\Outlook\Security","level"
 
-
 #publisher
 "puvbawarnings"="User Configuration\Policies\Administrative Templates\Microsoft Publisher 2016\Security\Trust Center","VBA Macro Notification Settings","3","HKCU:\Software\Policies\Microsoft\Office\16.0\publisher\Security","vbawarnings"
 "punotbpromptunsignedaddin"="User Configuration\Policies\Administrative Templates\Microsoft Publisher 2016\Security\Trust Center","Disable Trust Bar Notification for unsigned application add-ins","1","HKCU:\Software\Policies\Microsoft\Office\16.0\publisher\Security","notbpromptunsignedaddin"
 "purequireaddinsig"="User Configuration\Policies\Administrative Templates\Microsoft Publisher 2016\Security\Trust Center","Require that application add-ins are signed by Trusted Publisher","1","HKCU:\Software\Policies\Microsoft\office\16.0\publisher\security","requireaddinsig"
 "puautomationsecuritypublisher"="User Configuration\Policies\Administrative Templates\Microsoft Publisher 2016\Security","Publisher Automation Security Level","2","HKCU:\Software\Policies\Microsoft\Office\Common\Security","automationsecuritypublisher"
 
-
 #Project
 "prvbawarnings"="User Configuration\Policies\Administrative Templates\Microsoft Project 2016\Project Options\Security\Trust Center","VBA Macro Notification Settings","3","HKCU:\Software\Policies\Microsoft\Office\16.0\MS Project\Security","vbawarnings"
 "prnotbpromptunsignedaddin"="User Configuration\Policies\Administrative Templates\Microsoft Project 2016\Project Options\Security\Trust Center","Disable Trust Bar Notification for unsigned application add-ins and block them","1","HKCU:\Software\Policies\Microsoft\Office\16.0\MS Project\Security","notbpromptunsignedaddin"
 "prrequireaddinsig"="User Configuration\Policies\Administrative Templates\Microsoft Project 2016\Project Options\Security\Trust Center","Require that application add-ins are signed by Trusted Publisher","1","HKCU:\Software\Policies\Microsoft\Office\16.0\MS Project\Security","requireaddinsig"
 "prallownetworklocations"="User Configuration\Policies\Administrative Templates\Microsoft Project 2016\Project Options\Security\Trust Center","Allow Trusted Locations on the network","0","HKCU:\Software\Policies\Microsoft\Office\16.0\MS Project\Security\Trusted Locations","allownetworklocations"
-
 
 #visio
 "viblockcontentexecutionfrominternet"="User Configuration\Policies\Administrative Templates\Microsoft Visio 2016\Visio Options\Security\Trust Center","Block macros from running in Office files from the Internet","1","HKCU:\Software\Policies\Microsoft\Office\16.0\Visio\Security","blockcontentexecutionfrominternet"
@@ -8091,6 +8132,30 @@ foreach ($OfficePolItems in $OfficePolicies.values)
 ################################################
 #################  SUMMARY  ####################
 ################################################
+   if ($BiosUEFI -like "*warning*")
+   {
+       $newObjSummary = New-Object psObject
+       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value '<a href="#BiosUEFI">Out of date BIOS or UEFI</a>'
+       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Risk -Value "High Risk"
+       $fragSummary += $newObjSummary
+   }
+
+   if ($HotFix -like "*warning*")
+   {
+       $newObjSummary = New-Object psObject
+       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value '<a href="#Hotfix">Windows Updates are out of date</a>'
+       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Risk -Value "High Risk"
+       $fragSummary += $newObjSummary
+   }
+
+   if ($fragInstaApps -like "*warning*")
+   {
+       $newObjSummary = New-Object psObject
+       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value '<a href="#InstalledApps">Out of date Applications</a>'
+       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Risk -Value "High Risk"
+       $fragSummary += $newObjSummary
+   }
+    
     if ($MsinfoClixml -eq $null)
     {
        $newObjSummary = New-Object psObject
@@ -8260,7 +8325,7 @@ foreach ($OfficePolItems in $OfficePolicies.values)
        Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Risk -Value "Medium Risk"
        $fragSummary += $newObjSummary
    }
-
+   
    if ($fragUnQuoted -like "*warning*")
    {
        $newObjSummary = New-Object psObject
@@ -9122,10 +9187,10 @@ $style = @"
 ##########  HELPS AND DESCRIPTIONS  ############
 ################################################
 
-    $Intro = "Thanks for using the vulnerability report written by Tenaka.net, please show your support and visit my site, it's non-profit and Ad-free. <br> <br>Any issues with the report's accuracy please do let me know and I'll get it fixed asap. The results in this report are a guide and not a guarantee that the tested system is not without further defects or vulnerability. <br>
-    <br>The tests focus on known and common issues with Windows that can be exploited by an attacker. Each section contains a small snippet to provide some context, follow the links for further detail. <br> <br>Further support for the output can be found @ https://www.tenaka.net/windowsclient-vulnscanner<br>"
+    $Intro = "Thanks for using the vulnerability report written by Tenaka.net, please show your support and visit my site, it's non-profit and Ad-free. <br> <br>Any issues with the report's accuracy please do let me know and I'll get it fixed asap. The results in this report are a guide and not a guarantee that the tested system is not without further defects or vulnerability.<br>
+    <br>The tests focus on known and common issues with Windows that can be exploited by an attacker. Each section contains a small snippet to provide some context, follow the links for further detail.<br><br>The html output can be imported into Excel for further analysis and uses the True and False values as a drop-down filter.<br>Open Excel, Data, Import from Web. Enter the file path in the following format file:///C:/SecureReport/NameOfReport.htm, then Select multiple items and click on Load and select 'Load To', click on Table.<br><br>Further support for this report can be found @ https://www.tenaka.net/windowsclient-vulnscanner"
 
-    $Intro2 = "The results in this report are a guide and not a guarantee that the tested system is not without further defect or vulnerability. <br>The tests focus on known and common issues with Windows that can be exploited by an attacker. Each section contains a small snippet to provide some context, follow the links for further detail.<br>"
+    #$Intro2 = "The results in this report are a guide and not a guarantee that the tested system is not without further defect or vulnerability.<br>The tests focus on known and common issues with Windows that can be exploited by an attacker. Each section contains a small snippet to provide some context, follow the links for further detail.<br><br>The html output can be imported into Excel for further analysis and uses the True and False values as a drop-down filter.<br><br>Open Excel, Data, Import from Web. Enter the file path in the following format file:///C:/SecureReport/NameOfReport.htm, then Select multiple items and click on Load and select 'Load To', click on Table.<br>"
 
     $Finish = "This script has been provided by Tenaka.net, if it's beneficial, please provide feedback and any additional feature requests gratefully received. "
 
@@ -9195,7 +9260,7 @@ $style = @"
 
     $descripLocalAccounts = "Local accounts should be disabled when the client or server is part of a Domain. LAPS should be deployed to ensure all local account passwords are unique"
 
-    $descripWindowsOS = "These are recommended GPO settings to secure Windows by Microsoft, do NOT implement without the correct research and testing. Some settings could adversely affect your system.<br> <br>Due to the sheer number of settings, the script contains details and the equivalent GPO settings, search for RECOMMENDED SECURITY SETTINGS section<br><br>MS Security Compliance Toolkit can be found @ <br>https://admx.help/?Category=security-compliance-toolkit<br>https://www.microsoft.com/en-us/download/details.aspx?id=55319<br><br>**WindowsRegValue - Mouse over to show Reg Key to GPO path translation" 
+    $descripWindowsOS = "Warning: Absence of a GPO setting will raise an issue as the default setting is not assumed<br>These are recommended GPO settings to secure Windows by Microsoft, do NOT implement without the correct research and testing. Some settings could adversely affect your system.<br> <br>Due to the sheer number of settings, the script contains details and the equivalent GPO settings, search for RECOMMENDED SECURITY SETTINGS section<br><br>MS Security Compliance Toolkit can be found @ <br>https://admx.help/?Category=security-compliance-toolkit<br>https://www.microsoft.com/en-us/download/details.aspx?id=55319<br><br>**WindowsRegValue - Mouse over to show Reg Key to GPO path translation" 
 
     $descripOffice2016 = "These are recommended GPO settings to secure Office 2016-365 by Microsoft, do NOT implement without the correct research and testing. Some settings could adversely affect your system.<br> Its recommended that Attack Surface Reduction (ASR) is enabled but requires Windows Defender Real-Time Antivirus and works in conjunction with Exploit Guard to prevent malware abusing legitimate MS Office functionality"
 
@@ -9209,13 +9274,19 @@ $style = @"
 
     $descripKernelMode = "Enabed with Windwos 11 22H2 - For code running in kernel mode, the CPU confirms requested return addresses with a second copy of the address stored in the shadow stack to prevent attackers from substituting an address that runs malicious code. Not all drivers are compatiable with this security feature. More information can be found here @<br><br>https://techcommunity.microsoft.com/t5/windows-os-platform-blog/understanding-hardware-enforced-stack-protection/ba-p/1247815"
 
+    $descripInstalledApps = "Will assume any installed program older than 6 months is out of date"
+
+    $descripBios = "Will assume any UEFI\BIOS is out of date if its older than 6 months"
+
+    $descripWinUpdates = "Will assume any Windows Updates are out of date if older than 6 months"
+
 ################################################
 ################  FRAGMENTS  ###################
 ################################################
   
     #Top and Tail
     $FragDescrip1 =  $Descrip1 | ConvertTo-Html -as table -Fragment -PreContent "<h3><span style=font-family:$font;>$Intro</span></h3>" | Out-String
-    $FragDescrip2 =  $Descrip2 | ConvertTo-Html -as table -Fragment -PreContent "<h3><span style=font-family:$font;>$Intro2</span></h3>" | Out-String
+    #$FragDescrip2 =  $Descrip2 | ConvertTo-Html -as table -Fragment -PreContent "<h3><span style=font-family:$font;>$Intro2</span></h3>" | Out-String
     $FragDescripFin =  $DescripFin | ConvertTo-Html -as table -Fragment -PreContent "<h3><span style=font-family:$font;>$Finish</span></h3>" | Out-String
     $Frag_descripVirt2 = ConvertTo-Html -as table -Fragment -PostContent "<h4>$descripVirt2</h4>" | Out-String
     
@@ -9233,10 +9304,10 @@ $style = @"
     $frag_NeverExpires = $fragNeverExpires | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"PassExpire`"><a href=`"#TOP`">Domain Accounts that Never Expire their Password</a></span></h2>"  | Out-String
     $FragGroupDetails =  $GroupDetails  | ConvertTo-Html -As Table -fragment -PreContent "<h2>Local System Group Members</span></h2>" | Out-String
     $FragPassPol = $PassPol | Select-Object -SkipLast 3 | ConvertTo-Html -As Table -fragment -PreContent "<h2>Local Password Policy</span></h2>" | Out-String
-    $fragInstaApps  =  $InstallApps | Sort-Object publisher,displayname -Unique  | ConvertTo-Html -As Table  -fragment -PreContent "<h2>Installed Applications</span></h2>" | Out-String
-    $fragHotFix = $HotFix | ConvertTo-Html -As Table -property HotFixID,InstalledOn,Caption -fragment -PreContent "<h2>Latest 10 Installed Updates</span></h2>" | Out-String
+    $fragInstaApps  =  $InstallApps | Sort-Object publisher,displayname -Unique  | ConvertTo-Html -As Table  -fragment -PreContent "<h2><a name=`"InstalledApps`"><a href=`"#TOP`">Installed Applications</a></span></h2>" -PostContent "<h4>$descripInstalledApps</h4>" | Out-String
+    $fragHotFix = $HotFix | ConvertTo-Html -As Table -property HotFixID,InstalledOn,Caption -fragment -PreContent "<h2><a name=`"Hotfix`"><a href=`"#TOP`">Installed Windows Updates</a></span></h2>" -PostContent "<h4>$descripWinUpdates</h4>"| Out-String   
     $fragInstaApps16  =  $InstallApps16 | Sort-Object publisher,displayname -Unique  | ConvertTo-Html -As Table  -fragment -PreContent "<h2>Updates to Office 2016 and older or Updates that create KB's in the Registry</span></h2>" | Out-String
-    $fragBios = $bios | ConvertTo-Html -As List -property Name,Manufacturer,SerialNumber,SMBIOSBIOSVersion,ReleaseDate -fragment -PreContent "<h2>Bios Details</span></h2>" | Out-String
+    $fragBios = $BiosUEFI | ConvertTo-Html -As List -fragment -PreContent "<h2><a name=`"BiosUEFI`"><a href=`"#TOP`">Bios Details</a></span></h2>" -PostContent "<h4>$descripBios</h4>"| Out-String
     $fragCpu = $cpu | ConvertTo-Html -As List -property Name,MaxClockSpeed,NumberOfCores,ThreadCount -fragment -PreContent "<h2>Processor Details</span></h2>" | Out-String
     $frag_whoamiGroups =  $whoamiGroups | ConvertTo-Html -As Table -fragment -PreContent "<h2>Current Users Group Membership</span></h2>" -PostContent "<h4>$descripDomainGroups</h4>" | Out-String
     $frag_whoamiPriv =  $whoamiPriv | ConvertTo-Html -As Table -fragment -PreContent "<h2>Current Users Local Privileges</span></h2>" -PostContent "<h4>$descripDomainPrivs</h4>" | Out-String
@@ -9248,7 +9319,6 @@ $style = @"
     $Frag_AVStatus = $FragAVStatus | ConvertTo-Html -As Table  -fragment -PreContent "<h2><a name=`"AV`"><a href=`"#TOP`">AntiVirus Engine and Definition Status</a></span></h2>" -PostContent "<h4>$descripAV</h4>" | Out-String
     $frag_BitLocker = $fragBitLocker | ConvertTo-Html -As List -fragment -PreContent "<h2><a name=`"Bitlockerisnotenabled`"><a href=`"#TOP`">Bitlocker and TPM Details</a></span></h2>" -PostContent "<h4>$descripBitlocker</h4>" | Out-String
     $frag_Msinfo = $MsinfoClixml | ConvertTo-Html -As Table -fragment -PreContent "<h2><a name=`"VBS`"><a href=`"#TOP`">Virtualization and Secure Boot Details</a></span></h2>" -PostContent "<h4>$descripVirt</h4>"  | Out-String
-    
     $frag_kernelModeVal = $fragkernelModeVal | ConvertTo-Html -As Table -fragment -PreContent "<h2><a name=`"KernelMode`"><a href=`"#TOP`">Kernel-mode Hardware-enforced Stack Protection</a></span></h2>" -PostContent "<h4>$descripKernelMode</h4>"  | Out-String
     $frag_LSAPPL = $fragLSAPPL | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"LSA`"><a href=`"#TOP`">LSA Protection for Stored Credentials</a></span></h2>" -PostContent "<h4>$descripLSA</h4>" | Out-String
     $frag_DLLSafe = $fragDLLSafe | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"DLLSafe`"><a href=`"#TOP`">DLL Safe Search Order</a></span></h2>"  -PostContent "<h4>$descripDLL</h4>"| Out-String
@@ -9588,6 +9658,13 @@ DNS
 Auditing Wec\wef - remote collection point
 Interesting events
 wevtutil "Microsoft-Windows-Wcmsvc/Operational"
+Add Applocker audit
+Add WDAC audit
+File hash database
+Performance tweaks audit client and hyper v
+warn on stuff thats older than 6 months - apps, updates etc
+Warn Bios\uefi version and date
+
 
 remove powershell commands where performance is an issue, consider replacing with cmd alts
 
