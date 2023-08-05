@@ -328,6 +328,7 @@ YYMMDD
 230803.1 - Updated BIOS to warn when installed date is more than 6 months. 
 230804.1 - Updated looks and feel of report.
 230804.2 - Updated Windows Updates to alert when they are more than 6 months out of date.
+230805.1 - Updated Windows, Office and Edge GPO settings to distinguish between GPO not set and default setting apply and incorrectly set.
 #>
 
 #Remove any DVD from client
@@ -3899,6 +3900,8 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
         $trueFalse = "False"
     }
 
+     if ([string]::IsNullorEmpty($getWindowsOSVal) -eq $true){$WindowsOSSet = "DefaultGPO $WindowsOSDescrip is not explicitly set in GPO and the default setting is applied DefaultGPO"}
+
     $newObjWindowsOS = New-Object -TypeName PSObject
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsSetting -Value  $WindowsOSSet
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsRegValue -Value $WindowsOSReg
@@ -3936,6 +3939,8 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
         $trueFalse = "False"
     }
+
+     if ([string]::IsNullorEmpty($getWindowsOSVal) -eq $true){$WindowsOSSet = "DefaultGPO $WindowsOSDescrip is not explicitly set in GPO and the default setting is applied DefaultGPO"}
 
     $newObjWindowsOS = New-Object -TypeName PSObject
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsSetting -Value  $WindowsOSSet
@@ -3977,6 +3982,8 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
         $trueFalse = "True"
     }
 
+     if ([string]::IsNullorEmpty($getWindowsOSVal) -eq $true){$WindowsOSSet = "DefaultGPO $WindowsOSDescrip is not explicitly set in GPO and the default setting is applied DefaultGPO"}
+
     $newObjWindowsOS = New-Object -TypeName PSObject
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsSetting  -Value $WindowsOSSet
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsRegValue -Value $WindowsOSReg 
@@ -4017,6 +4024,8 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
         $trueFalse = "True"
     }
 
+    if ([string]::IsNullorEmpty($getWindowsOSVal) -eq $true){$WindowsOSSet = "DefaultGPO $WindowsOSDescrip is not explicitly set in GPO and the default setting is applied DefaultGPO"}
+
     $newObjWindowsOS = New-Object -TypeName PSObject
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsSetting -Value  $WindowsOSSet
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsRegValue -Value $WindowsOSReg 
@@ -4055,6 +4064,8 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
         $trueFalse = "False"
     }
+
+    if ([string]::IsNullorEmpty($getWindowsOSVal) -eq $true){$WindowsOSSet = "DefaultGPO $WindowsOSDescrip is not explicitly set in GPO and the default setting is applied DefaultGPO"}
 
     $newObjWindowsOS = New-Object -TypeName PSObject
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsSetting -Value  $WindowsOSSet
@@ -4098,6 +4109,8 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
         $trueFalse = "False"
     }
 
+    if ([string]::IsNullorEmpty($getWindowsOSVal) -eq $true){$WindowsOSSet = "DefaultGPO $WindowsOSDescrip is not explicitly set in GPO and the default setting is applied DefaultGPO"}
+
     $newObjWindowsOS = New-Object -TypeName PSObject
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsSetting -Value  $WindowsOSSet
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsRegValue -Value $WindowsOSReg 
@@ -4136,6 +4149,8 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
         $trueFalse = "False"
     }
+
+    if ([string]::IsNullorEmpty($getWindowsOSVal) -eq $true){$WindowsOSSet = "DefaultGPO $WindowsOSDescrip is not explicitly set in GPO and the default setting is applied DefaultGPO"}
 
     $newObjWindowsOS = New-Object -TypeName PSObject
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsSetting -Value  $WindowsOSSet
@@ -4177,6 +4192,8 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
         $trueFalse = "False"
     }
 
+    if ([string]::IsNullorEmpty($getWindowsOSVal) -eq $true){$WindowsOSSet = "DefaultGPO $WindowsOSDescrip is not explicitly set in GPO and the default setting is applied DefaultGPO"}
+
     $newObjWindowsOS = New-Object -TypeName PSObject
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsSetting -Value  $WindowsOSSet
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsRegValue -Value $WindowsOSReg 
@@ -4215,6 +4232,8 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
         $trueFalse = "False"
     }
 
+    if ([string]::IsNullorEmpty($getWindowsOSVal) -eq $true){$WindowsOSSet = "DefaultGPO $WindowsOSDescrip is not explicitly set in GPO and the default setting is applied DefaultGPO"}
+
     $newObjWindowsOS = New-Object -TypeName PSObject
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsSetting -Value  $WindowsOSSet
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsRegValue -Value $WindowsOSReg 
@@ -4249,6 +4268,8 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
         $trueFalse = "False"
     }
+
+    if ([string]::IsNullorEmpty($getWindowsOSVal) -eq $true){$WindowsOSSet = "DefaultGPO $WindowsOSDescrip is not explicitly set in GPO and the default setting is applied DefaultGPO"}
 
     $newObjWindowsOS = New-Object -TypeName PSObject
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsSetting -Value  $WindowsOSSet
@@ -4292,6 +4313,8 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
         $trueFalse = "False"
     }
 
+    if ([string]::IsNullorEmpty($getWindowsOSVal) -eq $true){$WindowsOSSet = "DefaultGPO $WindowsOSDescrip is not explicitly set in GPO and the default setting is applied DefaultGPO"}
+
     $newObjWindowsOS = New-Object -TypeName PSObject
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsSetting -Value  $WindowsOSSet
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsRegValue -Value $WindowsOSReg 
@@ -4326,6 +4349,8 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
         $trueFalse = "False"
     }
+
+    if ([string]::IsNullorEmpty($getWindowsOSVal) -eq $true){$WindowsOSSet = "DefaultGPO $WindowsOSDescrip is not explicitly set in GPO and the default setting is applied DefaultGPO"}
 
     $newObjWindowsOS = New-Object -TypeName PSObject
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsSetting -Value  $WindowsOSSet
@@ -4362,6 +4387,8 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
         $trueFalse = "False"
     }
 
+    if ([string]::IsNullorEmpty($getWindowsOSVal) -eq $true){$WindowsOSSet = "DefaultGPO $WindowsOSDescrip is not explicitly set in GPO and the default setting is applied DefaultGPO"}
+
     $newObjWindowsOS = New-Object -TypeName PSObject
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsSetting -Value  $WindowsOSSet
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsRegValue -Value $WindowsOSReg 
@@ -4395,6 +4422,8 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
         $trueFalse = "False"
     }
+
+    if ([string]::IsNullorEmpty($getWindowsOSVal) -eq $true){$WindowsOSSet = "DefaultGPO $WindowsOSDescrip is not explicitly set in GPO and the default setting is applied DefaultGPO"}
 
     $newObjWindowsOS = New-Object -TypeName PSObject
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsSetting -Value  $WindowsOSSet
@@ -4430,12 +4459,13 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
         $trueFalse = "False"
     }
 
+    if ([string]::IsNullorEmpty($getWindowsOSVal) -eq $true){$WindowsOSSet = "DefaultGPO $WindowsOSDescrip is not explicitly set in GPO and the default setting is applied DefaultGPO"}
+
     $newObjWindowsOS = New-Object -TypeName PSObject
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsSetting -Value  $WindowsOSSet
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsRegValue -Value $WindowsOSReg 
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name TrueIsCompliant -Value $trueFalse
     $fragWindowsOSVal += $newObjWindowsOS
-
 
     <#
     Screen saver timeout
@@ -4464,6 +4494,8 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
         $trueFalse = "False"
     }
+
+    if ([string]::IsNullorEmpty($getWindowsOSVal) -eq $true){$WindowsOSSet = "DefaultGPO $WindowsOSDescrip is not explicitly set in GPO and the default setting is applied DefaultGPO"}
 
     $newObjWindowsOS = New-Object -TypeName PSObject
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsSetting -Value  $WindowsOSSet
@@ -4500,6 +4532,8 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
         $trueFalse = "False"
     }
 
+    if ([string]::IsNullorEmpty($getWindowsOSVal) -eq $true){$WindowsOSSet = "DefaultGPO $WindowsOSDescrip is not explicitly set in GPO and the default setting is applied DefaultGPO"}
+
     $newObjWindowsOS = New-Object -TypeName PSObject
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsSetting -Value  $WindowsOSSet
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsRegValue -Value $WindowsOSReg 
@@ -4535,6 +4569,8 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
         $trueFalse = "False"
     }
 
+    if ([string]::IsNullorEmpty($getWindowsOSVal) -eq $true){$WindowsOSSet = "DefaultGPO $WindowsOSDescrip is not explicitly set in GPO and the default setting is applied DefaultGPO"}
+
     $newObjWindowsOS = New-Object -TypeName PSObject
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsSetting -Value  $WindowsOSSet
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsRegValue -Value $WindowsOSReg 
@@ -4568,6 +4604,8 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
         $trueFalse = "False"
     }
+
+    if ([string]::IsNullorEmpty($getWindowsOSVal) -eq $true){$WindowsOSSet = "DefaultGPO $WindowsOSDescrip is not explicitly set in GPO and the default setting is applied DefaultGPO"}
 
     $newObjWindowsOS = New-Object -TypeName PSObject
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsSetting -Value  $WindowsOSSet
@@ -4603,13 +4641,13 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
         $trueFalse = "False"
     }
 
+    if ([string]::IsNullorEmpty($getWindowsOSVal) -eq $true){$WindowsOSSet = "DefaultGPO $WindowsOSDescrip is not explicitly set in GPO and the default setting is applied DefaultGPO"}
+
     $newObjWindowsOS = New-Object -TypeName PSObject
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsSetting -Value  $WindowsOSSet
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsRegValue -Value $WindowsOSReg 
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name TrueIsCompliant -Value $trueFalse
     $fragWindowsOSVal += $newObjWindowsOS
-
-
 
     <#
     Prevent users from sharing files within their profile.
@@ -4642,6 +4680,8 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
         $trueFalse = "False"
     }
+
+    if ([string]::IsNullorEmpty($getWindowsOSVal) -eq $true){$WindowsOSSet = "DefaultGPO $WindowsOSDescrip is not explicitly set in GPO and the default setting is applied DefaultGPO"}
 
     $newObjWindowsOS = New-Object -TypeName PSObject
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsSetting -Value  $WindowsOSSet
@@ -4685,6 +4725,8 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
         $trueFalse = "False"
     }
 
+    if ([string]::IsNullorEmpty($getWindowsOSVal) -eq $true){$WindowsOSSet = "DefaultGPO $WindowsOSDescrip is not explicitly set in GPO and the default setting is applied DefaultGPO"}
+
     $newObjWindowsOS = New-Object -TypeName PSObject
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsSetting -Value  $WindowsOSSet
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsRegValue -Value $WindowsOSReg 
@@ -4723,6 +4765,8 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
         $trueFalse = "False"
     }
+
+    if ([string]::IsNullorEmpty($getWindowsOSVal) -eq $true){$WindowsOSSet = "DefaultGPO $WindowsOSDescrip is not explicitly set in GPO and the default setting is applied DefaultGPO"}
 
     $newObjWindowsOS = New-Object -TypeName PSObject
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsSetting -Value  $WindowsOSSet
@@ -4763,6 +4807,8 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
         $trueFalse = "False"
     }
 
+    if ([string]::IsNullorEmpty($getWindowsOSVal) -eq $true){$WindowsOSSet = "DefaultGPO $WindowsOSDescrip is not explicitly set in GPO and the default setting is applied DefaultGPO"}
+
     $newObjWindowsOS = New-Object -TypeName PSObject
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsSetting -Value  $WindowsOSSet
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsRegValue -Value $WindowsOSReg
@@ -4798,6 +4844,8 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
         $trueFalse = "False"
     }
+
+    if ([string]::IsNullorEmpty($getWindowsOSVal) -eq $true){$WindowsOSSet = "DefaultGPO $WindowsOSDescrip is not explicitly set in GPO and the default setting is applied DefaultGPO"}
 
     $newObjWindowsOS = New-Object -TypeName PSObject
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsSetting -Value  $WindowsOSSet
@@ -4845,6 +4893,8 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
         $trueFalse = "False"
     }
 
+    if ([string]::IsNullorEmpty($getWindowsOSVal) -eq $true){$WindowsOSSet = "DefaultGPO $WindowsOSDescrip is not explicitly set in GPO and the default setting is applied DefaultGPO"}
+
     $newObjWindowsOS = New-Object -TypeName PSObject
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsSetting -Value  $WindowsOSSet
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsRegValue -Value $WindowsOSReg 
@@ -4887,6 +4937,8 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
         $trueFalse = "False"
     }
+
+    if ([string]::IsNullorEmpty($getWindowsOSVal) -eq $true){$WindowsOSSet = "DefaultGPO $WindowsOSDescrip is not explicitly set in GPO and the default setting is applied DefaultGPO"}
 
     $newObjWindowsOS = New-Object -TypeName PSObject
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsSetting -Value  $WindowsOSSet
@@ -4937,6 +4989,8 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
         $trueFalse = "False"
     }
 
+    if ([string]::IsNullorEmpty($getWindowsOSVal) -eq $true){$WindowsOSSet = "DefaultGPO $WindowsOSDescrip is not explicitly set in GPO and the default setting is applied DefaultGPO"}
+
     $newObjWindowsOS = New-Object -TypeName PSObject
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsSetting -Value  $WindowsOSSet
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsRegValue -Value $WindowsOSReg 
@@ -4969,6 +5023,8 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
         $WindowsOSSet = "Warning $WindowsOSDescrip disabled warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
     }
+
+    if ([string]::IsNullorEmpty($getWindowsOSVal) -eq $true){$WindowsOSSet = "DefaultGPO $WindowsOSDescrip is not explicitly set in GPO and the default setting is applied DefaultGPO"}
 
     $newObjWindowsOS = New-Object -TypeName PSObject
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsSetting -Value  $WindowsOSSet
@@ -5012,6 +5068,8 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
         $trueFalse = "False"
     }
+
+    if ([string]::IsNullorEmpty($getWindowsOSVal) -eq $true){$WindowsOSSet = "DefaultGPO $WindowsOSDescrip is not explicitly set in GPO and the default setting is applied DefaultGPO"}
 
     $newObjWindowsOS = New-Object -TypeName PSObject
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsSetting -Value  $WindowsOSSet
@@ -5066,6 +5124,8 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
         $trueFalse = "False"
     }
 
+    if ([string]::IsNullorEmpty($getWindowsOSVal) -eq $true){$WindowsOSSet = "DefaultGPO $WindowsOSDescrip is not explicitly set in GPO and the default setting is applied DefaultGPO"}
+
     $newObjWindowsOS = New-Object -TypeName PSObject
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsSetting -Value  $WindowsOSSet
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsRegValue -Value $WindowsOSReg 
@@ -5115,6 +5175,8 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
         $trueFalse = "False"
     }
 
+    if ([string]::IsNullorEmpty($getWindowsOSVal) -eq $true){$WindowsOSSet = "DefaultGPO $WindowsOSDescrip is not explicitly set in GPO and the default setting is applied DefaultGPO"}
+
     $newObjWindowsOS = New-Object -TypeName PSObject
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsSetting -Value  $WindowsOSSet
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsRegValue -Value $WindowsOSReg 
@@ -5155,6 +5217,8 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
         $trueFalse = "False"
     }
 
+    if ([string]::IsNullorEmpty($getWindowsOSVal) -eq $true){$WindowsOSSet = "DefaultGPO $WindowsOSDescrip is not explicitly set in GPO and the default setting is applied DefaultGPO"}
+
     $newObjWindowsOS = New-Object -TypeName PSObject
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsSetting -Value  $WindowsOSSet
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsRegValue -Value $WindowsOSReg 
@@ -5193,6 +5257,8 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
         $trueFalse = "False"
     }
+
+    if ([string]::IsNullorEmpty($getWindowsOSVal) -eq $true){$WindowsOSSet = "DefaultGPO $WindowsOSDescrip is not explicitly set in GPO and the default setting is applied DefaultGPO"}
 
     $newObjWindowsOS = New-Object -TypeName PSObject
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsSetting -Value  $WindowsOSSet
@@ -5234,6 +5300,8 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
         $trueFalse = "False"
     }
 
+    if ([string]::IsNullorEmpty($getWindowsOSVal) -eq $true){$WindowsOSSet = "DefaultGPO $WindowsOSDescrip is not explicitly set in GPO and the default setting is applied DefaultGPO"}
+
     $newObjWindowsOS = New-Object -TypeName PSObject
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsSetting -Value  $WindowsOSSet
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsRegValue -Value $WindowsOSReg 
@@ -5273,6 +5341,8 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
         $trueFalse = "False"
     }
+
+    if ([string]::IsNullorEmpty($getWindowsOSVal) -eq $true){$WindowsOSSet = "DefaultGPO $WindowsOSDescrip is not explicitly set in GPO and the default setting is applied DefaultGPO"}
 
     $newObjWindowsOS = New-Object -TypeName PSObject
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsSetting -Value  $WindowsOSSet
@@ -5314,6 +5384,8 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
         $trueFalse = "False"
     }
 
+    if ([string]::IsNullorEmpty($getWindowsOSVal) -eq $true){$WindowsOSSet = "DefaultGPO $WindowsOSDescrip is not explicitly set in GPO and the default setting is applied DefaultGPO"}
+
     $newObjWindowsOS = New-Object -TypeName PSObject
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsSetting -Value  $WindowsOSSet
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsRegValue -Value $WindowsOSReg 
@@ -5351,6 +5423,8 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
         $trueFalse = "False"
     }
+
+    if ([string]::IsNullorEmpty($getWindowsOSVal) -eq $true){$WindowsOSSet = "DefaultGPO $WindowsOSDescrip is not explicitly set in GPO and the default setting is applied DefaultGPO"}
 
     $newObjWindowsOS = New-Object -TypeName PSObject
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsSetting -Value  $WindowsOSSet
@@ -5393,6 +5467,8 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
         $WindowsOSSet = "$WindowsOSDescrip is disabled" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
     }
+
+    if ([string]::IsNullorEmpty($getWindowsOSVal) -eq $true){$WindowsOSSet = "DefaultGPO $WindowsOSDescrip is not explicitly set in GPO and the default setting is applied DefaultGPO"}
 
     $newObjWindowsOS = New-Object -TypeName PSObject
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsSetting -Value  $WindowsOSSet
@@ -5438,6 +5514,8 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
         $trueFalse = "False"
     }
 
+    if ([string]::IsNullorEmpty($getWindowsOSVal) -eq $true){$WindowsOSSet = "DefaultGPO $WindowsOSDescrip is not explicitly set in GPO and the default setting is applied DefaultGPO"}
+
     $newObjWindowsOS = New-Object -TypeName PSObject
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsSetting -Value  $WindowsOSSet
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsRegValue -Value $WindowsOSReg 
@@ -5480,6 +5558,8 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
         $WindowsOSSet = "Warning $WindowsOSDescrip is disabled Warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
     }
+
+    if ([string]::IsNullorEmpty($getWindowsOSVal) -eq $true){$WindowsOSSet = "DefaultGPO $WindowsOSDescrip is not explicitly set in GPO and the default setting is applied DefaultGPO"}
 
     $newObjWindowsOS = New-Object -TypeName PSObject
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsSetting -Value  $WindowsOSSet
@@ -5525,6 +5605,8 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
         $trueFalse = "False"
     }
 
+    if ([string]::IsNullorEmpty($getWindowsOSVal) -eq $true){$WindowsOSSet = "DefaultGPO $WindowsOSDescrip is not explicitly set in GPO and the default setting is applied DefaultGPO"}
+
     $newObjWindowsOS = New-Object -TypeName PSObject
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsSetting -Value  $WindowsOSSet
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsRegValue -Value $WindowsOSReg 
@@ -5562,6 +5644,8 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
         $trueFalse = "False"
     }
+
+    if ([string]::IsNullorEmpty($getWindowsOSVal) -eq $true){$WindowsOSSet = "DefaultGPO $WindowsOSDescrip is not explicitly set in GPO and the default setting is applied DefaultGPO"}
 
     $newObjWindowsOS = New-Object -TypeName PSObject
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsSetting -Value  $WindowsOSSet
@@ -5607,6 +5691,8 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
         $trueFalse = "False"
     }
 
+    if ([string]::IsNullorEmpty($getWindowsOSVal) -eq $true){$WindowsOSSet = "DefaultGPO $WindowsOSDescrip is not explicitly set in GPO and the default setting is applied DefaultGPO"}
+
     $newObjWindowsOS = New-Object -TypeName PSObject
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsSetting -Value  $WindowsOSSet
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsRegValue -Value $WindowsOSReg 
@@ -5650,6 +5736,8 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
         $trueFalse = "False"
     }
 
+    if ([string]::IsNullorEmpty($getWindowsOSVal) -eq $true){$WindowsOSSet = "DefaultGPO $WindowsOSDescrip is not explicitly set in GPO and the default setting is applied DefaultGPO"}
+
     $newObjWindowsOS = New-Object -TypeName PSObject
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsSetting -Value  $WindowsOSSet
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsRegValue -Value $WindowsOSReg 
@@ -5683,6 +5771,8 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
         $trueFalse = "False"
     }
+
+    if ([string]::IsNullorEmpty($getWindowsOSVal) -eq $true){$WindowsOSSet = "DefaultGPO $WindowsOSDescrip is not explicitly set in GPO and the default setting is applied DefaultGPO"}
 
     $newObjWindowsOS = New-Object -TypeName PSObject
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsSetting -Value  $WindowsOSSet
@@ -5720,6 +5810,8 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
         $trueFalse = "False"
     }
 
+    if ([string]::IsNullorEmpty($getWindowsOSVal) -eq $true){$WindowsOSSet = "DefaultGPO $WindowsOSDescrip is not explicitly set in GPO and the default setting is applied DefaultGPO"}
+
     $newObjWindowsOS = New-Object -TypeName PSObject
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsSetting -Value  $WindowsOSSet
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsRegValue -Value $WindowsOSReg 
@@ -5753,6 +5845,8 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
         $trueFalse = "False"
     }
+
+    if ([string]::IsNullorEmpty($getWindowsOSVal) -eq $true){$WindowsOSSet = "DefaultGPO $WindowsOSDescrip is not explicitly set in GPO and the default setting is applied DefaultGPO"}
 
     $newObjWindowsOS = New-Object -TypeName PSObject
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsSetting -Value  $WindowsOSSet
@@ -5788,6 +5882,8 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
     }
 
+    if ([string]::IsNullorEmpty($getWindowsOSVal) -eq $true){$WindowsOSSet = "DefaultGPO $WindowsOSDescrip is not explicitly set in GPO and the default setting is applied DefaultGPO"}
+
     $newObjWindowsOS = New-Object -TypeName PSObject
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsSetting -Value  $WindowsOSSet
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsRegValue -Value $WindowsOSReg 
@@ -5821,6 +5917,8 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
         $trueFalse = "False"
     }
+
+    if ([string]::IsNullorEmpty($getWindowsOSVal) -eq $true){$WindowsOSSet = "DefaultGPO $WindowsOSDescrip is not explicitly set in GPO and the default setting is applied DefaultGPO"}
 
     $newObjWindowsOS = New-Object -TypeName PSObject
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsSetting -Value  $WindowsOSSet
@@ -5856,6 +5954,8 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
         $trueFalse = "False"
     }
 
+    if ([string]::IsNullorEmpty($getWindowsOSVal) -eq $true){$WindowsOSSet = "DefaultGPO $WindowsOSDescrip is not explicitly set in GPO and the default setting is applied DefaultGPO"}
+
     $newObjWindowsOS = New-Object -TypeName PSObject
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsSetting -Value  $WindowsOSSet
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsRegValue -Value $WindowsOSReg 
@@ -5889,6 +5989,8 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
         $trueFalse = "False"
     }
+
+    if ([string]::IsNullorEmpty($getWindowsOSVal) -eq $true){$WindowsOSSet = "DefaultGPO $WindowsOSDescrip is not explicitly set in GPO and the default setting is applied DefaultGPO"}
 
     $newObjWindowsOS = New-Object -TypeName PSObject
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsSetting -Value  $WindowsOSSet
@@ -5930,6 +6032,8 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
         $trueFalse = "False"
     }
 
+    if ([string]::IsNullorEmpty($getWindowsOSVal) -eq $true){$WindowsOSSet = "DefaultGPO $WindowsOSDescrip is not explicitly set in GPO and the default setting is applied DefaultGPO"}
+
     $newObjWindowsOS = New-Object -TypeName PSObject
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsSetting -Value  $WindowsOSSet
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsRegValue -Value $WindowsOSReg 
@@ -5963,6 +6067,8 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
         $trueFalse = "False"
     }
+
+    if ([string]::IsNullorEmpty($getWindowsOSVal) -eq $true){$WindowsOSSet = "DefaultGPO $WindowsOSDescrip is not explicitly set in GPO and the default setting is applied DefaultGPO"}
 
     $newObjWindowsOS = New-Object -TypeName PSObject
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsSetting -Value  $WindowsOSSet
@@ -5998,6 +6104,8 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
         $trueFalse = "False"
     }
 
+    if ([string]::IsNullorEmpty($getWindowsOSVal) -eq $true){$WindowsOSSet = "DefaultGPO $WindowsOSDescrip is not explicitly set in GPO and the default setting is applied DefaultGPO"}
+
     $newObjWindowsOS = New-Object -TypeName PSObject
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsSetting -Value  $WindowsOSSet
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsRegValue -Value $WindowsOSReg 
@@ -6032,14 +6140,14 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
         $trueFalse = "False"
     }
 
+    if ([string]::IsNullorEmpty($getWindowsOSVal) -eq $true){$WindowsOSSet = "DefaultGPO $WindowsOSDescrip is not explicitly set in GPO and the default setting is applied DefaultGPO"}
+
     $newObjWindowsOS = New-Object -TypeName PSObject
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsSetting -Value  $WindowsOSSet
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsRegValue -Value $WindowsOSReg 
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name TrueIsCompliant -Value $trueFalse
     $fragWindowsOSVal += $newObjWindowsOS
-
-
-
+    
     <#
     Configure Windows Defender SmartScreen
 
@@ -6077,6 +6185,8 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
         $trueFalse = "False"
     }
+
+    if ([string]::IsNullorEmpty($getWindowsOSVal) -eq $true){$WindowsOSSet = "DefaultGPO $WindowsOSDescrip is not explicitly set in GPO and the default setting is applied DefaultGPO"}
 
     $newObjWindowsOS = New-Object -TypeName PSObject
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsSetting -Value  $WindowsOSSet
@@ -6124,6 +6234,8 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
         $trueFalse = "False"
     }
 
+    if ([string]::IsNullorEmpty($getWindowsOSVal) -eq $true){$WindowsOSSet = "DefaultGPO $WindowsOSDescrip is not explicitly set in GPO and the default setting is applied DefaultGPO"}
+
     $newObjWindowsOS = New-Object -TypeName PSObject
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsSetting -Value  $WindowsOSSet
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsRegValue -Value $WindowsOSReg 
@@ -6165,6 +6277,8 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
         $trueFalse = "False"
     }
+
+    if ([string]::IsNullorEmpty($getWindowsOSVal) -eq $true){$WindowsOSSet = "DefaultGPO $WindowsOSDescrip is not explicitly set in GPO and the default setting is applied DefaultGPO"}
 
     $newObjWindowsOS = New-Object -TypeName PSObject
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsSetting -Value  $WindowsOSSet
@@ -6210,6 +6324,8 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
         $trueFalse = "False"
     }
 
+    if ([string]::IsNullorEmpty($getWindowsOSVal) -eq $true){$WindowsOSSet = "DefaultGPO $WindowsOSDescrip is not explicitly set in GPO and the default setting is applied DefaultGPO"}
+
     $newObjWindowsOS = New-Object -TypeName PSObject
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsSetting -Value  $WindowsOSSet
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsRegValue -Value $WindowsOSReg 
@@ -6254,6 +6370,8 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
         $trueFalse = "False"
     }
 
+    if ([string]::IsNullorEmpty($getWindowsOSVal) -eq $true){$WindowsOSSet = "DefaultGPO $WindowsOSDescrip is not explicitly set in GPO and the default setting is applied DefaultGPO"}
+
     $newObjWindowsOS = New-Object -TypeName PSObject
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsSetting -Value  $WindowsOSSet
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsRegValue -Value $WindowsOSReg 
@@ -6287,6 +6405,8 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
         $trueFalse = "False"
     }
+    
+    if ([string]::IsNullorEmpty($getWindowsOSVal) -eq $true){$WindowsOSSet = "DefaultGPO $WindowsOSDescrip is not explicitly set in GPO and the default setting is applied DefaultGPO"}
 
     $newObjWindowsOS = New-Object -TypeName PSObject
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsSetting -Value  $WindowsOSSet
@@ -6329,6 +6449,8 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
         $trueFalse = "False"
     }
 
+    if ([string]::IsNullorEmpty($getWindowsOSVal) -eq $true){$WindowsOSSet = "DefaultGPO $WindowsOSDescrip is not explicitly set in GPO and the default setting is applied DefaultGPO"}
+
     $newObjWindowsOS = New-Object -TypeName PSObject
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsSetting -Value  $WindowsOSSet
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsRegValue -Value $WindowsOSReg 
@@ -6369,6 +6491,8 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
         $trueFalse = "False"
     }
+
+    if ([string]::IsNullorEmpty($getWindowsOSVal) -eq $true){$WindowsOSSet = "DefaultGPO $WindowsOSDescrip is not explicitly set in GPO and the default setting is applied DefaultGPO"}
 
     $newObjWindowsOS = New-Object -TypeName PSObject
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsSetting -Value  $WindowsOSSet
@@ -6412,6 +6536,8 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
         $trueFalse = "False"
     }
 
+    if ([string]::IsNullorEmpty($getWindowsOSVal) -eq $true){$WindowsOSSet = "DefaultGPO $WindowsOSDescrip is not explicitly set in GPO and the default setting is applied DefaultGPO"}
+
     $newObjWindowsOS = New-Object -TypeName PSObject
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsSetting -Value  $WindowsOSSet
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsRegValue -Value $WindowsOSReg 
@@ -6454,6 +6580,8 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
         $trueFalse = "False"
     }
 
+    if ([string]::IsNullorEmpty($getWindowsOSVal) -eq $true){$WindowsOSSet = "DefaultGPO $WindowsOSDescrip is not explicitly set in GPO and the default setting is applied DefaultGPO"}
+
     $newObjWindowsOS = New-Object -TypeName PSObject
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsSetting -Value  $WindowsOSSet
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsRegValue -Value $WindowsOSReg 
@@ -6495,6 +6623,8 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
         $trueFalse = "False"
     }
+
+    if ([string]::IsNullorEmpty($getWindowsOSVal) -eq $true){$WindowsOSSet = "DefaultGPO $WindowsOSDescrip is not explicitly set in GPO and the default setting is applied DefaultGPO"}
 
     $newObjWindowsOS = New-Object -TypeName PSObject
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsSetting -Value  $WindowsOSSet
@@ -6543,6 +6673,8 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
         $trueFalse = "False"
     }
 
+    if ([string]::IsNullorEmpty($getWindowsOSVal) -eq $true){$WindowsOSSet = "DefaultGPO $WindowsOSDescrip is not explicitly set in GPO and the default setting is applied DefaultGPO"}
+
     $newObjWindowsOS = New-Object -TypeName PSObject
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsSetting -Value  $WindowsOSSet
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsRegValue -Value $WindowsOSReg 
@@ -6586,6 +6718,8 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
         $trueFalse = "False"
     }
 
+    if ([string]::IsNullorEmpty($getWindowsOSVal) -eq $true){$WindowsOSSet = "DefaultGPO $WindowsOSDescrip is not explicitly set in GPO and the default setting is applied DefaultGPO"}
+
     $newObjWindowsOS = New-Object -TypeName PSObject
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsSetting -Value  $WindowsOSSet
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsRegValue -Value $WindowsOSReg 
@@ -6625,6 +6759,8 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
         $trueFalse = "False"
     }
 
+    if ([string]::IsNullorEmpty($getWindowsOSVal) -eq $true){$WindowsOSSet = "DefaultGPO $WindowsOSDescrip is not explicitly set in GPO and the default setting is applied DefaultGPO"}
+
     $newObjWindowsOS = New-Object -TypeName PSObject
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsSetting -Value  $WindowsOSSet
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsRegValue -Value $WindowsOSReg 
@@ -6662,6 +6798,8 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
         $trueFalse = "False"
     }
+
+    if ([string]::IsNullorEmpty($getWindowsOSVal) -eq $true){$WindowsOSSet = "DefaultGPO $WindowsOSDescrip is not explicitly set in GPO and the default setting is applied DefaultGPO"}
 
     $newObjWindowsOS = New-Object -TypeName PSObject
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsSetting -Value  $WindowsOSSet
@@ -6701,6 +6839,8 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
         $trueFalse = "False"
     }
 
+    if ([string]::IsNullorEmpty($getWindowsOSVal) -eq $true){$WindowsOSSet = "DefaultGPO $WindowsOSDescrip is not explicitly set in GPO and the default setting is applied DefaultGPO"}
+
     $newObjWindowsOS = New-Object -TypeName PSObject
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsSetting -Value  $WindowsOSSet
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsRegValue -Value $WindowsOSReg 
@@ -6739,6 +6879,8 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
         $trueFalse = "False"
     }
 
+    if ([string]::IsNullorEmpty($getWindowsOSVal) -eq $true){$WindowsOSSet = "DefaultGPO $WindowsOSDescrip is not explicitly set in GPO and the default setting is applied DefaultGPO"}
+
     $newObjWindowsOS = New-Object -TypeName PSObject
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsSetting -Value  $WindowsOSSet
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsRegValue -Value $WindowsOSReg 
@@ -6776,6 +6918,8 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
         $trueFalse = "False"
     }
+
+    if ([string]::IsNullorEmpty($getWindowsOSVal) -eq $true){$WindowsOSSet = "DefaultGPO $WindowsOSDescrip is not explicitly set in GPO and the default setting is applied DefaultGPO"}
 
     $newObjWindowsOS = New-Object -TypeName PSObject
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsSetting -Value  $WindowsOSSet
@@ -6816,6 +6960,8 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
         $trueFalse = "False"
     }
 
+    if ([string]::IsNullorEmpty($getWindowsOSVal) -eq $true){$WindowsOSSet = "DefaultGPO $WindowsOSDescrip is not explicitly set in GPO and the default setting is applied DefaultGPO"}
+
     $newObjWindowsOS = New-Object -TypeName PSObject
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsSetting -Value  $WindowsOSSet
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsRegValue -Value $WindowsOSReg 
@@ -6854,6 +7000,8 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
         $trueFalse = "False"
     }
+
+    if ([string]::IsNullorEmpty($getWindowsOSVal) -eq $true){$WindowsOSSet = "DefaultGPO $WindowsOSDescrip is not explicitly set in GPO and the default setting is applied DefaultGPO"}
 
     $newObjWindowsOS = New-Object -TypeName PSObject
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsSetting -Value  $WindowsOSSet
@@ -6902,6 +7050,8 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
         $trueFalse = "False"
     }
+
+    if ([string]::IsNullorEmpty($getWindowsOSVal) -eq $true){$WindowsOSSet = "DefaultGPO $WindowsOSDescrip is not explicitly set in GPO and the default setting is applied DefaultGPO"}
 
     $newObjWindowsOS = New-Object -TypeName PSObject
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsSetting -Value  $WindowsOSSet
@@ -6958,6 +7108,8 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
         $trueFalse = "False"
     }
 
+    if ([string]::IsNullorEmpty($getWindowsOSVal) -eq $true){$WindowsOSSet = "DefaultGPO $WindowsOSDescrip is not explicitly set in GPO and the default setting is applied DefaultGPO"}
+
     $newObjWindowsOS = New-Object -TypeName PSObject
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsSetting -Value  $WindowsOSSet
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsRegValue -Value $WindowsOSReg 
@@ -7003,6 +7155,8 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
         $trueFalse = "False"
     }
 
+    if ([string]::IsNullorEmpty($getWindowsOSVal) -eq $true){$WindowsOSSet = "DefaultGPO $WindowsOSDescrip is not explicitly set in GPO and the default setting is applied DefaultGPO"}
+
     $newObjWindowsOS = New-Object -TypeName PSObject
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsSetting -Value  $WindowsOSSet
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsRegValue -Value $WindowsOSReg 
@@ -7042,6 +7196,8 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
         $trueFalse = "False"
     }
+
+    if ([string]::IsNullorEmpty($getWindowsOSVal) -eq $true){$WindowsOSSet = "DefaultGPO $WindowsOSDescrip is not explicitly set in GPO and the default setting is applied DefaultGPO"}
 
     $newObjWindowsOS = New-Object -TypeName PSObject
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsSetting -Value  $WindowsOSSet
@@ -7090,6 +7246,8 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
         $trueFalse = "False"
     }
 
+    if ([string]::IsNullorEmpty($getWindowsOSVal) -eq $true){$WindowsOSSet = "DefaultGPO $WindowsOSDescrip is not explicitly set in GPO and the default setting is applied DefaultGPO"}
+
     $newObjWindowsOS = New-Object -TypeName PSObject
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsSetting -Value  $WindowsOSSet
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsRegValue -Value $WindowsOSReg 
@@ -7128,6 +7286,8 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
         $trueFalse = "False"
     }
+
+    if ([string]::IsNullorEmpty($getWindowsOSVal) -eq $true){$WindowsOSSet = "DefaultGPO $WindowsOSDescrip is not explicitly set in GPO and the default setting is applied DefaultGPO"}
 
     $newObjWindowsOS = New-Object -TypeName PSObject
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsSetting -Value  $WindowsOSSet
@@ -7169,6 +7329,8 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
         $trueFalse = "False"
     }
 
+    if ([string]::IsNullorEmpty($getWindowsOSVal) -eq $true){$WindowsOSSet = "DefaultGPO $WindowsOSDescrip is not explicitly set in GPO and the default setting is applied DefaultGPO"}
+
     $newObjWindowsOS = New-Object -TypeName PSObject
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsSetting -Value  $WindowsOSSet
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsRegValue -Value $WindowsOSReg 
@@ -7203,6 +7365,8 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
         $trueFalse = "False"
     }
+
+    if ([string]::IsNullorEmpty($getWindowsOSVal) -eq $true){$WindowsOSSet = "DefaultGPO $WindowsOSDescrip is not explicitly set in GPO and the default setting is applied DefaultGPO"}
 
     $newObjWindowsOS = New-Object -TypeName PSObject
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsSetting -Value  $WindowsOSSet
@@ -7244,6 +7408,8 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
         $trueFalse = "False"
     }
 
+    if ([string]::IsNullorEmpty($getWindowsOSVal) -eq $true){$WindowsOSSet = "DefaultGPO $WindowsOSDescrip is not explicitly set in GPO and the default setting is applied DefaultGPO"}
+
     $newObjWindowsOS = New-Object -TypeName PSObject
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsSetting -Value  $WindowsOSSet
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsRegValue -Value $WindowsOSReg 
@@ -7280,6 +7446,8 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
         $trueFalse = "False"
     }
+
+    if ([string]::IsNullorEmpty($getWindowsOSVal) -eq $true){$WindowsOSSet = "DefaultGPO $WindowsOSDescrip is not explicitly set in GPO and the default setting is applied DefaultGPO"}
 
     $newObjWindowsOS = New-Object -TypeName PSObject
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsSetting -Value  $WindowsOSSet
@@ -7324,6 +7492,8 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
         $trueFalse = "False"
     }
 
+    if ([string]::IsNullorEmpty($getWindowsOSVal) -eq $true){$WindowsOSSet = "DefaultGPO $WindowsOSDescrip is not explicitly set in GPO and the default setting is applied DefaultGPO"}
+
     $newObjWindowsOS = New-Object -TypeName PSObject
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsSetting -Value  $WindowsOSSet
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsRegValue -Value $WindowsOSReg 
@@ -7363,6 +7533,8 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
         $trueFalse = "False"
     }
+
+    if ([string]::IsNullorEmpty($getWindowsOSVal) -eq $true){$WindowsOSSet = "DefaultGPO $WindowsOSDescrip is not explicitly set in GPO and the default setting is applied DefaultGPO"}
 
     $newObjWindowsOS = New-Object -TypeName PSObject
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsSetting -Value  $WindowsOSSet
@@ -7405,6 +7577,8 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
         $trueFalse = "False"
     }
 
+    if ([string]::IsNullorEmpty($getWindowsOSVal) -eq $true){$WindowsOSSet = "DefaultGPO $WindowsOSDescrip is not explicitly set in GPO and the default setting is applied DefaultGPO"}
+
     $newObjWindowsOS = New-Object -TypeName PSObject
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsSetting -Value  $WindowsOSSet
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsRegValue -Value $WindowsOSReg 
@@ -7444,6 +7618,8 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
         $trueFalse = "False"
     }
 
+    if ([string]::IsNullorEmpty($getWindowsOSVal) -eq $true){$WindowsOSSet = "DefaultGPO $WindowsOSDescrip is not explicitly set in GPO and the default setting is applied DefaultGPO"}
+
     $newObjWindowsOS = New-Object -TypeName PSObject
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsSetting -Value  $WindowsOSSet
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsRegValue -Value $WindowsOSReg 
@@ -7479,6 +7655,8 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
         $trueFalse = "False"
     }
+
+    if ([string]::IsNullorEmpty($getWindowsOSVal) -eq $true){$WindowsOSSet = "DefaultGPO $WindowsOSDescrip is not explicitly set in GPO and the default setting is applied DefaultGPO"}
 
     $newObjWindowsOS = New-Object -TypeName PSObject
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsSetting -Value  $WindowsOSSet
@@ -7521,6 +7699,8 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
         $trueFalse = "False"
     }
 
+    if ([string]::IsNullorEmpty($getWindowsOSVal) -eq $true){$WindowsOSSet = "DefaultGPO $WindowsOSDescrip is not explicitly set in GPO and the default setting is applied DefaultGPO"}
+
     $newObjWindowsOS = New-Object -TypeName PSObject
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsSetting -Value  $WindowsOSSet
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsRegValue -Value $WindowsOSReg 
@@ -7556,6 +7736,8 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
         $trueFalse = "False"
     }
 
+    if ([string]::IsNullorEmpty($getWindowsOSVal) -eq $true){$WindowsOSSet = "DefaultGPO $WindowsOSDescrip is not explicitly set in GPO and the default setting is applied DefaultGPO"}
+
     $newObjWindowsOS = New-Object -TypeName PSObject
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsSetting -Value  $WindowsOSSet
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsRegValue -Value $WindowsOSReg 
@@ -7589,6 +7771,8 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
         $trueFalse = "False"
     }
+
+    if ([string]::IsNullorEmpty($getWindowsOSVal) -eq $true){$WindowsOSSet = "DefaultGPO $WindowsOSDescrip is not explicitly set in GPO and the default setting is applied DefaultGPO"}
 
     $newObjWindowsOS = New-Object -TypeName PSObject
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsSetting -Value  $WindowsOSSet
@@ -7624,6 +7808,8 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
         $trueFalse = "False"
     }
+
+    if ([string]::IsNullorEmpty($getWindowsOSVal) -eq $true){$WindowsOSSet = "DefaultGPO $WindowsOSDescrip is not explicitly set in GPO and the default setting is applied DefaultGPO"}
 
     $newObjWindowsOS = New-Object -TypeName PSObject
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsSetting -Value  $WindowsOSSet
@@ -7662,6 +7848,8 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
         $trueFalse = "False"
     }
 
+    if ([string]::IsNullorEmpty($getWindowsOSVal) -eq $true){$WindowsOSSet = "DefaultGPO $WindowsOSDescrip is not explicitly set in GPO and the default setting is applied DefaultGPO"}
+
     $newObjWindowsOS = New-Object -TypeName PSObject
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsSetting -Value  $WindowsOSSet
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsRegValue -Value $WindowsOSReg 
@@ -7699,6 +7887,8 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
         $trueFalse = "False"
     }
 
+    if ([string]::IsNullorEmpty($getWindowsOSVal) -eq $true){$WindowsOSSet = "DefaultGPO $WindowsOSDescrip is not explicitly set in GPO and the default setting is applied DefaultGPO"}
+
     $newObjWindowsOS = New-Object -TypeName PSObject
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsSetting -Value  $WindowsOSSet
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsRegValue -Value $WindowsOSReg 
@@ -7734,6 +7924,8 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
         $trueFalse = "False"
     }
+
+    if ([string]::IsNullorEmpty($getWindowsOSVal) -eq $true){$WindowsOSSet = "DefaultGPO $WindowsOSDescrip is not explicitly set in GPO and the default setting is applied DefaultGPO"}
 
     $newObjWindowsOS = New-Object -TypeName PSObject
     Add-Member -InputObject $newObjWindowsOS -Type NoteProperty -Name WindowsGPONameSetting -Value $WindowsOSSet
@@ -7857,8 +8049,10 @@ $getEdgeValue = $getEdgePath.GetValue("$edgeRegName")
         $edgeTrue = "False"
     }
 
+    if ([string]::IsNullorEmpty($getEdgeValue) -eq $true){$EdgeSet = "DefaultGPO $edgeGPOName is not explicitly set in GPO and the default setting is applied DefaultGPO"}
+
     $newObjEdge = New-Object -TypeName PSObject
-    Add-Member -InputObject $newObjEdge -Type NoteProperty -Name EdgeGPONameSetting -Value  $EdgeSet
+    Add-Member -InputObject $newObjEdge -Type NoteProperty -Name EdgeGPONameSetting -Value $EdgeSet
     Add-Member -InputObject $newObjEdge -Type NoteProperty -Name EdgeRegValue -Value $EdgeReg 
     Add-Member -InputObject $newObjEdge -Type NoteProperty -Name TrueIsCompliant -Value $edgeTrue 
     $fragEdgeVal += $newObjEdge
@@ -8121,8 +8315,10 @@ foreach ($OfficePolItems in $OfficePolicies.values)
             $trueFalse = "False"
         }
 
+        if ([string]::IsNullorEmpty($getOfficeValue) -eq $true){$OfficeSet = "DefaultGPO $OfficeGPOName is not explicitly set in GPO and the default setting is applied DefaultGPO"}
+
         $newObjOffice = New-Object -TypeName PSObject
-        Add-Member -InputObject $newObjOffice -Type NoteProperty -Name OfficeGPONameSetting -Value  $OfficeSet
+        Add-Member -InputObject $newObjOffice -Type NoteProperty -Name OfficeGPONameSetting -Value $OfficeSet
         Add-Member -InputObject $newObjOffice -Type NoteProperty -Name OfficeRegValue -Value $OfficeReg 
         Add-Member -InputObject $newObjOffice -Type NoteProperty -Name TrueIsCompliant -Value $trueFalse
         $fragOfficeVal += $newObjOffice
@@ -9260,7 +9456,7 @@ $style = @"
 
     $descripLocalAccounts = "Local accounts should be disabled when the client or server is part of a Domain. LAPS should be deployed to ensure all local account passwords are unique"
 
-    $descripWindowsOS = "Warning: Absence of a GPO setting will raise an issue as the default setting is not assumed<br>These are recommended GPO settings to secure Windows by Microsoft, do NOT implement without the correct research and testing. Some settings could adversely affect your system.<br> <br>Due to the sheer number of settings, the script contains details and the equivalent GPO settings, search for RECOMMENDED SECURITY SETTINGS section<br><br>MS Security Compliance Toolkit can be found @ <br>https://admx.help/?Category=security-compliance-toolkit<br>https://www.microsoft.com/en-us/download/details.aspx?id=55319<br><br>**WindowsRegValue - Mouse over to show Reg Key to GPO path translation" 
+    $descripWindowsOS = "These are recommended GPO settings to secure Windows by Microsoft, do NOT implement without the correct research and testing. Some settings could adversely affect your system.<br> <br>Due to the sheer number of settings, the script contains details and the equivalent GPO settings, search for RECOMMENDED SECURITY SETTINGS section<br><br>MS Security Compliance Toolkit can be found @ <br>https://admx.help/?Category=security-compliance-toolkit<br>https://www.microsoft.com/en-us/download/details.aspx?id=55319<br><br>**WindowsRegValue - Mouse over to show Reg Key to GPO path translation" 
 
     $descripOffice2016 = "These are recommended GPO settings to secure Office 2016-365 by Microsoft, do NOT implement without the correct research and testing. Some settings could adversely affect your system.<br> Its recommended that Attack Surface Reduction (ASR) is enabled but requires Windows Defender Real-Time Antivirus and works in conjunction with Exploit Guard to prevent malware abusing legitimate MS Office functionality"
 
@@ -9535,6 +9731,10 @@ else
     foreach {$_ -replace "<td>Warning","<td><font color=#ff9933>Warning"} | 
     foreach {$_ -replace "#ff9933>Warning ","#ff9933>"} |
     foreach {$_ -replace "Warning</td>","<font></td>"} |
+
+    foreach {$_ -replace "<td>DefaultGPO","<td><font color=#ffd633>DefaultGPO"} | 
+    foreach {$_ -replace "#ffd633>DefaultGPO ","#ffd633>"} |
+    foreach {$_ -replace "DefaultGPO</td>","<font></td>"} |
 
     foreach {$_ -replace "<td>Review","<td><font color=#ff9933>Review"} | 
     foreach {$_ -replace "Review</td>","<font></td>"}  | 
