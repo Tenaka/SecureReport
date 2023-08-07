@@ -326,9 +326,11 @@ YYMMDD
 230802.1 - Certs now warns on Sha1
 230802.1 - Updated Installed Apps to warn when installed date is more than 6 months. 
 230803.1 - Updated BIOS to warn when installed date is more than 6 months. 
-230804.1 - Updated looks and feel of report.
-230804.2 - Updated Windows Updates to alert when they are more than 6 months out of date.
-230805.1 - Updated Windows, Office and Edge GPO settings to distinguish between GPO not set and default setting apply and incorrectly set.
+230805.1 - Updated looks and feel of report.
+230805.2 - Updated Windows Updates to alert when they are more than 6 months out of date.
+230807.1 - Report on supported CipherSuites - Needs explanation to be added
+
+
 #>
 
 #Remove any DVD from client
@@ -3460,13 +3462,44 @@ Write-Host "Completed searching for authenticode signature hashmismatch" -foregr
             {
                 Add-Member -InputObject $newObjCertificates -Type NoteProperty -Name CertPrivateKey -Value "privateKey - True privatekey" -force
             }
-
-                       
+                                   
              #Add-Member -InputObject $newObjCertificates -Type NoteProperty -Name CertIssuer -Value $certIssuer
              #Add-Member -InputObject $newObjCertificates -Type NoteProperty -Name CertExpired -Value $certExpire
              #add-Member -InputObject $newObjCertificates -Type NoteProperty -Name CertDNS -Value $certDns
              $fragCertificates += $newObjCertificates
         }
+    }
+
+################################################
+##############  CIPHER SUITS  ##############
+################################################
+
+$gtCipherSuit = Get-TlsCipherSuite
+$fragCipherSuit=@()
+foreach($CipherItem in $gtCipherSuit)
+    {
+        $cipherName = $CipherItem.name
+        $cipherCert = $CipherItem.certificate
+        $cipherhash = $CipherItem.hash
+        $cipherExch = $CipherItem.Exchange
+        $trueFalse = "True"   
+
+        if ($cipherhash -match "sha1")
+            {
+            $cipherhash = "Warning $cipherhash is vulnerable to MitM Warning"
+            $cipherName = "Warning $cipherName Warning"
+            $trueFalse = "False"  
+            }
+                    
+        $newObjCipherSuite = New-Object -TypeName PSObject
+        Add-Member -InputObject $newObjCipherSuite -Type NoteProperty -Name CipherName -Value $cipherName
+        Add-Member -InputObject $newObjCipherSuite -Type NoteProperty -Name CipherCert -Value $cipherCert
+        Add-Member -InputObject $newObjCipherSuite -Type NoteProperty -Name CipherHahs -Value $cipherhash
+        Add-Member -InputObject $newObjCipherSuite -Type NoteProperty -Name CipherExchange -Value $cipherExch
+        Add-Member -InputObject $newObjCipherSuite -Type NoteProperty -Name TrueIsCompliant -Value $trueFalse
+        
+        $fragCipherSuit += $newObjCipherSuite 
+        
     }
 
 ################################################
@@ -8521,6 +8554,14 @@ foreach ($OfficePolItems in $OfficePolicies.values)
        Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Risk -Value "Medium Risk"
        $fragSummary += $newObjSummary
    }
+
+   if ($fragCipherSuit -like "*Warning*")
+   {
+       $newObjSummary = New-Object psObject
+       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value '<a href="#CipherSuites">SHA1 Cipher Suites are Supported</a>'
+       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Risk -Value "High Risk"
+       $fragSummary += $newObjSummary
+   }
    
    if ($fragUnQuoted -like "*warning*")
    {
@@ -9456,7 +9497,7 @@ $style = @"
 
     $descripLocalAccounts = "Local accounts should be disabled when the client or server is part of a Domain. LAPS should be deployed to ensure all local account passwords are unique"
 
-    $descripWindowsOS = "These are recommended GPO settings to secure Windows by Microsoft, do NOT implement without the correct research and testing. Some settings could adversely affect your system.<br> <br>Due to the sheer number of settings, the script contains details and the equivalent GPO settings, search for RECOMMENDED SECURITY SETTINGS section<br><br>MS Security Compliance Toolkit can be found @ <br>https://admx.help/?Category=security-compliance-toolkit<br>https://www.microsoft.com/en-us/download/details.aspx?id=55319<br><br>**WindowsRegValue - Mouse over to show Reg Key to GPO path translation" 
+    $descripWindowsOS = "Warning: Absence of a GPO setting will raise an issue as the default setting is not assumed<br>These are recommended GPO settings to secure Windows by Microsoft, do NOT implement without the correct research and testing. Some settings could adversely affect your system.<br> <br>Due to the sheer number of settings, the script contains details and the equivalent GPO settings, search for RECOMMENDED SECURITY SETTINGS section<br><br>MS Security Compliance Toolkit can be found @ <br>https://admx.help/?Category=security-compliance-toolkit<br>https://www.microsoft.com/en-us/download/details.aspx?id=55319<br><br>**WindowsRegValue - Mouse over to show Reg Key to GPO path translation" 
 
     $descripOffice2016 = "These are recommended GPO settings to secure Office 2016-365 by Microsoft, do NOT implement without the correct research and testing. Some settings could adversely affect your system.<br> Its recommended that Attack Surface Reduction (ASR) is enabled but requires Windows Defender Real-Time Antivirus and works in conjunction with Exploit Guard to prevent malware abusing legitimate MS Office functionality"
 
@@ -9467,6 +9508,8 @@ $style = @"
     $descripDomainPrivsGps = "Review and minimise members of privileged groups and delegate as much as possible. Don't nest groups into Domain Admins, add direct user accounts only. Deploy User Rights Assignments to explicitly prevent Domain Admins from logging on to Member Servers and Clients more information can be found here @<br><br>https://www.tenaka.net/post/deny-domain-admins-logon-to-workstations<br><br>Dont add privilged groups to Guests or Domain Guests and yes I've seen Domain Guests added to Domain Admins"
 
     $descripCerts = ""
+
+    $decripCipher = ""
 
     $descripKernelMode = "Enabed with Windwos 11 22H2 - For code running in kernel mode, the CPU confirms requested return addresses with a second copy of the address stored in the shadow stack to prevent attackers from substituting an address that runs malicious code. Not all drivers are compatiable with this security feature. More information can be found here @<br><br>https://techcommunity.microsoft.com/t5/windows-os-platform-blog/understanding-hardware-enforced-stack-protection/ba-p/1247815"
 
@@ -9547,6 +9590,9 @@ $style = @"
     $frag_ASR = $fragASR | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"asr`"><a href=`"#TOP`">Attack Surface Reduction (ASR)</a></span></h2>" -PostContent "<h4>$descripASR</h4>" | Out-String
     $frag_WDigestULC = $fragWDigestULC | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"WDigest`"><a href=`"#TOP`">WDigest</a></span></h2>" -PostContent "<h4>$descripWDigest</h4>" | Out-String
     $frag_Certificates = $fragCertificates | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"Certs`"><a href=`"#TOP`">Installed Certificates</a></span></h2>" -PostContent "<h4>$descripCerts</h4>" | Out-String
+    
+    $frag_CipherSuit = $fragCipherSuit | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"CipherSuites`"><a href=`"#TOP`">Supported Cipher Suites</a></span></h2>" -PostContent "<h4>$decripCipher</h4>" | Out-String
+    
       
     #MS Recommended Secuirty settings (SSLF)
     $frag_WindowsOSVal = $fragWindowsOSVal | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"WinSSLF`"><a href=`"#TOP`">Windows OS Security Recommendations</a></span></h2>" -PostContent "<h4>$descripWindowsOS</h4>" | Out-String
@@ -9624,6 +9670,7 @@ if ($folders -eq "y")
     $frag_kernelModeVal,
     $frag_LapsPwEna,
     $frag_Certificates,
+    $frag_CipherSuit,
     $frag_DLLSafe,
     $frag_DLLHijack,
     $frag_DllNotSigned,
@@ -9690,6 +9737,7 @@ else
     $frag_kernelModeVal,
     $frag_LapsPwEna,
     $frag_Certificates,
+    $frag_CipherSuit,
     $frag_DLLSafe,
     $frag_DLLHijack,
     $frag_PCElevate,
