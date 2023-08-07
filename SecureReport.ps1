@@ -3494,7 +3494,7 @@ foreach($CipherItem in $gtCipherSuit)
         $newObjCipherSuite = New-Object -TypeName PSObject
         Add-Member -InputObject $newObjCipherSuite -Type NoteProperty -Name CipherName -Value $cipherName
         Add-Member -InputObject $newObjCipherSuite -Type NoteProperty -Name CipherCert -Value $cipherCert
-        Add-Member -InputObject $newObjCipherSuite -Type NoteProperty -Name CipherHahs -Value $cipherhash
+        Add-Member -InputObject $newObjCipherSuite -Type NoteProperty -Name CipherHash -Value $cipherhash
         Add-Member -InputObject $newObjCipherSuite -Type NoteProperty -Name CipherExchange -Value $cipherExch
         Add-Member -InputObject $newObjCipherSuite -Type NoteProperty -Name TrueIsCompliant -Value $trueFalse
         
