@@ -338,8 +338,12 @@ YYMMDD
         [convert]::ToBase64String((get-content -path C:\Image\Image.png -Encoding Byte)) >> C:\image\base.txt
 
         [convert]::FromBase64String((get-content -path C:\Image\base.txt -Encoding Byte)) >> C:\image\Image.png   
-
-        
+230811.1 - Search Powershell History for passwords and usernames
+230814.1 - Added Applocker Audit - Hash results show first hash only for each entry
+230815.1 - Updated Get-NetfirewallRule from -all to  -PolicyStore activestore 
+230816.1 - Added Details and Summary menu
+230816.2 - reordered headings and grouping       
+230816.3 - reordered compliance status, updated some compliances
 
 #>
 
@@ -431,6 +435,27 @@ function reports
 
     #Summary Frag
     $fragSummary=@()
+
+################################################
+############  MDT BUILD DETAILS  ###############
+################################################
+    $fragMDTBuild =@()
+
+    try {
+        $mdtBuild = gwmi -Class microsoft_BDD_info
+            $mdtID =  $mdtBuild.TaskSequenceID
+            $mdtTS = $mdtBuild.TaskSequenceName
+            $mdtVer = $mdtBuild.TaskSequenceVersion
+            $mdtDate = $mdtBuild.DeploymentTimestamp.Split(".")[0] 
+            $mdtActDate = [datetime]::ParseExact($mdtDate,'yyyyMMddHHmmss', $null)
+
+        $newObjMDTBuild = New-Object -TypeName PSObject
+        Add-Member -InputObject $newObjMDTBuild -Type NoteProperty -Name TaskSequenceID -Value $mdtID
+        Add-Member -InputObject $newObjMDTBuild -Type NoteProperty -Name TaskSequenceName -Value $mdtTS
+        Add-Member -InputObject $newObjMDTBuild -Type NoteProperty -Name TaskSequenceVersion -Value $mdtVer
+        Add-Member -InputObject $newObjMDTBuild -Type NoteProperty -Name DeploymentTime -Value $mdtActDate
+        $fragMDTBuild += $newObjMDTBuild
+    }catch{}
 
 ################################################
 #################  BITLOCKER  ##################
@@ -1307,7 +1332,7 @@ $fragNetwork=@()
     $gNetAdp = Get-NetAdapter | where {$_.Status -eq "up"}
     $intAlias = $gNetAdp.InterfaceAlias
 
-    $macAddy = $gNetAdp.MacAddress 
+    $macAddy = [string]$gNetAdp.MacAddress 
 
     $gNetIPC = Get-NetIPConfiguration  -InterfaceAlias $gNetAdp.Name
         $IPAddress4 = $gNetIPC.IPv4Address.ipaddress -join ", "
@@ -2497,7 +2522,8 @@ sleep 5
     $fragSecOptions +=  $newObjSecOptions
 
     <#
-    All allows the AES encryption types aes256-cts-hmac-sha1-96 and aes128-cts-hmac-sha1-96, as well as the RC4 encryption type rc4-hmac. AES takes precedence if the server supports AES and RC4 encryption types.
+    All allows the AES encryption types aes256-cts-hmac-sha1-96 and aes128-cts-hmac-sha1-96, as well as the RC4 encryption type rc4-hmac. 
+    AES takes precedence if the server supports AES and RC4 encryption types.
 
     * Strong or leaving it unset allows only the AES types.
     * Legacy allows only the RC4 type. RC4 is insecure. It should only be needed in very specific circumstances. 
@@ -2509,7 +2535,7 @@ sleep 5
     Also see https://wiki.samba.org/index.php/Samba_4.6_Features_added/changed#Kerberos_client_encryption_types.
     #>
     
-    $secOpTitle12 = "Domain member: Require strong (Windows 2000 or later) session key" 
+    $secOpTitle12 = "Network security: Configure encryption types allowed for Kerberos" 
     $getSecOp12 = get-item 'HKLM:\Software\Microsoft\Windows\CurrentVersion\Policies\System\Kerberos\Parameters\' -ErrorAction SilentlyContinue
     $getSecOp12res = $getSecOp12.getvalue("supportedencryptiontypes")
 
@@ -2673,7 +2699,7 @@ sleep 5
 
     [System.Text.StringBuilder]$fwtxt = New-Object System.Text.StringBuilder
 
-    $getFw = Get-NetFirewallRule | 
+    $getFw = Get-NetFirewallRule  -PolicyStore activestore | 
     Select-Object Displayname,ID,Enabled,Direction,Action,Status  | 
     where {$_.enabled -eq "true" -and $_.Direction -eq "Inbound"} | 
     Sort-Object direction -Descending
@@ -2841,7 +2867,7 @@ foreach ($runService in $gtServices)
 
 
     $newObjRunningSvc= New-Object -TypeName PSObject
-    Add-Member -InputObject $newObjRunningSvc -Type NoteProperty -Name DisplayName -Value $runSvcDisNam
+    Add-Member -InputObject $newObjRunningSvc -Type NoteProperty -Name DisplayName -Value $runSvcDisName
     Add-Member -InputObject $newObjRunningSvc -Type NoteProperty -Name ServiceName -Value $runSvcName
     Add-Member -InputObject $newObjRunningSvc -Type NoteProperty -Name Status -Value $runSvcStatus
     Add-Member -InputObject $newObjRunningSvc -Type NoteProperty -Name StartType -Value $runSvcStart
@@ -3565,7 +3591,7 @@ sleep 3
             $newObjShare = New-Object -TypeName PSObject
             Add-Member -InputObject $newObjShare -Type NoteProperty -Name Name -Value $shrName
             Add-Member -InputObject $newObjShare -Type NoteProperty -Name Path -Value $shrPath
-            Add-Member -InputObject $newObjShare -Type NoteProperty -Name Perms -Value $arrayjoin
+            Add-Member -InputObject $newObjShare -Type NoteProperty -Name Permissions -Value $arrayjoin
             $fragShare += $newObjShare
         }
 
@@ -3587,7 +3613,7 @@ sleep 7
 
     $getPSPass = Get-CimInstance win32_process -ErrorAction SilentlyContinue |
     Select-Object Caption, Description,CommandLine | 
-    where {$_.commandline -like "*pass*" -or $_.commandline -like "*credential*" -or $_.commandline -like "*username*"  }
+    where {$_.commandline -like "*pass*" -or $_.commandline -like "*credential*" -or $_.commandline -like "*username*" }
 
     $fragPSPass=@()
     foreach ($PStems in $getPSPass)
@@ -3673,6 +3699,7 @@ sleep 5
         #swapped to native tool, Powershell is too slow
         reg query HKLM\Software /f $regSearchItems /t REG_SZ /s >> $secEditPath
         reg query HKCU\Software /f $regSearchItems /t REG_SZ /s >> $secEditPath
+        reg query HKLM\SYSTEM\Current\ControlSet\Services /f $regSearchItems /t REG_SZ /s >> $secEditPath
 }
 
 $getRegPassCon = (get-content $secEditPath | where {$_ -notmatch "classes" -and $_ -notmatch "ClickToRun" -and $_ -notmatch "microsoft" -and $_ -notmatch "default"} | Select-String -Pattern "hkey_")
@@ -3700,6 +3727,225 @@ foreach ($getRegPassItem in $getRegPassCon)
 
 Write-Host " "
 Write-Host "Finished Searching for Embedded Password in the Registry" -foregroundColor Green
+
+################################################
+########  POWERSHELL PASSWORD SEARCH  ##########
+################################################
+#$gtPSPawd = get-content $env:APPDATA\Microsoft\Windows\PowerShell\PSReadLine\ConsoleHost_history.txt | where {$_ -match "pass" -or $_ -match "user" }
+
+$gtCachedProfiles = (Get-ChildItem c:\users\ -Force -Directory).fullname
+$fragPSPasswords=@()
+foreach ($CachedProfiles in $gtCachedProfiles)
+    {
+    $tpHistory = test-path "$($CachedProfiles)\Appdata\roaming\Microsoft\Windows\PowerShell\PSReadLine\ConsoleHost_history.txt"
+    if ($tpHistory -eq $true)
+        {
+            [array]$gtPSPassword = get-content "$($CachedProfiles)\Appdata\roaming\Microsoft\Windows\PowerShell\PSReadLine\ConsoleHost_history.txt" | where {$_ -match "pass" -or $_ -match "user" }
+            foreach ($psHistory in $gtPSPassword)
+            {
+                $gtPSPassword
+                $newObjPSPasswords = New-Object -TypeName PSObject
+                Add-Member -InputObject $newObjPSPasswords -Type NoteProperty -Name PSHistoryPath -Value $CachedProfiles
+                Add-Member -InputObject $newObjPSPasswords -Type NoteProperty -Name PSWordsOfInterest -Value "Warning $($psHistory) warning"
+
+                $fragPSPasswords += $newObjPSPasswords
+            }
+        }
+    else {}
+    }
+
+################################################
+###############  APPLOCKER AUDIT  ##############
+################################################
+$fragApplockerSvc=@()
+$AppLockerSvc = get-service appidsvc
+$newObjApplockerSvc = New-Object -TypeName PSObject
+Add-Member -InputObject $newObjApplockerSvc -Type NoteProperty -Name Path $AppLockerSvc.DisplayName
+Add-Member -InputObject $newObjApplockerSvc -Type NoteProperty -Name PubExcep $AppLockerSvc.Name
+Add-Member -InputObject $newObjApplockerSvc -Type NoteProperty -Name PubPathExcep $AppLockerSvc.StartType
+$fragApplockerSvc += $newObjApplockerSvc
+
+$gtAppLRuleCollection = Get-ApplockerPolicy -Effective | select -ExpandProperty RuleCollections 
+$gtAppLCollectionTypes = Get-ApplockerPolicy -Effective | select -ExpandProperty RuleCollectionTypes
+
+#Path Conditions
+$fragApplockerPath=@()
+foreach ($appLockerRule in $gtAppLCollectionTypes)
+{
+    $appLockerRuleType = ($gtAppLRuleCollection | where {$_.RuleCollectionType -eq "$appLockerRule"}) | select-object PathConditions,PathExceptions,PublisherExceptions,HashExceptions,action,UserOrGroupSid,id,name
+    $appLockerPathAllow = $appLockerRuleType | where {$_.action -eq "allow" -and $_.pathconditions -ne $null}
+    $appLockerPathDeny = $appLockerRuleType | where {$_.action -eq "deny" -and $_.pathconditions -ne $null} 
+
+        foreach ($allowitem in $appLockerPathAllow)
+            {
+                $alPathName = [string]$allowitem.name
+                $alPathCon = [string]$allowitem.pathconditions
+                $alPublishExcep = [string]$allowitem.PublisherExceptions
+                $alPublishPathExcep = [string]$allowitem.PathExceptions
+                $alPublishHashExcep = [string]$allowitem.HashExceptions
+                $alUserGroup = [string]$allowitem.UserOrGroupSid
+                $alAction = [string]$allowitem.action
+                $alID = [string]$allowitem.ID
+                $alRule = [string]$appLockerRule
+
+                $newObjApplocker = New-Object -TypeName PSObject
+                Add-Member -InputObject $newObjApplocker -Type NoteProperty -Name Name $alPathName
+                Add-Member -InputObject $newObjApplocker -Type NoteProperty -Name Path $alPathCon
+                Add-Member -InputObject $newObjAppLocker -Type NoteProperty -Name PubExcep $alPublishExcep
+                Add-Member -InputObject $newObjAppLocker -Type NoteProperty -Name PubPathExcep $alPublishPathExcep
+                Add-Member -InputObject $newObjAppLocker -Type NoteProperty -Name PubHashExcep $alPublishHashExcep
+                Add-Member -InputObject $newObjApplocker -Type NoteProperty -Name UserorGroup -Value $alUserGroup                 
+                Add-Member -InputObject $newObjApplocker -Type NoteProperty -Name Action -Value $alAction 
+                Add-Member -InputObject $newObjApplocker -Type NoteProperty -Name Rule -Value $alRule
+                #Add-Member -InputObject $newObjApplocker -Type NoteProperty -Name ID -Value $alID
+                $fragApplockerPath += $newObjApplocker    
+            }
+
+        foreach ($denyitem in $appLockerPathDeny)
+            {
+                $alPathName = [string]$denyitem.name
+                $alPathCon = [string]$denyitem.pathconditions
+                $alPublishExcep = [string]$denyitem.PublisherExceptions
+                $alPublishPathExcep = [string]$denyitem.PathExceptions
+                $alPublishHashExcep = [string]$denyitem.HashExceptions
+                $alUserGroup = [string]$denyitem.UserOrGroupSid
+                $alAction = [string]$denyitem.action
+                $alID = [string]$denyitem.ID
+                $alRule = [string]$appLockerRule
+
+                $newObjApplocker = New-Object -TypeName PSObject
+                Add-Member -InputObject $newObjApplocker -Type NoteProperty -Name Name $alPathName
+                Add-Member -InputObject $newObjApplocker -Type NoteProperty -Name Path $alPathCon
+                Add-Member -InputObject $newObjAppLocker -Type NoteProperty -Name PubExcep $alPublishExcep
+                Add-Member -InputObject $newObjAppLocker -Type NoteProperty -Name PubPathExcep $alPublishPathExcep
+                Add-Member -InputObject $newObjAppLocker -Type NoteProperty -Name PubHashExcep $alPublishHashExcep
+                Add-Member -InputObject $newObjApplocker -Type NoteProperty -Name UserorGroup -Value $alUserGroup                 
+                Add-Member -InputObject $newObjApplocker -Type NoteProperty -Name Action -Value $alAction 
+                Add-Member -InputObject $newObjApplocker -Type NoteProperty -Name Rule -Value $alRule
+                #Add-Member -InputObject $newObjApplocker -Type NoteProperty -Name ID -Value $alID
+                $fragApplockerPath += $newObjApplocker
+            }
+}
+
+
+#Publisher Rules
+$gtAppLRuleCollection = Get-ApplockerPolicy -Effective | select -ExpandProperty RuleCollections 
+$gtAppLCollectionTypes = Get-ApplockerPolicy -Effective | select -ExpandProperty RuleCollectionTypes
+
+#$appLockerRule  = "exe"
+#Path Conditions
+$fragApplockerPublisher=@()
+foreach ($appLockerRule in $gtAppLCollectionTypes)
+{
+    $appLockerRuleType = ($gtAppLRuleCollection | where {$_.RuleCollectionType -eq "$appLockerRule"}) | select-object PublisherConditions, PublisherExceptions, PathExceptions, HashExceptions, action,UserOrGroupSid,id,name
+    $ApplockerPublisherAllow = $appLockerRuleType | where {$_.action -eq "allow" -and $_.PublisherConditions -ne $null}
+    $ApplockerPublisherDeny = $appLockerRuleType | where {$_.action -eq "deny" -and $_.PublisherConditions -ne $null} 
+
+        foreach ($allowitem in $ApplockerPublisherAllow)
+            {
+                $alPublishName = [string]$allowitem.name
+                $alPublishCon = [string]$allowitem.PublisherConditions
+                $alPublishExcep = [string]$allowitem.PublisherExceptions
+                $alPublishPathExcep = [string]$allowitem.PathExceptions
+                $alPublishHashExcep = [string]$allowitem.HashExceptions
+                $alUserGroup = [string]$allowitem.UserOrGroupSid
+                $alAction = [string]$allowitem.action
+                $alID = [string]$allowitem.ID
+                $alRule = [string]$appLockerRule
+
+                $newObjAppLockPublisher = New-Object -TypeName PSObject
+                Add-Member -InputObject $newObjAppLockPublisher -Type NoteProperty -Name Publisher $alPublishName
+                Add-Member -InputObject $newObjAppLockPublisher -Type NoteProperty -Name Publisher $alPublishCon
+                Add-Member -InputObject $newObjAppLockPublisher -Type NoteProperty -Name PubExcep $alPublishExcep
+                Add-Member -InputObject $newObjAppLockPublisher -Type NoteProperty -Name PubPathExcep $alPublishPathExcep
+                Add-Member -InputObject $newObjAppLockPublisher -Type NoteProperty -Name PubHashExcep $alPublishHashExcep
+                Add-Member -InputObject $newObjAppLockPublisher -Type NoteProperty -Name UserorGroup -Value $alUserGroup                 
+                Add-Member -InputObject $newObjAppLockPublisher -Type NoteProperty -Name Action -Value $alAction 
+                Add-Member -InputObject $newObjAppLockPublisher -Type NoteProperty -Name Rule -Value $alRule
+                #Add-Member -InputObject $newObjAppLockPublisher -Type NoteProperty -Name ID -Value $alID
+                $fragApplockerPublisher += $newObjAppLockPublisher    
+            }
+
+        foreach ($denyitem in $ApplockerPublisherDeny)
+            {
+                $alPublishName = [string]$denyitem.name
+                $alPublishCon = [string]$denyitem.PublisherConditions
+                $alPublishExcep = [string]$denyitem.PublisherExceptions
+                $alPublishPathExcep = [string]$denyitem.PathExceptions
+                $alPublishHashExcep = [string]$denyitem.HashExceptions
+                $alUserGroup = [string]$denyitem.UserOrGroupSid
+                $alAction = [string]$denyitem.action
+                $alID = [string]$denyitem.ID
+                $alRule = [string]$appLockerRule
+
+                $newObjAppLockPublisher = New-Object -TypeName PSObject
+                Add-Member -InputObject $newObjAppLockPublisher -Type NoteProperty -Name Publisher $alPublishName
+                Add-Member -InputObject $newObjAppLockPublisher -Type NoteProperty -Name Publisher $alPublishCon
+                Add-Member -InputObject $newObjAppLockPublisher -Type NoteProperty -Name PubExcep $alPublishExcep
+                Add-Member -InputObject $newObjAppLockPublisher -Type NoteProperty -Name PubPathExcep $alPublishPathExcep
+                Add-Member -InputObject $newObjAppLockPublisher -Type NoteProperty -Name PubHashExcep $alPublishHashExcep
+                Add-Member -InputObject $newObjAppLockPublisher -Type NoteProperty -Name UserorGroup -Value $alUserGroup                 
+                Add-Member -InputObject $newObjAppLockPublisher -Type NoteProperty -Name Action -Value $alAction 
+                Add-Member -InputObject $newObjAppLockPublisher -Type NoteProperty -Name Rule -Value $alRule
+                #Add-Member -InputObject $newObjAppLockPublisher -Type NoteProperty -Name ID -Value $alID
+                $fragApplockerPublisher += $newObjAppLockPublisher
+            }
+}
+
+#hash conditions
+$gtAppLRuleCollection = Get-ApplockerPolicy -Effective | select -ExpandProperty RuleCollections 
+$gtAppLCollectionTypes = Get-ApplockerPolicy -Effective | select -ExpandProperty RuleCollectionTypes
+
+#Path Conditions
+$fragApplockerHash=@()
+foreach ($appLockerRule in $gtAppLCollectionTypes)
+{
+    $appLockerRuleType = ($gtAppLRuleCollection | where {$_.RuleCollectionType -eq "$appLockerRule"}) | select-object HashConditions, action, UserOrGroupSid, id, name
+    $ApplockerHashAllow = $appLockerRuleType | where {$_.action -eq "allow" -and $_.HashConditions -ne $null}
+    $ApplockerHashDeny = $appLockerRuleType | where {$_.action -eq "deny" -and $_.HashConditions -ne $null} 
+
+        foreach ($allowitem in $ApplockerHashAllow)
+            {
+                $alHashCon = [string]$allowitem.HashConditions #.split(";")[0]
+                $alHashCon = $alHashCon.split(";")[0]
+                $alUserGroup = [string]$allowitem.UserOrGroupSid
+                $alAction = [string]$allowitem.action
+                $alName = [string]$allowitem.name
+                $alID = [string]$allowitem.ID
+                $alRule = [string]$appLockerRule
+
+                $newObjAppLockHash = New-Object -TypeName PSObject
+                Add-Member -InputObject $newObjAppLockHash -Type NoteProperty -Name Name $alName
+                Add-Member -InputObject $newObjAppLockHash -Type NoteProperty -Name Hash $alHashCon
+                Add-Member -InputObject $newObjAppLockHash -Type NoteProperty -Name UserorGroup -Value $alUserGroup                 
+                Add-Member -InputObject $newObjAppLockHash -Type NoteProperty -Name Action -Value $alAction 
+                Add-Member -InputObject $newObjAppLockHash -Type NoteProperty -Name Rule -Value $alRule
+                #Add-Member -InputObject $newObjAppLockHash -Type NoteProperty -Name ID -Value $alID
+                $fragApplockerHash += $newObjAppLockHash    
+            }
+
+        foreach ($denyitem in $ApplockerHashDeny)
+            {
+                $alHashCon = [string]$denyitem.HashConditions #.split(";")[0]
+                $alHashCon = $alHashCon.split(";")[0]
+                $alUserGroup = [string]$denyitem.UserOrGroupSid
+                $alAction = [string]$denyitem.action
+                $alName = [string]$denyitem.name
+                $alID = [string]$denyitem.ID
+                $alRule = [string]$appLockerRule
+
+                $newObjAppLockHash = New-Object -TypeName PSObject
+                Add-Member -InputObject $newObjAppLockHash -Type NoteProperty -Name Name $alName
+                Add-Member -InputObject $newObjAppLockHash -Type NoteProperty -Name Hash $HashCon
+                Add-Member -InputObject $newObjAppLockHash -Type NoteProperty -Name UserorGroup -Value $alUserGroup                 
+                Add-Member -InputObject $newObjAppLockHash -Type NoteProperty -Name Action -Value $alAction 
+                Add-Member -InputObject $newObjAppLockHash -Type NoteProperty -Name Rule -Value $alRule
+                #Add-Member -InputObject $newObjAppLockHash -Type NoteProperty -Name ID -Value $alID
+                $fragApplockerHash += $newObjAppLockHash
+            }
+}
+
+
 
 ################################################
 ###############  DLL HIJACKING  ################
@@ -8441,15 +8687,6 @@ foreach ($OfficePolItems in $OfficePolicies.values)
        $fragSummary += $newObjSummary
     }
 
-    if ($fragPreAuth -like "*warning*")
-    {
-       $newObjSummary = New-Object psObject
-       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value '<a href="#PreAuth">There are AD accounts that dont Pre-Authenticated</a>'
-       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Risk -Value "High Risk"
-       $fragSummary += $newObjSummary
-    }
-
-    
     if ($fragkernelModeVal -like "*warning*")
     {
        $newObjSummary = New-Object psObject
@@ -8458,6 +8695,14 @@ foreach ($OfficePolItems in $OfficePolicies.values)
        $fragSummary += $newObjSummary
     }
 
+    if ($fragPreAuth -like "*warning*")
+    {
+       $newObjSummary = New-Object psObject
+       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value '<a href="#PreAuth">There are AD accounts that dont Pre-Authenticated</a>'
+       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Risk -Value "High Risk"
+       $fragSummary += $newObjSummary
+    }
+ 
 
     if ($fragNeverExpires -like "*warning*")
     {
@@ -8482,6 +8727,14 @@ foreach ($OfficePolItems in $OfficePolicies.values)
        Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Risk -Value "High Risk"
        $fragSummary += $newObjSummary
     }
+
+   if ($getFw -like "*Inbound*")
+   {
+       $newObjSummary = New-Object psObject
+       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value '<a href="#InFirewall">There are Firewall rules Allowing Inbound Firewall Traffic</a>'
+       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Risk -Value "High Risk"
+       $fragSummary += $newObjSummary
+   } 
 
     if ($fragWDigestULC -like "*warning*")
     {
@@ -8531,6 +8784,14 @@ foreach ($OfficePolItems in $OfficePolicies.values)
        $fragSummary += $newObjSummary
    } 
 
+   if ($fragRegPasswords -like "*Warning*")
+   {
+       $newObjSummary = New-Object psObject
+       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value '<a href="#PSHistory">Found Embedded Passwords in Powershell History</a>'
+       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Risk -Value "High Risk"
+       $fragSummary += $newObjSummary
+   }
+
     if ($fragAutoLogon -like "*warning*")
     {
        $newObjSummary = New-Object psObject
@@ -8543,7 +8804,7 @@ foreach ($OfficePolItems in $OfficePolicies.values)
     {
        $newObjSummary = New-Object psObject
        Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value '<a href="#SoftElevation">Installation of Software will Auto Elevate</a>'
-       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Risk -Value "High Risk"
+       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Risk -Value "Medium Risk"
        $fragSummary += $newObjSummary
     }
 
@@ -8591,17 +8852,17 @@ foreach ($OfficePolItems in $OfficePolicies.values)
    {
        $newObjSummary = New-Object psObject
        Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value '<a href="#CipherSuites">SHA1 Cipher Suites are Supported</a>'
-       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Risk -Value "High Risk"
+       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Risk -Value "Medium Risk"
        $fragSummary += $newObjSummary
    }
-   
+
    if ($fragUnQuoted -like "*warning*")
    {
        $newObjSummary = New-Object psObject
        Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value '<a href="#unquoted">Unquoted Paths Vulnerability</a>'
        Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Risk -Value "Very High Risk"
        $fragSummary += $newObjSummary
-   }
+   }   
 
    if ($fragReg -like "*warning*")
    {
@@ -8639,7 +8900,7 @@ foreach ($OfficePolItems in $OfficePolicies.values)
    {
        $newObjSummary = New-Object psObject
        Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value '<a href="#nonSysDirWrite">Directories that are Writeable and Non System</a>'
-       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Risk -Value "Low Risk"
+       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Risk -Value "Medium Risk"
        $fragSummary += $newObjSummary
    } 
 
@@ -8704,7 +8965,7 @@ foreach ($OfficePolItems in $OfficePolicies.values)
    {
        $newObjSummary = New-Object psObject
        Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value '<a href="#WinSSLF">Windows Hardening Policies Recommended by Microsoft are Missing</a>'
-       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Risk -Value "High Risk"
+       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Risk -Value "Medium Risk"
        $fragSummary += $newObjSummary
    }
 
@@ -8712,7 +8973,7 @@ foreach ($OfficePolItems in $OfficePolicies.values)
    {
        $newObjSummary = New-Object psObject
        Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value '<a href="#EdgeSSLF">Edge Hardening Policies Recommended by Microsoft are Missing</a>'
-       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Risk -Value "High Risk"
+       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Risk -Value "Medium Risk"
        $fragSummary += $newObjSummary
    }
 
@@ -8721,7 +8982,7 @@ foreach ($OfficePolItems in $OfficePolicies.values)
    {
        $newObjSummary = New-Object psObject
        Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value '<a href="#OfficeSSLF">Office Hardening Policies Recommended by Microsoft are Missing</a>'
-       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Risk -Value "High Risk"
+       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Risk -Value "Medium Risk"
        $fragSummary += $newObjSummary
    }
        
@@ -8733,17 +8994,6 @@ foreach ($OfficePolItems in $OfficePolicies.values)
        Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Risk -Value "Very High Risk"
        $fragSummary += $newObjSummary      
    }
-
-   
-   if ($getFw -like "*Inbound*")
-   {
-       $newObjSummary = New-Object psObject
-       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value '<a href="#InFirewall">There are Firewall rules Allowing Inbound Firewall Traffic</a>'
-       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Risk -Value "High Risk"
-       $fragSummary += $newObjSummary
-   } 
-
-
 
 ################################################
 ##########  HTML GENERATION  ###################
@@ -8921,6 +9171,54 @@ $style = @"
     text-decoration: none;
     }
 
+        a.class1:link {
+    color:#FFF9EC;
+    font-size:$FontBody_H4;
+    background-color: transparent;
+    text-decoration: none;
+    }
+
+    a.class1:visited {
+    color:#4682B4;
+    font-size:$FontBody_H4;
+    background-color: transparent;
+    text-decoration: none;
+    }
+
+    a.class1:hover {
+    color:#FFF9EC;
+    font-size:$FontBody_H4;
+    background-color: transparent;
+    text-decoration: none;
+    }
+
+    a.class1:active {
+    color:#4682B4;
+    font-size:$FontBody_H4;
+    background-color: transparent;
+    text-decoration: none;
+    }
+
+    details > summary {
+    background-color:#06273A; 
+    color:#4682B4;
+    font-size:130%;
+    font-family:Raleway;
+    margin:0,0,10px,0; 
+    Word-break:normal; 
+    Word-wrap:break-Word
+    }
+
+    details > p {
+    background-color:#06273A; 
+    color:#4682B4;
+    font-size:130%;
+    font-family:Raleway;
+    margin:0,0,10px,0; 
+    Word-break:normal; 
+    Word-wrap:break-Word
+    }
+
     </Style>
 "@
 }
@@ -9047,6 +9345,74 @@ $style = @"
     font-size:$FontBody_H3;
     background-color: transparent;
     text-decoration: none;
+    }
+    
+    details > summary {
+    background-color:#06273A; 
+    color:#4682B4;
+    font-size:130%;
+    font-family:Raleway;
+    margin:0,0,10px,0; 
+    Word-break:normal; 
+    Word-wrap:break-Word
+    }
+
+    details > p {
+    background-color:#06273A; 
+    color:#4682B4;
+    font-size:130%;
+    font-family:Raleway;
+    margin:0,0,10px,0; 
+    Word-break:normal; 
+    Word-wrap:break-Word
+    }
+
+        a.class1:link {
+    color:#FFF9EC;
+    font-size:$FontBody_H4;
+    background-color: transparent;
+    text-decoration: none;
+    }
+
+    a.class1:visited {
+    color:#4682B4;
+    font-size:$FontBody_H4;
+    background-color: transparent;
+    text-decoration: none;
+    }
+
+    a.class1:hover {
+    color:#FFF9EC;
+    font-size:$FontBody_H4;
+    background-color: transparent;
+    text-decoration: none;
+    }
+
+    a.class1:active {
+    color:#4682B4;
+    font-size:$FontBody_H4;
+    background-color: transparent;
+    text-decoration: none;
+    }
+
+    details > summary {
+    background-color:#06273A; 
+    color:#4682B4;
+    font-size:130%;
+    font-family:Raleway;
+    margin:0,0,10px,0; 
+    Word-break:normal; 
+    Word-wrap:break-Word
+    }
+
+    details > p {
+    background-color:#06273A; 
+    color:#4682B4;
+    font-size:130%;
+    font-family:Raleway;
+    margin:0,0,10px,0; 
+    Word-break:normal; 
+    Word-wrap:break-Word
     }
 
     </Style>
@@ -9177,6 +9543,54 @@ $style = @"
     text-decoration: none;
     }
 
+        a.class1:link {
+    color:#FFF9EC;
+    font-size:$FontBody_H4;
+    background-color: transparent;
+    text-decoration: none;
+    }
+
+    a.class1:visited {
+    color:#4682B4;
+    font-size:$FontBody_H4;
+    background-color: transparent;
+    text-decoration: none;
+    }
+
+    a.class1:hover {
+    color:#FFF9EC;
+    font-size:$FontBody_H4;
+    background-color: transparent;
+    text-decoration: none;
+    }
+
+    a.class1:active {
+    color:#4682B4;
+    font-size:$FontBody_H4;
+    background-color: transparent;
+    text-decoration: none;
+    }
+
+    details > summary {
+    background-color:#06273A; 
+    color:#4682B4;
+    font-size:130%;
+    font-family:Raleway;
+    margin:0,0,10px,0; 
+    Word-break:normal; 
+    Word-wrap:break-Word
+    }
+
+    details > p {
+    background-color:#06273A; 
+    color:#4682B4;
+    font-size:130%;
+    font-family:Raleway;
+    margin:0,0,10px,0; 
+    Word-break:normal; 
+    Word-wrap:break-Word
+    }
+
     </Style>
 "@
 }
@@ -9303,7 +9717,55 @@ $style = @"
     font-size:$FontBody_H3;
     background-color: transparent;
     text-decoration: none;
-    }    
+    }  
+        a.class1:link {
+    color:#FFF9EC;
+    font-size:$FontBody_H4;
+    background-color: transparent;
+    text-decoration: none;
+    }
+
+    a.class1:visited {
+    color:#4682B4;
+    font-size:$FontBody_H4;
+    background-color: transparent;
+    text-decoration: none;
+    }
+
+    a.class1:hover {
+    color:#FFF9EC;
+    font-size:$FontBody_H4;
+    background-color: transparent;
+    text-decoration: none;
+    }
+
+    a.class1:active {
+    color:#4682B4;
+    font-size:$FontBody_H4;
+    background-color: transparent;
+    text-decoration: none;
+    }
+
+    details > summary {
+    background-color:#06273A; 
+    color:#4682B4;
+    font-size:130%;
+    font-family:Raleway;
+    margin:0,0,10px,0; 
+    Word-break:normal; 
+    Word-wrap:break-Word
+    }
+
+    details > p {
+    background-color:#06273A; 
+    color:#4682B4;
+    font-size:130%;
+    font-family:Raleway;
+    margin:0,0,10px,0; 
+    Word-break:normal; 
+    Word-wrap:break-Word
+    }
+      
 
     </Style>
 "@
@@ -9430,46 +9892,94 @@ $style = @"
     }
 
     a:active {
-    color:#4682B4;
+    color:#D3BAA9;
     font-size:$FontBody_H3;
     background-color: transparent;
     text-decoration: none;
+    } 
+
+    a.class1:link {
+    color:#FFF9EC;
+    font-size:$FontBody_H4;
+    background-color: transparent;
+    text-decoration: none;
+    }
+
+    a.class1:visited {
+    color:#4682B4;
+    font-size:$FontBody_H4;
+    background-color: transparent;
+    text-decoration: none;
+    }
+
+    a.class1:hover {
+    color:#FFF9EC;
+    font-size:$FontBody_H4;
+    background-color: transparent;
+    text-decoration: none;
+    }
+
+    a.class1:active {
+    color:#4682B4;
+    font-size:$FontBody_H4;
+    background-color: transparent;
+    text-decoration: none;
+    }
+
+    details > summary {
+    background-color:#06273A; 
+    color:#4682B4;
+    font-size:130%;
+    font-family:Raleway;
+    margin:0,0,10px,0; 
+    Word-break:normal; 
+    Word-wrap:break-Word
+    }
+
+    details > p {
+    background-color:#06273A; 
+    color:#4682B4;
+    font-size:130%;
+    font-family:Raleway;
+    margin:0,0,10px,0; 
+    Word-break:normal; 
+    Word-wrap:break-Word
     }
 
     </Style>
 "@
 }
 
-    $VulnReport = "C:\SecureReport"
-    $OutFunc = "SystemReport"  
-    $tpSec10 = Test-Path "C:\SecureReport\output\$OutFunc\"
+$VulnReport = "C:\SecureReport"
+$OutFunc = "SystemReport"  
+$tpSec10 = Test-Path "C:\SecureReport\output\$OutFunc\"
     
-    if ($tpSec10 -eq $false)
+if ($tpSec10 -eq $false)
     {
         New-Item -Path "C:\SecureReport\output\$OutFunc\" -ItemType Directory -Force
     }
 
-    $working = "C:\SecureReport\output\$OutFunc\"
-    $Report = "C:\SecureReport\output\$OutFunc\" + "$OutFunc.html"
+$working = "C:\SecureReport\output\$OutFunc\"
+$Report = "C:\SecureReport\output\$OutFunc\" + "$OutFunc.html"
 
 ################################################
 ##########  HELPS AND DESCRIPTIONS  ############
 ################################################
 
-    $Intro = "Thanks for using the vulnerability report written by Tenaka.net, please show your support and visit my site, it's non-profit and Ad-free. <br> <br>Any issues with the report's accuracy please do let me know and I'll get it fixed asap. The results in this report are a guide and not a guarantee that the tested system is not without further defects or vulnerability.<br>
-    <br>The tests focus on known and common issues with Windows that can be exploited by an attacker. Each section contains a small snippet to provide some context, follow the links for further detail.<br><br>The html output can be imported into Excel for further analysis and uses the True and False values as a drop-down filter.<br>Open Excel, Data, Import from Web. Enter the file path in the following format file:///C:/SecureReport/NameOfReport.htm, then Select multiple items and click on Load and select 'Load To', click on Table.<br><br>Further support for this report can be found @ https://www.tenaka.net/windowsclient-vulnscanner"
+    $Intro = "Thanks for using the vulnerability report written by <a href=`"https://www.tenaka.net`" class=`"class1`">Tenaka.net</a>, please show your support and visit my site, it's non-profit and Ad-free. <br> <br>Any issues with the report's accuracy please do let me know and I'll get it fixed asap. The results in this report are a guide and not a guarantee that the tested system is not without further defects or vulnerability.<br>
+    <br>The tests focus on known and common issues with Windows that can be exploited by an attacker. Each section contains a small snippet to provide some context, follow the links for further detail.<br><br>The html output can be imported into Excel for further analysis and uses the True and False values as a drop-down filter.<br>Open Excel, Data, Import from Web. Enter the file path in the following format file:///C:/SecureReport/NameOfReport.htm, then Select multiple items and click on Load and select 'Load To', click on Table.<br><br>Further support for this report can be found @ <a href=`"https://www.tenaka.net/windowsclient-vulnscanner`" class=`"class1`">Vulnerability Scanner</a>"
 
     #$Intro2 = "The results in this report are a guide and not a guarantee that the tested system is not without further defect or vulnerability.<br>The tests focus on known and common issues with Windows that can be exploited by an attacker. Each section contains a small snippet to provide some context, follow the links for further detail.<br><br>The html output can be imported into Excel for further analysis and uses the True and False values as a drop-down filter.<br><br>Open Excel, Data, Import from Web. Enter the file path in the following format file:///C:/SecureReport/NameOfReport.htm, then Select multiple items and click on Load and select 'Load To', click on Table.<br>"
 
     $Finish = "This script has been provided by Tenaka.net, if it's beneficial, please provide feedback and any additional feature requests gratefully received. "
 
-    $descripBitlocker = "TPM and Bitlocker protect against offline attack from usb and mounting the local Windows system then Accessing the local data. 'TPM and Pin' enhances Bitlocker by preventing LPC Bus (Low Pin Count) bypasses of Bitlocker with TPM. <br> <br>Further information can be found @ https://www.tenaka.net/bitlocker<br>"
+    $descripBitlocker = "TPM and Bitlocker protect against offline attack from usb and mounting the local Windows system then Accessing the local data. 'TPM and Pin' enhances Bitlocker by preventing LPC Bus (Low Pin Count) bypasses of Bitlocker with TPM. <br> <br>Further information can be found @ <a href=`"https://www.tenaka.net/bitlocker`" class=`"class1`">Bitlocker</a>"
 
-    $descripVirt = "Secure Boot is a security standard to ensure only trusted OEM software is allowed at boot. At startup the UEFi and boot software's digital signatures are validated preventing rootkits. <br> <br>More on Secure Boot can be found here @ https://media.defense.gov/2020/Sep/15/2002497594/-1/-1/0/CTR-UEFI-SECURE-BOOT-CUSTOMIZATION-20200915.PDF/CTR-UEFI-SECURE-BOOT-CUSTOMIZATION-20200915.PDF<br>"
+    $descripVirt = "Virtualization-based security (VBS), isolates core system resources to create secure regions of memory. Enabling VBS allows for Hypervisor-Enforced Code Integrity (HVCI), Device Guard and Credential Guard. <br> <br>Further information can be found @ https://docs.microsoft.com/en-us/windows-hardware/design/device-experiences/oem-vbs<br> <br><a href=`"https://www.tenaka.net/deviceguard-vs-rce`" class=`"class1`">WDAC vs RCE</a> and <a href=`"https://www.tenaka.net/pass-the-hash`" class=`"class1`">Pass the Hash</a> <br><br>Secure Boot is a security standard to ensure only trusted OEM software is allowed at boot. At startup the UEFi and boot software's digital signatures are validated preventing rootkits. <br> <br>More on Secure Boot can be found here @ https://media.defense.gov/2020/Sep/15/2002497594/-1/-1/0/CTR-UEFI-SECURE-BOOT-CUSTOMIZATION-20200915.PDF/CTR-UEFI-SECURE-BOOT-CUSTOMIZATION-20200915.PDF<br>"
 
-    $descripVirt2 = "Virtualization-based security (VBS), isolates core system resources to create secure regions of memory. Enabling VBS allows for Hypervisor-Enforced Code Integrity (HVCI), Device Guard and Credential Guard. <br> <br>Further information can be found @ https://docs.microsoft.com/en-us/windows-hardware/design/device-experiences/oem-vbs<br> <br>https://www.tenaka.net/deviceguard-vs-rce and https://www.tenaka.net/pass-the-hash <br>"
+    $descripVirt2 = "Virtualization-based security (VBS), isolates core system resources to create secure regions of memory. Enabling VBS allows for Hypervisor-Enforced Code Integrity (HVCI), Device Guard and Credential Guard. <br> <br>Further information can be found @ https://docs.microsoft.com/en-us/windows-hardware/design/device-experiences/oem-vbs<br> <br><a href=`"https://www.tenaka.net/deviceguard-vs-rce`" class=`"class1`">WDAC vs RCE</a> and <a href=`"https://www.tenaka.net/pass-the-hash`" class=`"class1`">Pass the Hash</a> <br>"
 
-    $descripSecOptions = "<br>GPO settings can be found @ Computer Configuration\Windows Settings\Security Settings\Local Policies\Security Options<br><br>Prevent credential relay with Impacket and Man in the Middle by Digitally Signing for SMB and LDAP connections enforcement. <br> <br>Further information can be found @ https://www.tenaka.net/smb-relay-attack<br> <br>System cryptography: Force strong key protection for user keys stored on the computer should only be set on clients and not Servers<br>"
+    $descripSecOptions = "<br>GPO settings can be found @ Computer Configuration\Windows Settings\Security Settings\Local Policies\Security Options<br><br>Prevent credential relay with Impacket and Man in the Middle by Digitally Signing for SMB and LDAP connections enforcement. <br> <br>Further information can be found @ <a href=`"https://www.tenaka.net/smb-relay-attack`" class=`"class1`">SMB-Relay-Attack</a><br> <br>System cryptography: Force strong key protection for user keys stored on the computer should only be set on clients and not Servers<br>"
 
     $descripLSA = "Enabling RunAsPPL for LSA Protection allows only digitally signed binaries to load as a protected process preventing credential theft and Access by code injection and memory Access by processes that aren't signed. <br> <br>Further information can be found @ https://docs.microsoft.com/en-us/windows-server/security/credentials-protection-and-management/configuring-additional-lsa-protection<br>"
 
@@ -9483,23 +9993,23 @@ $style = @"
 
     $descripAutoLogon = "MECM\SCCM\MDT could leave Autologon credentials including a clear text password in the Registry."
 
-    $descripUnquoted = "The Unquoted paths vulnerability is when a Windows Service's 'Path to Executable' contains spaces and not wrapped in double-quotes providing a route to System. <br> <br>Further information can be found @ https://www.tenaka.net/unquotedpaths<br>"
+    $descripUnquoted = "The Unquoted paths vulnerability is when a Windows Service's 'Path to Executable' contains spaces and not wrapped in double-quotes providing a route to System. <br> <br>Further information can be found @ <a href=`"https://www.tenaka.net/unquotedpaths`" class=`"class1`">UnQuoted Paths</a><br>"
 
     $descripProcPw = "Processes that contain credentials to authenticate and Access applications. Launching Task Manager, Details and add 'Command line' to the view."
 
-    $descripLegacyNet = "LLMNR and other legacy network protocols can be used to steal password hashes. <br> <br>Further information can be found @https://www.tenaka.net/responder<br>"
+    $descripLegacyNet = "LLMNR and other legacy network protocols can be used to steal password hashes. <br> <br>Further information can be found @ <a href=`"https://www.tenaka.net/responder`" class=`"class1`">Responder</a><br>"
 
-    $descripRegPer ="Weak Registry permissions allowing users to change the path to launch malicious software.<br> <br>Further information can be found @ https://www.tenaka.net/unquotedpaths"
+    $descripRegPer ="Weak Registry permissions allowing users to change the path to launch malicious software.<br> <br>Further information can be found @ <a href=`"https://www.tenaka.net/unquotedpaths`" class=`"class1`">UnQuoted Paths</a>"
 
-    $descripSysFold = "Default System Folders that allow a User the Write permissions. These can be abused by creating content in some of the allowable default locations. Prevent by applying Execution controls eg Applocker.<br> <br> Further information can be found @ https://www.tenaka.net/unquotedpaths<br>"
+    $descripSysFold = "Default System Folders that allow a User the Write permissions. These can be abused by creating content in some of the allowable default locations. Prevent by applying Execution controls eg Applocker.<br> <br> Further information can be found @ <a href=`"https://www.tenaka.net/unquotedpaths`" class=`"class1`">UnQuoted Paths</a><br>"
 
-    $descripCreateSysFold = "Default System Folders that allows a User the CreateFile permissions. These can be abused by creating content in some of the allowable default locations. Prevent by applying Execution controls eg Applocker.<br> <br>Further information can be found @ https://www.tenaka.net/unquotedpaths<br>"
+    $descripCreateSysFold = "Default System Folders that allows a User the CreateFile permissions. These can be abused by creating content in some of the allowable default locations. Prevent by applying Execution controls eg Applocker.<br> <br>Further information can be found @ <a href=`"https://www.tenaka.net/unquotedpaths`" class=`"class1`">UnQuoted Paths</a><br>"
 
-    $descripNonFold = "A vulnerability exists when enterprise software has been installed on the root of C:\. The default permissions allow a user to replace approved software binaries with malicious binaries. <br> <br>Further information can be found @ https://www.tenaka.net/unquotedpaths<br>"
+    $descripNonFold = "A vulnerability exists when enterprise software has been installed on the root of C:\. The default permissions allow a user to replace approved software binaries with malicious binaries. <br> <br>Further information can be found @ <a href=`"https://www.tenaka.net/unquotedpaths`" class=`"class1`">UnQuoted Paths</a><br>"
 
-    $descripFile = "System files that allow users to write can be swapped out for malicious software binaries. <br> <br>Further  information can be found @ https://www.tenaka.net/unquotedpaths<br>"
+    $descripFile = "System files that allow users to write can be swapped out for malicious software binaries. <br> <br>Further  information can be found @ <a href=`"https://www.tenaka.net/unquotedpaths`" class=`"class1`">UnQuoted Paths</a>"
 
-    $descripFirewalls = "Firewalls should always block inbound and exceptions should be to a named IP and Port.<br> <br>Further  information can be found @ https://www.tenaka.net/whyhbfirewallsneeded<br>" 
+    $descripFirewalls = "Firewalls should always block inbound and exceptions should be to a named IP and Port.<br> <br>Further  information can be found @ <a href=`"https://www.tenaka.net/whyhbfirewallsneeded`" class=`"class1`">Why Hostbased Firewalls are Essential</a><br>" 
 
     $descripTaskSchPerms = "Checks for Scheduled Tasks excluding any that reference System32 as a directory. These potential user-created tasks are checked for scripts and their directory permissions are validated. No user should be allowed to Access the script and make amendments, this is a privilege escalation route." 
 
@@ -9511,9 +10021,9 @@ $style = @"
 
     $descriptDLLHijack = "DLL Hijacking is when a malicious dll replaces a legitimate dll due to a path vulnerability. A program or service makes a call on that dll gaining the privileges of that program or service. Additionally missing dll's presents a risk where a malicious dll is dropped into a path where no current dll exists but the program or service is making a call to that non-existent dll. This audit is reliant on programs being launched so that DLL's are loaded. Each process's loaded dll's are checked for permissions issues and whether they are signed. The DLL hijacking audit does not currently check for missing dll's being called. Process Monitor filtered for 'NAME NOT FOUND' and path ends with 'DLL' will."
 
-    $descripCredGu = "Credential Guard securely isolating the LSA process preventing the recovery of domain hashes from memory. Credential Guard only works for Domain joined clients and servers.<br> <br>Further information can be found @ https://www.tenaka.net/pass-the-hash<br>"
+    $descripCredGu = "Credential Guard securely isolating the LSA process preventing the recovery of domain hashes from memory. Credential Guard only works for Domain joined clients and servers.<br> <br>Further information can be found @ <a href=`"https://www.tenaka.net/pass-the-hash`" class=`"class1`">Pass the Hash</a><br>"
 
-    $descripLAPS = "Local Administrator Password Solution (LAPS) is a small program with some GPO settings that randomly sets the local administrator password for clients and servers across the estate. Domain Admins have default permission to view the local administrator password via DSA.MSC. Access to the LAPS passwords may be delegated unintentionally, this could lead to a serious security breach, leaking all local admin accounts passwords for all computer objects to those that shouldn't have Access. <br> <br>Installation guide can be found @ https://www.tenaka.net/post/local-admin-passwords. <br> <br>Security related issue details can be found @ https://www.tenaka.net/post/laps-leaks-local-admin-passwords<br>"
+    $descripLAPS = "Local Administrator Password Solution (LAPS) is a small program with some GPO settings that randomly sets the local administrator password for clients and servers across the estate. Domain Admins have default permission to view the local administrator password via DSA.MSC. Access to the LAPS passwords may be delegated unintentionally, this could lead to a serious security breach, leaking all local admin accounts passwords for all computer objects to those that shouldn't have Access. <br> <br>Installation guide can be found @ <a href=`"https://www.tenaka.net/post/local-admin-passwords`" class=`"class1`">LAPS Installation</a>. <br> <br>Security related issue details can be found @ <a href=`"https://www.tenaka.net/post/laps-leaks-local-admin-passwords`" class=`"class1`">LAPS Leaking Admin Passwords</a><br>"
 
     $descripURA = "User Rights Assignments (URA) control what tasks a user can perform on the local client, server or Domain Controller. For example the 'Log on as a service' (SeServiceLogonRight) provides the rights for a service account to Logon as a Service, not Interactively. <br> <br> Access to URA can be abused and attack the system. <br> <br>Both SeImpersonatePrivilege (Impersonate a client after authentication) and SeAssignPrimaryTokenPrivilege (Replace a process level token) are commonly used by service accounts and vulnerable to escalation of privilege via Juicy Potato exploits.<br> <br>SeBackupPrivilege (Back up files and directories), read Access to all files including SAM Database, Registry and NTDS.dit (AD Database). <br> <br>SeRestorePrivilege (Restore files and directories), Write Access to all files. <br> <br>SeDebugPrivilege (Debug programs), allows the ability to dump and inject into process memory inc kernel. Passwords are stored in memory in the clear and can be dumped and easily extracted. <br> <br>SeTakeOwnershipPrivilege (Take ownership of files or other objects), take ownership of file regardless of Access.<br> <br>SeNetworkLogonRight (Access this computer from the network) allows pass-the-hash when Local Admins share the same password, remove all the default groups and apply named groups, separating client from servers.<br><br>SeCreateGlobalPrivilege (Create global objects), do not assign any user or group other than Local System as this will allow system takeover<br><br>Further details can be found @ <br>https://docs.microsoft.com/en-us/windows/security/threat-protection/security-policy-settings/user-rights-assignment<br>https://www.microsoft.com/en-us/download/details.aspx?id=55319<br><br>**UserRightAssignment-Name - Mouse over to show Microsofts recommended setting"
 
@@ -9525,7 +10035,7 @@ $style = @"
 
     $descripDomainGroups = "Group membership of the user executing this script. Local admins are required, the account should not have Domain Admins as this can result in privilege escalation."
 
-    $descripDomainPrivs = "Reference User Rights Assignment (USR) section below for further details"
+    $descripDomainPrivs = "Reference User Rights Assignment (URA) section below for further details"
 
     $descripLocalAccounts = "Local accounts should be disabled when the client or server is part of a Domain. LAPS should be deployed to ensure all local account passwords are unique"
 
@@ -9533,11 +10043,11 @@ $style = @"
 
     $descripOffice2016 = "These are recommended GPO settings to secure Office 2016-365 by Microsoft, do NOT implement without the correct research and testing. Some settings could adversely affect your system.<br> Its recommended that Attack Surface Reduction (ASR) is enabled but requires Windows Defender Real-Time Antivirus and works in conjunction with Exploit Guard to prevent malware abusing legitimate MS Office functionality"
 
-    $descripPreAuth = "READ ME - Requires the installation of the AD RSAT tools for this to work.<br><br>Pre-authentication is when the user sends the KDC an Authentication Service Request (AS_REQ) with an encrypted Timestamp. The KDC replies with an Authentication Service Reply (AS_REP) with the TGT and a logon session. The issue arises when the user's account doesn't require pre-authentication, it's a check box on the user's account settings. An attacker is then able to request a DC, and the DC dutifully replies with user encrypted TGT using the user's own NTLM password hash. An offline brute force attack is then possible in the hope of extracting the clear text password, known as AS-REP Roasting <br> <br>Further information @<br><br>https://www.tenaka.net/kerberos-armouring<br>https://social.technet.microsoft.com/wiki/contents/articles/23559.kerberos-pre-authentication-why-it-should-not-be-disabled.aspx"
+    $descripPreAuth = "READ ME - Requires the installation of the AD RSAT tools for this to work.<br><br>Pre-authentication is when the user sends the KDC an Authentication Service Request (AS_REQ) with an encrypted Timestamp. The KDC replies with an Authentication Service Reply (AS_REP) with the TGT and a logon session. The issue arises when the user's account doesn't require pre-authentication, it's a check box on the user's account settings. An attacker is then able to request a DC, and the DC dutifully replies with user encrypted TGT using the user's own NTLM password hash. An offline brute force attack is then possible in the hope of extracting the clear text password, known as AS-REP Roasting <br> <br>Further information @ <a href=`"https://www.tenaka.net/kerberos-armouring`" class=`"class1`">Kerberos Armouring</a><br>"
 
     $descripAV = ""
 
-    $descripDomainPrivsGps = "Review and minimise members of privileged groups and delegate as much as possible. Don't nest groups into Domain Admins, add direct user accounts only. Deploy User Rights Assignments to explicitly prevent Domain Admins from logging on to Member Servers and Clients more information can be found here @<br><br>https://www.tenaka.net/post/deny-domain-admins-logon-to-workstations<br><br>Dont add privilged groups to Guests or Domain Guests and yes I've seen Domain Guests added to Domain Admins"
+    $descripDomainPrivsGps = "Review and minimise members of privileged groups and delegate as much as possible. Don't nest groups into Domain Admins, add direct user accounts only. Deploy User Rights Assignments to explicitly prevent Domain Admins from logging on to Member Servers and Clients more information can be found here @ <a href=`"https://www.tenaka.net/post/deny-domain-admins-logon-to-workstations`" class=`"class1`">URA to Deny Domain Admins Logging to Workstations</a><br><br>Dont add privilged groups to Guests or Domain Guests and yes I've seen Domain Guests added to Domain Admins"
 
     $descripCerts = ""
 
@@ -9550,6 +10060,11 @@ $style = @"
     $descripBios = "Will assume any UEFI\BIOS is out of date if its older than 6 months"
 
     $descripWinUpdates = "Will assume any Windows Updates are out of date if older than 6 months"
+
+    $descripPowershellHistory = "Searches Powershell history for Password or Usernames @ C:\Users\SomeUser\APDATA\Microsoft\Windows\PowerShell\PSReadLine\ConsoleHost_history.txt"
+
+    $descripToDo = ""
+
 
 ################################################
 ################  FRAGMENTS  ###################
@@ -9566,71 +10081,76 @@ $style = @"
             
     #Host details    
     $frag_Host = $fragHost | ConvertTo-Html -As List -Property Name,Domain,Model -fragment -PreContent "<h2>Host Details</span></h2>"  | Out-String
-    $fragOS = $OS | ConvertTo-Html -As List -property Caption,Version,OSArchitecture,InstallDate -fragment -PreContent "<h2>Windows Details</span></h2>" | Out-String
-    $FragAccountDetails = $AccountDetails  | ConvertTo-Html -As Table -fragment -PreContent "<h2>Local Account Details</span></h2>" -PostContent "<h4>$descripLocalAccounts</h4>" | Out-String 
-    $frag_DCList  = $fragDCList | ConvertTo-Html -As Table -fragment -PreContent "<h2>List of Domain Controllers</span></h2>" | Out-String 
-    $frag_FSMO = $fragFSMO | ConvertTo-Html -As Table -fragment -PreContent "<h2>FSMO Roles</span></h2>" | Out-String 
-    $frag_DomainGrps = $fragDomainGrps | ConvertTo-Html -As Table -fragment -PreContent "<h2>Members of Privilege Groups</span></h2>" -PostContent "<h4>$descripDomainPrivsGps</h4>" | Out-String 
-    $frag_PreAuth = $fragPreAuth | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"PreAuth`"><a href=`"#TOP`">Domain Accounts that DO NOT Pre-Authenticate</a></span></h2>" -PostContent "<h4>$descripPreAuth</h4>" | Out-String
-    $frag_NeverExpires = $fragNeverExpires | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"PassExpire`"><a href=`"#TOP`">Domain Accounts that Never Expire their Password</a></span></h2>"  | Out-String
-    $FragGroupDetails =  $GroupDetails  | ConvertTo-Html -As Table -fragment -PreContent "<h2>Local System Group Members</span></h2>" | Out-String
-    $FragPassPol = $PassPol | Select-Object -SkipLast 3 | ConvertTo-Html -As Table -fragment -PreContent "<h2>Local Password Policy</span></h2>" | Out-String
-    $fragInstaApps  =  $InstallApps | Sort-Object publisher,displayname -Unique  | ConvertTo-Html -As Table  -fragment -PreContent "<h2><a name=`"InstalledApps`"><a href=`"#TOP`">Installed Applications</a></span></h2>" -PostContent "<h4>$descripInstalledApps</h4>" | Out-String
-    $fragHotFix = $HotFix | ConvertTo-Html -As Table -property HotFixID,InstalledOn,Caption -fragment -PreContent "<h2><a name=`"Hotfix`"><a href=`"#TOP`">Installed Windows Updates</a></span></h2>" -PostContent "<h4>$descripWinUpdates</h4>"| Out-String   
-    $fragInstaApps16  =  $InstallApps16 | Sort-Object publisher,displayname -Unique  | ConvertTo-Html -As Table  -fragment -PreContent "<h2>Updates to Office 2016 and older or Updates that create KB's in the Registry</span></h2>" | Out-String
-    $fragBios = $BiosUEFI | ConvertTo-Html -As List -fragment -PreContent "<h2><a name=`"BiosUEFI`"><a href=`"#TOP`">Bios Details</a></span></h2>" -PostContent "<h4>$descripBios</h4>"| Out-String
-    $fragCpu = $cpu | ConvertTo-Html -As List -property Name,MaxClockSpeed,NumberOfCores,ThreadCount -fragment -PreContent "<h2>Processor Details</span></h2>" | Out-String
-    $frag_whoamiGroups =  $whoamiGroups | ConvertTo-Html -As Table -fragment -PreContent "<h2>Current Users Group Membership</span></h2>" -PostContent "<h4>$descripDomainGroups</h4>" | Out-String
-    $frag_whoamiPriv =  $whoamiPriv | ConvertTo-Html -As Table -fragment -PreContent "<h2>Current Users Local Privileges</span></h2>" -PostContent "<h4>$descripDomainPrivs</h4>" | Out-String
-    $frag_Network4 = $fragNetwork4 | ConvertTo-Html -As List -fragment -PreContent "<h2>IPv4 Address Details</span></h2>"  | Out-String
-    $frag_Network6 = $fragNetwork6 | ConvertTo-Html -As List -fragment -PreContent "<h2>IPv4 Address Details</span></h2>"  | Out-String
-    $Frag_WinFeature = $FragWinFeature | ConvertTo-Html -As table -fragment -PreContent "<h2>Installed Windows Features</span></h2>"  | Out-String
+    $fragOS = $OS | ConvertTo-Html -As List -property Caption,Version,OSArchitecture,InstallDate -fragment -PreContent "<p></p><details><summary>Windows Details</summary><p>" -PostContent "<h4>$descripToDo</h4></details>" | Out-String
+    $FragAccountDetails = $AccountDetails  | ConvertTo-Html -As Table -fragment -PreContent "<p></p><details><summary>Local Account Details</summary><p>" -PostContent "<h4>$descripLocalAccounts</h4></details>" | Out-String 
+    $frag_DCList  = $fragDCList | ConvertTo-Html -As Table -fragment -PreContent "<p></p><details><summary>List of Domain Controllers</summary><p>" -PostContent "<h4>$descripToDo</h4></details>" | Out-String 
+    $frag_FSMO = $fragFSMO | ConvertTo-Html -As Table -fragment -PreContent "<p></p><details><summary>FSMO Roles</summary><p>" -PostContent "<h4>$descripToDo</h4></details>"| Out-String 
+    $frag_DomainGrps = $fragDomainGrps | ConvertTo-Html -As Table -fragment -PreContent "<p></p><details><summary>Members of Privilege Groups</summary><p>" -PostContent "<h4>$descripDomainPrivsGps</h4></details>" | Out-String 
+    $frag_PreAuth = $fragPreAuth | ConvertTo-Html -as Table -Fragment -PreContent "<p></p><details><summary><a name=`"PreAuth`"><a href=`"#TOP`">Domain Accounts that DO NOT Pre-Authenticate</summary></a><p>" -PostContent "<h4>$descripPreAuth</h4></details>" | Out-String
+    $frag_NeverExpires = $fragNeverExpires | ConvertTo-Html -as Table -Fragment -PreContent "<p></p><details><summary><a name=`"PassExpire`"><a href=`"#TOP`">Domain Accounts that Never Expire their Password</summary></a><p></details>"  | Out-String
+    $FragGroupDetails =  $GroupDetails  | ConvertTo-Html -As Table -fragment -PreContent "<p></p><details><summary>Local System Group Members</summary><p>" -PostContent "<h4>$descripToDo</h4></details>" | Out-String
+    $FragPassPol = $PassPol | Select-Object -SkipLast 3 | ConvertTo-Html -As Table -fragment -PreContent "<p></p><details><summary>Local Password Policy</summary><p>" -PostContent "<h4>$descripToDo</h4></details>" | Out-String
+    $fragInstaApps  =  $InstallApps | Sort-Object publisher,displayname -Unique  | ConvertTo-Html -As Table  -fragment -PreContent "<p></p><details><summary><a name=`"InstalledApps`"><a href=`"#TOP`">Installed Applications</summary></a><p>" -PostContent "<h4>$descripInstalledApps</h4></details>" | Out-String
+    $fragHotFix = $HotFix | ConvertTo-Html -As Table -property HotFixID,InstalledOn,Caption -fragment -PreContent "<p></p><details><summary><a name=`"Hotfix`"><a href=`"#TOP`">Installed Windows Updates</summary></a><p>" -PostContent "<h4>$descripWinUpdates</h4></details>"| Out-String   
+    $fragInstaApps16  =  $InstallApps16 | Sort-Object publisher,displayname -Unique  | ConvertTo-Html -As Table  -fragment -PreContent "<p></p><details><summary>Updates to Office 2016 and older or Updates that create KB's in the Registry</summary><p>" -PostContent "<h4>$descripToDo</h4></details>" | Out-String
+    $fragBios = $BiosUEFI | ConvertTo-Html -As List -fragment -PreContent "<p></p><details><summary><a name=`"BiosUEFI`"><a href=`"#TOP`">Bios Details</summary></a><p>" -PostContent "<h4>$descripBios</h4></details>"| Out-String
+    $fragCpu = $cpu | ConvertTo-Html -As List -property Name,MaxClockSpeed,NumberOfCores,ThreadCount -fragment -PreContent "<p></p><details><summary>Processor Details</summary><p>" -PostContent "<h4>$descripToDo</h4></details>" | Out-String
+    $frag_whoamiGroups =  $whoamiGroups | ConvertTo-Html -As Table -fragment -PreContent "<p></p><details><summary>Current Users Group Membership</summary><p>" -PostContent "<h4>$descripDomainGroups</h4></details>" | Out-String
+    $frag_whoamiPriv =  $whoamiPriv | ConvertTo-Html -As Table -fragment -PreContent "<p></p><details><summary>Current Users Local Privileges</summary><p>" -PostContent "<h4>$descripDomainPrivs</h4></details>" | Out-String
+    $frag_Network4 = $fragNetwork4 | ConvertTo-Html -As List -fragment -PreContent "<p></p><details><summary>IPv4 Address Details</summary><p>" -PostContent "<h4>$descripToDo</h4></details>"  | Out-String
+    $frag_Network6 = $fragNetwork6 | ConvertTo-Html -As List -fragment -PreContent "<p></p><details><summary>IPv6 Address Details</summary><p>" -PostContent "<h4>$descripToDo</h4></details>"  | Out-String
+    $Frag_WinFeature = $FragWinFeature | ConvertTo-Html -As table -fragment -PreContent "<p></p><details><summary>Installed Windows Features</summary><p>" -PostContent "<h4>$descripToDo</h4></details>" | Out-String
+    $frag_MDTBuild = $fragMDTBuild | ConvertTo-Html -As table -fragment -PreContent "<p></p><details><summary>MDT Deployment Details</summary><p>" -PostContent "<h4>$descripToDo</h4></details>"  | Out-String
     
     #Security Review
-    $Frag_AVStatus = $FragAVStatus | ConvertTo-Html -As Table  -fragment -PreContent "<h2><a name=`"AV`"><a href=`"#TOP`">AntiVirus Engine and Definition Status</a></span></h2>" -PostContent "<h4>$descripAV</h4>" | Out-String
-    $frag_BitLocker = $fragBitLocker | ConvertTo-Html -As List -fragment -PreContent "<h2><a name=`"Bitlockerisnotenabled`"><a href=`"#TOP`">Bitlocker and TPM Details</a></span></h2>" -PostContent "<h4>$descripBitlocker</h4>" | Out-String
-    $frag_Msinfo = $MsinfoClixml | ConvertTo-Html -As Table -fragment -PreContent "<h2><a name=`"VBS`"><a href=`"#TOP`">Virtualization and Secure Boot Details</a></span></h2>" -PostContent "<h4>$descripVirt</h4>"  | Out-String
-    $frag_kernelModeVal = $fragkernelModeVal | ConvertTo-Html -As Table -fragment -PreContent "<h2><a name=`"KernelMode`"><a href=`"#TOP`">Kernel-mode Hardware-enforced Stack Protection</a></span></h2>" -PostContent "<h4>$descripKernelMode</h4>"  | Out-String
-    $frag_LSAPPL = $fragLSAPPL | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"LSA`"><a href=`"#TOP`">LSA Protection for Stored Credentials</a></span></h2>" -PostContent "<h4>$descripLSA</h4>" | Out-String
-    $frag_DLLSafe = $fragDLLSafe | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"DLLSafe`"><a href=`"#TOP`">DLL Safe Search Order</a></span></h2>"  -PostContent "<h4>$descripDLL</h4>"| Out-String
-    $frag_DLLHijack = $fragDLLHijack | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"DLLHigh`"><a href=`"#TOP`">Loaded DLL's that are vulnerable to DLL Hijacking</a></span></h2>" | Out-String
-    $frag_DllNotSigned = $fragDllNotSigned | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"DLLSign`"><a href=`"#TOP`">All DLL's that aren't signed and user permissions allow write</a></span></h2>"  -PostContent "<h4>$descriptDLLHijack</h4>"| Out-String
-    $frag_Code = $fragCode | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"HECI`"><a href=`"#TOP`">Hypervisor Enforced Code Integrity</a></span></h2>" -PostContent "<h4>$descripHyper</h4>" | Out-String
-    $frag_PCElevate = $fragPCElevate | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"SoftElevation`"><a href=`"#TOP`">Automatically Elevates User Installing Software</a></span></h2>"  -PostContent "<h4>$descripElev</h4>"| Out-String
-    $frag_FilePass = $fragFilePass | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"FilePW`"><a href=`"#TOP`">Files that Contain the Word PASSWord</a></span></h2>" -PostContent "<h4>$descripFilePw</h4>" | Out-String
-    $frag_AutoLogon = $fragAutoLogon   | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"AutoLogon`"><a href=`"#TOP`">AutoLogon Credentials in Registry</a></span></h2>"  -PostContent "<h4>$descripAutoLogon</h4>"| Out-String
-    $frag_UnQu = $fragUnQuoted | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"unquoted`"><a href=`"#TOP`">UnQuoted Paths Attack</a></span></h2>" -PostContent "<h4>$DescripUnquoted</h4>" | Out-String
-    $frag_LegNIC = $fragLegNIC | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"LegNetProt`"><a href=`"#TOP`">Legacy and Vulnerable Network Protocols</a></span></h2>" -PostContent "<h4>$DescripLegacyNet</h4>" | Out-String
-    $frag_SysRegPerms = $fragReg | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"RegWrite`"><a href=`"#TOP`">Registry Permissions Allowing User Access - Security Risk if Exist</a></span></h2>" -PostContent "<h4>$descripRegPer</h4>" | Out-String
-    $frag_PSPass = $fragPSPass | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"ProcPW`"><a href=`"#TOP`">Processes where CommandLine Contains a Password</a></span></h2>" -PostContent "<h4>$Finish</h4>" | Out-String
-    $frag_SecOptions = $fragSecOptions | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"secOptions`"><a href=`"#TOP`">Security Options to Prevent MitM Attacks</a></span></h2>" -PostContent "<h4>$descripSecOptions</h4>" | Out-String
-    $frag_wFolders = $fragwFold | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"sysFileWrite `"><a href=`"#TOP`">Non System Folders that are Writeable - Security Risk when Executable</span></a></h2>" -PostContent "<h4>$descripNonFold</h4>"| Out-String
-    $frag_SysFolders = $fragsysFold | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"SysDirWrite`"><a href=`"#TOP`">Default System Folders that are Writeable - Security Risk if Exist</span></a></h2>"  -PostContent "<h4>$descripSysFold</h4>"| Out-String
-    $frag_CreateSysFold = $fragCreateSysFold | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"sysDirExe`"><a href=`"#TOP`">Default System Folders that Permit Users to Create Files - Security Risk if Exist</a></span></h2>"  -PostContent "<h4>$descripCreateSysFold</h4>"| Out-String
-    $frag_wFile = $fragwFile | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"sysFileWrite`"><a href=`"#TOP`">System Files that are Writeable - Security Risk if Exist</a></span></h2>" -PostContent "<h4>$descripFile</h4>" | Out-String
-    $frag_FWProf = $fragFWProfile | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"FirewallProf`"><a href=`"#TOP`">Firewall Profile</a></span></h2>"  -PostContent "<h4>$DescripFirewalls</h4>"| Out-String
-    $frag_FW = $fragFW | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"InFirewall`"><a href=`"#TOP`">Enabled Firewall Rules</a></span></h2>" | Out-String
-    $frag_TaskPerms =  $SchedTaskPerms | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"schedDir`"><a href=`"#TOP`">Scheduled Tasks with Scripts Stored on Disk</a></span></h2>"  -PostContent "<h4>$descripTaskSchPerms</h4>" | Out-String
+    $Frag_AVStatus = $FragAVStatus | ConvertTo-Html -As Table  -fragment -PreContent "<p></p><details><summary><a name=`"AV`"><a href=`"#TOP`">AntiVirus Engine and Definition Status</summary></a><p>" -PostContent "<h4>$descripAV</h4></details>" | Out-String
+    $frag_BitLocker = $fragBitLocker | ConvertTo-Html -As List -fragment -PreContent "<p></p><details><summary><a name=`"Bitlockerisnotenabled`"><a href=`"#TOP`">Bitlocker and TPM Details</summary></a><p>" -PostContent "<h4>$descripBitlocker</h4></details>" | Out-String
+    $frag_Msinfo = $MsinfoClixml | ConvertTo-Html -As Table -fragment -PreContent "<p></p><details><summary><a name=`"VBS`"><a href=`"#TOP`">Virtualization and Secure Boot Details</summary></a><p>" -PostContent "<h4>$descripVirt</h4></details>"  | Out-String
+    $frag_kernelModeVal = $fragkernelModeVal | ConvertTo-Html -As Table -fragment -PreContent "<p></p><details><summary><a name=`"KernelMode`"><a href=`"#TOP`">Kernel-mode Hardware-enforced Stack Protection</summary></a><p>" -PostContent "<h4>$descripKernelMode</h4></details>"  | Out-String
+    $frag_LSAPPL = $fragLSAPPL | ConvertTo-Html -as Table -Fragment -PreContent "<p></p><details><summary><a name=`"LSA`"><a href=`"#TOP`">LSA Protection for Stored Credentials</summary></a><p>" -PostContent "<h4>$descripLSA</h4></details>" | Out-String
+    $frag_DLLSafe = $fragDLLSafe | ConvertTo-Html -as Table -Fragment -PreContent "<p></p><details><summary><a name=`"DLLSafe`"><a href=`"#TOP`">DLL Safe Search Order</summary></a><p>"  -PostContent "<h4>$descripDLL</h4></details>"| Out-String
+    $frag_DLLHijack = $fragDLLHijack | ConvertTo-Html -as Table -Fragment -PreContent "<p></p><details><summary><a name=`"DLLHigh`"><a href=`"#TOP`">Loaded DLL's that are vulnerable to DLL Hijacking</summary></a><p>" -PostContent "<h4>$descripToDo</h4></details>" | Out-String
+    $frag_DllNotSigned = $fragDllNotSigned | ConvertTo-Html -as Table -Fragment -PreContent "<p></p><details><summary><a name=`"DLLSign`"><a href=`"#TOP`">All DLL's that aren't signed and user permissions allow write</summary></a><p>"  -PostContent "<h4>$descriptDLLHijack</h4></details>"| Out-String
+    $frag_Code = $fragCode | ConvertTo-Html -as Table -Fragment -PreContent "<p></p><details><summary><a name=`"HECI`"><a href=`"#TOP`">Hypervisor Enforced Code Integrity</summary></a><p>" -PostContent "<h4>$descripHyper</h4></details>" | Out-String
+    $frag_PCElevate = $fragPCElevate | ConvertTo-Html -as Table -Fragment -PreContent "<p></p><details><summary><a name=`"SoftElevation`"><a href=`"#TOP`">Automatically Elevates User Installing Software</summary></a><p>"  -PostContent "<h4>$descripElev</h4></details>"| Out-String
+    $frag_FilePass = $fragFilePass | ConvertTo-Html -as Table -Fragment -PreContent "<p></p><details><summary><a name=`"FilePW`"><a href=`"#TOP`">Files that Contain the Word PASSWord</summary></a><p>" -PostContent "<h4>$descripFilePw</h4></details>" | Out-String
+    $frag_AutoLogon = $fragAutoLogon   | ConvertTo-Html -as Table -Fragment -PreContent "<p></p><details><summary><a name=`"AutoLogon`"><a href=`"#TOP`">AutoLogon Credentials in Registry</summary></a><p>"  -PostContent "<h4>$descripAutoLogon</h4></details>"| Out-String
+    $frag_UnQu = $fragUnQuoted | ConvertTo-Html -as Table -Fragment -PreContent "<p></p><details><summary><a name=`"unquoted`"><a href=`"#TOP`">UnQuoted Paths Attack</summary></a><p>" -PostContent "<h4>$DescripUnquoted</h4></details>" | Out-String
+    $frag_LegNIC = $fragLegNIC | ConvertTo-Html -as Table -Fragment -PreContent "<p></p><details><summary><a name=`"LegNetProt`"><a href=`"#TOP`">Legacy and Vulnerable Network Protocols</summary></a><p>" -PostContent "<h4>$DescripLegacyNet</h4></details>" | Out-String
+    $frag_SysRegPerms = $fragReg | ConvertTo-Html -as Table -Fragment -PreContent "<p></p><details><summary><a name=`"RegWrite`"><a href=`"#TOP`">Registry Permissions Allowing User Access - Security Risk if Exist</summary></a><p>" -PostContent "<h4>$descripRegPer</h4></details>" | Out-String
+    $frag_PSPass = $fragPSPass | ConvertTo-Html -as Table -Fragment -PreContent "<p></p><details><summary><a name=`"ProcPW`"><a href=`"#TOP`">Processes where CommandLine Contains a Password</summary></a><p>" -PostContent "<h4>$Finish</h4></details>" | Out-String
+    $frag_SecOptions = $fragSecOptions | ConvertTo-Html -as Table -Fragment -PreContent "<p></p><details><summary><a name=`"secOptions`"><a href=`"#TOP`">Security Options to Prevent MitM Attacks</summary></a><p>" -PostContent "<h4>$descripSecOptions</h4></details>" | Out-String
+    $frag_wFolders = $fragwFold | ConvertTo-Html -as Table -Fragment -PreContent "<p></p><details><summary><a name=`"sysFileWrite `"><a href=`"#TOP`">Non System Folders that are Writeable - Security Risk when Executable</summary></a><p>" -PostContent "<h4>$descripNonFold</h4></details>"| Out-String
+    $frag_SysFolders = $fragsysFold | ConvertTo-Html -as Table -Fragment -PreContent "<p></p><details><summary><a name=`"SysDirWrite`"><a href=`"#TOP`">Default System Folders that are Writeable - Security Risk if Exist</summary></a><p>"  -PostContent "<h4>$descripSysFold</h4></details>"| Out-String
+    $frag_CreateSysFold = $fragCreateSysFold | ConvertTo-Html -as Table -Fragment -PreContent "<p></p><details><summary><a name=`"sysDirExe`"><a href=`"#TOP`">Default System Folders that Permit Users to Create Files - Security Risk if Exist</summary></a><p>"  -PostContent "<h4>$descripCreateSysFold</h4></details>"| Out-String
+    $frag_wFile = $fragwFile | ConvertTo-Html -as Table -Fragment -PreContent "<p></p><details><summary><a name=`"sysFileWrite`"><a href=`"#TOP`">System Files that are Writeable - Security Risk if Exist</summary></a><p>" -PostContent "<h4>$descripFile</h4></details>" | Out-String
+    $frag_FWProf = $fragFWProfile | ConvertTo-Html -as Table -Fragment -PreContent "<p></p><details><summary><a name=`"FirewallProf`"><a href=`"#TOP`">Firewall Profile</summary></a><p>"  -PostContent "<h4>$DescripFirewalls</h4></details>"| Out-String
+    $frag_FW = $fragFW | ConvertTo-Html -as Table -Fragment -PreContent "<p></p><details><summary><a name=`"InFirewall`"><a href=`"#TOP`">Enabled Firewall Rules</summary></a><p>" -PostContent "<h4>$descripToDo</h4></details>"| Out-String
+    $frag_TaskPerms =  $SchedTaskPerms | ConvertTo-Html -as Table -Fragment -PreContent "<p></p><details><summary><a name=`"schedDir`"><a href=`"#TOP`">Scheduled Tasks with Scripts Stored on Disk</summary></a><p>"  -PostContent "<h4>$descripTaskSchPerms</h4></details>" | Out-String
+    $frag_RunServices =  $fragRunServices | ConvertTo-Html -as Table -Fragment -PreContent "<p></p><details><summary><a name=`"RunningServices`"><a href=`"#TOP`">Running Services</summary></a><p>" -PostContent "<h4>$descripToDo</h4></details>"  | Out-String
+    $frag_TaskListings = $SchedTaskListings | ConvertTo-Html -as Table -Fragment -PreContent "<p></p><details><summary><a name=`"schedTask`"><a href=`"#TOP`">Scheduled Tasks that Contain something Encoded</summary></a><p>"  -PostContent "<h4>$descripTaskSchEncode</h4></details>" | Out-String
+    $frag_DriverQuery = $DriverQuery | ConvertTo-Html -as Table -Fragment -PreContent "<p></p><details><summary><a name=`"drivers`"><a href=`"#TOP`">Drivers that aren't Signed</summary></a><p>" -PostContent "<h4>$descripToDo</h4></details>" -PostContent "<h4>$descriptDriverQuery</h4></details>" | Out-String
+    $frag_Share = $fragShare | ConvertTo-Html -as Table -Fragment -PreContent "<p></p><details><summary><a name=`"shares`"><a href=`"#TOP`">Shares and their Share Permissions</summary></a><p>" -PostContent "<h4>$descripToDo</h4></details>"  | Out-String
+    $frag_AuthCodeSig = $fragAuthCodeSig | ConvertTo-Html -as Table -Fragment -PreContent "<p></p><details><summary><a name=`"AuthentiCode`"><a href=`"#TOP`">Files with an Authenticode Signature HashMisMatch</summary></a><p>" -PostContent "<h4>$descriptAuthCodeSig</h4></details>"  | Out-String  
+    $frag_CredGuCFG = $fragCredGuCFG | ConvertTo-Html -as Table -Fragment -PreContent "<p></p><details><summary><a name=`"CredGuard`"><a href=`"#TOP`">Credential Guard</summary></a><p>" -PostContent "<h4>$descripCredGu</h4></details>" | Out-String
+    $frag_LapsPwEna = $fragLapsPwEna | ConvertTo-Html -as Table -Fragment -PreContent "<p></p><details><summary><a name=`"LAPS`"><a href=`"#TOP`">LAPS - Local Administrator Password Solution</summary></a><p>" -PostContent "<h4>$descripLAPS</h4></details>" | Out-String
+    $frag_URA = $fragURA | ConvertTo-Html -as Table -Fragment -PreContent "<p></p><details><summary>URA - Local Systems User Rights Assignments</summary></a><p>" -PostContent "<h4>$descripURA</h4></details>" | Out-String
+    $frag_RegPasswords = $fragRegPasswords | ConvertTo-Html -as Table -Fragment -PreContent "<p></p><details><summary><a name=`"RegPW`"><a href=`"#TOP`">Passwords Embedded in the Registry</summary></a><p>" -PostContent "<h4>$descripRegPasswords</h4></details>" | Out-String
+    $frag_ASR = $fragASR | ConvertTo-Html -as Table -Fragment -PreContent "<p></p><details><summary><a name=`"asr`"><a href=`"#TOP`">Attack Surface Reduction (ASR)</summary></a><p>" -PostContent "<h4>$descripASR</h4></details>" | Out-String
+    $frag_WDigestULC = $fragWDigestULC | ConvertTo-Html -as Table -Fragment -PreContent "<p></p><details><summary><a name=`"WDigest`"><a href=`"#TOP`">WDigest</summary></a><p>" -PostContent "<h4>$descripWDigest</h4></details>" | Out-String
+    $frag_Certificates = $fragCertificates | ConvertTo-Html -as Table -Fragment -PreContent "<p></p><details><summary><a name=`"Certs`"><a href=`"#TOP`">Installed Certificates</summary></a><p>" -PostContent "<h4>$descripCerts</h4></details>" | Out-String
+    $frag_CipherSuit = $fragCipherSuit | ConvertTo-Html -as Table -Fragment -PreContent "<p></p><details><summary><a name=`"CipherSuites`"><a href=`"#TOP`">Supported Cipher Suites</summary></a><p>" -PostContent "<h4>$decripCipher</h4></details>" | Out-String
+    $frag_PSPasswords = $fragPSPasswords | ConvertTo-Html -as Table -Fragment -PreContent "<p></p><details><summary><a name=`"PSHistory`"><a href=`"#TOP`">PowerShell History Containing Creds</summary></a><p>" -PostContent "<h4>$descripPowershellHistory</h4></details>" | Out-String
     
-    $frag_RunServices =  $fragRunServices | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"RunningServices`"><a href=`"#TOP`">Running Services</a></span></h2>"  | Out-String
-    
-    $frag_TaskListings = $SchedTaskListings | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"schedTask`"><a href=`"#TOP`">Scheduled Tasks that Contain something Encoded</a></span></h2>"  -PostContent "<h4>$descripTaskSchEncode</h4>" | Out-String
-    $frag_DriverQuery = $DriverQuery | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"drivers`"><a href=`"#TOP`">Drivers that aren't Signed</a></span></h2>" -PostContent "<h4>$descriptDriverQuery</h4>" | Out-String
-    $frag_Share = $fragShare | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"shares`"><a href=`"#TOP`">Shares and their Share Permissions</a></span></h2>"  | Out-String
-    $frag_AuthCodeSig = $fragAuthCodeSig | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"AuthentiCode`"><a href=`"#TOP`">Files with an Authenticode Signature HashMisMatch</a></span></h2>" -PostContent "<h4>$descriptAuthCodeSig</h4>"  | Out-String  
-    $frag_CredGuCFG = $fragCredGuCFG | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"CredGuard`"><a href=`"#TOP`">Credential Guard</a></span></h2>" -PostContent "<h4>$descripCredGu</h4>" | Out-String
-    $frag_LapsPwEna = $fragLapsPwEna | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"LAPS`"><a href=`"#TOP`">LAPS - Local Administrator Password Solution</a></span></h2>" -PostContent "<h4>$descripLAPS</h4>" | Out-String
-    $frag_URA = $fragURA | ConvertTo-Html -as Table -Fragment -PreContent "<h2>URA - Local Systems User Rights Assignments</a></span></h2>" -PostContent "<h4>$descripURA</h4>" | Out-String
-    $frag_RegPasswords = $fragRegPasswords | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"RegPW`"><a href=`"#TOP`">Passwords Embedded in the Registry</a></span></h2>" -PostContent "<h4>$descripRegPasswords</h4>" | Out-String
-    $frag_ASR = $fragASR | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"asr`"><a href=`"#TOP`">Attack Surface Reduction (ASR)</a></span></h2>" -PostContent "<h4>$descripASR</h4>" | Out-String
-    $frag_WDigestULC = $fragWDigestULC | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"WDigest`"><a href=`"#TOP`">WDigest</a></span></h2>" -PostContent "<h4>$descripWDigest</h4>" | Out-String
-    $frag_Certificates = $fragCertificates | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"Certs`"><a href=`"#TOP`">Installed Certificates</a></span></h2>" -PostContent "<h4>$descripCerts</h4>" | Out-String
-    $frag_CipherSuit = $fragCipherSuit | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"CipherSuites`"><a href=`"#TOP`">Supported Cipher Suites</a></span></h2>" -PostContent "<h4>$decripCipher</h4>" | Out-String
-          
+    $frag_ApplockerSvc = $fragApplockerSvc | ConvertTo-Html -As table -fragment -PreContent "<p></p><details><summary>Applocker Service Status</summary><p>" -PostContent "<h4>$descripToDo</h4></details>"  | Out-String      
+    $frag_ApplockerPath = $fragApplockerPath | ConvertTo-Html -As table -fragment -PreContent "<p></p><details><summary>Applocker Path Rules</summary><p>" -PostContent "<h4>$descripToDo</h4></details>"  | Out-String
+    $frag_ApplockerPublisher = $fragApplockerPublisher | ConvertTo-Html -As table -fragment -PreContent "<p></p><details><summary>Applocker Publisher Rules</summary><p>" -PostContent "<h4>$descripToDo</h4></details>" | Out-String
+    $frag_ApplockerHash = $fragApplockerHash | ConvertTo-Html -As table -fragment -PreContent "<p></p><details><summary>Applocker Hash Rules</summary><p>" -PostContent "<h4>$descripToDo</h4></details>" | Out-String
+         
     #MS Recommended Secuirty settings (SSLF)
-    $frag_WindowsOSVal = $fragWindowsOSVal | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"WinSSLF`"><a href=`"#TOP`">Windows OS Security Recommendations</a></span></h2>" -PostContent "<h4>$descripWindowsOS</h4>" | Out-String
-    $frag_EdgeVal = $fragEdgeVal | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"EdgeSSLF`"><a href=`"#TOP`">MS Edge Security Recommendations</a></span></h2>" | Out-String
-    $frag_OfficeVal = $fragOfficeVal | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"OfficeSSLF`"><a href=`"#TOP`">MS Office Security Recommendations</a></span></h2>" -PostContent "<h4>$descripOffice2016</h4>" | Out-String
+    $frag_WindowsOSVal = $fragWindowsOSVal | ConvertTo-Html -as Table -Fragment -PreContent "<p></p><details><summary><a name=`"WinSSLF`"><a href=`"#TOP`">Windows OS Security Recommendations</summary></a><p>" -PostContent "<h4>$descripWindowsOS</h4></details>" | Out-String
+    $frag_EdgeVal = $fragEdgeVal | ConvertTo-Html -as Table -Fragment -PreContent "<p></p><details><summary><a name=`"EdgeSSLF`"><a href=`"#TOP`">MS Edge Security Recommendations</summary></a><p>" -PostContent "<h4>$descripToDo</h4></details>" | Out-String
+    $frag_OfficeVal = $fragOfficeVal | ConvertTo-Html -as Table -Fragment -PreContent "<p></p><details><summary><a name=`"OfficeSSLF`"><a href=`"#TOP`">MS Office Security Recommendations</summary></a><p>" -PostContent "<h4>$descripOffice2016</h4></details>" | Out-String
     
     #Quick and dirty tidy up and removal of Frags that are $null
     if ($fragAuthCodeSig -eq $null){$frag_AuthCodeSig = ""}
@@ -9661,6 +10181,10 @@ $style = @"
     if ($fragFSMO -eq $null){$frag_FSMO = ""}
     if ($fragPreAuth -eq $null){$frag_PreAuth = ""}
 
+
+################################################
+###########  EMBEDDED IMAGE BRANDING  ##########
+################################################
     <#
         Convert image file to base64 for embedded picture in report
         Image is the title image on www.tenaka.net, if you wish to download image and confirm base64 and that it contains nothing malicious 
@@ -9683,12 +10207,25 @@ if ($folders -eq "y")
     $fragDescrip1, 
     $frag_Summary,
     $frag_host, 
+    #$frag_MDTBuild,
     $fragOS, 
     $fragbios, 
     $fragcpu, 
     $frag_Network4,
     $frag_Network6,
     $frag_Share,
+    $frag_LegNIC,
+    $frag_SecOptions,
+    $frag_FWProf,
+    $frag_FW,
+    $frag_Msinfo,
+    $frag_BitLocker, 
+    $frag_Code,
+    $frag_LSAPPL,
+    $frag_WDigestULC,
+    $frag_CredGuCFG,
+    $frag_kernelModeVal,
+#accounts and groups
     $FragPassPol,
     $FragAccountDetails,
     $frag_DomainGrps,
@@ -9700,23 +10237,23 @@ if ($folders -eq "y")
     $frag_whoamiGroups, 
     $frag_whoamiPriv,
     $frag_URA,
+    $frag_LapsPwEna,
+#progs
     $Frag_WinFeature,
     $fragInstaApps,
     $fragHotFix,
     $fragInstaApps16,
     $Frag_AVStatus,
     $frag_UnQu,
-    $frag_Msinfo,
-    $frag_BitLocker, 
-    $Frag_descripVirt2,
-    $frag_Code,
-    $frag_LSAPPL,
-    $frag_WDigestULC,
-    $frag_CredGuCFG,
-    $frag_kernelModeVal,
-    $frag_LapsPwEna,
+#applocker
+    $frag_ApplockerSvc,
+    $frag_ApplockerPath, 
+    $frag_ApplockerPublisher,
+    $frag_ApplockerHash, 
+#certs and ciphers     
     $frag_Certificates,
     $frag_CipherSuit,
+#file and reg audits
     $frag_DLLSafe,
     $frag_DLLHijack,
     $frag_DllNotSigned,
@@ -9724,9 +10261,11 @@ if ($folders -eq "y")
     $frag_PSPass,
     $frag_FilePass,
     $frag_RegPasswords,
+    $frag_PSPasswords,
     $frag_AutoLogon,
     $frag_TaskPerms,
     $frag_TaskListings,
+    #$frag_RunServices,
     $frag_SysRegPerms,
     $frag_SysFolders,
     $frag_CreateSysFold,
@@ -9734,14 +10273,11 @@ if ($folders -eq "y")
     $frag_wFile,
     $frag_DriverQuery,
     $frag_AuthCodeSig,
+#policy
     $frag_ASR,
-    $frag_LegNIC,
-    $frag_SecOptions,
     $frag_WindowsOSVal,
     $frag_EdgeVal,
     $frag_OfficeVal,
-    $frag_FWProf,
-    $frag_FW,
     $FragDescripFin  | out-file $Report
 }
 else
@@ -9752,12 +10288,25 @@ else
     $fragDescrip1, 
     $frag_Summary,
     $frag_host, 
+    #$frag_MDTBuild,
     $fragOS, 
     $fragbios, 
     $fragcpu, 
     $frag_Network4,
     $frag_Network6,
     $frag_Share,
+    $frag_LegNIC,
+    $frag_SecOptions,
+    $frag_FWProf,
+    $frag_FW,
+    $frag_Msinfo,
+    $frag_BitLocker, 
+    $frag_Code,
+    $frag_LSAPPL,
+    $frag_WDigestULC,
+    $frag_CredGuCFG,
+    $frag_kernelModeVal,
+#accounts and groups
     $FragPassPol,
     $FragAccountDetails,
     $frag_DomainGrps,
@@ -9769,42 +10318,42 @@ else
     $frag_whoamiGroups, 
     $frag_whoamiPriv,
     $frag_URA,
+    $frag_LapsPwEna,
+#progs
     $Frag_WinFeature,
     $fragInstaApps,
     $fragHotFix,
     $fragInstaApps16,
     $Frag_AVStatus,
     $frag_UnQu, 
-    $frag_Msinfo,
-    $frag_BitLocker, 
-    $Frag_descripVirt2,
-    $frag_Code,
-    $frag_LSAPPL,
-    $frag_WDigestULC,
-    $frag_CredGuCFG,
-    $frag_kernelModeVal,
-    $frag_LapsPwEna,
+#applocker
+    $frag_ApplockerSvc,
+    $frag_ApplockerPath, 
+    $frag_ApplockerPublisher,
+    $frag_ApplockerHash, 
+#certs and ciphers     
     $frag_Certificates,
     $frag_CipherSuit,
+#file and reg audits
     $frag_DLLSafe,
     $frag_DLLHijack,
     $frag_PCElevate,
     $frag_PSPass,
     $frag_FilePass,
     $frag_RegPasswords,
+    $frag_PSPasswords,
     $frag_AutoLogon,
     $frag_TaskPerms,
     $frag_TaskListings,
+   # $frag_RunServices,
     $frag_DriverQuery,
     $frag_AuthCodeSig,
-    $frag_LegNIC,
-    $frag_SecOptions,
+#Policy
     $frag_ASR,
     $frag_WindowsOSVal,
     $frag_EdgeVal,
     $frag_OfficeVal,
-    $frag_FWProf,
-    $frag_FW,
+
     $FragDescripFin  | out-file $Report
 }
 
