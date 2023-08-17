@@ -344,6 +344,7 @@ YYMMDD
 230816.1 - Added Details and Summary menu
 230816.2 - reordered headings and grouping       
 230816.3 - reordered compliance status, updated some compliances
+230817.1 - Fixed inconsistencies with searching for passwords in the Registry - now also reports correctly the password in the report
 
 #>
 
@@ -3702,28 +3703,36 @@ sleep 5
         reg query HKLM\SYSTEM\Current\ControlSet\Services /f $regSearchItems /t REG_SZ /s >> $secEditPath
 }
 
-$getRegPassCon = (get-content $secEditPath | where {$_ -notmatch "classes" -and $_ -notmatch "ClickToRun" -and $_ -notmatch "microsoft" -and $_ -notmatch "default"} | Select-String -Pattern "hkey_")
+$getRegPassCon = (get-content $secEditPath | 
+where {$_ -notmatch "classes" -and $_ -notmatch "ClickToRun" -and $_ -notmatch "microsoft" -and $_ -notmatch "default"} | 
+Select-String -Pattern "hkey_", "hkcu_")
+
 $fragRegPasswords=@()
 foreach ($getRegPassItem in $getRegPassCon)
 {
-    foreach ($regSearchItems in $regSearchWords)
+    if ($getRegPassItem -match "HKEY_LOCAL_MACHINE"){$getRegPassItem = $getRegPassItem.tostring().replace("HKEY_LOCAL_MACHINE","HKLM:")}
+    if ($getRegPassItem -match "HKEY_CURRENT_USER"){$getRegPassItem = $getRegPassItem.tostring().replace("HKEY_CURRENT_USER","HKCU:")}
+
+    if ((Get-ItemProperty $getRegPassItem).passwd -ne $null)
     {
-        $regPassValue = get-itemproperty $getRegPassItem | where {$_ -like "*$regSearchItems*"}
-        
-        if ($regPassValue -ne $null){
-            #$regPassValue | write-host -ForegroundColor yellow
-            $regPassPath = $regPassValue.PSPath.Replace("Microsoft.PowerShell.Core\Registry::","") 
-        
-            $regPassword = $regPassValue.$regSearchItems
-         
-            $newObjRegPasswords = New-Object -TypeName PSObject
-            Add-Member -InputObject $newObjRegPasswords -Type NoteProperty -Name RegistryPath -Value "Warning $($regPassPath) warning"
-            Add-Member -InputObject $newObjRegPasswords -Type NoteProperty -Name RegistryValue -Value "Warning $($regSearchItems) warning"
-            Add-Member -InputObject $newObjRegPasswords -Type NoteProperty -Name RegistryPassword -Value "Warning $($regPassword) warning"
-            $fragRegPasswords += $newObjRegPasswords
-        }
+        $regPassKey = (Get-Item $getRegPassItem)
+        $regPassKey = $regPassKey.Property
+        $regPassValue = (Get-ItemProperty $getRegPassItem).passwd 
     }
-}
+    elseif
+    ((Get-ItemProperty $getRegPassItem).password -ne $null)
+    {
+        $regPassKey = (Get-Item $getRegPassItem)
+        $regPassKey = $regPassKey.Property
+        $regPassValue = (Get-ItemProperty $getRegPassItem).password 
+    }
+
+    $newObjRegPasswords = New-Object -TypeName PSObject
+    Add-Member -InputObject $newObjRegPasswords -Type NoteProperty -Name RegistryPath -Value "Warning $($getRegPassItem) warning"
+    Add-Member -InputObject $newObjRegPasswords -Type NoteProperty -Name RegistryValue -Value "Warning $($regPassKey) warning"
+    Add-Member -InputObject $newObjRegPasswords -Type NoteProperty -Name RegistryPassword -Value "Warning $($regPassValue ) warning"
+    $fragRegPasswords += $newObjRegPasswords          
+} 
 
 Write-Host " "
 Write-Host "Finished Searching for Embedded Password in the Registry" -foregroundColor Green
@@ -8779,15 +8788,15 @@ foreach ($OfficePolItems in $OfficePolicies.values)
    if ($fragRegPasswords -like "*Warning*")
    {
        $newObjSummary = New-Object psObject
-       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value '<a href="#RegPW">Found Embedded Passwords in the Registry</a>'
-       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Risk -Value "Medium Risk"
+       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value '<a href="#RegPW">Passwords in the Registry</a>'
+       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Risk -Value "High Risk"
        $fragSummary += $newObjSummary
    } 
 
    if ($fragRegPasswords -like "*Warning*")
    {
        $newObjSummary = New-Object psObject
-       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value '<a href="#PSHistory">Found Embedded Passwords in Powershell History</a>'
+       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value '<a href="#PSHistory">Passwords in Powershell History</a>'
        Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Risk -Value "High Risk"
        $fragSummary += $newObjSummary
    }
@@ -10134,7 +10143,7 @@ $Report = "C:\SecureReport\output\$OutFunc\" + "$OutFunc.html"
     $frag_AuthCodeSig = $fragAuthCodeSig | ConvertTo-Html -as Table -Fragment -PreContent "<p></p><details><summary><a name=`"AuthentiCode`"><a href=`"#TOP`">Files with an Authenticode Signature HashMisMatch</summary></a><p>" -PostContent "<h4>$descriptAuthCodeSig</h4></details>"  | Out-String  
     $frag_CredGuCFG = $fragCredGuCFG | ConvertTo-Html -as Table -Fragment -PreContent "<p></p><details><summary><a name=`"CredGuard`"><a href=`"#TOP`">Credential Guard</summary></a><p>" -PostContent "<h4>$descripCredGu</h4></details>" | Out-String
     $frag_LapsPwEna = $fragLapsPwEna | ConvertTo-Html -as Table -Fragment -PreContent "<p></p><details><summary><a name=`"LAPS`"><a href=`"#TOP`">LAPS - Local Administrator Password Solution</summary></a><p>" -PostContent "<h4>$descripLAPS</h4></details>" | Out-String
-    $frag_URA = $fragURA | ConvertTo-Html -as Table -Fragment -PreContent "<p></p><details><summary>URA - Local Systems User Rights Assignments</summary></a><p>" -PostContent "<h4>$descripURA</h4></details>" | Out-String
+    $frag_URA = $fragURA | ConvertTo-Html -as Table -Fragment -PreContent "<p></p><details><summary>URA - Local Systems User Rights Assignments</summary><p>" -PostContent "<h4>$descripURA</h4></details>" | Out-String
     $frag_RegPasswords = $fragRegPasswords | ConvertTo-Html -as Table -Fragment -PreContent "<p></p><details><summary><a name=`"RegPW`"><a href=`"#TOP`">Passwords Embedded in the Registry</summary></a><p>" -PostContent "<h4>$descripRegPasswords</h4></details>" | Out-String
     $frag_ASR = $fragASR | ConvertTo-Html -as Table -Fragment -PreContent "<p></p><details><summary><a name=`"asr`"><a href=`"#TOP`">Attack Surface Reduction (ASR)</summary></a><p>" -PostContent "<h4>$descripASR</h4></details>" | Out-String
     $frag_WDigestULC = $fragWDigestULC | ConvertTo-Html -as Table -Fragment -PreContent "<p></p><details><summary><a name=`"WDigest`"><a href=`"#TOP`">WDigest</summary></a><p>" -PostContent "<h4>$descripWDigest</h4></details>" | Out-String
@@ -10180,6 +10189,27 @@ $Report = "C:\SecureReport\output\$OutFunc\" + "$OutFunc.html"
     if ($fragDCList -eq $null){$frag_DCList = ""}
     if ($fragFSMO -eq $null){$frag_FSMO = ""}
     if ($fragPreAuth -eq $null){$frag_PreAuth = ""}
+
+    <#to be used as filter
+    $nonNullVariables = @()
+    $var1 = "Value1"
+    $var2 = $null
+    $var3 = "Value3"
+    $var4 = $null
+    $var5 = "Value5"
+
+    $variables = @($var1, $var2, $var3, $var4, $var5)
+
+    foreach ($variable in $variables) 
+        {
+            if ($variable -ne $null) {
+            $nonNullVariables += "$($variable)," 
+        }
+    }
+
+    Write-Host ($nonNullVariables).TrimEnd(",")
+   
+    #>
 
 
 ################################################
