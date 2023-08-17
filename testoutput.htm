@@ -191,8 +191,8 @@
 <tr><td><a href="#LAPS">LAPS is not Configured</a></td><td><font color=#ff471a>High Risk</td></tr>
 <tr><td><a href="#AV">There are issues with AntiVirus</a></td><td><font color=#ff471a>High Risk</td></tr>
 <tr><td><a href="#ProcPW">Processes have been found that contain Embedded Passwords</a></td><td><font color=#ff471a>High Risk</td></tr>
-<tr><td><a href="#RegPW">Found Embedded Passwords in the Registry</a></td><td><font color=#ffb366>Medium Risk</td></tr>
-<tr><td><a href="#PSHistory">Found Embedded Passwords in Powershell History</a></td><td><font color=#ff471a>High Risk</td></tr>
+<tr><td><a href="#RegPW">Passwords in the Registry</a></td><td><font color=#ff471a>High Risk</td></tr>
+<tr><td><a href="#PSHistory">Passwords in Powershell History</a></td><td><font color=#ff471a>High Risk</td></tr>
 <tr><td><a href="#DLLSafe">DLL Safe Search is not Enabled</a></td><td><font color=#ff471a>High Risk</td></tr>
 <tr><td><a href="#Certs">Installed Certificate Issues</a></td><td><font color=#ffb366>Medium Risk</td></tr>
 <tr><td><a href="#CipherSuites">SHA1 Cipher Suites are Supported</a></td><td><font color=#ffb366>Medium Risk</td></tr>
@@ -538,7 +538,7 @@
 <tr><td>svc_sql_dbe</td><td><font color=#ff9933>Enabled <font></td><td>04/08/2023 00:35:03</td><td>08/03/2023 01:45:15</td><td></td><td>ActiveDirectory</td></tr>
 <tr><td>user1</td><td><font color=#ff9933>Enabled <font></td><td>08/04/2023 07:27:49</td><td>03/04/2023 10:19:08</td><td></td><td>ActiveDirectory</td></tr>
 <tr><td>pre-share</td><td><font color=#ff9933>Enabled <font></td><td></td><td></td><td></td><td>ActiveDirectory</td></tr>
-<tr><td>WDACDC1$</td><td><font color=#ff9933>Enabled <font></td><td>17/08/2023 08:11:36</td><td>13/08/2023 03:20:05</td><td></td><td>ActiveDirectory</td></tr>
+<tr><td>WDACDC1$</td><td><font color=#ff9933>Enabled <font></td><td>17/08/2023 12:27:44</td><td>13/08/2023 03:20:05</td><td></td><td>ActiveDirectory</td></tr>
 </table>
 <h4>Local accounts should be disabled when the client or server is part of a Domain. LAPS should be deployed to ensure all local account passwords are unique</h4></details>
 
@@ -580,7 +580,7 @@
 </table>
 <h4>READ ME - Requires the installation of the AD RSAT tools for this to work.<br><br>Pre-authentication is when the user sends the KDC an Authentication Service Request (AS_REQ) with an encrypted Timestamp. The KDC replies with an Authentication Service Reply (AS_REP) with the TGT and a logon session. The issue arises when the user's account doesn't require pre-authentication, it's a check box on the user's account settings. An attacker is then able to request a DC, and the DC dutifully replies with user encrypted TGT using the user's own NTLM password hash. An offline brute force attack is then possible in the hope of extracting the clear text password, known as AS-REP Roasting <br> <br>Further information @ <a href="https://www.tenaka.net/kerberos-armouring" class="class1">Kerberos Armouring</a><br></h4></details>
 
-<p></p><details><summary><a name="PassExpire"><a href="#TOP">Domain Accounts that Never Expire their Password</summary><p>
+<p></p><details><summary><a name="PassExpire"><a href="#TOP">Domain Accounts that Never Expire their Password</summary></a><p>
 <table>
 <colgroup><col/><col/><col/></colgroup>
 <tr><th>NeverExpires-Account</th><th>NeverExpires-OUPath</th><th>NeverExpires-UACValue</th></tr>
@@ -746,7 +746,7 @@
 </table>
 <h4>Reference User Rights Assignment (URA) section below for further details</h4></details>
 
-<p></p><details><summary>URA - Local Systems User Rights Assignments</summary><p>
+<p></p><details><summary>User Rights Assignments</summary><p>
 <table>
 <colgroup><col/><col/><col/></colgroup>
 <tr><th>UserRightAssignment-Name</th><th>UserRightAssignment-Priv</th><th>URA-GroupName</th></tr>
@@ -1967,6 +1967,9 @@
 <table>
 <colgroup><col/><col/><col/></colgroup>
 <tr><th>RegistryPath</th><th>RegistryValue</th><th>RegistryPassword</th></tr>
+<tr><td><font color=#ff9933>HKLM:\Software\test <font></td><td><font color=#ff9933>Password <font></td><td><font color=#ff9933>srihakljfalkjf <font></td></tr>
+<tr><td><font color=#ff9933>HKCU:\Software\MyPassword <font></td><td><font color=#ff9933>Password <font></td><td><font color=#ff9933>Password1234 <font></td></tr>
+<tr><td><font color=#ff9933>HKLM:\Software\passssss <font></td><td><font color=#ff9933>passwd <font></td><td><font color=#ff9933>fkagjfdkdfjalkdjfkal <font></td></tr>
 <tr><td><font color=#ff9933>HKLM:\Software\test <font></td><td><font color=#ff9933>Password <font></td><td><font color=#ff9933>srihakljfalkjf <font></td></tr>
 <tr><td><font color=#ff9933>HKCU:\Software\MyPassword <font></td><td><font color=#ff9933>Password <font></td><td><font color=#ff9933>Password1234 <font></td></tr>
 <tr><td><font color=#ff9933>HKLM:\Software\passssss <font></td><td><font color=#ff9933>passwd <font></td><td><font color=#ff9933>fkagjfdkdfjalkdjfkal <font></td></tr>
