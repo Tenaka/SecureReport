@@ -345,7 +345,11 @@ YYMMDD
 230816.2 - reordered headings and grouping       
 230816.3 - reordered compliance status, updated some compliances
 230817.1 - Fixed inconsistencies with searching for passwords in the Registry - now also reports correctly the password in the report
-
+230824.1 - Updated Fragments to weed out null fragments so they arent included in the finished report
+230824.2 - created additional unfiltered report output as a backup and comparison to the filtered final report
+230824.2 - Added final bit for Applocker auditing and showing enforcment mode
+230824.3 - Fixed typo in Reg search for passwords
+230901.1 - Added WDAC Policy and Enforcement checks
 #>
 
 #Remove any DVD from client
@@ -1203,6 +1207,8 @@ sleep 5
     #Virtualization - msinfo32
     $VulnReport = "C:\SecureReport"
     $OutFunc = "MSInfo" 
+    $wdacEnforce = "wdacEnforce"
+
                 
     $tpSec10 = Test-Path "C:\SecureReport\output\$OutFunc\"
     
@@ -1214,6 +1220,9 @@ sleep 5
     $msinfoPath = "C:\SecureReport\output\$OutFunc\" + "$OutFunc.txt"
     $msinfoPathcsv = "C:\SecureReport\output\$OutFunc\" + "$OutFunc.csv"
     $msinfoPathXml = "C:\SecureReport\output\$OutFunc\" + "$OutFunc.xml"
+
+    $wdacEnforcecsv = "C:\SecureReport\output\$OutFunc\" + "$wdacEnforce.csv"
+    $wdacEnforceXml = "C:\SecureReport\output\$OutFunc\" + "$wdacEnforce.xml"
 
     & cmd /c msinfo32 /nfo "C:\SecureReport\output\$OutFunc\" /report $msinfoPath
     $getMsinfo = Get-Content $msinfoPath | select -First 50
@@ -1242,10 +1251,50 @@ sleep 5
     Import-Csv $msinfoPathcsv -Delimiter ";" | Export-Clixml $msinfoPathXml
     $MsinfoClixml = Import-Clixml $msinfoPathXml 
 
-    #Get-Content $msinfoPathXml 
+    #Import-Clixml $msinfoPathXml | select-string "Windows Defender Application Control policy"
+
+    Set-Content -Path $wdacEnforcecsv -Value 'WDAC\DeviceGuard;Enforced\Audit'
+    ($getMsinfo | Select-String "Application Control Policy") -replace "policy	Enforced","policy;	Enforced" -replace "Policy  Audit","Policy;  Audit"|Out-File $wdacEnforcecsv -Encoding utf8 -Append 
+    ($getMsinfo | Select-String "Application Control User") -replace "off",";off" -replace " on",";on" -replace "policy	Enforced","policy;	Enforced"  -replace "Policy  Audit","Policy;  Audit" |Out-File $wdacEnforcecsv -Encoding utf8 -Append 
+
+    Import-Csv $wdacEnforcecsv -Delimiter ";" | Export-Clixml $wdacEnforceXml
+    $fragwdacClixml = Import-Clixml $wdacEnforceXml
+
 
 Write-Host " "
 Write-Host "Finished Collecting MSInfo32 data for VBS" -foregroundColor Green
+
+
+################################################
+############  WDAC | DEVICE GUARD  #############
+################################################
+#Citools available from Windows 11 22H2
+$osBuild = (Get-CimInstance -ClassName win32_operatingsystem).buildnumber 
+$fragWDACCIPolicy=@()
+if ($osBuild -ge "22621")
+{
+    $ciPolicyTool =  (CiTool -lp -json | ConvertFrom-Json).Policies | Where-Object {$_.IsEnforced -eq "True"} | Select-Object -Property * 
+
+    Foreach($ciPolicy in $ciPolicyTool)
+        {
+            $ciPolName = $ciPolicy.FriendlyName
+            $ciPolID = $ciPolicy.PolicyID
+            $ciPolsys = $ciPolicy.IsSystemPolicy
+            $ciPolDisk = $ciPolicy.IsOnDisk
+            $ciPolEnforced = $ciPolicy.IsEnforced
+            $ciPolEnforced = if ($ciPolicy.IsEnforced -match "False"){"Warning $($ciPolicy.IsEnforced) Warning"}else{$ciPolicy.IsEnforced}
+            $ciPolAuthorised = $ciPolicy.IsAuthorized
+
+            $newObjWdac = New-Object PSObject
+            Add-Member -InputObject $newObjWdac -Type NoteProperty -Name CIPolicyName -Value $ciPolName
+            Add-Member -InputObject $newObjWdac -Type NoteProperty -Name CIPolicyID -Value $ciPolID 
+            Add-Member -InputObject $newObjWdac -Type NoteProperty -Name CIPolicySystemPol -Value $ciPolsys
+            Add-Member -InputObject $newObjWdac -Type NoteProperty -Name CIPolicyOnDisk -Value $ciPolDisk                        
+            Add-Member -InputObject $newObjWdac -Type NoteProperty -Name CIPolicyEnforced -Value $ciPolEnforced             
+            Add-Member -InputObject $newObjWdac -Type NoteProperty -Name CIPolicyAuthorised -Value $ciPolAuthorised            
+            $fragWDACCIPolicy += $newObjWdac        
+        }
+}
 
 ################################################
 ################  DRIVERQRY  ###################
@@ -3700,7 +3749,7 @@ sleep 5
         #swapped to native tool, Powershell is too slow
         reg query HKLM\Software /f $regSearchItems /t REG_SZ /s >> $secEditPath
         reg query HKCU\Software /f $regSearchItems /t REG_SZ /s >> $secEditPath
-        reg query HKLM\SYSTEM\Current\ControlSet\Services /f $regSearchItems /t REG_SZ /s >> $secEditPath
+        reg query HKLM\SYSTEM\CurrentControlSet\Services /f $regSearchItems /t REG_SZ /s >> $secEditPath
 }
 
 $getRegPassCon = (get-content $secEditPath | 
@@ -3763,6 +3812,7 @@ foreach ($CachedProfiles in $gtCachedProfiles)
     else {}
     }
 
+
 ################################################
 ###############  APPLOCKER AUDIT  ##############
 ################################################
@@ -3776,6 +3826,31 @@ $fragApplockerSvc += $newObjApplockerSvc
 
 $gtAppLRuleCollection = Get-ApplockerPolicy -Effective | select -ExpandProperty RuleCollections 
 $gtAppLCollectionTypes = Get-ApplockerPolicy -Effective | select -ExpandProperty RuleCollectionTypes
+
+
+#Enforcment mode
+$fragApplockerEnforcement=@()
+$gtApplockerEnforce = (Get-AppLockerPolicy -Effective).rulecollections | Select-Object -Property RuleCollectionType,EnforcementMode,ServiceEnforcementMode,SystemAppAllowMode,Count 
+
+foreach($appEnforcement in $gtApplockerEnforce)
+{
+
+$applockerEnforceColl = $appEnforcement.RuleCollectionType
+$applockerEnforceMode = $appEnforcement.EnforcementMode
+$applockerEnforceSvc = $appEnforcement.ServiceEnforcementMode
+$applockerEnforceSys = $appEnforcement.SystemAppAllowMode
+$applockerEnforceCount = $appEnforcement.Count 
+
+    $newObjApplockerEnforce= New-Object -TypeName PSObject
+    Add-Member -InputObject $newObjApplockerEnforce -Type NoteProperty -Name CollectionType $applockerEnforceColl
+    Add-Member -InputObject $newObjApplockerEnforce -Type NoteProperty -Name EnforceMode $applockerEnforceMode
+    Add-Member -InputObject $newObjApplockerEnforce -Type NoteProperty -Name ServiceMode $applockerEnforceSvc 
+    Add-Member -InputObject $newObjApplockerEnforce -Type NoteProperty -Name SysAppAllow $applockerEnforceSys
+    Add-Member -InputObject $newObjApplockerEnforce -Type NoteProperty -Name NumerofRules $applockerEnforceCount              
+    $fragApplockerEnforcement += $newObjApplockerEnforce
+    
+}
+
 
 #Path Conditions
 $fragApplockerPath=@()
@@ -3863,8 +3938,8 @@ foreach ($appLockerRule in $gtAppLCollectionTypes)
                 $alRule = [string]$appLockerRule
 
                 $newObjAppLockPublisher = New-Object -TypeName PSObject
-                Add-Member -InputObject $newObjAppLockPublisher -Type NoteProperty -Name Publisher $alPublishName
-                Add-Member -InputObject $newObjAppLockPublisher -Type NoteProperty -Name Publisher $alPublishCon
+                Add-Member -InputObject $newObjAppLockPublisher -Type NoteProperty -Name PublisherName $alPublishName
+                Add-Member -InputObject $newObjAppLockPublisher -Type NoteProperty -Name PublisherConditions $alPublishCon
                 Add-Member -InputObject $newObjAppLockPublisher -Type NoteProperty -Name PubExcep $alPublishExcep
                 Add-Member -InputObject $newObjAppLockPublisher -Type NoteProperty -Name PubPathExcep $alPublishPathExcep
                 Add-Member -InputObject $newObjAppLockPublisher -Type NoteProperty -Name PubHashExcep $alPublishHashExcep
@@ -3888,8 +3963,8 @@ foreach ($appLockerRule in $gtAppLCollectionTypes)
                 $alRule = [string]$appLockerRule
 
                 $newObjAppLockPublisher = New-Object -TypeName PSObject
-                Add-Member -InputObject $newObjAppLockPublisher -Type NoteProperty -Name Publisher $alPublishName
-                Add-Member -InputObject $newObjAppLockPublisher -Type NoteProperty -Name Publisher $alPublishCon
+                Add-Member -InputObject $newObjAppLockPublisher -Type NoteProperty -Name PublisherName $alPublishName
+                Add-Member -InputObject $newObjAppLockPublisher -Type NoteProperty -Name PublisherConditions $alPublishCon
                 Add-Member -InputObject $newObjAppLockPublisher -Type NoteProperty -Name PubExcep $alPublishExcep
                 Add-Member -InputObject $newObjAppLockPublisher -Type NoteProperty -Name PubPathExcep $alPublishPathExcep
                 Add-Member -InputObject $newObjAppLockPublisher -Type NoteProperty -Name PubHashExcep $alPublishHashExcep
@@ -3900,6 +3975,7 @@ foreach ($appLockerRule in $gtAppLCollectionTypes)
                 $fragApplockerPublisher += $newObjAppLockPublisher
             }
 }
+
 
 #hash conditions
 $gtAppLRuleCollection = Get-ApplockerPolicy -Effective | select -ExpandProperty RuleCollections 
@@ -4155,7 +4231,608 @@ $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
     import-csv C:\SecureReport\output\DomainUser\Priv.csv -Delimiter "," | Export-Clixml C:\SecureReport\output\DomainUser\Priv.xml
     $whoamiPriv = Import-Clixml C:\SecureReport\output\DomainUser\Priv.xml
 
-#CERTS GO HERE - When its working correctly   
+################################################
+################  AUTORUNS  ####################
+################################################
+#https://attack.mitre.org/techniques/T1547/001/
+
+$fragAutoRunsVal=@()  
+<#-------------------------------------------------
+File System
+--------------------------------------------------#>
+$hkuRunComment=@()
+$hkuRunPath=@()
+$hkuRunItem=@()
+$gthkuRunValue=@()
+$tphkuRunPath=@()
+$hkuRunComment="Placing a program within a startup folder will also cause that program to execute when a user logs in. There is a startup folder location for individual user accounts as well as a system-wide startup folder that will be checked regardless of which user account logs in. The startup folder path for the current user is C:\Users\[Username]\AppData\Roaming\Microsoft\Windows\Start Menu\Programs\Startup. The startup folder path for all users is C:\ProgramData\Microsoft\Windows\Start Menu\Programs\StartUp."
+
+$gtCachedProfiles = (Get-ChildItem c:\users\ -Force -Directory).fullname
+$fragPSPasswords=@()
+foreach ($CachedProfiles in $gtCachedProfiles)
+    {
+        $tpAppDataStartup = test-path "$($CachedProfiles)\AppData\Roaming\Microsoft\Windows\Start Menu\Programs\Startup"
+
+        if ($tpAppDataStartup -ne $null)
+            {
+                $gtAppDataStartup = Get-ChildItem "$($CachedProfiles)\AppData\Roaming\Microsoft\Windows\Start Menu\Programs\Startup\" -Recurse -Force -Exclude desktop.ini
+
+                foreach($AppDataStartup in $gtAppDataStartup)
+                {
+                    $gthkuRunValue=""
+                    $newObjAutoRuns = New-Object -TypeName PSObject
+                    Add-Member -InputObject $newObjAutoRuns -Type NoteProperty -Name AutoRunsPath -Value ($AppDataStartup.Directory).FullName
+                    Add-Member -InputObject $newObjAutoRuns -Type NoteProperty -Name AutoRunsKey -Value ($AppDataStartup.Name) 
+                    Add-Member -InputObject $newObjAutoRuns -Type NoteProperty -Name AutoRunsValue -Value $gthkuRunValue
+                    Add-Member -InputObject $newObjAutoRuns -Type NoteProperty -Name AutoRunsComment -Value $hkuRunComment
+                    $fragAutoRunsVal += $newObjAutoRuns 
+                }
+            }
+    }
+
+$tpProgDataStartup = Test-Path "C:\ProgramData\Microsoft\Windows\Start Menu\Programs\StartUp" 
+
+if($tpProgDataStartup -ne $null)
+    {
+        $gtProgDataStartup = Get-ChildItem "C:\ProgramData\Microsoft\Windows\Start Menu\Programs\StartUp" -Recurse -Force -Exclude desktop.ini
+
+        $newObjAutoRuns = New-Object -TypeName PSObject
+        Add-Member -InputObject $newObjAutoRuns -Type NoteProperty -Name AutoRunsPath -Value ($AppDataStartup.Directory).FullName
+        add-Member -InputObject $newObjAutoRuns -Type NoteProperty -Name AutoRunsKey -Value ($AppDataStartup.Name) 
+        Add-Member -InputObject $newObjAutoRuns -Type NoteProperty -Name AutoRunsValue -Value $gthkuRunValue
+        Add-Member -InputObject $newObjAutoRuns -Type NoteProperty -Name AutoRunsComment -Value $hkuRunComment
+        $fragAutoRunsVal += $newObjAutoRuns
+    }
+
+<#-------------------------------------------------
+HK USERS
+--------------------------------------------------#>
+
+New-PSDrive -Name HKU -PSProvider Registry -Root HKEY_USERS
+$gtHKUSid = (Get-childItem HKU:\).Name 
+
+foreach ($HKUSidItem in $gtHKUSid)
+    {
+    #$HKUSidItem = "HKEY_USERS\S-1-5-21-4000739697-4006183653-2191022337-1360"
+
+        $hkuKey = ($HKUSidItem.Split("\")[0]).replace("HKEY_USERS","HKU")
+        $hkuSID = $HKUSidItem.Split("\")[1]
+
+        $hkuRunComment=@()
+        $hkuRunPath=@()
+        $hkuRunItem=@()
+        $gthkuRunValue=@()
+        $tphkuRunPath=@()
+        $hkuRunComment="Placing a program within a startup folder will also cause that program to execute when a user logs in. There is a startup folder location for individual user accounts as well as a system-wide startup folder that will be checked regardless of which user account logs in. The startup folder path for the current user is C:\Users\[Username]\AppData\Roaming\Microsoft\Windows\Start Menu\Programs\Startup. The startup folder path for all users is C:\ProgramData\Microsoft\Windows\Start Menu\Programs\StartUp."
+        $hkuRunPath = "$($hkuKey):\$($hkuSID)\Software\Microsoft\Windows\CurrentVersion\run"
+        $tphkuRunPath = Test-Path $hkuRunPath
+
+        if($tphkuRunPath -eq $true)
+        {
+            $hkuRun = Get-Item $hkuRunPath | select -ExpandProperty property
+            foreach($hkuRunItem in $hkuRun)
+                {
+                    $gthkuRunValue = (Get-ItemProperty $hkuRunPath -Name $hkuRunItem | Select -Property * -ExcludeProperty pspath,PSParentPath,PSChildName,psdrive,psprovider).$hkuRunItem 
+            
+                    $newObjAutoRuns = New-Object -TypeName PSObject
+                    Add-Member -InputObject $newObjAutoRuns -Type NoteProperty -Name AutoRunsPath -Value $hkuRunPath
+                    Add-Member -InputObject $newObjAutoRuns -Type NoteProperty -Name AutoRunsKey -Value $hkuRunItem 
+                    Add-Member -InputObject $newObjAutoRuns -Type NoteProperty -Name AutoRunsValue -Value $gthkuRunValue
+                    Add-Member -InputObject $newObjAutoRuns -Type NoteProperty -Name AutoRunsComment -Value $hkuRunComment
+                    $fragAutoRunsVal += $newObjAutoRuns                            
+                }
+        }
+
+        $hkuRunComment=@()
+        $hkuRunPath=@()
+        $hkuRunItem=@()
+        $gthkuRunValue=@()
+        $tphkuRunPath=@()
+        $hkuRunComment="Placing a program within a startup folder will also cause that program to execute when a user logs in. There is a startup folder location for individual user accounts as well as a system-wide startup folder that will be checked regardless of which user account logs in. The startup folder path for the current user is C:\Users\[Username]\AppData\Roaming\Microsoft\Windows\Start Menu\Programs\Startup. The startup folder path for all users is C:\ProgramData\Microsoft\Windows\Start Menu\Programs\StartUp."
+
+        $hkuRunPath = "$($hkuKey):\$($hkuSID)\Software\Microsoft\Windows\CurrentVersion\runonce"
+
+        $tphkuRunPath = Test-Path $hkuRunPath
+
+        if($tphkuRunPath -eq $true)
+        {
+            $hkuRun = Get-Item $hkuRunPath | select -ExpandProperty property
+            foreach($hkuRunItem in $hkuRun)
+                {
+                    $gthkuRunValue = (Get-ItemProperty $hkuRunPath -Name $hkuRunItem | Select -Property * -ExcludeProperty pspath,PSParentPath,PSChildName,psdrive,psprovider).$hkuRunItem 
+            
+                    $newObjAutoRuns = New-Object -TypeName PSObject
+                    Add-Member -InputObject $newObjAutoRuns -Type NoteProperty -Name AutoRunsPath -Value $hkuRunPath
+                    Add-Member -InputObject $newObjAutoRuns -Type NoteProperty -Name AutoRunsKey -Value $hkuRunItem 
+                    Add-Member -InputObject $newObjAutoRuns -Type NoteProperty -Name AutoRunsValue -Value $gthkuRunValue
+                    Add-Member -InputObject $newObjAutoRuns -Type NoteProperty -Name AutoRunsComment -Value $hkuRunComment
+                    $fragAutoRunsVal += $newObjAutoRuns
+                }
+         }
+
+
+        #HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\User Shell Folders
+        #$hkuUserShellFolders = Get-ItemProperty "$($hkuKey):\$($hkuSID)\Software\Microsoft\Windows\CurrentVersion\Explorer\User Shell Folders"
+        $hkuRunComment=@()
+        $hkuRunPath=@()
+        $hkuRunItem=@()
+        $gthkuRunValue=@()
+        $tphkuRunPath=@()
+        $hkuRunComment="The following Registry keys can be used to set startup folder items for persistence: HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\User Shell Folders and HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\Shell Folders"
+
+        $hkuRunPath = "$($hkuKey):\$($hkuSID)\Software\Microsoft\Windows\CurrentVersion\Explorer\User Shell Folders"
+
+        $tphkuRunPath = Test-Path $hkuRunPath
+
+        if($tphkuRunPath -eq $true)
+        {
+            $hkuRun = (Get-ItemProperty $hkuRunPath).startup #| select -ExpandProperty property 
+
+            $hkuRunPath = $hkuRunPath
+            $hkuRunItem = "startup"
+            $gthkuRunValue = $hkuRun
+
+            $newObjAutoRuns = New-Object -TypeName PSObject
+            Add-Member -InputObject $newObjAutoRuns -Type NoteProperty -Name AutoRunsPath -Value $hkuRunPath
+            Add-Member -InputObject $newObjAutoRuns -Type NoteProperty -Name AutoRunsKey -Value $hkuRunItem 
+            Add-Member -InputObject $newObjAutoRuns -Type NoteProperty -Name AutoRunsValue -Value $gthkuRunValue
+            Add-Member -InputObject $newObjAutoRuns -Type NoteProperty -Name AutoRunsComment -Value $hkuRunComment
+            $fragAutoRunsVal += $newObjAutoRuns
+
+         }
+
+
+        #HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\Shell Folders
+        #$hkuShellFolders = Get-ItemProperty "$($hkuKey):\$($hkuSID)\Software\Microsoft\Windows\CurrentVersion\Explorer\Shell Folders"
+        $hkuRunComment=@()
+        $hkuRunPath=@()
+        $hkuRunItem=@()
+        $gthkuRunValue=@()
+        $tphkuRunPath=@()
+        $hkuRunComment="The following Registry keys can be used to set startup folder items for persistence: HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\User Shell Folders and HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\Shell Folders"
+
+        $hkuRunPath = "$($hkuKey):\$($hkuSID)\Software\Microsoft\Windows\CurrentVersion\Explorer\Shell Folders"
+        $tphkuRunPath = Test-Path $hkuRunPath
+
+        if($tphkuRunPath -eq $true)
+        {
+            $hkuRun = (Get-ItemProperty $hkuRunPath).startup #| select -ExpandProperty property 
+
+            $hkuRunPath = $hkuRunPath
+            $hkuRunItem = "startup"
+            $gthkuRunValue = $hkuRun
+
+            $newObjAutoRuns = New-Object -TypeName PSObject
+            Add-Member -InputObject $newObjAutoRuns -Type NoteProperty -Name AutoRunsPath -Value $hkuRunPath
+            Add-Member -InputObject $newObjAutoRuns -Type NoteProperty -Name AutoRunsKey -Value $hkuRunItem 
+            Add-Member -InputObject $newObjAutoRuns -Type NoteProperty -Name AutoRunsValue -Value $gthkuRunValue
+            Add-Member -InputObject $newObjAutoRuns -Type NoteProperty -Name AutoRunsComment -Value $hkuRunComment
+            $fragAutoRunsVal += $newObjAutoRuns
+         }
+         
+        #$hkuRunServiceOnce = Get-ItemProperty "$($hkuKey):\$($hkuSID)\Software\Microsoft\Windows\CurrentVersion\RunServicesOnce"
+        $hkuRunComment=@()
+        $hkuRunPath=@()
+        $hkuRunItem=@()
+        $gthkuRunValue=@()
+        $tphkuRunPath=@()
+        $hkuRunComment="The following Registry keys can control automatic startup of services during boot: HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\RunServicesOnce and HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\RunServices"
+        $hkuRunPath = "$($hkuKey):\$($hkuSID)\Software\Microsoft\Windows\CurrentVersion\RunServicesOnce"
+
+        $tphkuRunPath = Test-Path $hkuRunPath
+
+        if($tphkuRunPath -eq $true)
+        {
+            $hkuRun = Get-Item $hkuRunPath | select -ExpandProperty property
+            foreach($hkuRunItem in $hkuRun)
+                {
+                    $gthkuRunValue = (Get-ItemProperty $hkuRunPath -Name $hkuRunItem | Select -Property * -ExcludeProperty pspath,PSParentPath,PSChildName,psdrive,psprovider).$hkuRunItem 
+            
+                    $newObjAutoRuns = New-Object -TypeName PSObject
+                    Add-Member -InputObject $newObjAutoRuns -Type NoteProperty -Name AutoRunsPath -Value $hkuRunPath
+                    Add-Member -InputObject $newObjAutoRuns -Type NoteProperty -Name AutoRunsKey -Value $hkuRunItem 
+                    Add-Member -InputObject $newObjAutoRuns -Type NoteProperty -Name AutoRunsValue -Value $gthkuRunValue
+                    Add-Member -InputObject $newObjAutoRuns -Type NoteProperty -Name AutoRunsComment -Value $hkuRunComment
+                    $fragAutoRunsVal += $newObjAutoRuns
+                }
+         }
+         
+        #$hkuRunServices = Get-ItemProperty "$($hkuKey):\$($hkuSID)\Software\Microsoft\Windows\CurrentVersion\RunServices"
+        $hkuRunComment=@()
+        $hkuRunPath=@()
+        $hkuRunItem=@()
+        $gthkuRunValue=@()
+        $tphkuRunPath=@()
+        $hkuRunComment="The following Registry keys can control automatic startup of services during boot: HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\RunServicesOnce and HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\RunServices"
+        $hkuRunPath = "$($hkuKey):\$($hkuSID)\Software\Microsoft\Windows\CurrentVersion\RunServices"
+
+        $tphkuRunPath = Test-Path $hkuRunPath
+
+        if($tphkuRunPath -eq $true)
+        {
+            $hkuRun = Get-Item $hkuRunPath | select -ExpandProperty property
+            foreach($hkuRunItem in $hkuRun)
+                {
+                    $gthkuRunValue = (Get-ItemProperty $hkuRunPath -Name $hkuRunItem | Select -Property * -ExcludeProperty pspath,PSParentPath,PSChildName,psdrive,psprovider).$hkuRunItem 
+            
+                    $newObjAutoRuns = New-Object -TypeName PSObject
+                    Add-Member -InputObject $newObjAutoRuns -Type NoteProperty -Name AutoRunsPath -Value $hkuRunPath
+                    Add-Member -InputObject $newObjAutoRuns -Type NoteProperty -Name AutoRunsKey -Value $hkuRunItem 
+                    Add-Member -InputObject $newObjAutoRuns -Type NoteProperty -Name AutoRunsValue -Value $gthkuRunValue
+                    Add-Member -InputObject $newObjAutoRuns -Type NoteProperty -Name AutoRunsComment -Value $hkuRunComment
+                    $fragAutoRunsVal += $newObjAutoRuns
+                }
+         }
+
+
+        #HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Policies\Explorer\Run
+        #$hkuExplorRun = Get-ItemProperty "$($hkuKey):\$($hkuSID)\Microsoft\Windows\CurrentVersion\Policies\Explorer\Run"
+        $hkuRunComment=@()
+        $hkuRunPath=@()
+        $hkuRunItem=@()
+        $gthkuRunValue=@()
+        $tphkuRunPath=@()
+        $hkuRunComment="Using policy settings to specify startup programs creates corresponding values in either of Registry key: HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Policies\Explorer\Run"
+        $hkuRunPath = "$($hkuKey):\$($hkuSID)\Microsoft\Windows\CurrentVersion\Policies\Explorer\Run"
+
+        $tphkuRunPath = Test-Path $hkuRunPath
+
+        if($tphkuRunPath -eq $true)
+        {
+            $hkuRun = Get-Item $hkuRunPath | select -ExpandProperty property
+            foreach($hkuRunItem in $hkuRun)
+                {
+                    $gthkuRunValue = (Get-ItemProperty $hkuRunPath -Name $hkuRunItem | Select -Property * -ExcludeProperty pspath,PSParentPath,PSChildName,psdrive,psprovider).$hkuRunItem 
+            
+                    $newObjAutoRuns = New-Object -TypeName PSObject
+                    Add-Member -InputObject $newObjAutoRuns -Type NoteProperty -Name AutoRunsPath -Value $hkuRunPath
+                    Add-Member -InputObject $newObjAutoRuns -Type NoteProperty -Name AutoRunsKey -Value $hkuRunItem 
+                    Add-Member -InputObject $newObjAutoRuns -Type NoteProperty -Name AutoRunsValue -Value $gthkuRunValue
+                    Add-Member -InputObject $newObjAutoRuns -Type NoteProperty -Name AutoRunsComment -Value $hkuRunComment
+                    $fragAutoRunsVal += $newObjAutoRuns
+                }
+         }
+
+        #$hkuWindows = Get-ItemProperty "$($hkuKey):\$($hkuSID)\Microsoft\Windows NT\CurrentVersion\Windows"
+        $hkuRunComment=@()
+        $hkuRunPath=@()
+        $hkuRunItem=@()
+        $gthkuRunValue=@()
+        $tphkuRunPath=@()
+        $hkuRunComment="Programs listed in the load value of the registry key: HKEY_CURRENT_USER\Software\Microsoft\Windows NT\CurrentVersion\Windows run when any user logs on."
+        $hkuRunPath = Get-ItemProperty "$($hkuKey):\$($hkuSID)\Microsoft\Windows NT\CurrentVersion\Windows"
+
+        $tphkuRunPath = Test-Path $hkuRunPath
+
+        if($tphkuRunPath -eq $true)
+        {
+            $hkuRun = Get-Item $hkuRunPath | select -ExpandProperty property
+            foreach($hkuRunItem in $hkuRun)
+                {
+                    $gthkuRunValue = (Get-ItemProperty $hkuRunPath -Name $hkuRunItem | Select -Property * -ExcludeProperty pspath,PSParentPath,PSChildName,psdrive,psprovider).$hkuRunItem 
+            
+                    $newObjAutoRuns = New-Object -TypeName PSObject
+                    Add-Member -InputObject $newObjAutoRuns -Type NoteProperty -Name AutoRunsPath -Value $hkuRunPath
+                    Add-Member -InputObject $newObjAutoRuns -Type NoteProperty -Name AutoRunsKey -Value $hkuRunItem 
+                    Add-Member -InputObject $newObjAutoRuns -Type NoteProperty -Name AutoRunsValue -Value $gthkuRunValue
+                    Add-Member -InputObject $newObjAutoRuns -Type NoteProperty -Name AutoRunsComment -Value $hkuRunComment
+                    $fragAutoRunsVal += $newObjAutoRuns
+                }
+         }
+
+    }
+
+<#-------------------------------------------------
+HK Local Machine
+--------------------------------------------------#>
+
+New-PSDrive -Name HKLM -PSProvider Registry -Root HKEY_LOCAL_MACHINE
+
+#$hklmCVRun = (Get-Item "HKLM:\Software\Microsoft\Windows\CurrentVersion\Run") 
+$hkuRunComment=@()
+$hkuRunPath=@()
+$hkuRunItem=@()
+$gthkuRunValue=@()
+$tphkuRunPath=@()
+$hkuRunComment="Placing a program within a startup folder will also cause that program to execute when a user logs in. There is a startup folder location for individual user accounts as well as a system-wide startup folder that will be checked regardless of which user account logs in. The startup folder path for the current user is C:\Users\[Username]\AppData\Roaming\Microsoft\Windows\Start Menu\Programs\Startup. The startup folder path for all users is C:\ProgramData\Microsoft\Windows\Start Menu\Programs\StartUp."
+$hkuRunPath = "HKLM:\Software\Microsoft\Windows\CurrentVersion\Run"
+$tphkuRunPath = Test-Path $hkuRunPath
+
+if($tphkuRunPath -eq $true)
+    {
+        $hkuRun = Get-Item $hkuRunPath | select -ExpandProperty property
+        foreach($hkuRunItem in $hkuRun)
+            {
+                $gthkuRunValue = (Get-ItemProperty $hkuRunPath -Name $hkuRunItem | Select -Property *  -ExcludeProperty pspath,PSParentPath,PSChildName,psdrive,psprovider).$hkuRunItem 
+            
+                $newObjAutoRuns = New-Object -TypeName PSObject
+                Add-Member -InputObject $newObjAutoRuns -Type NoteProperty -Name AutoRunsPath -Value $hkuRunPath
+                Add-Member -InputObject $newObjAutoRuns -Type NoteProperty -Name AutoRunsKey -Value $hkuRunItem 
+                Add-Member -InputObject $newObjAutoRuns -Type NoteProperty -Name AutoRunsValue -Value $gthkuRunValue
+                Add-Member -InputObject $newObjAutoRuns -Type NoteProperty -Name AutoRunsComment -Value $hkuRunComment
+                $fragAutoRunsVal += $newObjAutoRuns
+            }
+    }
+
+#$hklmCVRunOnce = (Get-Item "HKLM:\Software\Microsoft\Windows\CurrentVersion\RunOnce")
+$hkuRunComment=@()
+$hkuRunPath=@()
+$hkuRunItem=@()
+$gthkuRunValue=@()
+$tphkuRunPath=@()
+$hkuRunComment="Placing a program within a startup folder will also cause that program to execute when a user logs in. There is a startup folder location for individual user accounts as well as a system-wide startup folder that will be checked regardless of which user account logs in. The startup folder path for the current user is C:\Users\[Username]\AppData\Roaming\Microsoft\Windows\Start Menu\Programs\Startup. The startup folder path for all users is C:\ProgramData\Microsoft\Windows\Start Menu\Programs\StartUp."
+$hkuRunPath = Get-Item "HKLM:\Software\Microsoft\Windows\CurrentVersion\RunOnce"
+$tphkuRunPath = Test-Path $hkuRunPath
+
+if($tphkuRunPath -eq $true)
+    {
+        $hkuRun = Get-Item $hkuRunPath | select -ExpandProperty property
+        foreach($hkuRunItem in $hkuRun)
+            {
+                $gthkuRunValue = (Get-ItemProperty $hkuRunPath -Name $hkuRunItem | Select -Property *  -ExcludeProperty pspath,PSParentPath,PSChildName,psdrive,psprovider).$hkuRunItem 
+            
+                $newObjAutoRuns = New-Object -TypeName PSObject
+                Add-Member -InputObject $newObjAutoRuns -Type NoteProperty -Name AutoRunsPath -Value $hkuRunPath
+                Add-Member -InputObject $newObjAutoRuns -Type NoteProperty -Name AutoRunsKey -Value $hkuRunItem 
+                Add-Member -InputObject $newObjAutoRuns -Type NoteProperty -Name AutoRunsValue -Value $gthkuRunValue
+                Add-Member -InputObject $newObjAutoRuns -Type NoteProperty -Name AutoRunsComment -Value $hkuRunComment
+                $fragAutoRunsVal += $newObjAutoRuns
+            }
+    }
+    
+#Get-Item "HKLM:\Software\Microsoft\Windows\CurrentVersion\RunOnceEx"
+$hkuRunComment=@()
+$hkuRunPath=@()
+$hkuRunItem=@()
+$gthkuRunValue=@()
+$tphkuRunPath=@()
+$hkuRunComment="Run keys may exist under multiple hives. The HKEY_LOCAL_MACHINE\Software\Microsoft\Windows\CurrentVersion\RunOnceEx is also available but is not created by default on Windows Vista and newer. Registry run key entries can reference programs directly or list them as a dependency. For example, it is possible to load a DLL at logon using a Depend key with RunOnceEx: reg add HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\RunOnceEx\0001\Depend /v 1 /d C:\temp\evil[.]dll"
+$hkuRunPath = Get-Item "HKLM:\Software\Microsoft\Windows\CurrentVersion\RunOnceEx"
+$tphkuRunPath = Test-Path $hkuRunPath
+
+if($tphkuRunPath -eq $true)
+    {
+        $hkuRun = Get-Item $hkuRunPath | select -ExpandProperty property
+        foreach($hkuRunItem in $hkuRun)
+            {
+                $gthkuRunValue = (Get-ItemProperty $hkuRunPath -Name $hkuRunItem | Select -Property *  -ExcludeProperty pspath,PSParentPath,PSChildName,psdrive,psprovider).$hkuRunItem 
+            
+                $newObjAutoRuns = New-Object -TypeName PSObject
+                Add-Member -InputObject $newObjAutoRuns -Type NoteProperty -Name AutoRunsPath -Value $hkuRunPath
+                Add-Member -InputObject $newObjAutoRuns -Type NoteProperty -Name AutoRunsKey -Value $hkuRunItem 
+                Add-Member -InputObject $newObjAutoRuns -Type NoteProperty -Name AutoRunsValue -Value $gthkuRunValue
+                Add-Member -InputObject $newObjAutoRuns -Type NoteProperty -Name AutoRunsComment -Value $hkuRunComment
+                $fragAutoRunsVal += $newObjAutoRuns
+            }
+    }
+
+
+
+#$hklExplorShellFolders = (Get-ItemProperty "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Shell Folders" -Name "common startup").'Common Startup'
+$hkuRunComment=@()
+$hkuRunPath=@()
+$hkuRunItem=@()
+$gthkuRunValue=@()
+$tphkuRunPath=@()
+$hkuRunComment="The following Registry keys can be used to set startup folder items for persistence: HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Shell Folders and HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\User Shell Folders"
+$hkuRunPath = "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Shell Folders"
+
+$tphkuRunPath = Test-Path $hkuRunPath
+
+if($tphkuRunPath -eq $true)
+    {
+        $hkuRun = (Get-ItemProperty $hkuRunPath).startup #| select -ExpandProperty property 
+
+        $hkuRunPath = $hkuRunPath
+        $hkuRunItem = "startup"
+        $gthkuRunValue = $hkuRun
+
+        $newObjAutoRuns = New-Object -TypeName PSObject
+        Add-Member -InputObject $newObjAutoRuns -Type NoteProperty -Name AutoRunsPath -Value $hkuRunPath
+        Add-Member -InputObject $newObjAutoRuns -Type NoteProperty -Name AutoRunsKey -Value $hkuRunItem 
+        Add-Member -InputObject $newObjAutoRuns -Type NoteProperty -Name AutoRunsValue -Value $gthkuRunValue
+        Add-Member -InputObject $newObjAutoRuns -Type NoteProperty -Name AutoRunsComment -Value $hkuRunComment
+        $fragAutoRunsVal += $newObjAutoRuns
+
+    }
+    
+#$hklExplorShell = (Get-ItemProperty "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\User Shell Folders" -Name "common startup").'Common Startup'
+$hkuRunComment=@()
+$hkuRunPath=@()
+$hkuRunItem=@()
+$gthkuRunValue=@()
+$tphkuRunPath=@()
+$hkuRunComment="The following Registry keys can be used to set startup folder items for persistence: HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Shell Folders and HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\User Shell Folders"
+
+$hkuRunPath = "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\User Shell Folders"
+
+$tphkuRunPath = Test-Path $hkuRunPath
+
+if($tphkuRunPath -eq $true)
+    {
+        $hkuRun = (Get-ItemProperty $hkuRunPath).startup #| select -ExpandProperty property 
+
+        $hkuRunPath = $hkuRunPath
+        $hkuRunItem = "startup"
+        $gthkuRunValue = $hkuRun
+
+        $newObjAutoRuns = New-Object -TypeName PSObject
+        Add-Member -InputObject $newObjAutoRuns -Type NoteProperty -Name AutoRunsPath -Value $hkuRunPath
+        Add-Member -InputObject $newObjAutoRuns -Type NoteProperty -Name AutoRunsKey -Value $hkuRunItem 
+        Add-Member -InputObject $newObjAutoRuns -Type NoteProperty -Name AutoRunsValue -Value $gthkuRunValue
+        Add-Member -InputObject $newObjAutoRuns -Type NoteProperty -Name AutoRunsComment -Value $hkuRunComment
+        $fragAutoRunsVal += $newObjAutoRuns
+    }
+
+#$hklmCVRunSvcOnce = (Get-Item "HKLM:\Software\Microsoft\Windows\CurrentVersion\RunServicesOnce")
+$hkuRunComment=@()
+$hkuRunPath=@()
+$hkuRunItem=@()
+$gthkuRunValue=@()
+$tphkuRunPath=@()
+$hkuRunComment="The following Registry keys can control automatic startup of services during boot:HKEY_LOCAL_MACHINE\Software\Microsoft\Windows\CurrentVersion\RunServicesOnce and HKEY_LOCAL_MACHINE\Software\Microsoft\Windows\CurrentVersion\RunServices"
+$hkuRunPath = Get-Item "HKLM:\Software\Microsoft\Windows\CurrentVersion\RunServicesOnce"
+$tphkuRunPath = Test-Path $hkuRunPath
+
+if($tphkuRunPath -eq $true)
+    {
+        $hkuRun = Get-Item $hkuRunPath | select -ExpandProperty property
+        foreach($hkuRunItem in $hkuRun)
+            {
+                $gthkuRunValue = (Get-ItemProperty $hkuRunPath -Name $hkuRunItem | Select -Property *  -ExcludeProperty pspath,PSParentPath,PSChildName,psdrive,psprovider).$hkuRunItem 
+            
+                $newObjAutoRuns = New-Object -TypeName PSObject
+                Add-Member -InputObject $newObjAutoRuns -Type NoteProperty -Name AutoRunsPath -Value $hkuRunPath
+                Add-Member -InputObject $newObjAutoRuns -Type NoteProperty -Name AutoRunsKey -Value $hkuRunItem 
+                Add-Member -InputObject $newObjAutoRuns -Type NoteProperty -Name AutoRunsValue -Value $gthkuRunValue
+                Add-Member -InputObject $newObjAutoRuns -Type NoteProperty -Name AutoRunsComment -Value $hkuRunComment
+                $fragAutoRunsVal += $newObjAutoRuns
+            }
+    }
+
+#$hklmCVRunSvc = (Get-Item "HKLM:\Software\Microsoft\Windows\CurrentVersion\RunServices")
+$hkuRunComment=@()
+$hkuRunPath=@()
+$hkuRunItem=@()
+$gthkuRunValue=@()
+$tphkuRunPath=@()
+$hkuRunComment="The following Registry keys can control automatic startup of services during boot:HKEY_LOCAL_MACHINE\Software\Microsoft\Windows\CurrentVersion\RunServicesOnce and HKEY_LOCAL_MACHINE\Software\Microsoft\Windows\CurrentVersion\RunServices"
+
+$hkuRunPath = Get-Item "HKLM:\Software\Microsoft\Windows\CurrentVersion\RunServices"
+$tphkuRunPath = Test-Path $hkuRunPath
+
+if($tphkuRunPath -eq $true)
+    {
+        $hkuRun = Get-Item $hkuRunPath | select -ExpandProperty property
+        foreach($hkuRunItem in $hkuRun)
+            {
+                $gthkuRunValue = (Get-ItemProperty $hkuRunPath -Name $hkuRunItem | Select -Property *  -ExcludeProperty pspath,PSParentPath,PSChildName,psdrive,psprovider).$hkuRunItem 
+            
+                $newObjAutoRuns = New-Object -TypeName PSObject
+                Add-Member -InputObject $newObjAutoRuns -Type NoteProperty -Name AutoRunsPath -Value $hkuRunPath
+                Add-Member -InputObject $newObjAutoRuns -Type NoteProperty -Name AutoRunsKey -Value $hkuRunItem 
+                Add-Member -InputObject $newObjAutoRuns -Type NoteProperty -Name AutoRunsValue -Value $gthkuRunValue
+                Add-Member -InputObject $newObjAutoRuns -Type NoteProperty -Name AutoRunsComment -Value $hkuRunComment
+                $fragAutoRunsVal += $newObjAutoRuns
+            }
+    }
+    
+#$hklmCVPolRun = (Get-Item "HKLM:\Software\Microsoft\Windows\CurrentVersion\Policies\Explorer\Run")
+$hkuRunComment=@()
+$hkuRunPath=@()
+$hkuRunItem=@()
+$gthkuRunValue=@()
+$tphkuRunPath=@()
+$hkuRunComment="Using policy settings to specify startup programs creates corresponding values in either of two Registry keys: HKEY_LOCAL_MACHINE\Software\Microsoft\Windows\CurrentVersion\Policies\Explorer\Run"
+$hkuRunPath = Get-Item "HKLM:\Software\Microsoft\Windows\CurrentVersion\Policies\Explorer\Run"
+$tphkuRunPath = Test-Path $hkuRunPath
+
+if($tphkuRunPath -eq $true)
+    {
+        $hkuRun = Get-Item $hkuRunPath | select -ExpandProperty property
+        foreach($hkuRunItem in $hkuRun)
+            {
+                $gthkuRunValue = (Get-ItemProperty $hkuRunPath -Name $hkuRunItem | Select -Property *  -ExcludeProperty pspath,PSParentPath,PSChildName,psdrive,psprovider).$hkuRunItem 
+            
+                 $newObjAutoRuns = New-Object -TypeName PSObject
+                 Add-Member -InputObject $newObjAutoRuns -Type NoteProperty -Name AutoRunsPath -Value $hkuRunPath
+                 Add-Member -InputObject $newObjAutoRuns -Type NoteProperty -Name AutoRunsKey -Value $hkuRunItem 
+                 Add-Member -InputObject $newObjAutoRuns -Type NoteProperty -Name AutoRunsValue -Value $gthkuRunValue
+                 Add-Member -InputObject $newObjAutoRuns -Type NoteProperty -Name AutoRunsComment -Value $hkuRunComment
+                 $fragAutoRunsVal += $newObjAutoRuns
+            }
+    }
+
+
+#Get-ItemProperty "HKLM:\Software\Microsoft\Windows NT\CurrentVersion\Winlogon\Userinit" 
+$hkuRunComment=@()
+$hkuRunPath=@()
+$hkuRunItem=@()
+$gthkuRunValue=@()
+$tphkuRunPath=@()
+$hkuRunComment="The Winlogon key controls actions that occur when a user logs on to a computer running Windows 7. Most of these actions are under the control of the operating system, but you can also add custom actions here. The HKEY_LOCAL_MACHINE\Software\Microsoft\Windows NT\CurrentVersion\Winlogon\Userinit and HKEY_LOCAL_MACHINE\Software\Microsoft\Windows NT\CurrentVersion\Winlogon\Shell subkeys can automatically launch programs."
+$hkuRunPath = "HKLM:\Software\Microsoft\Windows NT\CurrentVersion\Winlogon"
+
+$tphkuRunPath = Test-Path $hkuRunPath
+
+if($tphkuRunPath -eq $true)
+{
+    $hkuRun = (Get-ItemProperty $hkuRunPath).Userinit #| select -ExpandProperty property 
+
+    $hkuRunPath = $hkuRunPath
+    $hkuRunItem = "Userinit "
+    $gthkuRunValue = $hkuRun
+
+    if ($gthkuRunValue -notmatch "userinit.exe"){$gthkuRunValue = "Warning $gthkuRunValue Warning"}
+    
+    $newObjAutoRuns = New-Object -TypeName PSObject
+    Add-Member -InputObject $newObjAutoRuns -Type NoteProperty -Name AutoRunsPath -Value $hkuRunPath
+    Add-Member -InputObject $newObjAutoRuns -Type NoteProperty -Name AutoRunsKey -Value $hkuRunItem 
+    Add-Member -InputObject $newObjAutoRuns -Type NoteProperty -Name AutoRunsValue -Value $gthkuRunValue
+    Add-Member -InputObject $newObjAutoRuns -Type NoteProperty -Name AutoRunsComment -Value $hkuRunComment
+    $fragAutoRunsVal += $newObjAutoRuns
+
+}
+
+#Get-ItemProperty "HKLM:\Software\Microsoft\Windows NT\CurrentVersion\Winlogon\Shell"
+$hkuRunComment=@()
+$hkuRunPath=@()
+$hkuRunItem=@()
+$gthkuRunValue=@()
+$tphkuRunPath=@()
+$hkuRunComment="The Winlogon key controls actions that occur when a user logs on to a computer running Windows 7. Most of these actions are under the control of the operating system, but you can also add custom actions here. The HKEY_LOCAL_MACHINE\Software\Microsoft\Windows NT\CurrentVersion\Winlogon\Userinit and HKEY_LOCAL_MACHINE\Software\Microsoft\Windows NT\CurrentVersion\Winlogon\Shell subkeys can automatically launch programs."
+
+$hkuRunPath = "HKLM:\Software\Microsoft\Windows NT\CurrentVersion\Winlogon"
+
+$tphkuRunPath = Test-Path $hkuRunPath
+
+if($tphkuRunPath -eq $true)
+{
+    $hkuRun = (Get-ItemProperty $hkuRunPath).Shell #| select -ExpandProperty property 
+
+    $hkuRunPath = $hkuRunPath
+    $hkuRunItem = "Shell"
+    $gthkuRunValue = $hkuRun
+
+    if ($gthkuRunValue -notmatch "explorer.exe" ){$gthkuRunValue = "Warning $gthkuRunValue Warning"}
+
+    $newObjAutoRuns = New-Object -TypeName PSObject
+    Add-Member -InputObject $newObjAutoRuns -Type NoteProperty -Name AutoRunsPath -Value $hkuRunPath
+    Add-Member -InputObject $newObjAutoRuns -Type NoteProperty -Name AutoRunsKey -Value $hkuRunItem 
+    Add-Member -InputObject $newObjAutoRuns -Type NoteProperty -Name AutoRunsValue -Value $gthkuRunValue
+    Add-Member -InputObject $newObjAutoRuns -Type NoteProperty -Name AutoRunsComment -Value $hkuRunComment
+    $fragAutoRunsVal += $newObjAutoRuns
+}
+
+
+#(Get-ItemProperty "HKLM:\\System\CurrentControlSet\Control\Session Manager").BootExecute
+$hkuRunComment=@()
+$hkuRunPath=@()
+$hkuRunItem=@()
+$gthkuRunValue=@()
+$tphkuRunPath=@()
+$hkuRunComment="By default, the multistring BootExecute value of the registry key HKEY_LOCAL_MACHINE\System\CurrentControlSet\Control\Session Manager is set to autocheck autochk *. This value causes Windows, at startup, to check the file-system integrity of the hard disks if the system has been shut down abnormally. Adversaries can add other programs or processes to this registry value which will automatically launch at boot."
+$hkuRunPath = "HKLM:\System\CurrentControlSet\Control\Session Manager"
+
+$tphkuRunPath = Test-Path $hkuRunPath
+
+if($tphkuRunPath -eq $true)
+{
+    $hkuRun = (Get-ItemProperty $hkuRunPath).BootExecute #| select -ExpandProperty property 
+
+    $hkuRunPath = $hkuRunPath
+    $hkuRunItem = "BootExecute"
+    $gthkuRunValue = [string]$hkuRun
+
+    if ($gthkuRunValue -notmatch "autocheck autochk *" ){$gthkuRunValue = "Warning $gthkuRunValue Warning"}
+
+    $newObjAutoRuns = New-Object -TypeName PSObject
+    Add-Member -InputObject $newObjAutoRuns -Type NoteProperty -Name AutoRunsPath -Value $hkuRunPath
+    Add-Member -InputObject $newObjAutoRuns -Type NoteProperty -Name AutoRunsKey -Value $hkuRunItem 
+    Add-Member -InputObject $newObjAutoRuns -Type NoteProperty -Name AutoRunsValue -Value $gthkuRunValue
+    Add-Member -InputObject $newObjAutoRuns -Type NoteProperty -Name AutoRunsComment -Value $hkuRunComment
+    $fragAutoRunsVal += $newObjAutoRuns
+}
 
 ################################################
 #######  RECOMMENDED SECURITY SETTINGS  ########
@@ -8809,6 +9486,16 @@ foreach ($OfficePolItems in $OfficePolicies.values)
        $fragSummary += $newObjSummary
     }
 
+    if ($fragAutoRunsVal -like "*warning*")
+    {
+       $newObjSummary = New-Object psObject
+       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value '<a href="#AutoRuns">AutoRuns Requires Review</a>'
+       Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Risk -Value "Medium Risk"
+       $fragSummary += $newObjSummary
+    }
+    $frag_AutoRuns
+
+
     if ($fragPCElevate -like "*warning*")
     {
        $newObjSummary = New-Object psObject
@@ -9969,6 +10656,7 @@ if ($tpSec10 -eq $false)
     }
 
 $working = "C:\SecureReport\output\$OutFunc\"
+$NonFilteredReport = "C:\SecureReport\output\$OutFunc\" + "NonFilteredReport.html"
 $Report = "C:\SecureReport\output\$OutFunc\" + "$OutFunc.html"
 
 ################################################
@@ -10008,7 +10696,7 @@ $Report = "C:\SecureReport\output\$OutFunc\" + "$OutFunc.html"
 
     $descripLegacyNet = "LLMNR and other legacy network protocols can be used to steal password hashes. <br> <br>Further information can be found @ <a href=`"https://www.tenaka.net/responder`" class=`"class1`">Responder</a><br>"
 
-    $descripRegPer ="Weak Registry permissions allowing users to change the path to launch malicious software.<br> <br>Further information can be found @ <a href=`"https://www.tenaka.net/unquotedpaths`" class=`"class1`">UnQuoted Paths</a>"
+    $descripRegPer ="Weak Registry permissions allowing users to change the path to launch malicious software.<br><br>Further information can be found @ <a href=`"https://www.tenaka.net/unquotedpaths`" class=`"class1`">UnQuoted Paths</a>"
 
     $descripSysFold = "Default System Folders that allow a User the Write permissions. These can be abused by creating content in some of the allowable default locations. Prevent by applying Execution controls eg Applocker.<br> <br> Further information can be found @ <a href=`"https://www.tenaka.net/unquotedpaths`" class=`"class1`">UnQuoted Paths</a><br>"
 
@@ -10072,13 +10760,191 @@ $Report = "C:\SecureReport\output\$OutFunc\" + "$OutFunc.html"
 
     $descripPowershellHistory = "Searches Powershell history for Password or Usernames @ C:\Users\SomeUser\APDATA\Microsoft\Windows\PowerShell\PSReadLine\ConsoleHost_history.txt"
 
+    $descripAutoRuns = "Autoruns are Windows programs set to auto-execute during startup launching when the operating system boots. These include legitimate apps, system utilities, and potentially malicious software. Autoruns can be exploited by planting malicious code in startup locations or manipulating system settings. This grants them persistence and control over compromised systems. Malware in startup locations can steal data, spread, or provide backdoor access. Exploited programs often leverage system vulnerabilities or manipulate user trust through disguised software.<br><br> The `"Run`" or `"RunOnce`" keys in the Windows Registry, like `"HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Run`", enabling their malware to launch at boot. Similarly, they might abuse the `"Startup`" folder where shortcuts execute on login. Notable examples include the use of these mechanisms by malware like `"Sasser`" (2004) and `"WannaCry`" (2017) worms. Regularly monitoring and securing these auto-start points is vital to prevent such exploits. Further information can be founds @ https://attack.mitre.org/techniques/T1547/001/ "
+
+    $descripWDAC = "Requires CITool.exe, comes as default with Windows 11 22H2<br><br>WDAC (Windows Defender Application Control), Device Guard was its release name, is a security feature in Windows operating systems designed to enhance system security. In kernel mode, WDAC operates by enforcing code integrity policies, which restrict the execution of unauthorized or unsigned code, preventing malicious software from running. It uses kernel-mode drivers to monitor and control the loading of executables and scripts, ensuring only approved applications run, bolstering system security<br><br>Application Control Policy and Application Control User should be set to Enforce when enabled.<br><br>There should be a named policy that is also set to (CIPolicyEnforced = True) and not Audit (CIPolicyEnforced = False)<br><br>For this to report on WDAC while Enforced, either sign this script or temporarily set 'Set-RuleOption -FilePath C:\WDAC\Policy.xml -Option 11'"
+    
     $descripToDo = ""
 
+################################################
+############  NON FILTERED FRAGMENTS  ##########
+################################################
+#Generates report without any filternig of content or details summary drop downs, this is to provide a fall back in case filtering is excessive. 
+#Final report filters out null fragments 
+   
+    #Top and Tail
+    $nFragDescrip1 =  $Descrip1 | ConvertTo-Html -as table -Fragment -PreContent "<h3><span style=font-family:$font;>$Intro</span></h3>" | Out-String
+    #$FragDescrip2 =  $Descrip2 | ConvertTo-Html -as table -Fragment -PreContent "<h3><span style=font-family:$font;>$Intro2</span></h3>" | Out-String
+    $nFragDescripFin =  $DescripFin | ConvertTo-Html -as table -Fragment -PreContent "<h3><span style=font-family:$font;>$Finish</span></h3>" | Out-String
+    $nFrag_descripVirt2 = ConvertTo-Html -as table -Fragment -PostContent "<h4>$descripVirt2</h4>" | Out-String
+    
+    #Summary
+    $nfrag_Summary = $fragSummary | ConvertTo-Html -As Table -fragment -PreContent "<h2>Overall Compliance Status</span></h2>"  | Out-String
+            
+    #Host details    
+    $nfrag_Host = $fragHost | ConvertTo-Html -As List -Property Name,Domain,Model -fragment -PreContent "<h2>Host Details</span></h2>"  | Out-String
+    $nfragOS = $OS | ConvertTo-Html -As List -property Caption,Version,OSArchitecture,InstallDate -fragment -PreContent "<h2>Windows Details</span></h2>" | Out-String
+    $nFragAccountDetails = $AccountDetails  | ConvertTo-Html -As Table -fragment -PreContent "<h2>Local Account Details</span></h2>" -PostContent "<h4>$descripLocalAccounts</h4>" | Out-String 
+    $nfrag_DCList  = $fragDCList | ConvertTo-Html -As Table -fragment -PreContent "<h2>List of Domain Controllers</span></h2>" | Out-String 
+    $nfrag_FSMO = $fragFSMO | ConvertTo-Html -As Table -fragment -PreContent "<h2>FSMO Roles</span></h2>" | Out-String 
+    $nfrag_DomainGrps = $fragDomainGrps | ConvertTo-Html -As Table -fragment -PreContent "<h2>Members of Privilege Groups</span></h2>" -PostContent "<h4>$descripDomainPrivsGps</h4>" | Out-String 
+    $nfrag_PreAuth = $fragPreAuth | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"PreAuth`"><a href=`"#TOP`">Domain Accounts that DO NOT Pre-Authenticate</a></span></h2>" -PostContent "<h4>$descripPreAuth</h4>" | Out-String
+    $nfrag_NeverExpires = $fragNeverExpires | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"PassExpire`"><a href=`"#TOP`">Domain Accounts that Never Expire their Password</a></span></h2>"  | Out-String
+    $nFragGroupDetails =  $GroupDetails  | ConvertTo-Html -As Table -fragment -PreContent "<h2>Local System Group Members</span></h2>" | Out-String
+    $nFragPassPol = $PassPol | Select-Object -SkipLast 3 | ConvertTo-Html -As Table -fragment -PreContent "<h2>Local Password Policy</span></h2>" | Out-String
+    $nfragInstaApps  =  $InstallApps | Sort-Object publisher,displayname -Unique  | ConvertTo-Html -As Table  -fragment -PreContent "<h2><a name=`"InstalledApps`"><a href=`"#TOP`">Installed Applications</a></span></h2>" -PostContent "<h4>$descripInstalledApps</h4>" | Out-String
+    $nfragHotFix = $HotFix | ConvertTo-Html -As Table -property HotFixID,InstalledOn,Caption -fragment -PreContent "<h2><a name=`"Hotfix`"><a href=`"#TOP`">Installed Windows Updates</a></span></h2>" -PostContent "<h4>$descripWinUpdates</h4>"| Out-String   
+    $nfragInstaApps16  =  $InstallApps16 | Sort-Object publisher,displayname -Unique  | ConvertTo-Html -As Table  -fragment -PreContent "<h2>Updates to Office 2016 and older or Updates that create KB's in the Registry</span></h2>" | Out-String
+    $nfragBios = $BiosUEFI | ConvertTo-Html -As List -fragment -PreContent "<h2><a name=`"BiosUEFI`"><a href=`"#TOP`">Bios Details</a></span></h2>" -PostContent "<h4>$descripBios</h4>"| Out-String
+    $nfragCpu = $cpu | ConvertTo-Html -As List -property Name,MaxClockSpeed,NumberOfCores,ThreadCount -fragment -PreContent "<h2>Processor Details</span></h2>" | Out-String
+    $nfrag_whoamiGroups =  $whoamiGroups | ConvertTo-Html -As Table -fragment -PreContent "<h2>Current Users Group Membership</span></h2>" -PostContent "<h4>$descripDomainGroups</h4>" | Out-String
+    $nfrag_whoamiPriv =  $whoamiPriv | ConvertTo-Html -As Table -fragment -PreContent "<h2>Current Users Local Privileges</span></h2>" -PostContent "<h4>$descripDomainPrivs</h4>" | Out-String
+    $nfrag_Network4 = $fragNetwork4 | ConvertTo-Html -As List -fragment -PreContent "<h2>IPv4 Address Details</span></h2>"  | Out-String
+    $nfrag_Network6 = $fragNetwork6 | ConvertTo-Html -As List -fragment -PreContent "<h2>IPv4 Address Details</span></h2>"  | Out-String
+    $nFrag_WinFeature = $FragWinFeature | ConvertTo-Html -As table -fragment -PreContent "<h2>Installed Windows Features</span></h2>"  | Out-String
+    $nfrag_MDTBuild = $fragMDTBuild | ConvertTo-Html -As table -fragment -PreContent "<h2>MDT Deployment Details</span></h2>"  | Out-String
+    
+    #Security Review
+    $nFrag_AVStatus = $FragAVStatus | ConvertTo-Html -As Table  -fragment -PreContent "<h2><a name=`"AV`"><a href=`"#TOP`">AntiVirus Engine and Definition Status</a></span></h2>" -PostContent "<h4>$descripAV</h4>" | Out-String
+    $nfrag_BitLocker = $fragBitLocker | ConvertTo-Html -As List -fragment -PreContent "<h2><a name=`"Bitlockerisnotenabled`"><a href=`"#TOP`">Bitlocker and TPM Details</a></span></h2>" -PostContent "<h4>$descripBitlocker</h4>" | Out-String
+    $nfrag_Msinfo = $MsinfoClixml | ConvertTo-Html -As Table -fragment -PreContent "<h2><a name=`"VBS`"><a href=`"#TOP`">Virtualization and Secure Boot Details</a></span></h2>" -PostContent "<h4>$descripVirt</h4>"  | Out-String
+    $nfrag_kernelModeVal = $fragkernelModeVal | ConvertTo-Html -As Table -fragment -PreContent "<h2><a name=`"KernelMode`"><a href=`"#TOP`">Kernel-mode Hardware-enforced Stack Protection</a></span></h2>" -PostContent "<h4>$descripKernelMode</h4>"  | Out-String
+    $nfrag_LSAPPL = $fragLSAPPL | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"LSA`"><a href=`"#TOP`">LSA Protection for Stored Credentials</a></span></h2>" -PostContent "<h4>$descripLSA</h4>" | Out-String
+    $nfrag_DLLSafe = $fragDLLSafe | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"DLLSafe`"><a href=`"#TOP`">DLL Safe Search Order</a></span></h2>"  -PostContent "<h4>$descripDLL</h4>"| Out-String
+    $nfrag_DLLHijack = $fragDLLHijack | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"DLLHigh`"><a href=`"#TOP`">Loaded DLL's that are vulnerable to DLL Hijacking</a></span></h2>" | Out-String
+    $nfrag_DllNotSigned = $fragDllNotSigned | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"DLLSign`"><a href=`"#TOP`">All DLL's that aren't signed and user permissions allow write</a></span></h2>"  -PostContent "<h4>$descriptDLLHijack</h4>"| Out-String
+    $nfrag_Code = $fragCode | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"HECI`"><a href=`"#TOP`">Hypervisor Enforced Code Integrity</a></span></h2>" -PostContent "<h4>$descripHyper</h4>" | Out-String
+    $nfrag_PCElevate = $fragPCElevate | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"SoftElevation`"><a href=`"#TOP`">Automatically Elevates User Installing Software</a></span></h2>"  -PostContent "<h4>$descripElev</h4>"| Out-String
+    $nfrag_FilePass = $fragFilePass | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"FilePW`"><a href=`"#TOP`">Files that Contain the Word PASSWord</a></span></h2>" -PostContent "<h4>$descripFilePw</h4>" | Out-String
+    $nfrag_AutoLogon = $fragAutoLogon   | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"AutoLogon`"><a href=`"#TOP`">AutoLogon Credentials in Registry</a></span></h2>"  -PostContent "<h4>$descripAutoLogon</h4>"| Out-String
+    $nfrag_UnQu = $fragUnQuoted | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"unquoted`"><a href=`"#TOP`">UnQuoted Paths Attack</a></span></h2>" -PostContent "<h4>$DescripUnquoted</h4>" | Out-String
+    $nfrag_LegNIC = $fragLegNIC | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"LegNetProt`"><a href=`"#TOP`">Legacy and Vulnerable Network Protocols</a></span></h2>" -PostContent "<h4>$DescripLegacyNet</h4>" | Out-String
+    $nfrag_SysRegPerms = $fragReg | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"RegWrite`"><a href=`"#TOP`">Registry Permissions Allowing User Access - Security Risk if Exist</a></span></h2>" -PostContent "<h4>$descripRegPer</h4>" | Out-String
+    $nfrag_PSPass = $fragPSPass | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"ProcPW`"><a href=`"#TOP`">Processes where CommandLine Contains a Password</a></span></h2>" -PostContent "<h4>$Finish</h4>" | Out-String
+    $nfrag_SecOptions = $fragSecOptions | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"secOptions`"><a href=`"#TOP`">Security Options to Prevent MitM Attacks</a></span></h2>" -PostContent "<h4>$descripSecOptions</h4>" | Out-String
+    $nfrag_wFolders = $fragwFold | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"sysFileWrite `"><a href=`"#TOP`">Non System Folders that are Writeable - Security Risk when Executable</span></a></h2>" -PostContent "<h4>$descripNonFold</h4>"| Out-String
+    $nfrag_SysFolders = $fragsysFold | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"SysDirWrite`"><a href=`"#TOP`">Default System Folders that are Writeable - Security Risk if Exist</span></a></h2>"  -PostContent "<h4>$descripSysFold</h4>"| Out-String
+    $nfrag_CreateSysFold = $fragCreateSysFold | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"sysDirExe`"><a href=`"#TOP`">Default System Folders that Permit Users to Create Files - Security Risk if Exist</a></span></h2>"  -PostContent "<h4>$descripCreateSysFold</h4>"| Out-String
+    $nfrag_wFile = $fragwFile | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"sysFileWrite`"><a href=`"#TOP`">System Files that are Writeable - Security Risk if Exist</a></span></h2>" -PostContent "<h4>$descripFile</h4>" | Out-String
+    $nfrag_FWProf = $fragFWProfile | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"FirewallProf`"><a href=`"#TOP`">Firewall Profile</a></span></h2>"  -PostContent "<h4>$DescripFirewalls</h4>"| Out-String
+    $nfrag_FW = $fragFW | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"InFirewall`"><a href=`"#TOP`">Enabled Firewall Rules</a></span></h2>" | Out-String
+    $nfrag_TaskPerms =  $SchedTaskPerms | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"schedDir`"><a href=`"#TOP`">Scheduled Tasks with Scripts Stored on Disk</a></span></h2>"  -PostContent "<h4>$descripTaskSchPerms</h4>" | Out-String
+    $nfrag_RunServices =  $fragRunServices | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"RunningServices`"><a href=`"#TOP`">Running Services</a></span></h2>"  | Out-String
+    $nfrag_AutoRuns = $fragAutoRunsVal | ConvertTo-Html -as Table -Fragment -PreContent "<p></p><details><summary><a name=`"AutoRuns`"><a href=`"#TOP`">AutoRuns</summary></a><p>" -PostContent "<h4>$descripAutoRuns</h4></details>" | Out-String         
+            
+    $nfrag_TaskListings = $SchedTaskListings | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"schedTask`"><a href=`"#TOP`">Scheduled Tasks that Contain something Encoded</a></span></h2>"  -PostContent "<h4>$descripTaskSchEncode</h4>" | Out-String
+    $nfrag_DriverQuery = $DriverQuery | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"drivers`"><a href=`"#TOP`">Drivers that aren't Signed</a></span></h2>" -PostContent "<h4>$descriptDriverQuery</h4>" | Out-String
+    $nfrag_Share = $fragShare | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"shares`"><a href=`"#TOP`">Shares and their Share Permissions</a></span></h2>"  | Out-String
+    $nfrag_AuthCodeSig = $fragAuthCodeSig | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"AuthentiCode`"><a href=`"#TOP`">Files with an Authenticode Signature HashMisMatch</a></span></h2>" -PostContent "<h4>$descriptAuthCodeSig</h4>"  | Out-String  
+    $nfrag_CredGuCFG = $fragCredGuCFG | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"CredGuard`"><a href=`"#TOP`">Credential Guard</a></span></h2>" -PostContent "<h4>$descripCredGu</h4>" | Out-String
+    $nfrag_LapsPwEna = $fragLapsPwEna | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"LAPS`"><a href=`"#TOP`">LAPS - Local Administrator Password Solution</a></span></h2>" -PostContent "<h4>$descripLAPS</h4>" | Out-String
+    $nfrag_URA = $fragURA | ConvertTo-Html -as Table -Fragment -PreContent "<h2>URA - Local Systems User Rights Assignments</a></span></h2>" -PostContent "<h4>$descripURA</h4>" | Out-String
+    $nfrag_RegPasswords = $fragRegPasswords | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"RegPW`"><a href=`"#TOP`">Passwords Embedded in the Registry</a></span></h2>" -PostContent "<h4>$descripRegPasswords</h4>" | Out-String
+    $nfrag_ASR = $fragASR | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"asr`"><a href=`"#TOP`">Attack Surface Reduction (ASR)</a></span></h2>" -PostContent "<h4>$descripASR</h4>" | Out-String
+    $nfrag_WDigestULC = $fragWDigestULC | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"WDigest`"><a href=`"#TOP`">WDigest</a></span></h2>" -PostContent "<h4>$descripWDigest</h4>" | Out-String
+    $nfrag_Certificates = $fragCertificates | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"Certs`"><a href=`"#TOP`">Installed Certificates</a></span></h2>" -PostContent "<h4>$descripCerts</h4>" | Out-String
+    $nfrag_CipherSuit = $fragCipherSuit | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"CipherSuites`"><a href=`"#TOP`">Supported Cipher Suites</a></span></h2>" -PostContent "<h4>$decripCipher</h4>" | Out-String
+    $nfrag_PSPasswords = $fragPSPasswords | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"PSHistory`"><a href=`"#TOP`">PowerShell History Containing Creds</a></span></h2>" -PostContent "<h4>$descripPowershellHistory</h4>" | Out-String
+    $nfrag_ApplockerSvc = $fragApplockerSvc | ConvertTo-Html -As table -fragment -PreContent "<h2>Applocker Service Status</span></h2>"  | Out-String      
+    $nfrag_ApplockerPath = $fragApplockerPath | ConvertTo-Html -As table -fragment -PreContent "<h2>Applocker Path Rules</span></h2>"  | Out-String
+    $nfrag_ApplockerPublisher = $fragApplockerPublisher | ConvertTo-Html -As table -fragment -PreContent "<h2>Applocker Publisher Rules</span></h2>"  | Out-String
+    $nfrag_ApplockerHash = $fragApplockerHash | ConvertTo-Html -As table -fragment -PreContent "<h2>Applocker Hash Rules</span></h2>"  | Out-String
+    $nfrag_ApplockerEnforcement = $fragApplockerEnforcement | ConvertTo-Html -As table -fragment -PreContent "<h2>Applocker Enforcement Rules</span></h2>"  | Out-String  
+ 
+    $nfrag_wdacClixml = $fragwdacClixml | ConvertTo-Html -As Table -fragment -PreContent "<p></p><details><summary><a name=`"WDACEnforce`"><a href=`"#TOP`">WDAC Enforcement Mode</summary></a><p>" -PostContent "<h4>$descripToDo</h4></details>"  | Out-String
+    $nfrag_WDACCIPolicy = $fragWDACCIPolicy | ConvertTo-Html -As Table -fragment -PreContent "<p></p><details><summary><a name=`"WDACPolicy`"><a href=`"#TOP`">WDAC Policy</summary></a><p>" -PostContent "<h4>$descripWDAC</h4></details>"  | Out-String
+            
+    #MS Recommended Secuirty settings (SSLF)
+    $nfrag_WindowsOSVal = $fragWindowsOSVal | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"WinSSLF`"><a href=`"#TOP`">Windows OS Security Recommendations</a></span></h2>" -PostContent "<h4>$descripWindowsOS</h4>" | Out-String
+    $nfrag_EdgeVal = $fragEdgeVal | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"EdgeSSLF`"><a href=`"#TOP`">MS Edge Security Recommendations</a></span></h2>" | Out-String
+    $nfrag_OfficeVal = $fragOfficeVal | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"OfficeSSLF`"><a href=`"#TOP`">MS Office Security Recommendations</a></span></h2>" -PostContent "<h4>$descripOffice2016</h4>" | Out-String
+    
+    ConvertTo-Html -Head $style -Body "<h1 align=center style='text-align:center'>$basePNG<h1>",    
+
+    $nfragDescrip1, 
+    $nfrag_Summary,
+    $nfrag_host, 
+    #n$frag_MDTBuild,
+    $nfragOS, 
+    $nfragbios, 
+    $nfragcpu, 
+    $nfrag_Network4,
+    $nfrag_Network6,
+    $nfrag_Share,
+    $nfrag_LegNIC,
+    $nfrag_SecOptions,
+    $nfrag_FWProf,
+    $nfrag_FW,
+    $nfrag_Msinfo,
+    $nfrag_BitLocker, 
+    $nfrag_Code,
+    $nfrag_LSAPPL,
+    $nfrag_WDigestULC,
+    $nfrag_CredGuCFG,
+    $nfrag_kernelModeVal,
+#accounts and groups
+    $nFragPassPol,
+    $nFragAccountDetails,
+    $nfrag_DomainGrps,
+    $nfrag_DCList,
+    $nfrag_FSMO,
+    $nfrag_PreAuth,
+    $nfrag_NeverExpires,
+    $nFragGroupDetails,
+    $nfrag_whoamiGroups, 
+    $nfrag_whoamiPriv,
+    $nfrag_URA,
+    $nfrag_LapsPwEna,
+#progs
+    $nFrag_WinFeature,
+    $nfragInstaApps,
+    $nfragHotFix,
+    $nfragInstaApps16,
+    $nFrag_AVStatus,
+    $nfrag_UnQu,
+#applocker
+    $nfrag_wdacClixml,
+    $nfrag_WDACCIPolicy,
+    $nfrag_ApplockerSvc,
+    $nfrag_ApplockerEnforcement,
+    $nfrag_ApplockerPath, 
+    $nfrag_ApplockerPublisher,
+    $nfrag_ApplockerHash, 
+#certs and ciphers     
+    $nfrag_Certificates,
+    $nfrag_CipherSuit,
+#file and reg audits
+    $nfrag_DLLSafe,
+    $nfrag_DLLHijack,
+    $nfrag_DllNotSigned,
+    $nfrag_PCElevate,
+    $nfrag_PSPass,
+    $nfrag_FilePass,
+    $nfrag_RegPasswords,
+    $nfrag_PSPasswords,
+    $nfrag_AutoLogon,
+    $nfrag_AutoRuns,
+    $nfrag_TaskPerms,
+    $nfrag_TaskListings,
+    #$nfrag_RunServices,
+    $nfrag_SysRegPerms,
+    $nfrag_SysFolders,
+    $nfrag_CreateSysFold,
+    $nfrag_wFolders,
+    $nfrag_wFile,
+    $nfrag_DriverQuery,
+    $nfrag_AuthCodeSig,
+#policy
+    $nfrag_ASR,
+    $nfrag_WindowsOSVal,
+    $nfrag_EdgeVal,
+    $nfrag_OfficeVal,
+    $nFragDescripFin  | out-file $NonFilteredReport
 
 ################################################
-################  FRAGMENTS  ###################
+##########  FINAL REPORT FRAGMENTS  ############
 ################################################
-  
+#Generates report with empty or null fragments removed   
     #Top and Tail
     $FragDescrip1 =  $Descrip1 | ConvertTo-Html -as table -Fragment -PreContent "<h3><span style=font-family:$font;>$Intro</span></h3>" | Out-String
     #$FragDescrip2 =  $Descrip2 | ConvertTo-Html -as table -Fragment -PreContent "<h3><span style=font-family:$font;>$Intro2</span></h3>" | Out-String
@@ -10089,108 +10955,219 @@ $Report = "C:\SecureReport\output\$OutFunc\" + "$OutFunc.html"
     $frag_Summary = $fragSummary | ConvertTo-Html -As Table -fragment -PreContent "<h2>Overall Compliance Status</span></h2>"  | Out-String
             
     #Host details    
-    $frag_Host = $fragHost | ConvertTo-Html -As List -Property Name,Domain,Model -fragment -PreContent "<h2>Host Details</span></h2>"  | Out-String
-    $fragOS = $OS | ConvertTo-Html -As List -property Caption,Version,OSArchitecture,InstallDate -fragment -PreContent "<p></p><details><summary>Windows Details</summary><p>" -PostContent "<h4>$descripToDo</h4></details>" | Out-String
-    $FragAccountDetails = $AccountDetails  | ConvertTo-Html -As Table -fragment -PreContent "<p></p><details><summary>Local Account Details</summary><p>" -PostContent "<h4>$descripLocalAccounts</h4></details>" | Out-String 
-    $frag_DCList  = $fragDCList | ConvertTo-Html -As Table -fragment -PreContent "<p></p><details><summary>List of Domain Controllers</summary><p>" -PostContent "<h4>$descripToDo</h4></details>" | Out-String 
-    $frag_FSMO = $fragFSMO | ConvertTo-Html -As Table -fragment -PreContent "<p></p><details><summary>FSMO Roles</summary><p>" -PostContent "<h4>$descripToDo</h4></details>"| Out-String 
-    $frag_DomainGrps = $fragDomainGrps | ConvertTo-Html -As Table -fragment -PreContent "<p></p><details><summary>Members of Privilege Groups</summary><p>" -PostContent "<h4>$descripDomainPrivsGps</h4></details>" | Out-String 
-    $frag_PreAuth = $fragPreAuth | ConvertTo-Html -as Table -Fragment -PreContent "<p></p><details><summary><a name=`"PreAuth`"><a href=`"#TOP`">Domain Accounts that DO NOT Pre-Authenticate</summary></a><p>" -PostContent "<h4>$descripPreAuth</h4></details>" | Out-String
-    $frag_NeverExpires = $fragNeverExpires | ConvertTo-Html -as Table -Fragment -PreContent "<p></p><details><summary><a name=`"PassExpire`"><a href=`"#TOP`">Domain Accounts that Never Expire their Password</summary></a><p>" -PostContent "<h4>$descripToDo</h4></details>"  | Out-String
-    $FragGroupDetails =  $GroupDetails  | ConvertTo-Html -As Table -fragment -PreContent "<p></p><details><summary>Local System Group Members</summary><p>" -PostContent "<h4>$descripToDo</h4></details>" | Out-String
-    $FragPassPol = $PassPol | Select-Object -SkipLast 3 | ConvertTo-Html -As Table -fragment -PreContent "<p></p><details><summary>Local Password Policy</summary><p>" -PostContent "<h4>$descripToDo</h4></details>" | Out-String
-    $fragInstaApps  =  $InstallApps | Sort-Object publisher,displayname -Unique  | ConvertTo-Html -As Table  -fragment -PreContent "<p></p><details><summary><a name=`"InstalledApps`"><a href=`"#TOP`">Installed Applications</summary></a><p>" -PostContent "<h4>$descripInstalledApps</h4></details>" | Out-String
-    $fragHotFix = $HotFix | ConvertTo-Html -As Table -property HotFixID,InstalledOn,Caption -fragment -PreContent "<p></p><details><summary><a name=`"Hotfix`"><a href=`"#TOP`">Installed Windows Updates</summary></a><p>" -PostContent "<h4>$descripWinUpdates</h4></details>"| Out-String   
-    $fragInstaApps16  =  $InstallApps16 | Sort-Object publisher,displayname -Unique  | ConvertTo-Html -As Table  -fragment -PreContent "<p></p><details><summary>Updates to Office 2016 and older or Updates that create KB's in the Registry</summary><p>" -PostContent "<h4>$descripToDo</h4></details>" | Out-String
-    $fragBios = $BiosUEFI | ConvertTo-Html -As List -fragment -PreContent "<p></p><details><summary><a name=`"BiosUEFI`"><a href=`"#TOP`">Bios Details</summary></a><p>" -PostContent "<h4>$descripBios</h4></details>"| Out-String
-    $fragCpu = $cpu | ConvertTo-Html -As List -property Name,MaxClockSpeed,NumberOfCores,ThreadCount -fragment -PreContent "<p></p><details><summary>Processor Details</summary><p>" -PostContent "<h4>$descripToDo</h4></details>" | Out-String
-    $frag_whoamiGroups =  $whoamiGroups | ConvertTo-Html -As Table -fragment -PreContent "<p></p><details><summary>Current Users Group Membership</summary><p>" -PostContent "<h4>$descripDomainGroups</h4></details>" | Out-String
-    $frag_whoamiPriv =  $whoamiPriv | ConvertTo-Html -As Table -fragment -PreContent "<p></p><details><summary>Current Users Local Privileges</summary><p>" -PostContent "<h4>$descripDomainPrivs</h4></details>" | Out-String
+    if ([string]::IsNullOrEmpty($fragHost.ToString())){$frag_Host = $null} 
+    else{$frag_Host = $fragHost | ConvertTo-Html -As List -Property Name,Domain,Model -fragment -PreContent "<h2>Host Details</span></h2>"  | Out-String}
+
+    if ([string]::IsNullOrEmpty($OS.ToString())){$fragOS = $null}
+    else{$fragOS = $OS | ConvertTo-Html -As List -property Caption,Version,OSArchitecture,InstallDate -fragment -PreContent "<p></p><details><summary>Windows Details</summary><p>" -PostContent "<h4>$descripToDo</h4></details>" | Out-String}
+    
+    if ([string]::IsNullOrEmpty($AccountDetails.ToString())){$FragAccountDetails = $null}
+    else{$FragAccountDetails = $AccountDetails  | ConvertTo-Html -As Table -fragment -PreContent "<p></p><details><summary>Local Account Details</summary><p>" -PostContent "<h4>$descripLocalAccounts</h4></details>" | Out-String} 
+    
+    if ([string]::IsNullOrEmpty($fragDCList)){$frag_DCList = $null} 
+    else{$frag_DCList  = $fragDCList | ConvertTo-Html -As Table -fragment -PreContent "<p></p><details><summary>List of Domain Controllers</summary><p>" -PostContent "<h4>$descripToDo</h4></details>" | Out-String} 
+    
+    if ([string]::IsNullOrEmpty($fragFSMO)){$frag_FSMO = $null} 
+    else{$frag_FSMO = $fragFSMO | ConvertTo-Html -As Table -fragment -PreContent "<p></p><details><summary>FSMO Roles</summary><p>" -PostContent "<h4>$descripToDo</h4></details>"| Out-String} 
+    
+    if ([string]::IsNullOrEmpty($fragDomainGrps)){$frag_DomainGrps = $null} 
+    else{$frag_DomainGrps = $fragDomainGrps | ConvertTo-Html -As Table -fragment -PreContent "<p></p><details><summary>Members of Privilege Groups</summary><p>" -PostContent "<h4>$descripDomainPrivsGps</h4></details>" | Out-String} 
+    
+    if ([string]::IsNullOrEmpty($fragPreAuth)){$frag_PreAuth = $null} 
+    else{$frag_PreAuth = $fragPreAuth | ConvertTo-Html -as Table -Fragment -PreContent "<p></p><details><summary><a name=`"PreAuth`"><a href=`"#TOP`">Domain Accounts that DO NOT Pre-Authenticate</summary></a><p>" -PostContent "<h4>$descripPreAuth</h4></details>" | Out-String}
+    
+    if ([string]::IsNullOrEmpty($fragNeverExpires)){$frag_NeverExpires = $null} 
+    else{$frag_NeverExpires = $fragNeverExpires | ConvertTo-Html -as Table -Fragment -PreContent "<p></p><details><summary><a name=`"PassExpire`"><a href=`"#TOP`">Domain Accounts that Never Expire their Password</summary></a><p>" -PostContent "<h4>$descripToDo</h4></details>"  | Out-String}
+    
+    if ([string]::IsNullOrEmpty($GroupDetails.ToString())){$FragGroupDetails = $null} 
+    else{$FragGroupDetails = $GroupDetails  | ConvertTo-Html -As Table -fragment -PreContent "<p></p><details><summary>Local System Group Members</summary><p>" -PostContent "<h4>$descripToDo</h4></details>" | Out-String}
+    
+    if ([string]::IsNullOrEmpty($PassPol.ToString())){$FragPassPol = $null} 
+    else{$FragPassPol = $PassPol | Select-Object -SkipLast 3 | ConvertTo-Html -As Table -fragment -PreContent "<p></p><details><summary>Local Password Policy</summary><p>" -PostContent "<h4>$descripToDo</h4></details>" | Out-String}
+    
+    if ([string]::IsNullOrEmpty($InstallApps.ToString())){$fragInstaApps = $null} 
+    else{$fragInstaApps = $InstallApps | Sort-Object publisher,displayname -Unique  | ConvertTo-Html -As Table  -fragment -PreContent "<p></p><details><summary><a name=`"InstalledApps`"><a href=`"#TOP`">Installed Applications</summary></a><p>" -PostContent "<h4>$descripInstalledApps</h4></details>" | Out-String}
+    
+    if ([string]::IsNullOrEmpty($HotFix.ToString())){$fragHotFix = $null} 
+    else{$fragHotFix = $HotFix | ConvertTo-Html -As Table -property HotFixID,InstalledOn,Caption -fragment -PreContent "<p></p><details><summary><a name=`"Hotfix`"><a href=`"#TOP`">Installed Windows Updates</summary></a><p>" -PostContent "<h4>$descripWinUpdates</h4></details>"| Out-String}   
+    
+    if ([string]::IsNullOrEmpty($InstallApps16)){$fragInstaApps16 = $null} 
+    else{$fragInstaApps16 = $InstallApps16 | Sort-Object publisher,displayname -Unique  | ConvertTo-Html -As Table  -fragment -PreContent "<p></p><details><summary>Updates to Office 2016 and older or Updates that create KB's in the Registry</summary><p>" -PostContent "<h4>$descripToDo</h4></details>" | Out-String}
+    
+    if ([string]::IsNullOrEmpty($BiosUEFI.ToString())){$fragBios = $null} 
+    else{$fragBios = $BiosUEFI | ConvertTo-Html -As List -fragment -PreContent "<p></p><details><summary><a name=`"BiosUEFI`"><a href=`"#TOP`">Bios Details</summary></a><p>" -PostContent "<h4>$descripBios</h4></details>"| Out-String}
+    
+    if ([string]::IsNullOrEmpty($cpu.ToString())){$fragCpu = $null} 
+    else{$fragCpu = $cpu | ConvertTo-Html -As List -property Name,MaxClockSpeed,NumberOfCores,ThreadCount -fragment -PreContent "<p></p><details><summary>Processor Details</summary><p>" -PostContent "<h4>$descripToDo</h4></details>" | Out-String}
+    
+    if ([string]::IsNullOrEmpty($whoamiGroups.ToString())){$frag_whoamiGroups = $null} 
+    else{$frag_whoamiGroups =  $whoamiGroups | ConvertTo-Html -As Table -fragment -PreContent "<p></p><details><summary>Current Users Group Membership</summary><p>" -PostContent "<h4>$descripDomainGroups</h4></details>" | Out-String}
+    
+    if ([string]::IsNullOrEmpty($whoamiPriv.ToString())){$frag_whoamiPriv = $null} 
+    else{$frag_whoamiPriv =  $whoamiPriv | ConvertTo-Html -As Table -fragment -PreContent "<p></p><details><summary>Current Users Local Privileges</summary><p>" -PostContent "<h4>$descripDomainPrivs</h4></details>" | Out-String}
+    
     $frag_Network4 = $fragNetwork4 | ConvertTo-Html -As List -fragment -PreContent "<p></p><details><summary>IPv4 Address Details</summary><p>" -PostContent "<h4>$descripToDo</h4></details>"  | Out-String
+    
     $frag_Network6 = $fragNetwork6 | ConvertTo-Html -As List -fragment -PreContent "<p></p><details><summary>IPv6 Address Details</summary><p>" -PostContent "<h4>$descripToDo</h4></details>"  | Out-String
-    $Frag_WinFeature = $FragWinFeature | ConvertTo-Html -As table -fragment -PreContent "<p></p><details><summary>Installed Windows Features</summary><p>" -PostContent "<h4>$descripToDo</h4></details>" | Out-String
-    $frag_MDTBuild = $fragMDTBuild | ConvertTo-Html -As table -fragment -PreContent "<p></p><details><summary>MDT Deployment Details</summary><p>" -PostContent "<h4>$descripToDo</h4></details>"  | Out-String
+    
+    if ([string]::IsNullOrEmpty($FragWinFeature.ToString())){$Frag_WinFeature = $null} 
+    else{$Frag_WinFeature = $FragWinFeature | ConvertTo-Html -As table -fragment -PreContent "<p></p><details><summary>Installed Windows Features</summary><p>" -PostContent "<h4>$descripToDo</h4></details>" | Out-String}
+    
+    if ([string]::IsNullOrEmpty($fragMDTBuild.ToString())){$frag_MDTBuild = $null} 
+    else{$frag_MDTBuild = $fragMDTBuild | ConvertTo-Html -As table -fragment -PreContent "<p></p><details><summary>MDT Deployment Details</summary><p>" -PostContent "<h4>$descripToDo</h4></details>"  | Out-String}
     
     #Security Review
-    $Frag_AVStatus = $FragAVStatus | ConvertTo-Html -As Table  -fragment -PreContent "<p></p><details><summary><a name=`"AV`"><a href=`"#TOP`">AntiVirus Engine and Definition Status</summary></a><p>" -PostContent "<h4>$descripAV</h4></details>" | Out-String
-    $frag_BitLocker = $fragBitLocker | ConvertTo-Html -As List -fragment -PreContent "<p></p><details><summary><a name=`"Bitlockerisnotenabled`"><a href=`"#TOP`">Bitlocker and TPM Details</summary></a><p>" -PostContent "<h4>$descripBitlocker</h4></details>" | Out-String
-    $frag_Msinfo = $MsinfoClixml | ConvertTo-Html -As Table -fragment -PreContent "<p></p><details><summary><a name=`"VBS`"><a href=`"#TOP`">Virtualization and Secure Boot Details</summary></a><p>" -PostContent "<h4>$descripVirt</h4></details>"  | Out-String
-    $frag_kernelModeVal = $fragkernelModeVal | ConvertTo-Html -As Table -fragment -PreContent "<p></p><details><summary><a name=`"KernelMode`"><a href=`"#TOP`">Kernel-mode Hardware-enforced Stack Protection</summary></a><p>" -PostContent "<h4>$descripKernelMode</h4></details>"  | Out-String
-    $frag_LSAPPL = $fragLSAPPL | ConvertTo-Html -as Table -Fragment -PreContent "<p></p><details><summary><a name=`"LSA`"><a href=`"#TOP`">LSA Protection for Stored Credentials</summary></a><p>" -PostContent "<h4>$descripLSA</h4></details>" | Out-String
-    $frag_DLLSafe = $fragDLLSafe | ConvertTo-Html -as Table -Fragment -PreContent "<p></p><details><summary><a name=`"DLLSafe`"><a href=`"#TOP`">DLL Safe Search Order</summary></a><p>"  -PostContent "<h4>$descripDLL</h4></details>"| Out-String
-    $frag_DLLHijack = $fragDLLHijack | ConvertTo-Html -as Table -Fragment -PreContent "<p></p><details><summary><a name=`"DLLHigh`"><a href=`"#TOP`">Loaded DLL's that are vulnerable to DLL Hijacking</summary></a><p>" -PostContent "<h4>$descripToDo</h4></details>" | Out-String
-    $frag_DllNotSigned = $fragDllNotSigned | ConvertTo-Html -as Table -Fragment -PreContent "<p></p><details><summary><a name=`"DLLSign`"><a href=`"#TOP`">All DLL's that aren't signed and user permissions allow write</summary></a><p>"  -PostContent "<h4>$descriptDLLHijack</h4></details>"| Out-String
-    $frag_Code = $fragCode | ConvertTo-Html -as Table -Fragment -PreContent "<p></p><details><summary><a name=`"HECI`"><a href=`"#TOP`">Hypervisor Enforced Code Integrity</summary></a><p>" -PostContent "<h4>$descripHyper</h4></details>" | Out-String
-    $frag_PCElevate = $fragPCElevate | ConvertTo-Html -as Table -Fragment -PreContent "<p></p><details><summary><a name=`"SoftElevation`"><a href=`"#TOP`">Automatically Elevates User Installing Software</summary></a><p>"  -PostContent "<h4>$descripElev</h4></details>"| Out-String
-    $frag_FilePass = $fragFilePass | ConvertTo-Html -as Table -Fragment -PreContent "<p></p><details><summary><a name=`"FilePW`"><a href=`"#TOP`">Files that Contain the Word PASSWord</summary></a><p>" -PostContent "<h4>$descripFilePw</h4></details>" | Out-String
-    $frag_AutoLogon = $fragAutoLogon   | ConvertTo-Html -as Table -Fragment -PreContent "<p></p><details><summary><a name=`"AutoLogon`"><a href=`"#TOP`">AutoLogon Credentials in Registry</summary></a><p>"  -PostContent "<h4>$descripAutoLogon</h4></details>"| Out-String
-    $frag_UnQu = $fragUnQuoted | ConvertTo-Html -as Table -Fragment -PreContent "<p></p><details><summary><a name=`"unquoted`"><a href=`"#TOP`">UnQuoted Paths Attack</summary></a><p>" -PostContent "<h4>$DescripUnquoted</h4></details>" | Out-String
-    $frag_LegNIC = $fragLegNIC | ConvertTo-Html -as Table -Fragment -PreContent "<p></p><details><summary><a name=`"LegNetProt`"><a href=`"#TOP`">Legacy and Vulnerable Network Protocols</summary></a><p>" -PostContent "<h4>$DescripLegacyNet</h4></details>" | Out-String
-    $frag_SysRegPerms = $fragReg | ConvertTo-Html -as Table -Fragment -PreContent "<p></p><details><summary><a name=`"RegWrite`"><a href=`"#TOP`">Registry Permissions Allowing User Access - Security Risk if Exist</summary></a><p>" -PostContent "<h4>$descripRegPer</h4></details>" | Out-String
-    $frag_PSPass = $fragPSPass | ConvertTo-Html -as Table -Fragment -PreContent "<p></p><details><summary><a name=`"ProcPW`"><a href=`"#TOP`">Processes where CommandLine Contains a Password</summary></a><p>" -PostContent "<h4>$Finish</h4></details>" | Out-String
-    $frag_SecOptions = $fragSecOptions | ConvertTo-Html -as Table -Fragment -PreContent "<p></p><details><summary><a name=`"secOptions`"><a href=`"#TOP`">Security Options to Prevent MitM Attacks</summary></a><p>" -PostContent "<h4>$descripSecOptions</h4></details>" | Out-String
-    $frag_wFolders = $fragwFold | ConvertTo-Html -as Table -Fragment -PreContent "<p></p><details><summary><a name=`"sysFileWrite `"><a href=`"#TOP`">Non System Folders that are Writeable - Security Risk when Executable</summary></a><p>" -PostContent "<h4>$descripNonFold</h4></details>"| Out-String
-    $frag_SysFolders = $fragsysFold | ConvertTo-Html -as Table -Fragment -PreContent "<p></p><details><summary><a name=`"SysDirWrite`"><a href=`"#TOP`">Default System Folders that are Writeable - Security Risk if Exist</summary></a><p>"  -PostContent "<h4>$descripSysFold</h4></details>"| Out-String
-    $frag_CreateSysFold = $fragCreateSysFold | ConvertTo-Html -as Table -Fragment -PreContent "<p></p><details><summary><a name=`"sysDirExe`"><a href=`"#TOP`">Default System Folders that Permit Users to Create Files - Security Risk if Exist</summary></a><p>"  -PostContent "<h4>$descripCreateSysFold</h4></details>"| Out-String
-    $frag_wFile = $fragwFile | ConvertTo-Html -as Table -Fragment -PreContent "<p></p><details><summary><a name=`"sysFileWrite`"><a href=`"#TOP`">System Files that are Writeable - Security Risk if Exist</summary></a><p>" -PostContent "<h4>$descripFile</h4></details>" | Out-String
-    $frag_FWProf = $fragFWProfile | ConvertTo-Html -as Table -Fragment -PreContent "<p></p><details><summary><a name=`"FirewallProf`"><a href=`"#TOP`">Firewall Profile</summary></a><p>"  -PostContent "<h4>$DescripFirewalls</h4></details>"| Out-String
-    $frag_FW = $fragFW | ConvertTo-Html -as Table -Fragment -PreContent "<p></p><details><summary><a name=`"InFirewall`"><a href=`"#TOP`">Enabled Firewall Rules</summary></a><p>" -PostContent "<h4>$descripToDo</h4></details>"| Out-String
-    $frag_TaskPerms =  $SchedTaskPerms | ConvertTo-Html -as Table -Fragment -PreContent "<p></p><details><summary><a name=`"schedDir`"><a href=`"#TOP`">Scheduled Tasks with Scripts Stored on Disk</summary></a><p>"  -PostContent "<h4>$descripTaskSchPerms</h4></details>" | Out-String
-    $frag_RunServices =  $fragRunServices | ConvertTo-Html -as Table -Fragment -PreContent "<p></p><details><summary><a name=`"RunningServices`"><a href=`"#TOP`">Running Services</summary></a><p>" -PostContent "<h4>$descripToDo</h4></details>"  | Out-String
-    $frag_TaskListings = $SchedTaskListings | ConvertTo-Html -as Table -Fragment -PreContent "<p></p><details><summary><a name=`"schedTask`"><a href=`"#TOP`">Scheduled Tasks that Contain something Encoded</summary></a><p>"  -PostContent "<h4>$descripTaskSchEncode</h4></details>" | Out-String
-    $frag_DriverQuery = $DriverQuery | ConvertTo-Html -as Table -Fragment -PreContent "<p></p><details><summary><a name=`"drivers`"><a href=`"#TOP`">Drivers that aren't Signed</summary></a><p>" -PostContent "<h4>$descripToDo</h4></details>" -PostContent "<h4>$descriptDriverQuery</h4></details>" | Out-String
-    $frag_Share = $fragShare | ConvertTo-Html -as Table -Fragment -PreContent "<p></p><details><summary><a name=`"shares`"><a href=`"#TOP`">Shares and their Share Permissions</summary></a><p>" -PostContent "<h4>$descripToDo</h4></details>"  | Out-String
-    $frag_AuthCodeSig = $fragAuthCodeSig | ConvertTo-Html -as Table -Fragment -PreContent "<p></p><details><summary><a name=`"AuthentiCode`"><a href=`"#TOP`">Files with an Authenticode Signature HashMisMatch</summary></a><p>" -PostContent "<h4>$descriptAuthCodeSig</h4></details>"  | Out-String  
-    $frag_CredGuCFG = $fragCredGuCFG | ConvertTo-Html -as Table -Fragment -PreContent "<p></p><details><summary><a name=`"CredGuard`"><a href=`"#TOP`">Credential Guard</summary></a><p>" -PostContent "<h4>$descripCredGu</h4></details>" | Out-String
-    $frag_LapsPwEna = $fragLapsPwEna | ConvertTo-Html -as Table -Fragment -PreContent "<p></p><details><summary><a name=`"LAPS`"><a href=`"#TOP`">LAPS - Local Administrator Password Solution</summary></a><p>" -PostContent "<h4>$descripLAPS</h4></details>" | Out-String
-    $frag_URA = $fragURA | ConvertTo-Html -as Table -Fragment -PreContent "<p></p><details><summary>User Rights Assignments</summary><p>" -PostContent "<h4>$descripURA</h4></details>" | Out-String
-    $frag_RegPasswords = $fragRegPasswords | ConvertTo-Html -as Table -Fragment -PreContent "<p></p><details><summary><a name=`"RegPW`"><a href=`"#TOP`">Passwords Embedded in the Registry</summary></a><p>" -PostContent "<h4>$descripRegPasswords</h4></details>" | Out-String
-    $frag_ASR = $fragASR | ConvertTo-Html -as Table -Fragment -PreContent "<p></p><details><summary><a name=`"asr`"><a href=`"#TOP`">Attack Surface Reduction (ASR)</summary></a><p>" -PostContent "<h4>$descripASR</h4></details>" | Out-String
-    $frag_WDigestULC = $fragWDigestULC | ConvertTo-Html -as Table -Fragment -PreContent "<p></p><details><summary><a name=`"WDigest`"><a href=`"#TOP`">WDigest</summary></a><p>" -PostContent "<h4>$descripWDigest</h4></details>" | Out-String
-    $frag_Certificates = $fragCertificates | ConvertTo-Html -as Table -Fragment -PreContent "<p></p><details><summary><a name=`"Certs`"><a href=`"#TOP`">Installed Certificates</summary></a><p>" -PostContent "<h4>$descripCerts</h4></details>" | Out-String
-    $frag_CipherSuit = $fragCipherSuit | ConvertTo-Html -as Table -Fragment -PreContent "<p></p><details><summary><a name=`"CipherSuites`"><a href=`"#TOP`">Supported Cipher Suites</summary></a><p>" -PostContent "<h4>$decripCipher</h4></details>" | Out-String
-    $frag_PSPasswords = $fragPSPasswords | ConvertTo-Html -as Table -Fragment -PreContent "<p></p><details><summary><a name=`"PSHistory`"><a href=`"#TOP`">PowerShell History Containing Creds</summary></a><p>" -PostContent "<h4>$descripPowershellHistory</h4></details>" | Out-String
+    if ($FragAVStatus -eq $null){$Frag_AVStatus = $null} 
+    else{$Frag_AVStatus = $FragAVStatus | ConvertTo-Html -As Table  -fragment -PreContent "<p></p><details><summary><a name=`"AV`"><a href=`"#TOP`">AntiVirus Engine and Definition Status</summary></a><p>" -PostContent "<h4>$descripAV</h4></details>" | Out-String}
     
-    $frag_ApplockerSvc = $fragApplockerSvc | ConvertTo-Html -As table -fragment -PreContent "<p></p><details><summary>Applocker Service Status</summary><p>" -PostContent "<h4>$descripToDo</h4></details>"  | Out-String      
-    $frag_ApplockerPath = $fragApplockerPath | ConvertTo-Html -As table -fragment -PreContent "<p></p><details><summary>Applocker Path Rules</summary><p>" -PostContent "<h4>$descripToDo</h4></details>"  | Out-String
-    $frag_ApplockerPublisher = $fragApplockerPublisher | ConvertTo-Html -As table -fragment -PreContent "<p></p><details><summary>Applocker Publisher Rules</summary><p>" -PostContent "<h4>$descripToDo</h4></details>" | Out-String
-    $frag_ApplockerHash = $fragApplockerHash | ConvertTo-Html -As table -fragment -PreContent "<p></p><details><summary>Applocker Hash Rules</summary><p>" -PostContent "<h4>$descripToDo</h4></details>" | Out-String
-         
+    if ([string]::IsNullOrEmpty($fragBitLocker.ToString())){$frag_BitLocker = $null} 
+    else{$frag_BitLocker = $fragBitLocker | ConvertTo-Html -As List -fragment -PreContent "<p></p><details><summary><a name=`"Bitlockerisnotenabled`"><a href=`"#TOP`">Bitlocker and TPM Details</summary></a><p>" -PostContent "<h4>$descripBitlocker</h4></details>" | Out-String}
+    
+    if ([string]::IsNullOrEmpty($MsinfoClixml.ToString())){$frag_Msinfo = $null} 
+    else{$frag_Msinfo = $MsinfoClixml | ConvertTo-Html -As Table -fragment -PreContent "<p></p><details><summary><a name=`"VBS`"><a href=`"#TOP`">Virtualization and Secure Boot Details</summary></a><p>" -PostContent "<h4>$descripVirt</h4></details>"  | Out-String}    
+
+    if ([string]::IsNullOrEmpty($fragkernelModeVal.ToString())){$frag_kernelModeVal = $null} 
+    else{$frag_kernelModeVal = $fragkernelModeVal | ConvertTo-Html -As Table -fragment -PreContent "<p></p><details><summary><a name=`"KernelMode`"><a href=`"#TOP`">Kernel-mode Hardware-enforced Stack Protection</summary></a><p>" -PostContent "<h4>$descripKernelMode</h4></details>"  | Out-String}
+    
+    if ([string]::IsNullOrEmpty($fragLSAPPL.ToString())){$fragLSAPPL = $null} 
+    else{$frag_LSAPPL = $fragLSAPPL | ConvertTo-Html -as Table -Fragment -PreContent "<p></p><details><summary><a name=`"LSA`"><a href=`"#TOP`">LSA Protection for Stored Credentials</summary></a><p>" -PostContent "<h4>$descripLSA</h4></details>" | Out-String}
+    
+    if ([string]::IsNullOrEmpty($fragDLLSafe.ToString())){$frag_DLLSafe  = $null} 
+    else{$frag_DLLSafe = $fragDLLSafe | ConvertTo-Html -as Table -Fragment -PreContent "<p></p><details><summary><a name=`"DLLSafe`"><a href=`"#TOP`">DLL Safe Search Order</summary></a><p>"  -PostContent "<h4>$descripDLL</h4></details>"| Out-String}
+    
+    if ([string]::IsNullOrEmpty($fragDLLHijack)){$frag_DLLHijack = $null} 
+    else{$frag_DLLHijack = $fragDLLHijack | ConvertTo-Html -as Table -Fragment -PreContent "<p></p><details><summary><a name=`"DLLHigh`"><a href=`"#TOP`">Loaded DLL's that are vulnerable to DLL Hijacking</summary></a><p>" -PostContent "<h4>$descripToDo</h4></details>" | Out-String}
+    
+    if ([string]::IsNullOrEmpty($fragDllNotSigned.ToString())){$frag_DllNotSigned = $null} 
+    else{$frag_DllNotSigned = $fragDllNotSigned | ConvertTo-Html -as Table -Fragment -PreContent "<p></p><details><summary><a name=`"DLLSign`"><a href=`"#TOP`">All DLL's that aren't signed and user permissions allow write</summary></a><p>"  -PostContent "<h4>$descriptDLLHijack</h4></details>"| Out-String}
+    
+    if ([string]::IsNullOrEmpty($fragCode.ToString())){$frag_Code = $null} 
+    else{$frag_Code = $fragCode | ConvertTo-Html -as Table -Fragment -PreContent "<p></p><details><summary><a name=`"HECI`"><a href=`"#TOP`">Hypervisor Enforced Code Integrity</summary></a><p>" -PostContent "<h4>$descripHyper</h4></details>" | Out-String}
+    
+    if ([string]::IsNullOrEmpty($fragPCElevate.ToString())){$frag_PCElevate = $null} 
+    else{$frag_PCElevate = $fragPCElevate | ConvertTo-Html -as Table -Fragment -PreContent "<p></p><details><summary><a name=`"SoftElevation`"><a href=`"#TOP`">Automatically Elevates User Installing Software</summary></a><p>"  -PostContent "<h4>$descripElev</h4></details>"| Out-String}
+    
+    if ($fragFilePass -eq $null){$frag_FilePass = $null} 
+    else{$frag_FilePass = $fragFilePass | ConvertTo-Html -as Table -Fragment -PreContent "<p></p><details><summary><a name=`"FilePW`"><a href=`"#TOP`">Files that Contain the Word PASSWord</summary></a><p>" -PostContent "<h4>$descripFilePw</h4></details>" | Out-String}
+    
+    if ([string]::IsNullOrEmpty($fragAutoLogon.ToString())){$frag_AutoLogon = $null} 
+    else{$frag_AutoLogon = $fragAutoLogon  | ConvertTo-Html -as Table -Fragment -PreContent "<p></p><details><summary><a name=`"AutoLogon`"><a href=`"#TOP`">AutoLogon Credentials in Registry</summary></a><p>"  -PostContent "<h4>$descripAutoLogon</h4></details>"| Out-String}
+    
+    if ([string]::IsNullOrEmpty($fragUnQuoted)){$frag_UnQu = $null} 
+    else{$frag_UnQu = $fragUnQuoted | ConvertTo-Html -as Table -Fragment -PreContent "<p></p><details><summary><a name=`"unquoted`"><a href=`"#TOP`">UnQuoted Paths Attack</summary></a><p>" -PostContent "<h4>$DescripUnquoted</h4></details>" | Out-String}
+    
+    if ([string]::IsNullOrEmpty($fragLegNIC.ToString())){$frag_LegNIC = $null} 
+    else{$frag_LegNIC = $fragLegNIC | ConvertTo-Html -as Table -Fragment -PreContent "<p></p><details><summary><a name=`"LegNetProt`"><a href=`"#TOP`">Legacy and Vulnerable Network Protocols</summary></a><p>" -PostContent "<h4>$DescripLegacyNet</h4></details>" | Out-String}
+    
+    if ([string]::IsNullOrEmpty($fragReg.ToString())){$frag_SysRegPerms = $null} 
+    else{$frag_SysRegPerms = $fragReg | ConvertTo-Html -as Table -Fragment -PreContent "<p></p><details><summary><a name=`"RegWrite`"><a href=`"#TOP`">Registry Permissions Allowing User Access - Security Risk if Exist</summary></a><p>" -PostContent "<h4>$descripRegPer</h4></details>" | Out-String}
+    
+    if ([string]::IsNullOrEmpty($fragPSPass)){$frag_PSPass = $null} 
+    else{$frag_PSPass = $fragPSPass | ConvertTo-Html -as Table -Fragment -PreContent "<p></p><details><summary><a name=`"ProcPW`"><a href=`"#TOP`">Processes where CommandLine Contains a Password</summary></a><p>" -PostContent "<h4>$Finish</h4></details>" | Out-String}
+    
+    if ([string]::IsNullOrEmpty($fragSecOptions.ToString())){$frag_SecOptions = $null} 
+    else{$frag_SecOptions = $fragSecOptions | ConvertTo-Html -as Table -Fragment -PreContent "<p></p><details><summary><a name=`"secOptions`"><a href=`"#TOP`">Security Options to Prevent MitM Attacks</summary></a><p>" -PostContent "<h4>$descripSecOptions</h4></details>" | Out-String}
+    
+    if ([string]::IsNullOrEmpty($fragwFold.ToString())){$frag_wFolders = $nulll = $null} 
+    else{$frag_wFolders = $fragwFold | ConvertTo-Html -as Table -Fragment -PreContent "<p></p><details><summary><a name=`"sysFileWrite `"><a href=`"#TOP`">Non System Folders that are Writeable - Security Risk when Executable</summary></a><p>" -PostContent "<h4>$descripNonFold</h4></details>"| Out-String}
+        
+    if ([string]::IsNullOrEmpty($fragsysFold.ToString())){$frag_SysFolders = $null}
+    else{$frag_SysFolders = $fragsysFold | ConvertTo-Html -as Table -Fragment -PreContent "<p></p><details><summary><a name=`"SysDirWrite`"><a href=`"#TOP`">Default System Folders that are Writeable - Security Risk if Exist</summary></a><p>"  -PostContent "<h4>$descripSysFold</h4></details>"| Out-String}
+        
+    if ([string]::IsNullOrWhiteSpace($fragCreateSysFold.ToString())){$frag_CreateSysFold = $null}
+    else{$frag_CreateSysFold = $fragCreateSysFold | ConvertTo-Html -as Table -Fragment -PreContent "<p></p><details><summary><a name=`"sysDirExe`"><a href=`"#TOP`">Default System Folders that Permit Users to Create Files - Security Risk if Exist</summary></a><p>"  -PostContent "<h4>$descripCreateSysFold</h4></details>"| Out-String}
+       
+    if ([string]::IsNullOrEmpty($fragwFile)){$frag_wFile = $null}
+    else{$frag_wFile = $fragwFile | ConvertTo-Html -as Table -Fragment -PreContent "<p></p><details><summary><a name=`"sysFileWrite`"><a href=`"#TOP`">System Files that are Writeable - Security Risk if Exist</summary></a><p>" -PostContent "<h4>$descripFile</h4></details>" | Out-String}
+   
+    if ([string]::IsNullOrEmpty($fragFWProfile.ToString())){$frag_FWProfile = $null} 
+    else{$frag_FWProf = $fragFWProfile | ConvertTo-Html -as Table -Fragment -PreContent "<p></p><details><summary><a name=`"FirewallProf`"><a href=`"#TOP`">Firewall Profile</summary></a><p>"  -PostContent "<h4>$DescripFirewalls</h4></details>"| Out-String}
+    
+    if ([string]::IsNullOrEmpty($fragFW.ToString())){$frag_FW = $null} 
+    else{$frag_FW = $fragFW | ConvertTo-Html -as Table -Fragment -PreContent "<p></p><details><summary><a name=`"InFirewall`"><a href=`"#TOP`">Enabled Firewall Rules</summary></a><p>" -PostContent "<h4>$descripToDo</h4></details>"| Out-String}
+    
+    if ([string]::IsNullOrEmpty($SchedTaskPerms)){$frag_TaskPerms = $null} 
+    else{$frag_TaskPerms = $SchedTaskPerms | ConvertTo-Html -as Table -Fragment -PreContent "<p></p><details><summary><a name=`"schedDir`"><a href=`"#TOP`">Scheduled Tasks with Scripts Stored on Disk</summary></a><p>"  -PostContent "<h4>$descripTaskSchPerms</h4></details>" | Out-String}
+    
+    if ([string]::IsNullOrEmpty($fragRunServices.ToString())){$frag_RunServices = $null} 
+    else{$frag_RunServices =  $fragRunServices | ConvertTo-Html -as Table -Fragment -PreContent "<p></p><details><summary><a name=`"RunningServices`"><a href=`"#TOP`">Running Services</summary></a><p>" -PostContent "<h4>$descripToDo</h4></details>"  | Out-String}
+    
+    if ([string]::IsNullOrEmpty($SchedTaskListings)){$frag_TaskListings = $null} 
+    else{$frag_TaskListings = $SchedTaskListings | ConvertTo-Html -as Table -Fragment -PreContent "<p></p><details><summary><a name=`"schedTask`"><a href=`"#TOP`">Scheduled Tasks that Contain something Encoded</summary></a><p>"  -PostContent "<h4>$descripTaskSchEncode</h4></details>" | Out-String}
+    
+    if ($DriverQuery -eq $null){$frag_DriverQuery = $null} 
+    else{$frag_DriverQuery = $DriverQuery | ConvertTo-Html -as Table -Fragment -PreContent "<p></p><details><summary><a name=`"drivers`"><a href=`"#TOP`">Drivers that aren't Signed</summary></a><p>" -PostContent "<h4>$descriptDriverQuery</h4></details>" | Out-String}
+    
+    if ([string]::IsNullOrEmpty($fragShare.ToString())){$frag_Share = $null} 
+    else{$frag_Share = $fragShare | ConvertTo-Html -as Table -Fragment -PreContent "<p></p><details><summary><a name=`"shares`"><a href=`"#TOP`">Shares and their Share Permissions</summary></a><p>" -PostContent "<h4>$descripToDo</h4></details>"  | Out-String}
+    
+    if ([string]::IsNullOrEmpty($fragAuthCodeSig.ToString())){$frag_AuthCodeSig = $null} 
+    else{$frag_AuthCodeSig = $fragAuthCodeSig | ConvertTo-Html -as Table -Fragment -PreContent "<p></p><details><summary><a name=`"AuthentiCode`"><a href=`"#TOP`">Files with an Authenticode Signature HashMisMatch</summary></a><p>" -PostContent "<h4>$descriptAuthCodeSig</h4></details>"  | Out-String}  
+    
+    if ([string]::IsNullOrEmpty($fragCredGuCFG.ToString())){$frag_CredGuCFG = $null} 
+    else{$frag_CredGuCFG = $fragCredGuCFG | ConvertTo-Html -as Table -Fragment -PreContent "<p></p><details><summary><a name=`"CredGuard`"><a href=`"#TOP`">Credential Guard</summary></a><p>" -PostContent "<h4>$descripCredGu</h4></details>" | Out-String}
+    
+    if ([string]::IsNullOrEmpty($fragLapsPwEna.ToString())){$frag_LapsPwEna = $null} 
+    else{$frag_LapsPwEna = $fragLapsPwEna | ConvertTo-Html -as Table -Fragment -PreContent "<p></p><details><summary><a name=`"LAPS`"><a href=`"#TOP`">LAPS - Local Administrator Password Solution</summary></a><p>" -PostContent "<h4>$descripLAPS</h4></details>" | Out-String}
+    
+    if ([string]::IsNullOrEmpty($fragURA.ToString())){$frag_URA = $null} 
+    else{$frag_URA = $fragURA | ConvertTo-Html -as Table -Fragment -PreContent "<p></p><details><summary>User Rights Assignments</summary><p>" -PostContent "<h4>$descripURA</h4></details>" | Out-String}
+    
+    if ($fragRegPasswords -eq $null){$frag_RegPasswords = $null} 
+    else{$frag_RegPasswords = $fragRegPasswords | ConvertTo-Html -as Table -Fragment -PreContent "<p></p><details><summary><a name=`"RegPW`"><a href=`"#TOP`">Passwords Embedded in the Registry</summary></a><p>" -PostContent "<h4>$descripRegPasswords</h4></details>" | Out-String}
+    
+    if ([string]::IsNullOrempty($fragASR.ToString())){$frag_ASR = $null} 
+    else{$frag_ASR = $fragASR | ConvertTo-Html -as Table -Fragment -PreContent "<p></p><details><summary><a name=`"asr`"><a href=`"#TOP`">Attack Surface Reduction (ASR)</summary></a><p>" -PostContent "<h4>$descripASR</h4></details>" | Out-String}
+    
+    if ($fragWDigestULC-eq $null){$frag_WDigestULC = $null} 
+    else{$frag_WDigestULC = $fragWDigestULC | ConvertTo-Html -as Table -Fragment -PreContent "<p></p><details><summary><a name=`"WDigest`"><a href=`"#TOP`">WDigest</summary></a><p>" -PostContent "<h4>$descripWDigest</h4></details>" | Out-String}
+    
+    if ([string]::IsNullOrEmpty($fragCertificates.ToString())){$frag_Certificates = $null} 
+    else{$frag_Certificates = $fragCertificates | ConvertTo-Html -as Table -Fragment -PreContent "<p></p><details><summary><a name=`"Certs`"><a href=`"#TOP`">Installed Certificates</summary></a><p>" -PostContent "<h4>$descripCerts</h4></details>" | Out-String}
+    
+    if ([string]::IsNullOrEmpty($fragCipherSuit.ToString())){$frag_CipherSuit = $null} 
+    else{$frag_CipherSuit = $fragCipherSuit | ConvertTo-Html -as Table -Fragment -PreContent "<p></p><details><summary><a name=`"CipherSuites`"><a href=`"#TOP`">Supported Cipher Suites</summary></a><p>" -PostContent "<h4>$decripCipher</h4></details>" | Out-String}
+    
+    if ([string]::IsNullOrEmpty($fragPSPasswords)){$frag_PSPasswords = $null} 
+    else{$frag_PSPasswords = $fragPSPasswords | ConvertTo-Html -as Table -Fragment -PreContent "<p></p><details><summary><a name=`"PSHistory`"><a href=`"#TOP`">PowerShell History Containing Creds</summary></a><p>" -PostContent "<h4>$descripPowershellHistory</h4></details>" | Out-String}
+    
+    if ([string]::IsNullOrEmpty($fragAutoRunsVal.ToString())){$frag_AutoRuns = $null} 
+    else{$frag_AutoRuns = $fragAutoRunsVal | ConvertTo-Html -as Table -Fragment -PreContent "<p></p><details><summary><a name=`"AutoRuns`"><a href=`"#TOP`">AutoRuns</summary></a><p>" -PostContent "<h4>$descripAutoRuns</h4></details>" | Out-String}
+        
+    if ([string]::IsNullOrEmpty($fragApplockerSvc.ToString())){$fragApplockerSvc = $null} 
+    else{$frag_ApplockerSvc = $fragApplockerSvc | ConvertTo-Html -As table -fragment -PreContent "<p></p><details><summary>Applocker Service Status</summary><p>" -PostContent "<h4>$descripToDo</h4></details>"  | Out-String}      
+    
+    if ([string]::IsNullOrEmpty($fragApplockerEnforcement.ToString())){$fragApplockerEnforcement = $null} 
+    else{$frag_ApplockerEnforcement = $fragApplockerEnforcement | ConvertTo-Html -As table -fragment -PreContent "<p></p><details><summary>Applocker Enforcement</summary><p>" -PostContent "<h4>$descripToDo</h4></details>"  | Out-String}      
+   
+    if ([string]::IsNullOrEmpty($fragApplockerPath)){$frag_ApplockerPath = $null} 
+    else{$frag_ApplockerPath = $fragApplockerPath | ConvertTo-Html -As table -fragment -PreContent "<p></p><details><summary>Applocker Path Rules</summary><p>" -PostContent "<h4>$descripToDo</h4></details>"  | Out-String}
+    
+    if ([string]::IsNullOrEmpty($fragApplockerPublisher)){$frag_ApplockerPublisher = $null} 
+    else{$frag_ApplockerPublisher = $fragApplockerPublisher | ConvertTo-Html -As table -fragment -PreContent "<p></p><details><summary>Applocker Publisher Rules</summary><p>" -PostContent "<h4>$descripToDo</h4></details>" | Out-String}
+    
+    if ([string]::IsNullOrEmpty($fragApplockerHash)){$frag_ApplockerHash = $null} 
+    else{$frag_ApplockerHash = $fragApplockerHash | ConvertTo-Html -As table -fragment -PreContent "<p></p><details><summary>Applocker Hash Rules</summary><p>" -PostContent "<h4>$descripToDo</h4></details>" | Out-String}
+
+    if ([string]::IsNullOrEmpty($fragwdacClixml.ToString())){$frag_wdacClixml = $null} 
+    else{$frag_wdacClixml = $fragwdacClixml | ConvertTo-Html -As Table -fragment -PreContent "<p></p><details><summary><a name=`"WDACEnforce`"><a href=`"#TOP`">WDAC Enforcement Mode</summary></a><p>" -PostContent "<h4>$descripToDo</h4></details>"  | Out-String}
+     
+    if ($fragWDACCIPolicy -eq $null){$frag_WDACCIPolicy = $null} 
+    else{$frag_WDACCIPolicy = $fragWDACCIPolicy | ConvertTo-Html -As Table -fragment -PreContent "<p></p><details><summary><a name=`"WDACPolicy`"><a href=`"#TOP`">WDAC Policy</summary></a><p>" -PostContent "<h4>$descripWDAC</h4></details>"  | Out-String}
+            
     #MS Recommended Secuirty settings (SSLF)
-    $frag_WindowsOSVal = $fragWindowsOSVal | ConvertTo-Html -as Table -Fragment -PreContent "<p></p><details><summary><a name=`"WinSSLF`"><a href=`"#TOP`">Windows OS Security Recommendations</summary></a><p>" -PostContent "<h4>$descripWindowsOS</h4></details>" | Out-String
-    $frag_EdgeVal = $fragEdgeVal | ConvertTo-Html -as Table -Fragment -PreContent "<p></p><details><summary><a name=`"EdgeSSLF`"><a href=`"#TOP`">MS Edge Security Recommendations</summary></a><p>" -PostContent "<h4>$descripToDo</h4></details>" | Out-String
-    $frag_OfficeVal = $fragOfficeVal | ConvertTo-Html -as Table -Fragment -PreContent "<p></p><details><summary><a name=`"OfficeSSLF`"><a href=`"#TOP`">MS Office Security Recommendations</summary></a><p>" -PostContent "<h4>$descripOffice2016</h4></details>" | Out-String
+    if ([string]::IsNullOrEmpty($fragWindowsOSVal.ToString())){$frag_WindowsOSVal = $null}
+    else{$frag_WindowsOSVal = $fragWindowsOSVal | ConvertTo-Html -as Table -Fragment -PreContent "<p></p><details><summary><a name=`"WinSSLF`"><a href=`"#TOP`">Windows OS Security Recommendations</summary></a><p>" -PostContent "<h4>$descripWindowsOS</h4></details>" | Out-String}
     
-    #Quick and dirty tidy up and removal of Frags that are $null
-    if ($fragAuthCodeSig -eq $null){$frag_AuthCodeSig = ""}
-    if ($fragDLLSafe -eq $null){$frag_DLLSafe = ""}
-    if ($fragDLLHijack -eq $null){$frag_DLLHijack = ""}
-    if ($fragDllNotSigned -eq $null){$frag_DllNotSigned = ""}
-    if ($fragPCElevate-eq $null){$frag_PCElevate= ""}
-    if ($fragFilePass-eq $null){$frag_FilePass = ""}
-    if ($fragAutoLogon -eq $null){$frag_AutoLogon = ""}
-    if ($fragUnQuoted -eq $null){$frag_UnQu = ""}
-    if ($fragReg -eq $null){$frag_SysRegPerms = ""}
-    if ($fragwFold -eq $null){$frag_SysFolders = ""}
-    if ($fragwFile -eq $null){$frag_wFile = ""}
-    if ($fragFWProfile -eq $null){$frag_FWProf = ""}
-    if ($DriverQuery -eq $null){$frag_DriverQuery = ""}
-    if ($SchedTaskPerms -eq $null){$frag_TaskPerms = ""}
-    if ($SchedTaskListings -eq $null){$frag_TaskListings = ""}
-    if ($InstallApps16  -eq $null){$fragInstaApps16 = ""}
-    if ($fragPSPass -eq $null){$frag_PSPass = ""}
-    if ($fragRegPasswords -eq $null){$frag_RegPasswords = ""}
-    if ($DriverQuery -eq $null){$frag_DriverQuery = ""}
-    if ($SchedTaskPerms -eq $null){$frag_TaskPerms = ""}
-    if ($fragPSPass -eq $null){$frag_PSPass = ""}
-    if ($fragFilePass -eq $null){$frag_FilePass = ""}
-    if ($fragRegPasswords -eq $null){$frag_RegPasswords = ""}
-    if ($fragDomainGrps -eq $null){$frag_DomainGrps = ""}
-    if ($fragDCList -eq $null){$frag_DCList = ""}
-    if ($fragFSMO -eq $null){$frag_FSMO = ""}
-    if ($fragPreAuth -eq $null){$frag_PreAuth = ""}
+    if ([string]::IsNullOrEmpty($fragEdgeVal.ToString())){$frag_EdgeVal = $null}
+    else{$frag_EdgeVal = $fragEdgeVal | ConvertTo-Html -as Table -Fragment -PreContent "<p></p><details><summary><a name=`"EdgeSSLF`"><a href=`"#TOP`">MS Edge Security Recommendations</summary></a><p>" -PostContent "<h4>$descripToDo</h4></details>" | Out-String}
+    
+    if ([string]::IsNullOrEmpty($fragOfficeVal.ToString())){$frag_OfficeVal = $null}
+    else{$frag_OfficeVal = $fragOfficeVal | ConvertTo-Html -as Table -Fragment -PreContent "<p></p><details><summary><a name=`"OfficeSSLF`"><a href=`"#TOP`">MS Office Security Recommendations</summary></a><p>" -PostContent "<h4>$descripOffice2016</h4></details>" | Out-String}
+    
 
     <#to be used as filter
+    #[string]::IsNullOrEmpty
     $nonNullVariables = @()
     $var1 = "Value1"
     $var2 = $null
@@ -10206,10 +11183,9 @@ $Report = "C:\SecureReport\output\$OutFunc\" + "$OutFunc.html"
             $nonNullVariables += "$($variable)," 
         }
     }
-
     Write-Host ($nonNullVariables).TrimEnd(",")
    
-    #>
+
 
 
 ################################################
@@ -10229,8 +11205,6 @@ $Report = "C:\SecureReport\output\$OutFunc\" + "$OutFunc.html"
 ################################################
 ############  CREATE HTML REPORT  ##############
 ################################################
-if ($folders -eq "y")
-{
     #ConvertTo-Html -Head $style -Body "<h1 align=center style='text-align:center'><span style='color:$titleCol;'>TENAKA.NET</span><h1>", 
     ConvertTo-Html -Head $style -Body "<h1 align=center style='text-align:center'>$basePNG<h1>",    
 
@@ -10275,8 +11249,11 @@ if ($folders -eq "y")
     $fragInstaApps16,
     $Frag_AVStatus,
     $frag_UnQu,
-#applocker
+#applocker - wdac
+    $frag_wdacClixml,
+    $frag_WDACCIPolicy,
     $frag_ApplockerSvc,
+    $frag_ApplockerEnforcement,
     $frag_ApplockerPath, 
     $frag_ApplockerPublisher,
     $frag_ApplockerHash, 
@@ -10293,6 +11270,7 @@ if ($folders -eq "y")
     $frag_RegPasswords,
     $frag_PSPasswords,
     $frag_AutoLogon,
+    $frag_AutoRuns,
     $frag_TaskPerms,
     $frag_TaskListings,
     #$frag_RunServices,
@@ -10309,83 +11287,6 @@ if ($folders -eq "y")
     $frag_EdgeVal,
     $frag_OfficeVal,
     $FragDescripFin  | out-file $Report
-}
-else
-{
-    #ConvertTo-Html -Head $style -Body "<h1 align=center style='text-align:center'><span style='color:$titleCol;'>TENAKA.NET</span><h1>", 
-
-    ConvertTo-Html -Head $style -Body "<h1 align=center style='text-align:center'>$basePNG<h1>",     
-    $fragDescrip1, 
-    $frag_Summary,
-    $frag_host, 
-    #$frag_MDTBuild,
-    $fragOS, 
-    $fragbios, 
-    $fragcpu, 
-    $frag_Network4,
-    $frag_Network6,
-    $frag_Share,
-    $frag_LegNIC,
-    $frag_SecOptions,
-    $frag_FWProf,
-    $frag_FW,
-    $frag_Msinfo,
-    $frag_BitLocker, 
-    $frag_Code,
-    $frag_LSAPPL,
-    $frag_WDigestULC,
-    $frag_CredGuCFG,
-    $frag_kernelModeVal,
-#accounts and groups
-    $FragPassPol,
-    $FragAccountDetails,
-    $frag_DomainGrps,
-    $frag_DCList,
-    $frag_FSMO,
-    $frag_PreAuth,
-    $frag_NeverExpires,
-    $FragGroupDetails,
-    $frag_whoamiGroups, 
-    $frag_whoamiPriv,
-    $frag_URA,
-    $frag_LapsPwEna,
-#progs
-    $Frag_WinFeature,
-    $fragInstaApps,
-    $fragHotFix,
-    $fragInstaApps16,
-    $Frag_AVStatus,
-    $frag_UnQu, 
-#applocker
-    $frag_ApplockerSvc,
-    $frag_ApplockerPath, 
-    $frag_ApplockerPublisher,
-    $frag_ApplockerHash, 
-#certs and ciphers     
-    $frag_Certificates,
-    $frag_CipherSuit,
-#file and reg audits
-    $frag_DLLSafe,
-    $frag_DLLHijack,
-    $frag_PCElevate,
-    $frag_PSPass,
-    $frag_FilePass,
-    $frag_RegPasswords,
-    $frag_PSPasswords,
-    $frag_AutoLogon,
-    $frag_TaskPerms,
-    $frag_TaskListings,
-   # $frag_RunServices,
-    $frag_DriverQuery,
-    $frag_AuthCodeSig,
-#Policy
-    $frag_ASR,
-    $frag_WindowsOSVal,
-    $frag_EdgeVal,
-    $frag_OfficeVal,
-
-    $FragDescripFin  | out-file $Report
-}
 
     $HostDomain = ((Get-CimInstance -ClassName win32_computersystem).Domain) + "\" 
     $repDate = (Get-Date).Date.ToString("yy-MM-dd").Replace(":","_")
@@ -10498,7 +11399,7 @@ Stuff to Fix.....
 $ExecutionContext.SessionState.LanguageMode -eq "ConstrainedLanguage"
 Null message warning that security is missing
 set warning for secure boot
-Expand on explanations - currently of use to non-techies
+Expand on explanations - currently of use to techies
 
 remove extra blanks when listing progs via registry 
 
@@ -10525,7 +11426,6 @@ wifi passwords
 credential manager
     %Systemdrive%\Users\<Username>\AppData\Local\Microsoft\Credentials
     cmdkey /list 
-powershell passwords, history, transcript, creds
 Services and svc accounts
 GPO and GPP's that apply
 Browser security
@@ -10533,8 +11433,7 @@ DNS
 Auditing Wec\wef - remote collection point
 Interesting events
 wevtutil "Microsoft-Windows-Wcmsvc/Operational"
-Add Applocker audit
-Add WDAC audit
+
 File hash database
 Performance tweaks audit client and hyper v
 warn on stuff thats older than 6 months - apps, updates etc
