@@ -5,8 +5,6 @@ Check for common and known security vulnerabilities and create an html report ba
 
 The report is saved to C:\Securereport\FinishedReport.htm
 
-Before everyone gets critical regarding the script formatting, some are due to how ConvertTo-HTML expects the data, most are to help those that aren’t familiar with scripting. There is a conscious decision not to use aliases or abbreviations and where possible to create variables. 
-
 #List of checks and balances:
 Host Details, CPU, Bios, Windows Version
 Accounts, Groups and Password Policy
