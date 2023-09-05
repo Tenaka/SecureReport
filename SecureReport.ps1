@@ -1,4 +1,6 @@
 <#
+Tenaka.net
+
 .Synopsis
 Check for common and known security vulnerabilities and create an html report based on the findings
 
@@ -350,6 +352,11 @@ YYMMDD
 230824.2 - Added final bit for Applocker auditing and showing enforcment mode
 230824.3 - Fixed typo in Reg search for passwords
 230901.1 - Added WDAC Policy and Enforcement checks
+230905.1 - Updated filtering in Password Search in Registry - streamlined by removing multiple ifs, changed filter as removed potential passwords, fixed again, the var that records actual passwords.
+230905.2 - Updates Installed Windows Features as MS have moved the goal posts and deprecated the dism command to list out packages
+230905.3 - Broke Server and Client Features into differenct Fargs
+
+
 #>
 
 #Remove any DVD from client
@@ -1038,33 +1045,52 @@ sleep 5
     $FragWinFeature=@()
     $getWindows = Get-CimInstance win32_operatingsystem | Select-Object caption
         if ($getWindows.caption -notlike "*Server*")
-        {
-        Dism /online /Get-Features >> $WinFeaturePathtxt
-        $getdismCont = (Get-Content $WinFeaturePathtxt | Select-String enabled -Context 1) -replace("  Feature Name : ","") -replace("> State : ",",") | Sort-Object 
-    
-        foreach ($dismItem in $getdismCont)
             {
-                $dismSplit = $dismItem.split(",")
-                $dismSplit[0]
-                $dismSplit[1]
+            Dism /online /Get-Features >> $WinFeaturePathtxt
+            $getdismCont = (Get-Content $WinFeaturePathtxt | Select-String enabled -Context 1) -replace("  Feature Name : ","") -replace("> State : ",",") | Sort-Object 
+   
+                foreach ($dismItem in $getdismCont)
+                    {
+                        $dismSplit = $dismItem.split(",")
+                        $dismSplit[0]
+                        $dismSplit[1]
 
-                $newObjWinFeature = New-Object -TypeName PSObject
-                Add-Member -InputObject $newObjWinFeature -Type NoteProperty -Name WindowsFeature -Value $dismSplit[0]
-                Add-Member -InputObject $newObjWinFeature -Type NoteProperty -Name InstallState -Value $dismSplit[1]
-                $FragWinFeature += $newObjWinFeature
+                        $newObjWinFeature = New-Object -TypeName PSObject
+                        Add-Member -InputObject $newObjWinFeature -Type NoteProperty -Name WindowsFeature -Value $dismSplit[0]
+                        Add-Member -InputObject $newObjWinFeature -Type NoteProperty -Name InstallState -Value $dismSplit[1]
+                        $FragWinFeature += $newObjWinFeature
+                    }
             }
-        }
-        else
-        {
-        $WinFeature = Get-WindowsFeature | where {$_.installed -eq "installed"} | Sort-Object name
-        foreach ($featureItem in $WinFeature)
+
+        if($getdismCont -eq $null)
             {
-                $newObjWinFeature = New-Object -TypeName PSObject
-                Add-Member -InputObject $newObjWinFeature -Type NoteProperty -Name WindowsFeature -Value $featureItem.DisplayName 
-                #Add-Member -InputObject $newObjWinFeature -Type NoteProperty -Name InstallState -Value $featureItem.Installed
-                $FragWinFeature += $newObjWinFeature
+           
+            $gtAppxPackage  = Get-AppxPackage 
+                foreach($AppxPackageItem in $gtAppxPackage)
+                    {
+                        $appxName = $AppxPackageItem.name
+                        $appxStatus = $AppxPackageItem.status
+
+                        $newObjWinFeature = New-Object -TypeName PSObject
+                        Add-Member -InputObject $newObjWinFeature -Type NoteProperty -Name WindowsFeature -Value $appxName
+                        Add-Member -InputObject $newObjWinFeature -Type NoteProperty -Name InstallState -Value $appxStatus
+                        $FragWinFeature += $newObjWinFeature        
+                    }
+        
             }
-        }
+
+        $FragSrvWinFeature=@()
+        if($getWindows.caption -like "*Server*")
+            {
+            $WinFeature = Get-WindowsFeature | where {$_.installed -eq "installed"} | Sort-Object name
+            foreach ($featureItem in $WinFeature)
+                {
+                    $newObjSrvWinFeature = New-Object -TypeName PSObject
+                    Add-Member -InputObject $newObjSrvWinFeature -Type NoteProperty -Name WindowsSrvFeature -Value $featureItem.DisplayName 
+                    #Add-Member -InputObject $newObjWinFeature -Type NoteProperty -Name InstallState -Value $featureItem.Installed
+                    $FragSrvWinFeature += $newObjSrvWinFeature
+                }
+            }
 
 ################################################
 ##################  ANTIVIRUS  #################
@@ -3743,7 +3769,7 @@ sleep 5
     $secEditPath = "C:\SecureReport\output\$OutFunc\" + "$OutFunc.txt"
 
     #Enter list of Words to search
-    $regSearchWords = "password", "passwd"
+    $regSearchWords = "password", "passwd","DefaultPassword"
 
     foreach ($regSearchItems in $regSearchWords){
         #swapped to native tool, Powershell is too slow
@@ -3753,8 +3779,8 @@ sleep 5
 }
 
 $getRegPassCon = (get-content $secEditPath | 
-where {$_ -notmatch "classes" -and $_ -notmatch "ClickToRun" -and $_ -notmatch "microsoft" -and $_ -notmatch "default"} | 
-Select-String -Pattern "hkey_", "hkcu_")
+where {$_ -notmatch "classes" -and $_ -notmatch "ClickToRun" -and $_ -notmatch "}" -and $_ -notmatch "PolicyManager" -and $_ -notmatch "Internet" -and $_ -notmatch "WSMAN" -and $_ -notmatch "PasswordEnrollmentManager"} |Select-String -Pattern "hkey_", "hkcu_")# -and $_ -notmatch "microsoft" -and $_ -notmatch "default"} | 
+
 
 $fragRegPasswords=@()
 foreach ($getRegPassItem in $getRegPassCon)
@@ -3762,24 +3788,14 @@ foreach ($getRegPassItem in $getRegPassCon)
     if ($getRegPassItem -match "HKEY_LOCAL_MACHINE"){$getRegPassItem = $getRegPassItem.tostring().replace("HKEY_LOCAL_MACHINE","HKLM:")}
     if ($getRegPassItem -match "HKEY_CURRENT_USER"){$getRegPassItem = $getRegPassItem.tostring().replace("HKEY_CURRENT_USER","HKCU:")}
 
-    if ((Get-ItemProperty $getRegPassItem).passwd -ne $null)
-    {
-        $regPassKey = (Get-Item $getRegPassItem)
-        $regPassKey = $regPassKey.Property
-        $regPassValue = (Get-ItemProperty $getRegPassItem).passwd 
-    }
-    elseif
-    ((Get-ItemProperty $getRegPassItem).password -ne $null)
-    {
-        $regPassKey = (Get-Item $getRegPassItem)
-        $regPassKey = $regPassKey.Property
-        $regPassValue = (Get-ItemProperty $getRegPassItem).password 
-    }
+    $gtRegPassItem = (Get-Item $getRegPassItem)
+    $gtItemPasskey = (Get-Item $getRegPassItem).property | where {$_ -match "passd" -or $_ -match "password" -and $_ -notmatch "PasswordExpiryWarning"}
+    $gtItemPassValue = (Get-ItemProperty $getRegPassItem).$gtItemPasskey
 
     $newObjRegPasswords = New-Object -TypeName PSObject
     Add-Member -InputObject $newObjRegPasswords -Type NoteProperty -Name RegistryPath -Value "Warning $($getRegPassItem) warning"
-    Add-Member -InputObject $newObjRegPasswords -Type NoteProperty -Name RegistryValue -Value "Warning $($regPassKey) warning"
-    Add-Member -InputObject $newObjRegPasswords -Type NoteProperty -Name RegistryPassword -Value "Warning $($regPassValue ) warning"
+    Add-Member -InputObject $newObjRegPasswords -Type NoteProperty -Name RegistryValue -Value "Warning $($gtItemPasskey) warning"
+    Add-Member -InputObject $newObjRegPasswords -Type NoteProperty -Name RegistryPassword -Value "Warning $($gtItemPassValue) warning"
     $fragRegPasswords += $newObjRegPasswords          
 } 
 
@@ -10801,7 +10817,8 @@ $Report = "C:\SecureReport\output\$OutFunc\" + "$OutFunc.html"
     $nfrag_whoamiPriv =  $whoamiPriv | ConvertTo-Html -As Table -fragment -PreContent "<h2>Current Users Local Privileges</span></h2>" -PostContent "<h4>$descripDomainPrivs</h4>" | Out-String
     $nfrag_Network4 = $fragNetwork4 | ConvertTo-Html -As List -fragment -PreContent "<h2>IPv4 Address Details</span></h2>"  | Out-String
     $nfrag_Network6 = $fragNetwork6 | ConvertTo-Html -As List -fragment -PreContent "<h2>IPv4 Address Details</span></h2>"  | Out-String
-    $nFrag_WinFeature = $FragWinFeature | ConvertTo-Html -As table -fragment -PreContent "<h2>Installed Windows Features</span></h2>"  | Out-String
+    $nFrag_WinFeature = $FragWinFeature | ConvertTo-Html -As table -fragment -PreContent "<h2>Installed Windows Client Features</span></h2>"  | Out-String
+    $nFrag_SrvWinFeature = $FragSrvWinFeature | ConvertTo-Html -As table -fragment -PreContent "<h2>Installed Windows ServerFeatures</span></h2>"  | Out-String
     $nfrag_MDTBuild = $fragMDTBuild | ConvertTo-Html -As table -fragment -PreContent "<h2>MDT Deployment Details</span></h2>"  | Out-String
     
     #Security Review
@@ -10897,6 +10914,7 @@ $Report = "C:\SecureReport\output\$OutFunc\" + "$OutFunc.html"
     $nfrag_LapsPwEna,
 #progs
     $nFrag_WinFeature,
+    $nFrag_SrvWinFeature,
     $nfragInstaApps,
     $nfragHotFix,
     $nfragInstaApps16,
@@ -11010,9 +11028,15 @@ $Report = "C:\SecureReport\output\$OutFunc\" + "$OutFunc.html"
     
     $frag_Network6 = $fragNetwork6 | ConvertTo-Html -As List -fragment -PreContent "<p></p><details><summary>IPv6 Address Details</summary><p>" -PostContent "<h4>$descripToDo</h4></details>"  | Out-String
     
+    #Client Features
     if ([string]::IsNullOrEmpty($FragWinFeature.ToString())){$Frag_WinFeature = $null} 
-    else{$Frag_WinFeature = $FragWinFeature | ConvertTo-Html -As table -fragment -PreContent "<p></p><details><summary>Installed Windows Features</summary><p>" -PostContent "<h4>$descripToDo</h4></details>" | Out-String}
+    else{$Frag_WinFeature = $FragWinFeature | ConvertTo-Html -As table -fragment -PreContent "<p></p><details><summary>Installed Windows Client Features</summary><p>" -PostContent "<h4>$descripToDo</h4></details>" | Out-String}
     
+    #Server Features
+    if ([string]::IsNullOrEmpty($FragSrvWinFeature.ToString())){$Frag_SrvWinFeature = $null} 
+    else{$Frag_SrvWinFeature = $FragSrvWinFeature | ConvertTo-Html -As table -fragment -PreContent "<p></p><details><summary>Installed Windows Server Features</summary><p>" -PostContent "<h4>$descripToDo</h4></details>" | Out-String}
+    
+
     if ([string]::IsNullOrEmpty($fragMDTBuild.ToString())){$frag_MDTBuild = $null} 
     else{$frag_MDTBuild = $fragMDTBuild | ConvertTo-Html -As table -fragment -PreContent "<p></p><details><summary>MDT Deployment Details</summary><p>" -PostContent "<h4>$descripToDo</h4></details>"  | Out-String}
     
@@ -11244,6 +11268,7 @@ $Report = "C:\SecureReport\output\$OutFunc\" + "$OutFunc.html"
     $frag_LapsPwEna,
 #progs
     $Frag_WinFeature,
+    $Frag_SrvWinFeature,
     $fragInstaApps,
     $fragHotFix,
     $fragInstaApps16,
@@ -11399,7 +11424,7 @@ Stuff to Fix.....
 $ExecutionContext.SessionState.LanguageMode -eq "ConstrainedLanguage"
 Null message warning that security is missing
 set warning for secure boot
-Expand on explanations - currently of use to techies
+Expand on explanations - currently of use to non-techies
 
 remove extra blanks when listing progs via registry 
 
@@ -11426,6 +11451,7 @@ wifi passwords
 credential manager
     %Systemdrive%\Users\<Username>\AppData\Local\Microsoft\Credentials
     cmdkey /list 
+powershell passwords, history, transcript, creds
 Services and svc accounts
 GPO and GPP's that apply
 Browser security
@@ -11433,7 +11459,8 @@ DNS
 Auditing Wec\wef - remote collection point
 Interesting events
 wevtutil "Microsoft-Windows-Wcmsvc/Operational"
-
+Add Applocker audit
+Add WDAC audit
 File hash database
 Performance tweaks audit client and hyper v
 warn on stuff thats older than 6 months - apps, updates etc
