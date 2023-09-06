@@ -352,11 +352,10 @@ YYMMDD
 230824.2 - Added final bit for Applocker auditing and showing enforcment mode
 230824.3 - Fixed typo in Reg search for passwords
 230901.1 - Added WDAC Policy and Enforcement checks
-230905.1 - Updated filtering in Password Search in Registry - streamlined by removing multiple ifs, changed filter as removed potential passwords, fixed again, the var that records actual passwords.
+230905.1 - Updated filtering in Password Search in Registry - displays found password in the report also
 230905.2 - Updates Installed Windows Features as MS have moved the goal posts and deprecated the dism command to list out packages
 230905.3 - Broke Server and Client Features into differenct Fargs
-
-
+230906.1 - Typo in the Autologon audit, removed the additional space that prevented it working. 
 #>
 
 #Remove any DVD from client
@@ -1403,65 +1402,71 @@ Write-Host "Finished Collectiong DriverQuery data for VBS" -foregroundColor Gree
     0 = "0","0.0.0.0","4294967296","4294967294"
     }
 
-$fragNetwork=@()
+$fragNetwork4=@()
+$fragNetwork6=@()
 
-    $gNetAdp = Get-NetAdapter | where {$_.Status -eq "up"}
-    $intAlias = $gNetAdp.InterfaceAlias
+    $gNetAdapter = Get-NetAdapter | where {$_.Status -eq "up"}
 
-    $macAddy = [string]$gNetAdp.MacAddress 
-
-    $gNetIPC = Get-NetIPConfiguration  -InterfaceAlias $gNetAdp.Name
-        $IPAddress4 = $gNetIPC.IPv4Address.ipaddress -join ", "
-        $IPAddress4 = [string]$IPAddress4 
-        
-        $IPAddress6 = $gNetIPC.IPv6Address.ipaddress -join ", "
-        $IPAddress6 = [string]$IPAddress6
-
-        $Router4 = $gNetIPC.IPv4DefaultGateway.nexthop -join ", "
-        $Router4 =[string]$Router4
-        
-        $Router6 = $gNetIPC.IPv6DefaultGateway.nexthop -join ", "
-        $Router6  = [string]$Router6 
-        
-        $dnsAddress = $gNetIPC.dnsserver.serveraddresses -join ", "
-        $dnsAddress = [String]$dnsAddress
-
-    $InterfaceAlias = $gNetAdp.Name
-    $gNetIPA4 = Get-NetIPAddress  | where {$_.InterfaceAlias -eq "$InterfaceAlias" -and $_.AddressFamily -eq "IPv4"}
-    $IPSubnet4 = $gNetIPA4.PrefixLength
-
-    $gNetIPA6 = Get-NetIPAddress | where {$_.InterfaceAlias -eq "$InterfaceAlias" -and $_.AddressFamily -eq "IPv6"}
-    $IPSubnet6 = $gNetIPA6.PrefixLength -join " ,"
-    $IPSubnet6 = [string]$IPSubnet6 
-
-    foreach ($IPSubItem in $IPSubnet.Values)
+    foreach($gNetAdp in $gNetAdapter)
     {
-    $subPrefix = $IPSubItem[0]
-    $subnet = $IPSubItem[1]
-    $subAddress = $IPSubItem[2]
-    $subHosts = $IPSubItem[3]
-        if ($subPrefix -eq $IPSubnet4)
-        {
-        $subnetTrans = $subnet
+
+        $intAlias = $gNetAdp.InterfaceAlias
+
+        $macAddy = [string]$gNetAdp.MacAddress 
+
+        $gNetIPC = Get-NetIPConfiguration -InterfaceAlias $gNetAdp.Name
+            $IPAddress4 = $gNetIPC.IPv4Address.ipaddress 
+            $IPAddress4 = [string]$IPAddress4 
+        
+            $IPAddress6 = $gNetIPC.IPv6Address.ipaddress 
+            $IPAddress6 = [string]$IPAddress6
+
+            $Router4 = $gNetIPC.IPv4DefaultGateway.nexthop 
+            $Router4 =[string]$Router4
+        
+            $Router6 = $gNetIPC.IPv6DefaultGateway.nexthop 
+            $Router6  = [string]$Router6 
+        
+            $dnsAddress = $gNetIPC.dnsserver.serveraddresses 
+            $dnsAddress = [String]$dnsAddress
+
+            $InterfaceAlias = $gNetAdp.Name
+            $gNetIPA4 = Get-NetIPAddress  | where {$_.InterfaceAlias -eq "$InterfaceAlias" -and $_.AddressFamily -eq "IPv4"}
+            $IPSubnet4 = $gNetIPA4.PrefixLength
+
+            $gNetIPA6 = Get-NetIPAddress | where {$_.InterfaceAlias -eq "$InterfaceAlias" -and $_.AddressFamily -eq "IPv6"}
+            $IPSubnet6 = $gNetIPA6.PrefixLength -join " ,"
+            $IPSubnet6 = [string]$IPSubnet6 
+
+            foreach ($IPSubItem in $IPSubnet.Values)
+            {
+                $subPrefix = $IPSubItem[0]
+                $subnet = $IPSubItem[1]
+                $subAddress = $IPSubItem[2]
+                $subHosts = $IPSubItem[3]
+                if ($subPrefix -eq $IPSubnet4)
+                {
+                    $subnetTrans = $subnet
+                }
+            }    
+
+            $newObjNetwork4 = New-Object -TypeName PSObject
+            Add-Member -InputObject $newObjNetwork4 -Type NoteProperty -Name IPv4Address -Value $IPAddress4
+            Add-Member -InputObject $newObjNetwork4 -Type NoteProperty -Name IPv4Subnet -Value $subnetTrans
+            Add-Member -InputObject $newObjNetwork4 -Type NoteProperty -Name IPv4Gateway -Value $Router4
+            Add-Member -InputObject $newObjNetwork4 -Type NoteProperty -Name DNSServers -Value $dnsAddress
+            Add-Member -InputObject $newObjNetwork4 -Type NoteProperty -Name Mac -Value $macAddy 
+            $fragNetwork4 += $newObjNetwork4
+
+            $newObjNetwork6 = New-Object -TypeName PSObject
+            Add-Member -InputObject $newObjNetwork6 -Type NoteProperty -Name IPv6Address -Value $IPAddress6 
+            Add-Member -InputObject $newObjNetwork6 -Type NoteProperty -Name IPv6Subnet -Value $IPSubnet6
+            Add-Member -InputObject $newObjNetwork6 -Type NoteProperty -Name IPv6Gateway -Value $Router6
+            Add-Member -InputObject $newObjNetwork6 -Type NoteProperty -Name DNSServers -Value $dnsAddress
+            Add-Member -InputObject $newObjNetwork6 -Type NoteProperty -Name Mac -Value $macAddy 
+            $fragNetwork6 += $newObjNetwork6
+
         }
-    }
-
-$newObjNetwork4 = New-Object -TypeName PSObject
-Add-Member -InputObject $newObjNetwork4 -Type NoteProperty -Name IPv4Address -Value $IPAddress4
-Add-Member -InputObject $newObjNetwork4 -Type NoteProperty -Name IPv4Subnet -Value $subnetTrans
-Add-Member -InputObject $newObjNetwork4 -Type NoteProperty -Name IPv4Gateway -Value $Router4
-Add-Member -InputObject $newObjNetwork4 -Type NoteProperty -Name DNSServers -Value $dnsAddress
-Add-Member -InputObject $newObjNetwork4 -Type NoteProperty -Name Mac -Value $macAddy 
-$fragNetwork4 += $newObjNetwork4
-
-$newObjNetwork6 = New-Object -TypeName PSObject
-Add-Member -InputObject $newObjNetwork6 -Type NoteProperty -Name IPv6Address -Value $IPAddress6 
-Add-Member -InputObject $newObjNetwork6 -Type NoteProperty -Name IPv6Subnet -Value $IPSubnet6
-Add-Member -InputObject $newObjNetwork6 -Type NoteProperty -Name IPv6Gateway -Value $Router6
-Add-Member -InputObject $newObjNetwork6 -Type NoteProperty -Name DNSServers -Value $dnsAddress
-Add-Member -InputObject $newObjNetwork6 -Type NoteProperty -Name Mac -Value $macAddy 
-$fragNetwork6 += $newObjNetwork6
-
 ################################################
 #############  MISC REG SETTINGS  ##############
 ################################################
@@ -1732,11 +1737,11 @@ sleep 5
     #AutoLogon Details in REG inc password   
     $getAutoLogon = Get-Item  "HKLM:\Software\Microsoft\Windows NT\CurrentVersion\Winlogon" -ErrorAction SilentlyContinue
     $AutoLogonDefUser =  $getAutoLogon.GetValue("DefaultUserName")
-    $AutoLogonDefPass =  $getAutoLogon.GetValue("DefaultPassword ") 
+    $AutoLogonDefPass =  $getAutoLogon.GetValue("DefaultPassword") 
 
     $fragAutoLogon =@()
 
-    if ($AutoLogonDefPass  -ne "$null")
+    if ($AutoLogonDefPass  -eq "$null")
     {
         $AutoLPass = "There is no Default Password set for AutoLogon" 
         $AutoLUser = "There is no Default User set for AutoLogon" 
@@ -3605,7 +3610,7 @@ Write-Host "Completed searching for authenticode signature hashmismatch" -foregr
     }
 
 ################################################
-##############  CIPHER SUITS  ##############
+###############  CIPHER SUITS  #################
 ################################################
 
 $gtCipherSuit = Get-TlsCipherSuite
@@ -11146,11 +11151,9 @@ $Report = "C:\SecureReport\output\$OutFunc\" + "$OutFunc.html"
     if ($fragWDigestULC-eq $null){$frag_WDigestULC = $null} 
     else{$frag_WDigestULC = $fragWDigestULC | ConvertTo-Html -as Table -Fragment -PreContent "<p></p><details><summary><a name=`"WDigest`"><a href=`"#TOP`">WDigest</summary></a><p>" -PostContent "<h4>$descripWDigest</h4></details>" | Out-String}
     
-    if ([string]::IsNullOrEmpty($fragCertificates.ToString())){$frag_Certificates = $null} 
-    else{$frag_Certificates = $fragCertificates | ConvertTo-Html -as Table -Fragment -PreContent "<p></p><details><summary><a name=`"Certs`"><a href=`"#TOP`">Installed Certificates</summary></a><p>" -PostContent "<h4>$descripCerts</h4></details>" | Out-String}
+    $frag_Certificates = $fragCertificates | ConvertTo-Html -as Table -Fragment -PreContent "<p></p><details><summary><a name=`"Certs`"><a href=`"#TOP`">Installed Certificates</summary></a><p>" -PostContent "<h4>$descripCerts</h4></details>" | Out-String
     
-    if ([string]::IsNullOrEmpty($fragCipherSuit.ToString())){$frag_CipherSuit = $null} 
-    else{$frag_CipherSuit = $fragCipherSuit | ConvertTo-Html -as Table -Fragment -PreContent "<p></p><details><summary><a name=`"CipherSuites`"><a href=`"#TOP`">Supported Cipher Suites</summary></a><p>" -PostContent "<h4>$decripCipher</h4></details>" | Out-String}
+    $frag_CipherSuit = $fragCipherSuit | ConvertTo-Html -as Table -Fragment -PreContent "<p></p><details><summary><a name=`"CipherSuites`"><a href=`"#TOP`">Supported Cipher Suites</summary></a><p>" -PostContent "<h4>$decripCipher</h4></details>" | Out-String
     
     if ([string]::IsNullOrEmpty($fragPSPasswords)){$frag_PSPasswords = $null} 
     else{$frag_PSPasswords = $fragPSPasswords | ConvertTo-Html -as Table -Fragment -PreContent "<p></p><details><summary><a name=`"PSHistory`"><a href=`"#TOP`">PowerShell History Containing Creds</summary></a><p>" -PostContent "<h4>$descripPowershellHistory</h4></details>" | Out-String}
