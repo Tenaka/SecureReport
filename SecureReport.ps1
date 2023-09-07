@@ -356,6 +356,9 @@ YYMMDD
 230905.2 - Updates Installed Windows Features as MS have moved the goal posts and deprecated the dism command to list out packages
 230905.3 - Broke Server and Client Features into differenct Fargs
 230906.1 - Typo in the Autologon audit, removed the additional space that prevented it working. 
+230906.2 - Fix issue with IPAddress audit, bombed out with multiple active network adapters
+230907.1 - Added WindowsOptionalFeature for Appx Packages
+
 #>
 
 #Remove any DVD from client
@@ -1064,19 +1067,33 @@ sleep 5
         if($getdismCont -eq $null)
             {
            
+            $getWindows  = Get-WindowsOptionalFeature -online | where {$_.state -eq "enabled"}
+                foreach($feature in $getWindows)
+                    {
+                        $featureName = $feature.featurename
+                        $featureState = $feature.state
+
+                        $newObjWinFeature = New-Object -TypeName PSObject
+                        Add-Member -InputObject $newObjWinFeature -Type NoteProperty -Name WindowsFeature -Value $featureName
+                        Add-Member -InputObject $newObjWinFeature -Type NoteProperty -Name InstallState -Value $featureState
+                        $FragWinFeature += $newObjWinFeature        
+                    }
+        
+            }
+
+            $FragAppx=@()
             $gtAppxPackage  = Get-AppxPackage 
                 foreach($AppxPackageItem in $gtAppxPackage)
                     {
                         $appxName = $AppxPackageItem.name
                         $appxStatus = $AppxPackageItem.status
 
-                        $newObjWinFeature = New-Object -TypeName PSObject
-                        Add-Member -InputObject $newObjWinFeature -Type NoteProperty -Name WindowsFeature -Value $appxName
-                        Add-Member -InputObject $newObjWinFeature -Type NoteProperty -Name InstallState -Value $appxStatus
-                        $FragWinFeature += $newObjWinFeature        
+                        $newObjWinAppx = New-Object -TypeName PSObject
+                        Add-Member -InputObject $newObjWinAppx -Type NoteProperty -Name WindowsFeature -Value $appxName
+                        Add-Member -InputObject $newObjWinAppx -Type NoteProperty -Name InstallState -Value $appxStatus
+                        $FragAppx += $newObjWinAppx       
                     }
-        
-            }
+
 
         $FragSrvWinFeature=@()
         if($getWindows.caption -like "*Server*")
@@ -10823,6 +10840,8 @@ $Report = "C:\SecureReport\output\$OutFunc\" + "$OutFunc.html"
     $nfrag_Network4 = $fragNetwork4 | ConvertTo-Html -As List -fragment -PreContent "<h2>IPv4 Address Details</span></h2>"  | Out-String
     $nfrag_Network6 = $fragNetwork6 | ConvertTo-Html -As List -fragment -PreContent "<h2>IPv4 Address Details</span></h2>"  | Out-String
     $nFrag_WinFeature = $FragWinFeature | ConvertTo-Html -As table -fragment -PreContent "<h2>Installed Windows Client Features</span></h2>"  | Out-String
+    
+    $nFrag_Appx = $FragAppx | ConvertTo-Html -As table -fragment -PreContent "<h2>Installed Windows Optional Features</span></h2>"  | Out-String
     $nFrag_SrvWinFeature = $FragSrvWinFeature | ConvertTo-Html -As table -fragment -PreContent "<h2>Installed Windows ServerFeatures</span></h2>"  | Out-String
     $nfrag_MDTBuild = $fragMDTBuild | ConvertTo-Html -As table -fragment -PreContent "<h2>MDT Deployment Details</span></h2>"  | Out-String
     
@@ -10919,6 +10938,7 @@ $Report = "C:\SecureReport\output\$OutFunc\" + "$OutFunc.html"
     $nfrag_LapsPwEna,
 #progs
     $nFrag_WinFeature,
+    $nFrag_Appx,
     $nFrag_SrvWinFeature,
     $nfragInstaApps,
     $nfragHotFix,
@@ -11036,11 +11056,13 @@ $Report = "C:\SecureReport\output\$OutFunc\" + "$OutFunc.html"
     #Client Features
     if ([string]::IsNullOrEmpty($FragWinFeature.ToString())){$Frag_WinFeature = $null} 
     else{$Frag_WinFeature = $FragWinFeature | ConvertTo-Html -As table -fragment -PreContent "<p></p><details><summary>Installed Windows Client Features</summary><p>" -PostContent "<h4>$descripToDo</h4></details>" | Out-String}
+ 
+    if ([string]::IsNullOrEmpty($FragAppx.ToString())){$Frag_Appx = $null} 
+    else{$Frag_Appx = $FragAppx | ConvertTo-Html -As table -fragment -PreContent "<p></p><details><summary>Installed Windows Client Optional Features</summary><p>" -PostContent "<h4>$descripToDo</h4></details>" | Out-String}
     
     #Server Features
     if ([string]::IsNullOrEmpty($FragSrvWinFeature.ToString())){$Frag_SrvWinFeature = $null} 
     else{$Frag_SrvWinFeature = $FragSrvWinFeature | ConvertTo-Html -As table -fragment -PreContent "<p></p><details><summary>Installed Windows Server Features</summary><p>" -PostContent "<h4>$descripToDo</h4></details>" | Out-String}
-    
 
     if ([string]::IsNullOrEmpty($fragMDTBuild.ToString())){$frag_MDTBuild = $null} 
     else{$frag_MDTBuild = $fragMDTBuild | ConvertTo-Html -As table -fragment -PreContent "<p></p><details><summary>MDT Deployment Details</summary><p>" -PostContent "<h4>$descripToDo</h4></details>"  | Out-String}
@@ -11271,6 +11293,7 @@ $Report = "C:\SecureReport\output\$OutFunc\" + "$OutFunc.html"
     $frag_LapsPwEna,
 #progs
     $Frag_WinFeature,
+    $Frag_Appx,
     $Frag_SrvWinFeature,
     $fragInstaApps,
     $fragHotFix,
