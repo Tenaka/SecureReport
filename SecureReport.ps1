@@ -356,9 +356,8 @@ YYMMDD
 230905.2 - Updates Installed Windows Features as MS have moved the goal posts and deprecated the dism command to list out packages
 230905.3 - Broke Server and Client Features into differenct Fargs
 230906.1 - Typo in the Autologon audit, removed the additional space that prevented it working. 
-230906.2 - Fix issue with IPAddress audit, bombed out with multiple active network adapters
-230907.1 - Added WindowsOptionalFeature for Appx Packages
-
+230906.1 - Update IPv4\6 Audits to cope with multiple active NIC's eg Hyper-V Server
+230913.1 - Improved ASR reporting and fixed miss reporting when not set to 1 but not 0
 #>
 
 #Remove any DVD from client
@@ -4133,6 +4132,14 @@ if ($tpSec10 -eq $false)
 $ASRPathtxt = "C:\SecureReport\output\$OutFunc\" + "$OutFunc.txt"
 $getASRGuids = Get-ItemProperty "HKLM:\Software\Policies\Microsoft\Windows Defender\Windows Defender Exploit Guard\ASR\Rules" -ErrorAction SilentlyContinue
 
+<#
+    - 1 (Block)
+    - 0 (Off)
+    - 2 (Audit)
+    - 5 (Not Configured)
+    - 6 (Warn)
+#>
+
 if ($getASRGuids -eq $null)
     {
     Set-Content -Path $ASRPathtxt -Value "ASP Policy is not set: 0"
@@ -4141,7 +4148,7 @@ if ($getASRGuids -eq $null)
 else
     {
     $getASRGuids | Out-File $ASRPathtxt
-    $getASRCont = Get-Content $ASRPathtxt | Select-String -Pattern ": 1", ": 0"
+    $getASRCont = Get-Content $ASRPathtxt | Select-String -Pattern ": 1", ": 0",": 2",": 6",": 5"
     }
 
 
@@ -4192,39 +4199,63 @@ foreach ($getASRContItems in $getASRCont)
 $asrGuid = $getASRContItems.ToString().split(":").replace(" ","")[0]
 $asrGuidSetting = $getASRContItems.ToString().split(":").replace(" ","")[1]
 
-    foreach ($asrGuiditem in $asrGuid)
-        {
-        $asrGuidContains = $ASRList.Contains($asrGuiditem) 
-        write-host "$asrGuiditem"
-        Write-Host $asrGuidContains-ForegroundColor Green
-        if ($asrGuidContains -eq "true")
-            {
-            $ASRGuidObj = "ASR Guid $asrGuiditem is set" 
-            }
-        else
-            {
-            $ASRGuidObj = "Warning ASR Guid $asrGuiditem is not set Warning" 
-            }
-        
+     
         if ($asrGuidSetting -eq "1")
             {
-            $asrGuidSetObj = "ASR = 1"    
+                $asrGuidSetObj = "ASR (Block) = 1"    
             }
-        else
+       
+       if ($asrGuidSetting -eq "2")
             {
-            $asrGuidSetObj = "Warning ASR is disabled Warning"
+                $asrGuidSetObj = "Warning ASR (Audit) = 2 Warning"
+            }
+
+       if ($asrGuidSetting -eq "5")
+            {
+                $asrGuidSetObj = "Warning ASR (Not Configured) = 5 Warning"
+            }
+       if ($asrGuidSetting -eq "6")
+            {
+                $asrGuidSetObj = "Warning ASR (Warn) = 6 Warning"
+            }
+       
+       if ($asrGuidSetting -eq "0")
+            {
+                $asrGuidSetObj = "Warning ASR is disabled Warning"
+
+            }
+       if ($asrGuidSetting -eq $null)
+            {
+                $asrGuidSetObj = "Warning ASR is disabled Warning"
             }
 
            $ASRDescripObj = $asrDescription | Select-String -Pattern $asrGuid
 
            $newObjASR = New-Object -TypeName PSObject
-           Add-Member -InputObject $newObjASR -Type NoteProperty -Name ASRGuid -Value $ASRGuidObj
+           Add-Member -InputObject $newObjASR -Type NoteProperty -Name ASRGuid -Value $asrGuid
            Add-Member -InputObject $newObjASR -Type NoteProperty -Name ASRSetting -Value $asrGuidSetObj
            Add-Member -InputObject $newObjASR -Type NoteProperty -Name ASRDescription -Value $ASRDescripObj
            $fragASR += $newObjASR
-        }
+
 }
 
+<# fix this compare to add missing settings that exist in the above table
+$ASRContentGuid = $getASRCont.ToString().split(":").replace(" ","")[0]
+$missingASRs = (Compare-Object $ASRList $ASRContentGuid | ?{$_.sideIndicator -eq '<='}).InputObject
+
+
+foreach ($ASRmissingItem in $missingASRs)
+{
+           $ASRDescripObj = $asrDescription | Select-String -Pattern $ASRmissingItem
+
+           $newObjASR = New-Object -TypeName PSObject
+           Add-Member -InputObject $newObjASR -Type NoteProperty -Name ASRGuid -Value "Warning $ASRmissingItem Warning"
+           Add-Member -InputObject $newObjASR -Type NoteProperty -Name ASRSetting -Value "Warning Is not Set Warning "
+           Add-Member -InputObject $newObjASR -Type NoteProperty -Name ASRDescription -Value "Warning $ASRDescripObj Warning"
+           $fragASR += $newObjASR
+
+}
+#>
 ################################################
 ##########  DOMAIN USER DETAILS  ###############
 ################################################
