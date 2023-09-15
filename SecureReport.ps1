@@ -358,6 +358,8 @@ YYMMDD
 230906.1 - Typo in the Autologon audit, removed the additional space that prevented it working. 
 230906.1 - Update IPv4\6 Audits to cope with multiple active NIC's eg Hyper-V Server
 230913.1 - Improved ASR reporting and fixed miss reporting when not set to 1 but not 0
+230914.1 - Added Windows Patch version
+230915.1 - fixed excessive * char in report
 #>
 
 #Remove any DVD from client
@@ -531,6 +533,16 @@ sleep 5
     $OS = Get-CimInstance -ClassName win32_operatingsystem 
     $bios = Get-CimInstance -ClassName win32_bios | Select-Object Name,Manufacturer,SerialNumber,SMBIOSBIOSVersion,ReleaseDate
     $cpu = Get-CimInstance -ClassName win32_processor
+
+    $fragPatchversion=@()
+    #$OSBuildNumber = (Get-ItemProperty HKLM:\system\Software\Microsoft\BuildLayers\OSClient).buildnumber
+    #$OSPatchNumber = (Get-ItemProperty HKLM:\system\Software\Microsoft\BuildLayers\OSClient).BuildQfe
+    [string]$OSPatchversion = &cmd.exe /c ver.exe
+    $OSPatchverSpace = [string]$OSPatchversion.Replace(" Microsoft","Microsoft")
+
+    $newObjPatchversion = New-Object -TypeName PSObject
+    Add-Member -InputObject $newObjPatchversion -Type NoteProperty -Name WindowsPatchVersion -Value $OSPatchverSpace
+    $fragPatchversion += $newObjPatchversion
 
     $BiosUEFI=@()
 
@@ -10853,6 +10865,7 @@ $Report = "C:\SecureReport\output\$OutFunc\" + "$OutFunc.html"
     #Host details    
     $nfrag_Host = $fragHost | ConvertTo-Html -As List -Property Name,Domain,Model -fragment -PreContent "<h2>Host Details</span></h2>"  | Out-String
     $nfragOS = $OS | ConvertTo-Html -As List -property Caption,Version,OSArchitecture,InstallDate -fragment -PreContent "<h2>Windows Details</span></h2>" | Out-String
+    $nfrag_Patchversion = $fragPatchversion | ConvertTo-Html -As Table  -fragment -PreContent "<h2>Windows Patch Version</span></h2>" | Out-String
     $nFragAccountDetails = $AccountDetails  | ConvertTo-Html -As Table -fragment -PreContent "<h2>Local Account Details</span></h2>" -PostContent "<h4>$descripLocalAccounts</h4>" | Out-String 
     $nfrag_DCList  = $fragDCList | ConvertTo-Html -As Table -fragment -PreContent "<h2>List of Domain Controllers</span></h2>" | Out-String 
     $nfrag_FSMO = $fragFSMO | ConvertTo-Html -As Table -fragment -PreContent "<h2>FSMO Roles</span></h2>" | Out-String 
@@ -10938,6 +10951,7 @@ $Report = "C:\SecureReport\output\$OutFunc\" + "$OutFunc.html"
     $nfrag_host, 
     #n$frag_MDTBuild,
     $nfragOS, 
+    $nfrag_Patchversion,
     $nfragbios, 
     $nfragcpu, 
     $nfrag_Network4,
@@ -11029,12 +11043,13 @@ $Report = "C:\SecureReport\output\$OutFunc\" + "$OutFunc.html"
     $frag_Summary = $fragSummary | ConvertTo-Html -As Table -fragment -PreContent "<h2>Overall Compliance Status</span></h2>"  | Out-String
             
     #Host details    
-    if ([string]::IsNullOrEmpty($fragHost.ToString())){$frag_Host = $null} 
-    else{$frag_Host = $fragHost | ConvertTo-Html -As List -Property Name,Domain,Model -fragment -PreContent "<h2>Host Details</span></h2>"  | Out-String}
+    $frag_Host = $fragHost | ConvertTo-Html -As List -Property Name,Domain,Model -fragment -PreContent "<h2>Host Details</span></h2>"  | Out-String
 
-    if ([string]::IsNullOrEmpty($OS.ToString())){$fragOS = $null}
-    else{$fragOS = $OS | ConvertTo-Html -As List -property Caption,Version,OSArchitecture,InstallDate -fragment -PreContent "<p></p><details><summary>Windows Details</summary><p>" -PostContent "<h4>$descripToDo</h4></details>" | Out-String}
+    $fragOS = $OS | ConvertTo-Html -As List -property Caption,Version,OSArchitecture,InstallDate -fragment -PreContent "<h2><summary>Windows Details</span></h2>" | Out-String
     
+    $frag_Patchversion = $fragPatchversion  | ConvertTo-Html -As list -fragment -PreContent "<h2>Windows Patch Version</span></h2>" | Out-String
+    $frag_OSPatchver = $frag_Patchversion.Replace("<td>*:</td>","")
+
     if ([string]::IsNullOrEmpty($AccountDetails.ToString())){$FragAccountDetails = $null}
     else{$FragAccountDetails = $AccountDetails  | ConvertTo-Html -As Table -fragment -PreContent "<p></p><details><summary>Local Account Details</summary><p>" -PostContent "<h4>$descripLocalAccounts</h4></details>" | Out-String} 
     
@@ -11098,13 +11113,13 @@ $Report = "C:\SecureReport\output\$OutFunc\" + "$OutFunc.html"
     if ([string]::IsNullOrEmpty($fragMDTBuild.ToString())){$frag_MDTBuild = $null} 
     else{$frag_MDTBuild = $fragMDTBuild | ConvertTo-Html -As table -fragment -PreContent "<p></p><details><summary>MDT Deployment Details</summary><p>" -PostContent "<h4>$descripToDo</h4></details>"  | Out-String}
     
-    #Security Review
-    if ($FragAVStatus -eq $null){$Frag_AVStatus = $null} 
-    else{$Frag_AVStatus = $FragAVStatus | ConvertTo-Html -As Table  -fragment -PreContent "<p></p><details><summary><a name=`"AV`"><a href=`"#TOP`">AntiVirus Engine and Definition Status</summary></a><p>" -PostContent "<h4>$descripAV</h4></details>" | Out-String}
-    
-    if ([string]::IsNullOrEmpty($fragBitLocker.ToString())){$frag_BitLocker = $null} 
-    else{$frag_BitLocker = $fragBitLocker | ConvertTo-Html -As List -fragment -PreContent "<p></p><details><summary><a name=`"Bitlockerisnotenabled`"><a href=`"#TOP`">Bitlocker and TPM Details</summary></a><p>" -PostContent "<h4>$descripBitlocker</h4></details>" | Out-String}
-    
+    #Security Review - <th>*</th>
+    $Frag_AVStatus = $FragAVStatus | ConvertTo-Html -As Table  -fragment -PreContent "<p></p><details><summary><a name=`"AV`"><a href=`"#TOP`">AntiVirus Engine and Definition Status</summary></a><p>" -PostContent "<h4>$descripAV</h4></details>" | Out-String
+    $Frag_AVStatusN = $Frag_AVStatus.replace("<th>*</th>","")
+
+    $frag_BitLocker = $fragBitLocker | ConvertTo-Html -As List -fragment -PreContent "<p></p><details><summary><a name=`"Bitlockerisnotenabled`"><a href=`"#TOP`">Bitlocker and TPM Details</summary></a><p>" -PostContent "<h4>$descripBitlocker</h4></details>" | Out-String
+    $frag_BitLockerN = $frag_BitLocker.Replace("<td>*:</td>","")
+
     if ([string]::IsNullOrEmpty($MsinfoClixml.ToString())){$frag_Msinfo = $null} 
     else{$frag_Msinfo = $MsinfoClixml | ConvertTo-Html -As Table -fragment -PreContent "<p></p><details><summary><a name=`"VBS`"><a href=`"#TOP`">Virtualization and Secure Boot Details</summary></a><p>" -PostContent "<h4>$descripVirt</h4></details>"  | Out-String}    
 
@@ -11293,6 +11308,7 @@ $Report = "C:\SecureReport\output\$OutFunc\" + "$OutFunc.html"
     $frag_host, 
     #$frag_MDTBuild,
     $fragOS, 
+    $frag_OSPatchver,
     $fragbios, 
     $fragcpu, 
     $frag_Network4,
@@ -11303,7 +11319,7 @@ $Report = "C:\SecureReport\output\$OutFunc\" + "$OutFunc.html"
     $frag_FWProf,
     $frag_FW,
     $frag_Msinfo,
-    $frag_BitLocker, 
+    $frag_BitLockerN, 
     $frag_Code,
     $frag_LSAPPL,
     $frag_WDigestULC,
@@ -11329,7 +11345,7 @@ $Report = "C:\SecureReport\output\$OutFunc\" + "$OutFunc.html"
     $fragInstaApps,
     $fragHotFix,
     $fragInstaApps16,
-    $Frag_AVStatus,
+    $Frag_AVStatusN,
     $frag_UnQu,
 #applocker - wdac
     $frag_wdacClixml,
@@ -11376,6 +11392,7 @@ $Report = "C:\SecureReport\output\$OutFunc\" + "$OutFunc.html"
     Get-Content $Report | 
     foreach {$_ -replace "<tr><th>*</th></tr>",""} | 
     foreach {$_ -replace "<tr><td> </td></tr>",""} |
+    foreach {$_ -replace "<td>*:</td>",""} |
 
     foreach {$_ -replace "<td>expired","<td><font color=#ff9933>expired"} | 
     foreach {$_ -replace "expired</td>","<font></td>"} |
