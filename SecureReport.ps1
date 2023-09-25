@@ -359,7 +359,8 @@ YYMMDD
 230906.1 - Update IPv4\6 Audits to cope with multiple active NIC's eg Hyper-V Server
 230913.1 - Improved ASR reporting and fixed miss reporting when not set to 1 but not 0
 230914.1 - Added Windows Patch version
-230915.1 - fixed excessive * char in report
+230915.1 - Fixed excessive * char in report
+230925.1 - Fixed sizing issues with html css settings 
 #>
 
 #Remove any DVD from client
@@ -9820,7 +9821,7 @@ foreach ($OfficePolItems in $OfficePolicies.values)
 #$font = "helvetica"
 $font = "Raleway"
 $FontTitle_H1 = "175%"
-$FontSub_H2 = "130%"
+$FontSub_H2 = "115%"
 $FontBody_H3 = "105%"
 $FontHelps_H4 = "100%"
 
@@ -9846,6 +9847,7 @@ $style = @"
         border-width: 1px;
         padding: 7px;
         font-size:$FontBody_H3;
+        font-family:$font;
         border-style: solid;
         border-color:#B87333;
         border-collapse:collapse;
@@ -9869,6 +9871,7 @@ $style = @"
         font-family:$font;
         margin:0,0,10px,0; 
         Word-break:normal; 
+        font-weight: normal;  
         Word-wrap:break-Word
     }
     h3
@@ -9899,6 +9902,7 @@ $style = @"
         border-width: 1px;
         padding: 7px;
         font-size:$FontBody_H3;
+        font-family:$font;
         border-style: solid;
         border-color:#B87333;
         background-color:#250F00
@@ -9908,6 +9912,7 @@ $style = @"
         border-width: 1px;
         padding:7px;
         font-size:$FontBody_H3;
+        font-family:$font;
         border-style: solid; 
         border-style: #B87333
     }
@@ -9922,35 +9927,40 @@ $style = @"
 
     a:link {
     color:#4682B4;
-    font-size:$FontBody_H3;
+    font-size:$FontSub_H2;
+    font-family:$font;
     background-color: transparent;
     text-decoration: none;
     }
 
     a:visited {
     color:#ff9933;
-    font-size:$FontBody_H3;
+    font-size:$FontSub_H2;
+    font-family:$font;
     background-color: transparent;
     text-decoration: none;
     }
 
     a:hover {
     color:#B87333;
-    font-size:$FontBody_H3;
+    font-size:$FontSub_H2;
+    font-family:$font;
     background-color: transparent;
     text-decoration: none;
     }
 
     a:active {
     color:#4682B4;
-    font-size:$FontBody_H3;
+    font-size:$FontSub_H2;
+    font-family:$font;
     background-color: transparent;
     text-decoration: none;
     }
 
-        a.class1:link {
+    a.class1:link {
     color:#FFF9EC;
     font-size:$FontBody_H4;
+    font-family:$font;
     background-color: transparent;
     text-decoration: none;
     }
@@ -9958,6 +9968,7 @@ $style = @"
     a.class1:visited {
     color:#4682B4;
     font-size:$FontBody_H4;
+    font-family:$font;
     background-color: transparent;
     text-decoration: none;
     }
@@ -9965,6 +9976,7 @@ $style = @"
     a.class1:hover {
     color:#FFF9EC;
     font-size:$FontBody_H4;
+    font-family:$font;
     background-color: transparent;
     text-decoration: none;
     }
@@ -9972,6 +9984,7 @@ $style = @"
     a.class1:active {
     color:#4682B4;
     font-size:$FontBody_H4;
+    font-family:$font;
     background-color: transparent;
     text-decoration: none;
     }
@@ -9979,8 +9992,8 @@ $style = @"
     details > summary {
     background-color:#06273A; 
     color:#4682B4;
-    font-size:130%;
-    font-family:Raleway;
+    font-size:$FontSub_H2;
+    font-family:$font;
     margin:0,0,10px,0; 
     Word-break:normal; 
     Word-wrap:break-Word
@@ -9989,8 +10002,8 @@ $style = @"
     details > p {
     background-color:#06273A; 
     color:#4682B4;
-    font-size:130%;
-    font-family:Raleway;
+    font-size:$FontSub_H2;
+    font-family:$font;
     margin:0,0,10px,0; 
     Word-break:normal; 
     Word-wrap:break-Word
@@ -10022,6 +10035,7 @@ $style = @"
         border-width: 1px;
         padding: 7px;
         font-size:$FontBody_H3;
+        font-family:$font;
         border-style: solid;
         border-color:#FFF9EC;
         border-collapse:collapse;
@@ -10045,6 +10059,7 @@ $style = @"
         font-family:$font;
         margin:0,0,10px,0; 
         Word-break:normal; 
+        font-weight: normal;  
         Word-wrap:break-Word
     }
     h3
@@ -10075,6 +10090,7 @@ $style = @"
         border-width: 1px;
         padding: 7px;
         font-size:$FontBody_H3;
+        font-family:$font;
         border-style: solid;
         border-color:#FFF9EC;
         background-color:#06273A
@@ -10084,6 +10100,7 @@ $style = @"
         border-width: 1px;
         padding:7px;
         font-size:$FontBody_H3;
+        font-family:$font;
         border-style: solid; 
         border-style: #FFF9EC
     }
@@ -10098,55 +10115,40 @@ $style = @"
 
     a:link {
     color:#4682B4;
-    font-size:$FontBody_H3;
+    font-size:$FontSub_H2;
+    font-family:$font;
     background-color: transparent;
     text-decoration: none;
     }
 
     a:visited {
     color:#ff9933;
-    font-size:$FontBody_H3;
+    font-size:$FontSub_H2;
+    font-family:$font;
     background-color: transparent;
     text-decoration: none;
     }
 
     a:hover {
     color:#FFF9EC;
-    font-size:$FontBody_H3;
+    font-size:$FontSub_H2;
+    font-family:$font;
     background-color: transparent;
     text-decoration: none;
     }
 
     a:active {
     color:#4682B4;
-    font-size:$FontBody_H3;
+    font-size:$FontSub_H2;
+    font-family:$font;
     background-color: transparent;
     text-decoration: none;
     }
     
-    details > summary {
-    background-color:#06273A; 
-    color:#4682B4;
-    font-size:130%;
-    font-family:Raleway;
-    margin:0,0,10px,0; 
-    Word-break:normal; 
-    Word-wrap:break-Word
-    }
-
-    details > p {
-    background-color:#06273A; 
-    color:#4682B4;
-    font-size:130%;
-    font-family:Raleway;
-    margin:0,0,10px,0; 
-    Word-break:normal; 
-    Word-wrap:break-Word
-    }
-
-        a.class1:link {
+    a.class1:link {
     color:#FFF9EC;
     font-size:$FontBody_H4;
+    font-family:$font;
     background-color: transparent;
     text-decoration: none;
     }
@@ -10154,6 +10156,7 @@ $style = @"
     a.class1:visited {
     color:#4682B4;
     font-size:$FontBody_H4;
+    font-family:$font;
     background-color: transparent;
     text-decoration: none;
     }
@@ -10161,6 +10164,7 @@ $style = @"
     a.class1:hover {
     color:#FFF9EC;
     font-size:$FontBody_H4;
+    font-family:$font;
     background-color: transparent;
     text-decoration: none;
     }
@@ -10168,6 +10172,7 @@ $style = @"
     a.class1:active {
     color:#4682B4;
     font-size:$FontBody_H4;
+    font-family:$font;
     background-color: transparent;
     text-decoration: none;
     }
@@ -10175,8 +10180,8 @@ $style = @"
     details > summary {
     background-color:#06273A; 
     color:#4682B4;
-    font-size:130%;
-    font-family:Raleway;
+    font-size:$FontSub_H2;
+    font-family:$font;
     margin:0,0,10px,0; 
     Word-break:normal; 
     Word-wrap:break-Word
@@ -10185,8 +10190,8 @@ $style = @"
     details > p {
     background-color:#06273A; 
     color:#4682B4;
-    font-size:130%;
-    font-family:Raleway;
+    font-size:$FontSub_H2;
+    font-family:$font;
     margin:0,0,10px,0; 
     Word-break:normal; 
     Word-wrap:break-Word
@@ -10218,6 +10223,7 @@ $style = @"
         border-width: 1px;
         padding: 7px;
         font-size:$FontBody_H3;
+        font-family:$font;
         border-style: solid;
         border-color:#FFF9EC;
         border-collapse:collapse;
@@ -10241,6 +10247,7 @@ $style = @"
         font-family:$font;
         margin:0,0,10px,0; 
         Word-break:normal; 
+        font-weight: normal;  
         Word-wrap:break-Word
     }
     h3
@@ -10271,6 +10278,7 @@ $style = @"
         border-width: 1px;
         padding: 7px;
         font-size:$FontBody_H3;
+        font-family:$font;
         border-style: solid;
         border-color:#79253D;
         background-color:#EBEAE7
@@ -10280,6 +10288,7 @@ $style = @"
         border-width: 1px;
         padding:7px;
         font-size:$FontBody_H3;
+        font-family:$font;
         border-style: solid; 
         border-style: #79253D
     }
@@ -10294,35 +10303,40 @@ $style = @"
 
     a:link {
     color:#000000;
-    font-size:$FontBody_H3;
+    font-size:$FontSub_H2;
+    font-family:$font;
     background-color: transparent;
     text-decoration: none;
     }
 
     a:visited {
     color:#ff9933;
-    font-size:$FontBody_H3;
+    font-size:$FontSub_H2;
+    font-family:$font;
     background-color: transparent;
     text-decoration: none;
     }
 
     a:hover {
     color:#79253D;
-    font-size:$FontBody_H3;
+    font-size:$FontSub_H2;
+    font-family:$font;
     background-color: transparent;
     text-decoration: none;
     }
 
     a:active {
     color:#000000;
-    font-size:$FontBody_H3;
+    font-size:$FontSub_H2;
+    font-family:$font;
     background-color: transparent;
     text-decoration: none;
     }
 
-        a.class1:link {
+    a.class1:link {
     color:#FFF9EC;
     font-size:$FontBody_H4;
+    font-family:$font;
     background-color: transparent;
     text-decoration: none;
     }
@@ -10330,6 +10344,7 @@ $style = @"
     a.class1:visited {
     color:#4682B4;
     font-size:$FontBody_H4;
+    font-family:$font;
     background-color: transparent;
     text-decoration: none;
     }
@@ -10337,6 +10352,7 @@ $style = @"
     a.class1:hover {
     color:#FFF9EC;
     font-size:$FontBody_H4;
+    font-family:$font;
     background-color: transparent;
     text-decoration: none;
     }
@@ -10344,6 +10360,7 @@ $style = @"
     a.class1:active {
     color:#4682B4;
     font-size:$FontBody_H4;
+    font-family:$font;
     background-color: transparent;
     text-decoration: none;
     }
@@ -10351,8 +10368,8 @@ $style = @"
     details > summary {
     background-color:#06273A; 
     color:#4682B4;
-    font-size:130%;
-    font-family:Raleway;
+    font-size:$FontSub_H2;
+    font-family:$font;
     margin:0,0,10px,0; 
     Word-break:normal; 
     Word-wrap:break-Word
@@ -10361,8 +10378,8 @@ $style = @"
     details > p {
     background-color:#06273A; 
     color:#4682B4;
-    font-size:130%;
-    font-family:Raleway;
+    font-size:$FontSub_H2;
+    font-family:$font;
     margin:0,0,10px,0; 
     Word-break:normal; 
     Word-wrap:break-Word
@@ -10417,6 +10434,7 @@ $style = @"
         font-family:$font;
         margin:0,0,10px,0; 
         Word-break:normal; 
+        font-weight: normal;  
         Word-wrap:break-Word
     }
     h3
@@ -10447,6 +10465,7 @@ $style = @"
         border-width: 1px;
         padding: 7px;
         font-size:$FontBody_H3;
+        font-family:$font;
         border-style: solid;
         border-color:#D3BAA9;
         background-color:#454545
@@ -10456,6 +10475,7 @@ $style = @"
         border-width: 1px;
         padding:7px;
         font-size:$FontBody_H3;
+        font-family:$font;
         border-style: solid; 
         border-style: #D3BAA9
     }
@@ -10470,34 +10490,39 @@ $style = @"
 
     a:link {
     color:#D3BAA9;
-    font-size:$FontBody_H3;
+    font-size:$FontSub_H2;
+    font-family:$font;
     background-color: transparent;
     text-decoration: none;
     }
 
     a:visited {
     color:#ff9933;
-    font-size:$FontBody_H3;
+    font-size:$FontSub_H2;
+    font-family:$font;
     background-color: transparent;
     text-decoration: none;
     }
 
     a:hover {
     color:#A88F7E;
-    font-size:$FontBody_H3;
+    font-size:$FontSub_H2;
+    font-family:$font;
     background-color: transparent;
     text-decoration: none;
     }
 
     a:active {
     color:#D3BAA9;
-    font-size:$FontBody_H3;
+    font-size:$FontSub_H2;
+    font-family:$font;
     background-color: transparent;
     text-decoration: none;
     }  
-        a.class1:link {
+    a.class1:link {
     color:#FFF9EC;
     font-size:$FontBody_H4;
+    font-family:$font;
     background-color: transparent;
     text-decoration: none;
     }
@@ -10505,6 +10530,7 @@ $style = @"
     a.class1:visited {
     color:#4682B4;
     font-size:$FontBody_H4;
+    font-family:$font;
     background-color: transparent;
     text-decoration: none;
     }
@@ -10512,6 +10538,7 @@ $style = @"
     a.class1:hover {
     color:#FFF9EC;
     font-size:$FontBody_H4;
+    font-family:$font;
     background-color: transparent;
     text-decoration: none;
     }
@@ -10519,6 +10546,7 @@ $style = @"
     a.class1:active {
     color:#4682B4;
     font-size:$FontBody_H4;
+    font-family:$font;
     background-color: transparent;
     text-decoration: none;
     }
@@ -10526,8 +10554,8 @@ $style = @"
     details > summary {
     background-color:#06273A; 
     color:#4682B4;
-    font-size:130%;
-    font-family:Raleway;
+    font-size:$FontSub_H2;
+    font-family:$font;
     margin:0,0,10px,0; 
     Word-break:normal; 
     Word-wrap:break-Word
@@ -10536,8 +10564,8 @@ $style = @"
     details > p {
     background-color:#06273A; 
     color:#4682B4;
-    font-size:130%;
-    font-family:Raleway;
+    font-size:$FontSub_H2;
+    font-family:$font;
     margin:0,0,10px,0; 
     Word-break:normal; 
     Word-wrap:break-Word
@@ -10595,7 +10623,8 @@ $style = @"
         font-size:$FontSub_H2;
         font-family:$font;
         margin:0,0,10px,0; 
-        Word-break:normal; 
+        Word-break:normal;
+        font-weight: normal;         
         Word-wrap:break-Word
     }
     h3
@@ -10626,6 +10655,7 @@ $style = @"
         border-width: 1px;
         padding: 7px;
         font-size:$FontBody_H3;
+        font-family:$font;
         border-style: solid;
         border-color:#FFF9EC;
         background-color:#06273A
@@ -10635,6 +10665,7 @@ $style = @"
         border-width: 1px;
         padding:7px;
         font-size:$FontBody_H3;
+        font-family:$font;
         border-style: solid; 
         border-style: #FFF9EC
     }
@@ -10649,28 +10680,32 @@ $style = @"
 
     a:link {
     color:#4682B4;
-    font-size:$FontBody_H3;
+    font-size:$FontSub_H2;
+    font-family:$font;
     background-color: transparent;
     text-decoration: none;
     }
 
     a:visited {
     color:#ff9933;
-    font-size:$FontBody_H3;
+    font-size:$FontSub_H2;
+    font-family:$font;
     background-color: transparent;
     text-decoration: none;
     }
 
     a:hover {
     color:#FFF9EC;
-    font-size:$FontBody_H3;
+    font-size:$FontSub_H2;
+    font-family:$font;
     background-color: transparent;
     text-decoration: none;
     }
 
     a:active {
     color:#D3BAA9;
-    font-size:$FontBody_H3;
+    font-size:$FontSub_H2;
+    font-family:$font;
     background-color: transparent;
     text-decoration: none;
     } 
@@ -10678,6 +10713,7 @@ $style = @"
     a.class1:link {
     color:#FFF9EC;
     font-size:$FontBody_H4;
+    font-family:$font;
     background-color: transparent;
     text-decoration: none;
     }
@@ -10685,6 +10721,7 @@ $style = @"
     a.class1:visited {
     color:#4682B4;
     font-size:$FontBody_H4;
+    font-family:$font;
     background-color: transparent;
     text-decoration: none;
     }
@@ -10692,6 +10729,7 @@ $style = @"
     a.class1:hover {
     color:#FFF9EC;
     font-size:$FontBody_H4;
+    font-family:$font;
     background-color: transparent;
     text-decoration: none;
     }
@@ -10699,6 +10737,7 @@ $style = @"
     a.class1:active {
     color:#4682B4;
     font-size:$FontBody_H4;
+    font-family:$font;
     background-color: transparent;
     text-decoration: none;
     }
@@ -10706,8 +10745,8 @@ $style = @"
     details > summary {
     background-color:#06273A; 
     color:#4682B4;
-    font-size:130%;
-    font-family:Raleway;
+    font-size:$FontSub_H2;
+    font-family:$font;
     margin:0,0,10px,0; 
     Word-break:normal; 
     Word-wrap:break-Word
@@ -10716,8 +10755,8 @@ $style = @"
     details > p {
     background-color:#06273A; 
     color:#4682B4;
-    font-size:130%;
-    font-family:Raleway;
+    font-size:$FontSub_H2;
+    font-family:$font;
     margin:0,0,10px,0; 
     Word-break:normal; 
     Word-wrap:break-Word
@@ -11040,27 +11079,27 @@ $Report = "C:\SecureReport\output\$OutFunc\" + "$OutFunc.html"
     $Frag_descripVirt2 = ConvertTo-Html -as table -Fragment -PostContent "<h4>$descripVirt2</h4>" | Out-String
     
     #Summary
-    $frag_Summary = $fragSummary | ConvertTo-Html -As Table -fragment -PreContent "<h2>Overall Compliance Status</span></h2>"  | Out-String
+    $frag_Summary = $fragSummary | ConvertTo-Html -As Table -fragment -PreContent "<h2><a href=`"#TOP`">Overall Compliance Status</a></span></h2>"  | Out-String
             
     #Host details    
-    $frag_Host = $fragHost | ConvertTo-Html -As List -Property Name,Domain,Model -fragment -PreContent "<h2>Host Details</span></h2>"  | Out-String
+    $frag_Host = $fragHost | ConvertTo-Html -As List -Property Name,Domain,Model -fragment -PreContent "<h2><a href=`"#TOP`">Host Details</a></span></h2>"  | Out-String
 
-    $fragOS = $OS | ConvertTo-Html -As List -property Caption,Version,OSArchitecture,InstallDate -fragment -PreContent "<h2><summary>Windows Details</span></h2>" | Out-String
+    $fragOS = $OS | ConvertTo-Html -As List -property Caption,Version,OSArchitecture,InstallDate -fragment -PreContent "<h2><summary><a href=`"#TOP`">Windows Details</a></span></h2>" | Out-String
     
-    $frag_Patchversion = $fragPatchversion  | ConvertTo-Html -As list -fragment -PreContent "<h2>Windows Patch Version</span></h2>" | Out-String
+    $frag_Patchversion = $fragPatchversion  | ConvertTo-Html -As list -fragment -PreContent "<h2><a href=`"#TOP`">Windows Patch Version</a></span></h2>" | Out-String
     $frag_OSPatchver = $frag_Patchversion.Replace("<td>*:</td>","")
 
     if ([string]::IsNullOrEmpty($AccountDetails.ToString())){$FragAccountDetails = $null}
-    else{$FragAccountDetails = $AccountDetails  | ConvertTo-Html -As Table -fragment -PreContent "<p></p><details><summary>Local Account Details</summary><p>" -PostContent "<h4>$descripLocalAccounts</h4></details>" | Out-String} 
+    else{$FragAccountDetails = $AccountDetails  | ConvertTo-Html -As Table -fragment -PreContent "<p></p><details><summary><a href=`"#TOP`">Local Account Detail</a></summary><p>" -PostContent "<h4>$descripLocalAccounts</h4></details>" | Out-String} 
     
     if ([string]::IsNullOrEmpty($fragDCList)){$frag_DCList = $null} 
-    else{$frag_DCList  = $fragDCList | ConvertTo-Html -As Table -fragment -PreContent "<p></p><details><summary>List of Domain Controllers</summary><p>" -PostContent "<h4>$descripToDo</h4></details>" | Out-String} 
+    else{$frag_DCList  = $fragDCList | ConvertTo-Html -As Table -fragment -PreContent "<p></p><details><summary><a href=`"#TOP`">List of Domain Controllers</a></summary><p>" -PostContent "<h4>$descripToDo</h4></details>" | Out-String} 
     
     if ([string]::IsNullOrEmpty($fragFSMO)){$frag_FSMO = $null} 
-    else{$frag_FSMO = $fragFSMO | ConvertTo-Html -As Table -fragment -PreContent "<p></p><details><summary>FSMO Roles</summary><p>" -PostContent "<h4>$descripToDo</h4></details>"| Out-String} 
+    else{$frag_FSMO = $fragFSMO | ConvertTo-Html -As Table -fragment -PreContent "<p></p><details><summary><a href=`"#TOP`">FSMO Roles</a></summary><p>" -PostContent "<h4>$descripToDo</h4></details>"| Out-String} 
     
     if ([string]::IsNullOrEmpty($fragDomainGrps)){$frag_DomainGrps = $null} 
-    else{$frag_DomainGrps = $fragDomainGrps | ConvertTo-Html -As Table -fragment -PreContent "<p></p><details><summary>Members of Privilege Groups</summary><p>" -PostContent "<h4>$descripDomainPrivsGps</h4></details>" | Out-String} 
+    else{$frag_DomainGrps = $fragDomainGrps | ConvertTo-Html -As Table -fragment -PreContent "<p></p><details><summary><a href=`"#TOP`">Members of Privilege Groups</a></summary><p>" -PostContent "<h4>$descripDomainPrivsGps</h4></details>" | Out-String} 
     
     if ([string]::IsNullOrEmpty($fragPreAuth)){$frag_PreAuth = $null} 
     else{$frag_PreAuth = $fragPreAuth | ConvertTo-Html -as Table -Fragment -PreContent "<p></p><details><summary><a name=`"PreAuth`"><a href=`"#TOP`">Domain Accounts that DO NOT Pre-Authenticate</summary></a><p>" -PostContent "<h4>$descripPreAuth</h4></details>" | Out-String}
@@ -11069,10 +11108,10 @@ $Report = "C:\SecureReport\output\$OutFunc\" + "$OutFunc.html"
     else{$frag_NeverExpires = $fragNeverExpires | ConvertTo-Html -as Table -Fragment -PreContent "<p></p><details><summary><a name=`"PassExpire`"><a href=`"#TOP`">Domain Accounts that Never Expire their Password</summary></a><p>" -PostContent "<h4>$descripToDo</h4></details>"  | Out-String}
     
     if ([string]::IsNullOrEmpty($GroupDetails.ToString())){$FragGroupDetails = $null} 
-    else{$FragGroupDetails = $GroupDetails  | ConvertTo-Html -As Table -fragment -PreContent "<p></p><details><summary>Local System Group Members</summary><p>" -PostContent "<h4>$descripToDo</h4></details>" | Out-String}
+    else{$FragGroupDetails = $GroupDetails  | ConvertTo-Html -As Table -fragment -PreContent "<p></p><details><summary><a href=`"#TOP`">Local System Group Members</a></summary><p>" -PostContent "<h4>$descripToDo</h4></details>" | Out-String}
     
     if ([string]::IsNullOrEmpty($PassPol.ToString())){$FragPassPol = $null} 
-    else{$FragPassPol = $PassPol | Select-Object -SkipLast 3 | ConvertTo-Html -As Table -fragment -PreContent "<p></p><details><summary>Local Password Policy</summary><p>" -PostContent "<h4>$descripToDo</h4></details>" | Out-String}
+    else{$FragPassPol = $PassPol | Select-Object -SkipLast 3 | ConvertTo-Html -As Table -fragment -PreContent "<p></p><details><summary><a href=`"#TOP`">Local Password Policy</a></summary><p>" -PostContent "<h4>$descripToDo</h4></details>" | Out-String}
     
     if ([string]::IsNullOrEmpty($InstallApps.ToString())){$fragInstaApps = $null} 
     else{$fragInstaApps = $InstallApps | Sort-Object publisher,displayname -Unique  | ConvertTo-Html -As Table  -fragment -PreContent "<p></p><details><summary><a name=`"InstalledApps`"><a href=`"#TOP`">Installed Applications</summary></a><p>" -PostContent "<h4>$descripInstalledApps</h4></details>" | Out-String}
@@ -11081,37 +11120,37 @@ $Report = "C:\SecureReport\output\$OutFunc\" + "$OutFunc.html"
     else{$fragHotFix = $HotFix | ConvertTo-Html -As Table -property HotFixID,InstalledOn,Caption -fragment -PreContent "<p></p><details><summary><a name=`"Hotfix`"><a href=`"#TOP`">Installed Windows Updates</summary></a><p>" -PostContent "<h4>$descripWinUpdates</h4></details>"| Out-String}   
     
     if ([string]::IsNullOrEmpty($InstallApps16)){$fragInstaApps16 = $null} 
-    else{$fragInstaApps16 = $InstallApps16 | Sort-Object publisher,displayname -Unique  | ConvertTo-Html -As Table  -fragment -PreContent "<p></p><details><summary>Updates to Office 2016 and older or Updates that create KB's in the Registry</summary><p>" -PostContent "<h4>$descripToDo</h4></details>" | Out-String}
+    else{$fragInstaApps16 = $InstallApps16 | Sort-Object publisher,displayname -Unique  | ConvertTo-Html -As Table  -fragment -PreContent "<p></p><details><summary><a href=`"#TOP`">Updates to Office 2016 and older or Updates that create KB's in the Registry</a></summary><p>" -PostContent "<h4>$descripToDo</h4></details>" | Out-String}
     
     if ([string]::IsNullOrEmpty($BiosUEFI.ToString())){$fragBios = $null} 
     else{$fragBios = $BiosUEFI | ConvertTo-Html -As List -fragment -PreContent "<p></p><details><summary><a name=`"BiosUEFI`"><a href=`"#TOP`">Bios Details</summary></a><p>" -PostContent "<h4>$descripBios</h4></details>"| Out-String}
     
     if ([string]::IsNullOrEmpty($cpu.ToString())){$fragCpu = $null} 
-    else{$fragCpu = $cpu | ConvertTo-Html -As List -property Name,MaxClockSpeed,NumberOfCores,ThreadCount -fragment -PreContent "<p></p><details><summary>Processor Details</summary><p>" -PostContent "<h4>$descripToDo</h4></details>" | Out-String}
+    else{$fragCpu = $cpu | ConvertTo-Html -As List -property Name,MaxClockSpeed,NumberOfCores,ThreadCount -fragment -PreContent "<p></p><details><summary><a href=`"#TOP`">Processor Details</a></summary><p>" -PostContent "<h4>$descripToDo</h4></details>" | Out-String}
     
     if ([string]::IsNullOrEmpty($whoamiGroups.ToString())){$frag_whoamiGroups = $null} 
-    else{$frag_whoamiGroups =  $whoamiGroups | ConvertTo-Html -As Table -fragment -PreContent "<p></p><details><summary>Current Users Group Membership</summary><p>" -PostContent "<h4>$descripDomainGroups</h4></details>" | Out-String}
+    else{$frag_whoamiGroups =  $whoamiGroups | ConvertTo-Html -As Table -fragment -PreContent "<p></p><details><summary><a href=`"#TOP`">Current Users Group Membership</a></summary><p>" -PostContent "<h4>$descripDomainGroups</h4></details>" | Out-String}
     
     if ([string]::IsNullOrEmpty($whoamiPriv.ToString())){$frag_whoamiPriv = $null} 
-    else{$frag_whoamiPriv =  $whoamiPriv | ConvertTo-Html -As Table -fragment -PreContent "<p></p><details><summary>Current Users Local Privileges</summary><p>" -PostContent "<h4>$descripDomainPrivs</h4></details>" | Out-String}
+    else{$frag_whoamiPriv =  $whoamiPriv | ConvertTo-Html -As Table -fragment -PreContent "<p></p><details><summary><a href=`"#TOP`">Current Users Local Privileges</a></summary><p>" -PostContent "<h4>$descripDomainPrivs</h4></details>" | Out-String}
     
-    $frag_Network4 = $fragNetwork4 | ConvertTo-Html -As List -fragment -PreContent "<p></p><details><summary>IPv4 Address Details</summary><p>" -PostContent "<h4>$descripToDo</h4></details>"  | Out-String
+    $frag_Network4 = $fragNetwork4 | ConvertTo-Html -As List -fragment -PreContent "<p></p><details><summary><a href=`"#TOP`">IPv4 Address Details</a></summary><p>" -PostContent "<h4>$descripToDo</h4></details>"  | Out-String
     
-    $frag_Network6 = $fragNetwork6 | ConvertTo-Html -As List -fragment -PreContent "<p></p><details><summary>IPv6 Address Details</summary><p>" -PostContent "<h4>$descripToDo</h4></details>"  | Out-String
+    $frag_Network6 = $fragNetwork6 | ConvertTo-Html -As List -fragment -PreContent "<p></p><details><summary><a href=`"#TOP`">IPv6 Address Details</a></summary><p>" -PostContent "<h4>$descripToDo</h4></details>"  | Out-String
     
     #Client Features
     if ([string]::IsNullOrEmpty($FragWinFeature.ToString())){$Frag_WinFeature = $null} 
-    else{$Frag_WinFeature = $FragWinFeature | ConvertTo-Html -As table -fragment -PreContent "<p></p><details><summary>Installed Windows Client Features</summary><p>" -PostContent "<h4>$descripToDo</h4></details>" | Out-String}
+    else{$Frag_WinFeature = $FragWinFeature | ConvertTo-Html -As table -fragment -PreContent "<p></p><details><summary><a href=`"#TOP`">Installed Windows Client Features</a></summary><p>" -PostContent "<h4>$descripToDo</h4></details>" | Out-String}
  
     if ([string]::IsNullOrEmpty($FragAppx.ToString())){$Frag_Appx = $null} 
-    else{$Frag_Appx = $FragAppx | ConvertTo-Html -As table -fragment -PreContent "<p></p><details><summary>Installed Windows Client Optional Features</summary><p>" -PostContent "<h4>$descripToDo</h4></details>" | Out-String}
+    else{$Frag_Appx = $FragAppx | ConvertTo-Html -As table -fragment -PreContent "<p></p><details><summary><a href=`"#TOP`">Installed Windows Client Optional Features</a></summary><p>" -PostContent "<h4>$descripToDo</h4></details>" | Out-String}
     
     #Server Features
     if ([string]::IsNullOrEmpty($FragSrvWinFeature.ToString())){$Frag_SrvWinFeature = $null} 
-    else{$Frag_SrvWinFeature = $FragSrvWinFeature | ConvertTo-Html -As table -fragment -PreContent "<p></p><details><summary>Installed Windows Server Features</summary><p>" -PostContent "<h4>$descripToDo</h4></details>" | Out-String}
+    else{$Frag_SrvWinFeature = $FragSrvWinFeature | ConvertTo-Html -As table -fragment -PreContent "<p></p><details><summary><a href=`"#TOP`">Installed Windows Server Features</a></summary><p>" -PostContent "<h4>$descripToDo</h4></details>" | Out-String}
 
     if ([string]::IsNullOrEmpty($fragMDTBuild.ToString())){$frag_MDTBuild = $null} 
-    else{$frag_MDTBuild = $fragMDTBuild | ConvertTo-Html -As table -fragment -PreContent "<p></p><details><summary>MDT Deployment Details</summary><p>" -PostContent "<h4>$descripToDo</h4></details>"  | Out-String}
+    else{$frag_MDTBuild = $fragMDTBuild | ConvertTo-Html -As table -fragment -PreContent "<p></p><details><summary><a href=`"#TOP`">MDT Deployment Details</a></summary><p>" -PostContent "<h4>$descripToDo</h4></details>"  | Out-String}
     
     #Security Review - <th>*</th>
     $Frag_AVStatus = $FragAVStatus | ConvertTo-Html -As Table  -fragment -PreContent "<p></p><details><summary><a name=`"AV`"><a href=`"#TOP`">AntiVirus Engine and Definition Status</summary></a><p>" -PostContent "<h4>$descripAV</h4></details>" | Out-String
@@ -11208,7 +11247,7 @@ $Report = "C:\SecureReport\output\$OutFunc\" + "$OutFunc.html"
     else{$frag_LapsPwEna = $fragLapsPwEna | ConvertTo-Html -as Table -Fragment -PreContent "<p></p><details><summary><a name=`"LAPS`"><a href=`"#TOP`">LAPS - Local Administrator Password Solution</summary></a><p>" -PostContent "<h4>$descripLAPS</h4></details>" | Out-String}
     
     if ([string]::IsNullOrEmpty($fragURA.ToString())){$frag_URA = $null} 
-    else{$frag_URA = $fragURA | ConvertTo-Html -as Table -Fragment -PreContent "<p></p><details><summary>User Rights Assignments</summary><p>" -PostContent "<h4>$descripURA</h4></details>" | Out-String}
+    else{$frag_URA = $fragURA | ConvertTo-Html -as Table -Fragment -PreContent "<p></p><details><summary><a href=`"#TOP`">User Rights Assignments</a></summary><p>" -PostContent "<h4>$descripURA</h4></details>" | Out-String}
     
     if ($fragRegPasswords -eq $null){$frag_RegPasswords = $null} 
     else{$frag_RegPasswords = $fragRegPasswords | ConvertTo-Html -as Table -Fragment -PreContent "<p></p><details><summary><a name=`"RegPW`"><a href=`"#TOP`">Passwords Embedded in the Registry</summary></a><p>" -PostContent "<h4>$descripRegPasswords</h4></details>" | Out-String}
@@ -11230,19 +11269,19 @@ $Report = "C:\SecureReport\output\$OutFunc\" + "$OutFunc.html"
     else{$frag_AutoRuns = $fragAutoRunsVal | ConvertTo-Html -as Table -Fragment -PreContent "<p></p><details><summary><a name=`"AutoRuns`"><a href=`"#TOP`">AutoRuns</summary></a><p>" -PostContent "<h4>$descripAutoRuns</h4></details>" | Out-String}
         
     if ([string]::IsNullOrEmpty($fragApplockerSvc.ToString())){$fragApplockerSvc = $null} 
-    else{$frag_ApplockerSvc = $fragApplockerSvc | ConvertTo-Html -As table -fragment -PreContent "<p></p><details><summary>Applocker Service Status</summary><p>" -PostContent "<h4>$descripToDo</h4></details>"  | Out-String}      
+    else{$frag_ApplockerSvc = $fragApplockerSvc | ConvertTo-Html -As table -fragment -PreContent "<p></p><details><summary><a href=`"#TOP`">Applocker Service Status</a></summary><p>" -PostContent "<h4>$descripToDo</h4></details>"  | Out-String}      
     
     if ([string]::IsNullOrEmpty($fragApplockerEnforcement.ToString())){$fragApplockerEnforcement = $null} 
-    else{$frag_ApplockerEnforcement = $fragApplockerEnforcement | ConvertTo-Html -As table -fragment -PreContent "<p></p><details><summary>Applocker Enforcement</summary><p>" -PostContent "<h4>$descripToDo</h4></details>"  | Out-String}      
+    else{$frag_ApplockerEnforcement = $fragApplockerEnforcement | ConvertTo-Html -As table -fragment -PreContent "<p></p><details><summary><a href=`"#TOP`">Applocker Enforcement</a></summary><p>" -PostContent "<h4>$descripToDo</h4></details>"  | Out-String}      
    
     if ([string]::IsNullOrEmpty($fragApplockerPath)){$frag_ApplockerPath = $null} 
-    else{$frag_ApplockerPath = $fragApplockerPath | ConvertTo-Html -As table -fragment -PreContent "<p></p><details><summary>Applocker Path Rules</summary><p>" -PostContent "<h4>$descripToDo</h4></details>"  | Out-String}
+    else{$frag_ApplockerPath = $fragApplockerPath | ConvertTo-Html -As table -fragment -PreContent "<p></p><details><summary><a href=`"#TOP`">Applocker Path Rules</a></summary><p>" -PostContent "<h4>$descripToDo</h4></details>"  | Out-String}
     
     if ([string]::IsNullOrEmpty($fragApplockerPublisher)){$frag_ApplockerPublisher = $null} 
-    else{$frag_ApplockerPublisher = $fragApplockerPublisher | ConvertTo-Html -As table -fragment -PreContent "<p></p><details><summary>Applocker Publisher Rules</summary><p>" -PostContent "<h4>$descripToDo</h4></details>" | Out-String}
+    else{$frag_ApplockerPublisher = $fragApplockerPublisher | ConvertTo-Html -As table -fragment -PreContent "<p></p><details><summary><a href=`"#TOP`">Applocker Publisher Rules</a></summary><p>" -PostContent "<h4>$descripToDo</h4></details>" | Out-String}
     
     if ([string]::IsNullOrEmpty($fragApplockerHash)){$frag_ApplockerHash = $null} 
-    else{$frag_ApplockerHash = $fragApplockerHash | ConvertTo-Html -As table -fragment -PreContent "<p></p><details><summary>Applocker Hash Rules</summary><p>" -PostContent "<h4>$descripToDo</h4></details>" | Out-String}
+    else{$frag_ApplockerHash = $fragApplockerHash | ConvertTo-Html -As table -fragment -PreContent "<p></p><details><summary><a href=`"#TOP`">Applocker Hash Rules</a></summary><p>" -PostContent "<h4>$descripToDo</h4></details>" | Out-String}
 
     if ([string]::IsNullOrEmpty($fragwdacClixml.ToString())){$frag_wdacClixml = $null} 
     else{$frag_wdacClixml = $fragwdacClixml | ConvertTo-Html -As Table -fragment -PreContent "<p></p><details><summary><a name=`"WDACEnforce`"><a href=`"#TOP`">WDAC Enforcement Mode</summary></a><p>" -PostContent "<h4>$descripToDo</h4></details>"  | Out-String}
