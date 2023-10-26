@@ -539,7 +539,7 @@ sleep 5
     $fragPatchversion=@()
     #$OSBuildNumber = (Get-ItemProperty HKLM:\system\Software\Microsoft\BuildLayers\OSClient).buildnumber
     #$OSPatchNumber = (Get-ItemProperty HKLM:\system\Software\Microsoft\BuildLayers\OSClient).BuildQfe
-    [string]$OSPatchversion = &cmd.exe /c ver.exe
+    [string]$OSPatchversion = & cmd.exe /c ver.exe
     $OSPatchverSpace = [string]$OSPatchversion.Replace(" Microsoft","Microsoft")
 
     $newObjPatchversion = New-Object -TypeName PSObject
