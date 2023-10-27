@@ -10984,7 +10984,7 @@ $Report = "C:\SecureReport\output\$OutFunc\" + "$OutFunc.html"
     $nfrag_EdgeVal = $fragEdgeVal | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"EdgeSSLF`"><a href=`"#TOP`">MS Edge Security Recommendations</a></h2>" | Out-String
     $nfrag_OfficeVal = $fragOfficeVal | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"OfficeSSLF`"><a href=`"#TOP`">MS Office Security Recommendations</a></h2>" -PostContent "<h4>$descripOffice2016</h4>" | Out-String
     
-    ConvertTo-Html -Head $style -Body "<h1 align=center style='text-align:center'>$basePNG<h1>",    
+    ConvertTo-Html -Head $style -Body "<h1 align=center style='text-align:center'>$basePNG</h1>",    
 
     $nfragDescrip1, 
     $nfrag_Summary,
@@ -11340,8 +11340,8 @@ $Report = "C:\SecureReport\output\$OutFunc\" + "$OutFunc.html"
 ################################################
 ############  CREATE HTML REPORT  ##############
 ################################################
-    #ConvertTo-Html -Head $style -Body "<h1 align=center style='text-align:center'><span style='color:$titleCol;'>TENAKA.NET</span><h1>", 
-    ConvertTo-Html -Head $style -Body "<h1 align=center style='text-align:center'>$basePNG<h1>",    
+    #ConvertTo-Html -Head $style -Body "<h1 align=center style='text-align:center'><span style='color:$titleCol;'>TENAKA.NET</span></h1>", 
+    ConvertTo-Html -Head $style -Body "<h1 align=center style='text-align:center'>$basePNG</h1>",    
 
     $fragDescrip1, 
     $frag_Summary,
@@ -11533,14 +11533,17 @@ reports
 
 <#
 Stuff to Fix.....
+top of list:
+Rewrite from scratch - add functions, try catch, output all content to file, 
+rewrite into functions adding a $null catch so the function doesnt wipe the current value of the array - 
+split into function and processing files - script is way to long in a oner
+Point script at excel or csv of gpo polices
 
 
 $ExecutionContext.SessionState.LanguageMode -eq "ConstrainedLanguage"
 Null message warning that security is missing
 set warning for secure boot
 Expand on explanations - currently of use to non-techies
-
-remove extra blanks when listing progs via registry 
 
 Stuff to Audit.....
 
@@ -11565,20 +11568,15 @@ wifi passwords
 credential manager
     %Systemdrive%\Users\<Username>\AppData\Local\Microsoft\Credentials
     cmdkey /list 
-powershell passwords, history, transcript, creds
+
 Services and svc accounts
-GPO and GPP's that apply
 Browser security
 DNS
 Auditing Wec\wef - remote collection point
 Interesting events
 wevtutil "Microsoft-Windows-Wcmsvc/Operational"
-Add Applocker audit
-Add WDAC audit
 File hash database
 Performance tweaks audit client and hyper v
-warn on stuff thats older than 6 months - apps, updates etc
-Warn Bios\uefi version and date
 
 
 remove powershell commands where performance is an issue, consider replacing with cmd alts
@@ -11599,7 +11597,7 @@ Report on Windows defender and memory protections
 Allign look and feel for all Reg and gpo queries inc mouse over effect
 
 Stuff that wont get fixed.....
-Progress bars or screen output will remain limited, each time an output is written to screen the performance degrads
+Progress bars or screen output will remain limited, each time an output is written to screen the performance degrades 
 
 
 dism get-features replace with
