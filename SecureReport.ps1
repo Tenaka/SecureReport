@@ -1797,7 +1797,7 @@ sleep 5
     else
     {
         $AutoLPass = "Warning AutoLogon default password is set with a vaule of $AutoLogonDefPass Warning" 
-        $AutoLUser = "Warning AutoLogon Default User is set with a vaule of $AutoLogonDefUser Warning" 
+        $AutoLUser = "Warning AutoLogon Default User is set with a value of $AutoLogonDefUser Warning" 
         $AutoLReg = "HKLM:\Software\Microsoft\Windows NT\Currentversion\Winlogon"
         $trueFalse = "False"
     }
@@ -11265,7 +11265,7 @@ $MSSlSvc = Get-Service | where {$_.Name -like "*SQL*"}
 
 
     <#<><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><>
-                             Base64 Image
+                      Embedded Image Branding as Baase64 - Tenaka
     <><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><>#>
         <#
             Convert image file to base64 for embedded picture in report
@@ -11735,26 +11735,28 @@ $MSSlSvc = Get-Service | where {$_.Name -like "*SQL*"}
                           Colour Mapping
     <><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><>#>
 
-    $ColorWarning = "#ff9933"     #Orange
+    $ColorWarning = "#ff9933"        #Orange
 
-    $ColorActiveTab = "#06273a"   #Dark Blue
-    $colorContentTab = "#06273a"  #Dark Blue
-    $colorPassiveTab = "#28425F"  #Grey Blue medium
-    $colorHoverTab = "#ff9933"    #Orange
+    $ColorActiveTab = "#06273a"      #Dark Blue
+    $colorContentTab = "#06273a"     #Dark Blue
+    $colorPassiveTab = "#28425F"     #Grey Blue medium
+    $colorHoverTab = "#ff9933"       #Orange
+    $colorHoverTabText = "#06273a"   #Dark Blue
+    $colorActiveTabText = "#FFF9EC"  #off white
 
-    $colorBackground = "#28425F"  #Grey Blue medium
+    $colorBackground = "#28425F"     #Grey Blue medium
 
-    $colorTH = "#06273a"          #Dark Blue
-    $colorTD = "#FFF9EC"          #off white
+    $colorTH = "#06273a"             #Dark Blue
+    $colorTD = "#FFF9EC"             #off white
 
-    $colorTable1 = "#06273a"      #Dark Blue
-    $colorTable2 = "#28425F"      #Grey Blue medium
+    $colorTable1 = "#06273a"         #Dark Blue
+    $colorTable2 = "#28425F"         #Grey Blue medium
 
-    $colorText = "#FFF9EC"        #off white
-    $colorTextHover = "#ff9933"   #Orange
-    $colorH4 = "#9f9696"          #Grey
+    $colorText = "#FFF9EC"           #off white
+    $colorTextHover = "#ff9933"      #Orange
+    $colorH4 = "#9f9696"             #Grey
 
-    $colorBorders = "#FFF9EC"     #off white
+    $colorBorders = "#FFF9EC"        #off white
 
 
     $font = "Raleway"
@@ -11856,6 +11858,7 @@ $MSSlSvc = Get-Service | where {$_.Name -like "*SQL*"}
 
     .headerTab label:hover {
 	    background: $colorHoverTab;
+        color: $colorHoverTabText;
     }
 
     .contentTab {
@@ -11887,6 +11890,7 @@ $MSSlSvc = Get-Service | where {$_.Name -like "*SQL*"}
     .headerTab [type=radio] { display: none; }
     [type=radio]:checked ~ label {
 	    background: $ColorActiveTab;
+        color: $colorActiveTabText;
 	    z-index: 2;
     }
 
@@ -11999,7 +12003,7 @@ $MSSlSvc = Get-Service | where {$_.Name -like "*SQL*"}
             
     $frag_TaskListings = $SchedTaskListings | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"schedTask`"><a href=`"#TOP`">Encoded Scheduled Tasks</a></h2>"  -PostContent "<h4>$descripTaskSchEncode</h4>" | Out-String
     $frag_DriverQuery = $DriverQuery | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"drivers`"><a href=`"#TOP`">Drivers Not Signed</a></h2>" -PostContent "<h4>$descriptDriverQuery</h4>" | Out-String
-    $frag_Share = $fragShare | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"shares`"><a href=`"#TOP`">SharevPermissions</a></h2>"  | Out-String
+    $frag_Share = $fragShare | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"shares`"><a href=`"#TOP`">Share Permissions</a></h2>"  | Out-String
     $frag_AuthCodeSig = $fragAuthCodeSig | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"AuthentiCode`"><a href=`"#TOP`">Authenticode HashMisMatch</a></h2>" -PostContent "<h4>$descriptAuthCodeSig</h4>"  | Out-String  
     $frag_CredGuCFG = $fragCredGuCFG | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"CredGuard`"><a href=`"#TOP`">Credential Guard</a></h2>" -PostContent "<h4>$descripCredGu</h4>" | Out-String
     $frag_LapsPwEna = $fragLapsPwEna | ConvertTo-Html -as Table -Fragment -PreContent "<h2><a name=`"LAPS`"><a href=`"#TOP`">LAPS</a></h2>" -PostContent "<h4>$descripLAPS</h4>" | Out-String
@@ -12115,7 +12119,7 @@ $MSSlSvc = Get-Service | where {$_.Name -like "*SQL*"}
 
 		    <div class="headerTab">
 			    <input type="radio" id="Software" name="headerTabs">
-			    <label for="Software">Software</label>
+			    <label for="Software">Software and Features</label>
 			    <div class="contentTab">
 				    <p>$frag_PatchversionN $frag_HotFix $frag_InstaApps $frag_WinFeature $frag_Appx $frag_InstaApps16 $frag_SrvWinFeature
                     </p>
@@ -12124,7 +12128,7 @@ $MSSlSvc = Get-Service | where {$_.Name -like "*SQL*"}
 
 		    <div class="headerTab">
 			    <input type="radio" id="Certs" name="headerTabs">
-			    <label for="Certs">Certificates, Ciphers</label>
+			    <label for="Certs">Certificates & Ciphers</label>
 			    <div class="contentTab">
 				    <p>$frag_Certificates $frag_CipherSuit
                     </p>
@@ -12133,16 +12137,16 @@ $MSSlSvc = Get-Service | where {$_.Name -like "*SQL*"}
 
 		    <div class="headerTab">
 			    <input type="radio" id="DLL" name="headerTabs">
-			    <label for="DLL">DLL, Authenticode</label>
+			    <label for="DLL">DLL, Signed Code</label>
 			    <div class="contentTab">
-				    <p>$frag_DLLSafe $frag_DLLHijack $frag_DllNotSigned $frag_AuthCodeSig
+				    <p>$frag_DLLSafe $frag_DLLHijack $frag_DllNotSigned $frag_DriverQuery $frag_AuthCodeSig
                     </p>
 			    </div>
 		    </div>
 
 		    <div class="headerTab">
 			    <input type="radio" id="DomainInfo" name="headerTabs">
-			    <label for="DomainInfo">Users and Groups</label>
+			    <label for="DomainInfo">Users & Groups</label>
 			    <div class="contentTab">
 				    <p>$frag_AccountDetails $frag_DCListN $frag_FSMO $frag_PassPol $frag_PreAuth $frag_NeverExpires $frag_whoamiGroups $frag_GroupDetails $frag_DomainGrps 
                     </p>
@@ -12153,7 +12157,7 @@ $MSSlSvc = Get-Service | where {$_.Name -like "*SQL*"}
 			    <input type="radio" id="Services" name="headerTabs">
 			    <label for="Services">Services, Schedules, UnQuoted</label>
 			    <div class="contentTab">
-				    <p>$frag_UnQu $frag_TaskListings $frag_TaskPerms $frag_AutoRuns $frag_DriverQuery $frag_RunServices 
+				    <p>$frag_UnQu $frag_TaskListings $frag_TaskPerms $frag_AutoRuns $frag_RunServices 
                     </p>
 			    </div>
 		    </div>
