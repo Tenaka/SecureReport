@@ -22,7 +22,7 @@
 	    min-width: 100%; 
         min-height: 100%;
 	    margin: 0 auto; 
-	    padding: 0px;
+	    padding: 1px;
     }
 
         table
@@ -90,6 +90,7 @@
 
     .headerTab label:hover {
 	    background: #ff9933;
+        color: #06273a;
     }
 
     .contentTab {
@@ -121,6 +122,7 @@
     .headerTab [type=radio] { display: none; }
     [type=radio]:checked ~ label {
 	    background: #06273a;
+        color: #FFF9EC;
 	    z-index: 2;
     }
 
@@ -163,12 +165,11 @@
 <tr><th>Vulnerability</th><th>Risk</th></tr>
 <tr><td><a href="#BiosUEFI">Out of date BIOS or UEFI</a></td><td><font color=#ff471a>High Risk</td></tr>
 <tr><td><a href="#Hotfix">Windows Updates are out of date</a></td><td><font color=#ff471a>High Risk</td></tr>
-<tr><td><a href="#HECI">Hypervisor Enforced Code Integrity</a></td><td><font color=#ff471a>High Risk</td></tr>
 <tr><td><a href="#Bitlockerisnotenabled">Bitlocker</a></td><td><font color=#e60000>Very High Risk</td></tr>
 <tr><td><a href="#KernelMode">Kernel-mode Hardware-enforced Stack Protection is not enabled</a></td><td><font color=#ff471a>High Risk</td></tr>
+<tr><td><a href="#PreAuth">There are AD accounts that dont Pre-Authenticated</a></td><td><font color=#ff471a>High Risk</td></tr>
 <tr><td><a href="#PassExpire">There are AD accounts that dont Expire their Passwords</a></td><td><font color=#ff471a>High Risk</td></tr>
 <tr><td><a href="#LSA">LSA is Disabled</a></td><td><font color=#ff471a>High Risk</td></tr>
-<tr><td><a href="#CredGuard">Credential Guard is Disabled</a></td><td><font color=#ff471a>High Risk</td></tr>
 <tr><td><a href="#InFirewall">There are Firewall rules Allowing Inbound Firewall Traffic</a></td><td><font color=#ff471a>High Risk</td></tr>
 <tr><td><a href="#LAPS">LAPS is not Configured</a></td><td><font color=#ff471a>High Risk</td></tr>
 <tr><td><a href="#AV">There are issues with AntiVirus</a></td><td><font color=#ff471a>High Risk</td></tr>
@@ -179,6 +180,8 @@
 <tr><td><a href="#Certs">Installed Certificate Issues</a></td><td><font color=#ffb366>Medium Risk</td></tr>
 <tr><td><a href="#CipherSuites">SHA1 Cipher Suites are Supported</a></td><td><font color=#ffb366>Medium Risk</td></tr>
 <tr><td><a href="#unquoted">Unquoted Paths Vulnerability</a></td><td><font color=#e60000>Very High Risk</td></tr>
+<tr><td><a href="#RegWrite">Registry Keys that are Writeable</a></td><td><font color=#ff471a>High Risk</td></tr>
+<tr><td><a href="#sysFileWrite">File in Program Files or Windows Directories are Writeable</a></td><td><font color=#ff471a>High Risk</td></tr>
 <tr><td><a href="#shares">There are System Shares available</a></td><td><font color=#80ff80>Informational</td></tr>
 <tr><td><a href="#LegNetProt">Legacy Network Protocols are Enabled</a></td><td><font color=#ff751a>Medium to High Risk</td></tr>
 <tr><td><a href="#schedTask">Scheduled Tasks Contain Base64 or Commands that Require Reviewing</a></td><td><font color=#ffb366>Medium Risk</td></tr>
@@ -212,7 +215,7 @@
 <tr><td>OSArchitecture:</td><td>64-bit</td></tr>
 <tr><td>InstallDate:</td><td>25/09/2023 23:14:26</td></tr>
 </table>
- <h2><a name="BiosUEFI"><a href="#TOP">Bios Details</a></h2>
+ <h2>Bios Details</h2>
 <table>
 <tr><td>BiosName:</td><td>Hyper-V UEFI Release v4.1</td></tr>
 <tr><td>BiosManufacturer:</td><td>Microsoft Corporation</td></tr>
@@ -244,7 +247,7 @@
 <tr><td>DNSServers:</td><td>::1 127.0.0.1</td></tr>
 <tr><td>Mac:</td><td>00-15-5D-00-0B-1A</td></tr>
 </table>
- <h2><a name="shares"><a href="#TOP">SharevPermissions</a></h2>
+ <h2>Share Permissions</h2>
 <table>
 <colgroup><col/><col/><col/></colgroup>
 <tr><th>Name</th><th>Path</th><th>Permissions</th></tr>
@@ -266,7 +269,7 @@
 			    <input type="radio" id="Network" name="headerTabs">
 			    <label for="Network">Legacy Networks, Firewalls</label>
 			    <div class="contentTab">
-				    <p><h2><a name="LegNetProt"><a href="#TOP">Legacy Network</a></h2>
+				    <p><h2>Legacy Network</h2>
 <table>
 <colgroup><col/><col/><col/></colgroup>
 <tr><th>LegacyProtocol</th><th>LegacyPath</th><th>TrueIsCompliant</th></tr>
@@ -297,7 +300,7 @@
 <tr><td><font color=#ff9933>There is no &#39;255.255.255.255 wpad&#39; entry <font></td><td>C:\Windows\System32\Drivers\etc\hosts\</td><td>False</td></tr>
 </table>
 <h4>LLMNR and other legacy network protocols can be used to steal password hashes. <br> <br>Further information can be found @ <a href="https://www.tenaka.net/responder" class="class1">Responder</a><br></h4>
- <h2><a name="FirewallProf"><a href="#TOP">Firewall Profile</a></h2>
+ <h2>Firewall Profile</h2>
 <table>
 <colgroup><col/><col/><col/><col/></colgroup>
 <tr><th>Name</th><th>Enabled</th><th>Inbound</th><th>Outbound</th></tr>
@@ -306,7 +309,7 @@
 <tr><td>Public</td><td>True</td><td>Block</td><td>Allow</td></tr>
 </table>
 <h4>Firewalls should always block inbound and exceptions should be to a named IP and Port.<br> <br>Further  information can be found @ <a href="https://www.tenaka.net/whyhbfirewallsneeded" class="class1">Why Hostbased Firewalls are Essential</a><br></h4>
- <h2><a name="InFirewall"><a href="#TOP">Firewall Rules</a></h2>
+ <h2>Firewall Rules</h2>
 <table>
 <colgroup><col/><col/><col/><col/><col/><col/><col/><col/></colgroup>
 <tr><th>DisplayName</th><th>Direction</th><th>Protocol</th><th>LocalIP</th><th>LocalPort</th><th>RemoteIP</th><th>RemotePort</th><th>Program</th></tr>
@@ -421,7 +424,7 @@
 			    <input type="radio" id="URA" name="headerTabs">
 			    <label for="URA">URA & Security Options</label>
 			    <div class="contentTab">
-				    <p><h2>URA</a></h2>
+				    <p><h2>URA</h2>
 <table>
 <colgroup><col/><col/><col/></colgroup>
 <tr><th>UserRightAssignment-Name</th><th>UserRightAssignment-Priv</th><th>URA-GroupName</th></tr>
@@ -491,7 +494,7 @@
 <tr><td>SeDelegateSessionUserImpersonatePrivilege</td><td>Obtain an impersonation token for another user in the same session</td><td>Disabled</td></tr>
 </table>
 <h4>Reference User Rights Assignment (URA) section below for further details</h4>
- <h2><a name="secOptions"><a href="#TOP">Security Options</a></h2>
+ <h2>Security Options</h2>
 <table>
 <colgroup><col/><col/></colgroup>
 <tr><th>SecurityOptions</th><th>TrueIsCompliant</th></tr>
@@ -524,28 +527,34 @@
 			    <input type="radio" id="vbs" name="headerTabs">
 			    <label for="vbs">VBS and Bitlocker</label>
 			    <div class="contentTab">
-				    <p><h2><a name="Bitlockerisnotenabled"><a href="#TOP">Bitlocker</a></h2>
+				    <p><h2>Bitlocker</h2>
 <table>
 <tr><td><font color=#ff9933>Bitlocker is disabled <font></td></tr>
 </table>
 <h4>TPM and Bitlocker protect against offline attack from usb and mounting the local Windows system then Accessing the local data. 'TPM and Pin' enhances Bitlocker by preventing LPC Bus (Low Pin Count) bypasses of Bitlocker with TPM. <br> <br>Further information can be found @ <a href="https://www.tenaka.net/bitlocker" class="class1">Bitlocker</a></h4>
- <h2><a name="VBS"><a href="#TOP">VBS and Secure Boot</a></h2>
+ <h2>VBS and Secure Boot</h2>
 <table>
 <colgroup><col/><col/></colgroup>
 <tr><th>Virtualization</th><th>On\Off</th></tr>
 <tr><td>Secure Boot State	</td><td>on	</td></tr>
 <tr><td>Kernel DMA Protection	</td><td>off	</td></tr>
+<tr><td>Virtualization-based security Required Security Properties</td><td>Base Virtualization Support, Secure Boot	</td></tr>
+<tr><td>Virtualization-based security Available Security Properties</td><td>Base Virtualization Support, Secure Boot, DMA Protection, UEFI Code Readonly, Mode Based Execution Control	</td></tr>
+<tr><td>Virtualization-based security services configured</td><td>Credential Guard, Hypervisor enforced Code Integrity, Secure Launch	</td></tr>
+<tr><td>Virtualization-based security services running</td><td>Credential Guard, Hypervisor enforced Code Integrity	</td></tr>
+<tr><td>Windows Defender Application Control policy</td><td>Enforced	</td></tr>
+<tr><td>Windows Defender Application Control user mode policy	</td><td>off	</td></tr>
 <tr><td>Device Encryption Support</td><td>Not Available	</td></tr>
 </table>
 <h4>Virtualization-based security (VBS), isolates core system resources to create secure regions of memory. Enabling VBS allows for Hypervisor-Enforced Code Integrity (HVCI), Device Guard and Credential Guard. <br> <br>Further information can be found @ https://docs.microsoft.com/en-us/windows-hardware/design/device-experiences/oem-vbs<br> <br><a href="https://www.tenaka.net/deviceguard-vs-rce" class="class1">WDAC vs RCE</a> and <a href="https://www.tenaka.net/pass-the-hash" class="class1">Pass the Hash</a> <br><br>Secure Boot is a security standard to ensure only trusted OEM software is allowed at boot. At startup the UEFi and boot software's digital signatures are validated preventing rootkits. <br> <br>More on Secure Boot can be found here @ https://media.defense.gov/2020/Sep/15/2002497594/-1/-1/0/CTR-UEFI-SECURE-BOOT-CUSTOMIZATION-20200915.PDF/CTR-UEFI-SECURE-BOOT-CUSTOMIZATION-20200915.PDF<br></h4>
- <h2><a name="HECI"><a href="#TOP">HECI</a></h2>
+ <h2>HECI</h2>
 <table>
 <colgroup><col/><col/><col/></colgroup>
 <tr><th>CodeSetting</th><th>CodeValue</th><th>TrueIsCompliant</th></tr>
-<tr><td><font color=#ff9933>Hypervisor Enforced Code Integrity is disabled set Enabled to 1 <font></td><td>HKLM:\System\CurrentControlSet\Control\DeviceGuard\Scenarios\HypervisorEnforcedCodeIntegrity</td><td>False</td></tr>
+<tr><td>Hypervisor Enforced Code Integrity is enabled</td><td>HKLM:\System\CurrentControlSet\Control\DeviceGuard\Scenarios\HypervisorEnforcedCodeIntegrity</td><td>True</td></tr>
 </table>
 <h4>Hypervisor Enforced Code Integrity prevents the loading of unsigned kernel-mode drivers and system binaries from being loaded into system memory. <br> <br>Further information can be found @ https://docs.microsoft.com/en-us/windows/security/threat-protection/device-guard/enable-virtualization-based-protection-of-code-integrity<br></h4>
- <h2><a name="KernelMode"><a href="#TOP">Kernel-mode</a></h2>
+ <h2>Kernel-mode</h2>
 <table>
 <colgroup><col/><col/><col/></colgroup>
 <tr><th>KernelModeSetting</th><th>KernelModeRegValue</th><th>TrueIsCompliant</th></tr>
@@ -561,7 +570,7 @@
 			    <input type="radio" id="AppExe" name="headerTabs">
 			    <label for="AppExe">AV & Application Execution</label>
 			    <div class="contentTab">
-				    <p><h2><a name="AV"><a href="#tab-1">AntiVirus Status</a></h2>
+				    <p><h2></h2>
 <table>
 <colgroup><col/></colgroup>
 <tr></tr>
@@ -613,12 +622,16 @@
 <tr><th>Name</th><th>Hash</th><th>UserorGroup</th><th>Action</th><th>Rule</th></tr>
 <tr><td>explorer.exe</td><td>SHA256 0x19252086F34F4A76D2D43F0070511E2AE167278FDCC25C12506DC1B83649359E</td><td>S-1-1-0</td><td>Allow</td><td>Exe</td></tr>
 </table>
- <h2><a name="WDACPolicy"><a href="#TOP">WDAC Policy</a></h2>
+ <h2>WDAC Policy</h2>
 <table>
 </table>
 <h4>Requires CITool.exe, comes as default with Windows 11 22H2<br><br>WDAC (Windows Defender Application Control), Device Guard was its release name, is a security feature in Windows operating systems designed to enhance system security. In kernel mode, WDAC operates by enforcing code integrity policies, which restrict the execution of unauthorized or unsigned code, preventing malicious software from running. It uses kernel-mode drivers to monitor and control the loading of executables and scripts, ensuring only approved applications run, bolstering system security<br><br>Application Control Policy and Application Control User should be set to Enforce when enabled.<br><br>There should be a named policy that is also set to (CIPolicyEnforced = True) and not Audit (CIPolicyEnforced = False)<br><br>For this to report on WDAC while Enforced, either sign this script or temporarily set 'Set-RuleOption -FilePath C:\WDAC\Policy.xml -Option 11'</h4></details>
-  <h2><a name="WDACEnforce"><a href="#TOP">WDAC Enforcement</a></h2>
+  <h2>WDAC Enforcement</h2>
 <table>
+<colgroup><col/><col/></colgroup>
+<tr><th>WDAC\DeviceGuard</th><th>Enforced\Audit</th></tr>
+<tr><td>Windows Defender Application Control policy</td><td>Enforced	</td></tr>
+<tr><td>Windows Defender Application Control user mode policy	</td><td>off	</td></tr>
 </table>
 <h4></h4></details>
  
@@ -628,7 +641,7 @@
 
 		    <div class="headerTab">
 			    <input type="radio" id="Software" name="headerTabs">
-			    <label for="Software">Software</label>
+			    <label for="Software">Software and Features</label>
 			    <div class="contentTab">
 				    <p><h2>Windows Patch</h2>
 <table>
@@ -636,7 +649,7 @@
 <tr></tr>
 <tr><td>Microsoft Windows [Version 10.0.20348.643]</td></tr>
 </table>
- <h2><a name="Hotfix"><a href="#TOP">Windows Updates</a></></h2>
+ <h2>Windows Updates</></h2>
 <table>
 <colgroup><col/><col/><col/></colgroup>
 <tr><th>HotFixID</th><th>InstalledOn</th><th>Caption</th></tr>
@@ -645,7 +658,7 @@
 <tr><td>KB5011652</td><td><font color=#ff9933>20220403 <font></td><td></td></tr>
 </table>
 <h4>Will assume any Windows Updates are out of date if older than 6 months</h4>
- <h2><a name="InstalledApps"><a href="#TOP">Installed Applications</a></h2>
+ <h2>Installed Applications</h2>
 <table>
 <colgroup><col/><col/><col/><col/><col/><col/></colgroup>
 <tr><th>Publisher</th><th>DisplayName</th><th>DisplayVersion</th><th>DisplayIcon</th><th>InstallDate</th><th>TrueIsCompliant</th></tr>
@@ -827,9 +840,9 @@
 
 		    <div class="headerTab">
 			    <input type="radio" id="Certs" name="headerTabs">
-			    <label for="Certs">Certificates, Ciphers</label>
+			    <label for="Certs">Certificates & Ciphers</label>
 			    <div class="contentTab">
-				    <p><h2><a name="Certs"><a href="#TOP">Certificates</a></h2>
+				    <p><h2>Certificates</h2>
 <table>
 <colgroup><col/><col/><col/><col/><col/></colgroup>
 <tr><th>CertIssuer</th><th>CertSha1</th><th>CertExpired</th><th>CertSelfSigned</th><th>CertPrivateKey</th></tr>
@@ -871,7 +884,7 @@
 <tr><td>CN=Microsoft ECC Development Root Certificate Authority 2018, O=Microsoft Corporation, L=Redmond, S=Washington, C=US</td><td>sha384ECDSA</td><td>27/02/2043</td><td>False</td><td>False</td></tr>
 </table>
 <h4></h4>
- <h2><a name="CipherSuites"><a href="#TOP">Cipher Suites</a></h2>
+ <h2>Cipher Suites</h2>
 <table>
 <colgroup><col/><col/><col/><col/><col/></colgroup>
 <tr><th>CipherName</th><th>CipherCert</th><th>CipherHash</th><th>CipherExchange</th><th>TrueIsCompliant</th></tr>
@@ -915,23 +928,30 @@
 
 		    <div class="headerTab">
 			    <input type="radio" id="DLL" name="headerTabs">
-			    <label for="DLL">DLL, Authenticode</label>
+			    <label for="DLL">DLL, Signed Code</label>
 			    <div class="contentTab">
-				    <p><h2><a name="DLLSafe"><a href="#TOP">DLL Safe Search</a></h2>
+				    <p><h2>DLL Safe Search</h2>
 <table>
 <colgroup><col/><col/><col/><col/></colgroup>
 <tr><th>DLLSafeSetting</th><th>DLLSafeValue</th><th>DLLSafeComment</th><th>TrueIsCompliant</th></tr>
 <tr><td><font color=#ff9933>DLLSafeSearch is disabled set SafeDLLSearchMode to 1 <font></td><td>HKLM:\System\CurrentControlSet\Control\Session Manager</td><td>Protects against DLL search order hijacking</td><td>False</td></tr>
 </table>
 <h4>Loading DLL's default behaviour is to call the dll from the current working directory of the application, then the directories listed in the environmental variable. Setting 'DLL Safe Search' mitigates the risk by moving CWD to later in the search order. <br> <br>Further information can be found @ https://docs.microsoft.com/en-us/windows/win32/dlls/dynamic-link-library-search-order<br></h4>
- <h2><a name="DLLHigh"><a href="#TOP">DLL Hijacking</a></h2>
+ <h2>DLL Hijacking</h2>
 <table>
 </table>
- <h2><a name="DLLSign"><a href="#TOP">DLL's not Signed</a></h2>
+ <h2>DLL's not Signed</h2>
 <table>
 </table>
 <h4>DLL Hijacking is when a malicious dll replaces a legitimate dll due to a path vulnerability. A program or service makes a call on that dll gaining the privileges of that program or service. Additionally missing dll's presents a risk where a malicious dll is dropped into a path where no current dll exists but the program or service is making a call to that non-existent dll. This audit is reliant on programs being launched so that DLL's are loaded. Each process's loaded dll's are checked for permissions issues and whether they are signed. The DLL hijacking audit does not currently check for missing dll's being called. Process Monitor filtered for 'NAME NOT FOUND' and path ends with 'DLL' will.</h4>
- <h2><a name="AuthentiCode"><a href="#TOP">Authenticode HashMisMatch</a></h2>
+ <h2>Drivers Not Signed</h2>
+<table>
+<colgroup><col/></colgroup>
+
+<tr><td><font color=#ff9933>Microsoft Remote Display Adapt rdpidd.inf    FALSE    Microsoft                 <font></td></tr>
+</table>
+<h4>All Drivers should be signed with a digital signature to verify the integrity of the packages. 64bit kernel Mode drivers must be signed without exception</h4>
+ <h2>Authenticode HashMisMatch</h2>
 <table>
 </table>
 <h4>Checks that digitally signed files have a valid and trusted hash. If any Hash Mis-Matches then the file could have been altered</h4>
@@ -942,15 +962,16 @@
 
 		    <div class="headerTab">
 			    <input type="radio" id="DomainInfo" name="headerTabs">
-			    <label for="DomainInfo">Users and Groups</label>
+			    <label for="DomainInfo">Users & Groups</label>
 			    <div class="contentTab">
 				    <p><h2>Local Accounts</h2>
 <table>
 <colgroup><col/><col/><col/><col/><col/><col/></colgroup>
 <tr><th>AccountName</th><th>IsAccountEnabled</th><th>AccountLastLogon</th><th>AccountLastPassChange</th><th>AccountExpiresOn</th><th>AccountSource</th></tr>
-<tr><td>Administrator</td><td><font color=#ff9933>Enabled <font></td><td>29/10/2023 06:25:47</td><td>25/09/2023 23:14:25</td><td></td><td>ActiveDirectory</td></tr>
-<tr><td>Guest</td><td>False</td><td></td><td></td><td></td><td>ActiveDirectory</td></tr>
+<tr><td>Administrator</td><td><font color=#ff9933>Enabled <font></td><td>31/10/2023 12:46:02</td><td>25/09/2023 23:14:25</td><td></td><td>ActiveDirectory</td></tr>
+<tr><td>Guest</td><td>False</td><td></td><td>31/10/2023 12:47:26</td><td></td><td>ActiveDirectory</td></tr>
 <tr><td>krbtgt</td><td>False</td><td></td><td>27/10/2023 01:01:35</td><td>08/12/2023 00:01:35</td><td>ActiveDirectory</td></tr>
+<tr><td>user-pre</td><td><font color=#ff9933>Enabled <font></td><td></td><td>31/10/2023 12:47:58</td><td>12/12/2023 11:47:58</td><td>ActiveDirectory</td></tr>
 </table>
 <h4>Local accounts should be disabled when the client or server is part of a Domain. LAPS should be deployed to ensure all local account passwords are unique</h4>
  <h2>Domain Controllers</h2>
@@ -978,16 +999,20 @@
 <tr><td>Lockout duration (minutes)</td><td>                           30</td></tr>
 <tr><td>Lockout observation window (minutes)</td><td>                 30</td></tr>
 </table>
- <h2><a name="PreAuth"><a href="#TOP">Pre-Authenticate</a></h2>
+ <h2>Pre-Authenticate</h2>
 <table>
+<colgroup><col/><col/><col/></colgroup>
+<tr><th>PreAuth-Account</th><th>PreAuth-OUPath</th><th>PreAuth-UACValue</th></tr>
+<tr><td><font color=#ff9933>Guest <font></td><td><font color=#ff9933>CN=Guest,CN=Users,DC=test,DC=loc <font></td><td><font color=#ff9933>4260386 <font></td></tr>
+<tr><td><font color=#ff9933>user-pre <font></td><td><font color=#ff9933>CN=user-pre,CN=Users,DC=test,DC=loc <font></td><td><font color=#ff9933>5243520 <font></td></tr>
 </table>
 <h4>READ ME - Requires the installation of the AD RSAT tools for this to work.<br><br>Pre-authentication is when the user sends the KDC an Authentication Service Request (AS_REQ) with an encrypted Timestamp. The KDC replies with an Authentication Service Reply (AS_REP) with the TGT and a logon session. The issue arises when the user's account doesn't require pre-authentication, it's a check box on the user's account settings. An attacker is then able to request a DC, and the DC dutifully replies with user encrypted TGT using the user's own NTLM password hash. An offline brute force attack is then possible in the hope of extracting the clear text password, known as AS-REP Roasting <br> <br>Further information @ <a href="https://www.tenaka.net/kerberos-armouring" class="class1">Kerberos Armouring</a><br></h4>
- <h2><a name="PassExpire"><a href="#TOP">Password Never Expires</a></h2>
+ <h2>Password Never Expires</h2>
 <table>
 <colgroup><col/><col/><col/></colgroup>
 <tr><th>NeverExpires-Account</th><th>NeverExpires-OUPath</th><th>NeverExpires-UACValue</th></tr>
 <tr><td><font color=#ff9933>Administrator <font></td><td><font color=#ff9933>CN=Administrator,CN=Users,DC=test,DC=loc <font></td><td><font color=#ff9933>66048 <font></td></tr>
-<tr><td><font color=#ff9933>Guest <font></td><td><font color=#ff9933>CN=Guest,CN=Users,DC=test,DC=loc <font></td><td><font color=#ff9933>66082 <font></td></tr>
+<tr><td><font color=#ff9933>Guest <font></td><td><font color=#ff9933>CN=Guest,CN=Users,DC=test,DC=loc <font></td><td><font color=#ff9933>4260386 <font></td></tr>
 </table>
  <h2>User Groups</h2>
 <table>
@@ -1036,30 +1061,32 @@
 			    <input type="radio" id="Services" name="headerTabs">
 			    <label for="Services">Services, Schedules, UnQuoted</label>
 			    <div class="contentTab">
-				    <p><h2><a name="unquoted"><a href="#TOP">UnQuoted Paths</a></h2>
+				    <p><h2>UnQuoted Paths</h2>
 <table>
 <colgroup><col/><col/></colgroup>
 <tr><th>ServiceName</th><th>Path</th></tr>
 <tr><td><font color=#ff9933>SQLBrowser <font></td><td><font color=#ff9933>C:\Program Files (x86)\Microsoft SQL Server\90\Shared\sqlbrowser.exe <font></td></tr>
 </table>
 <h4>The Unquoted paths vulnerability is when a Windows Service's 'Path to Executable' contains spaces and not wrapped in double-quotes providing a route to System. <br> <br>Further information can be found @ <a href="https://www.tenaka.net/unquotedpaths" class="class1">UnQuoted Paths</a><br></h4>
- <h2><a name="schedTask"><a href="#TOP">Encoded Scheduled Tasks</a></h2>
+ <h2>Encoded Scheduled Tasks</h2>
 <table>
 <colgroup><col/><col/><col/></colgroup>
 <tr><th>TaskName</th><th>TaskExe</th><th>TaskArguments</th></tr>
 <tr><td>CreateExplorerShellUnelevatedTask</td><td>C:\Windows\Explorer.EXE</td><td>/NoUACCheck</td></tr>
+<tr><td>Embedded Base64</td><td>Powershell.exe</td><td>-e &quot;w0KGgoAAAANSUhEUgAAE4gAAATgCAYAAAAbRqi8AAAAAXNSR0IArs4c6QAAIABJREFUeF7s3L+LnVd6B/BzJsN4BCoEkQoVtrewG6uyK5VqV50NA1Y0kk1ARZTCArkQaI1GyKDOJotlaeps5T8i+Q+2se8Eg8GFWzdxw&quot;</td></tr>
 <tr><td>MicrosoftEdgeUpdateTaskMachineCore</td><td>C:\Program Files (x86)\Microsoft\EdgeUpdate\MicrosoftEdgeUpdate.exe</td><td>/c</td></tr>
 <tr><td>MicrosoftEdgeUpdateTaskMachineUA</td><td>C:\Program Files (x86)\Microsoft\EdgeUpdate\MicrosoftEdgeUpdate.exe</td><td>/ua /installsource scheduler</td></tr>
+<tr><td>Powershell Schedule on Disk</td><td>powershell</td><td>-file C:\Users\Administrator\Desktop\Untitled1.ps1</td></tr>
 <tr><td>UninstallDeviceTask</td><td>BthUdTask.exe</td><td>$(Arg0)</td></tr>
 <tr><td>UPnPHostConfig</td><td>sc.exe</td><td>config upnphost start= auto</td></tr>
 <tr><td>UpdateLibrary</td><td>&quot;%ProgramFiles%\Windows Media Player\wmpnscfg.exe&quot;</td><td></td></tr>
 </table>
 <h4>Checks for encoded scripts, PowerShell or exe's that make calls off box or run within Task Scheduler</h4>
- <h2><a name="schedDir"><a href="#TOP">Scheduled Tasks</a></h2>
+ <h2>Scheduled Tasks</h2>
 <table>
 </table>
 <h4>Checks for Scheduled Tasks excluding any that reference System32 as a directory. These potential user-created tasks are checked for scripts and their directory permissions are validated. No user should be allowed to Access the script and make amendments, this is a privilege escalation route.</h4>
- <h2><a name="AutoRuns"><a href="#TOP">AutoRuns</a></h2>
+ <h2>AutoRuns</h2>
 <table>
 <colgroup><col/><col/><col/><col/></colgroup>
 <tr><th>AutoRunsPath</th><th>AutoRunsKey</th><th>AutoRunsValue</th><th>AutoRunsComment</th></tr>
@@ -1084,14 +1111,7 @@
 <tr><td>HKLM:\System\CurrentControlSet\Control\Session Manager</td><td>BootExecute</td><td>autocheck autochk /q /v *</td><td>By default, the multistring BootExecute value of the registry key HKEY_LOCAL_MACHINE\System\CurrentControlSet\Control\Session Manager is set to autocheck autochk *. This value causes Windows, at startup, to check the file-system integrity of the hard disks if the system has been shut down abnormally. Adversaries can add other programs or processes to this registry value which will automatically launch at boot.</td></tr>
 </table>
 <h4>Autoruns are Windows programs set to auto-execute during startup launching when the operating system boots. These include legitimate apps, system utilities, and potentially malicious software. Autoruns can be exploited by planting malicious code in startup locations or manipulating system settings. This grants them persistence and control over compromised systems. Malware in startup locations can steal data, spread, or provide backdoor access. Exploited programs often leverage system vulnerabilities or manipulate user trust through disguised software.<br><br> The "Run" or "RunOnce" keys in the Windows Registry, like "HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Run", enabling their malware to launch at boot. Similarly, they might abuse the "Startup" folder where shortcuts execute on login. Notable examples include the use of these mechanisms by malware like "Sasser" (2004) and "WannaCry" (2017) worms. Regularly monitoring and securing these auto-start points is vital to prevent such exploits. Further information can be founds @ https://attack.mitre.org/techniques/T1547/001/ </h4></details>
- <h2><a name="drivers"><a href="#TOP">Drivers Not Signed</a></h2>
-<table>
-<colgroup><col/></colgroup>
-<tr><th>*</th></tr>
-<tr><td><font color=#ff9933>Microsoft Remote Display Adapt rdpidd.inf    FALSE    Microsoft                 <font></td></tr>
-</table>
-<h4>All Drivers should be signed with a digital signature to verify the integrity of the packages. 64bit kernel Mode drivers must be signed without exception</h4>
- <h2><a name="RunningServices"><a href="#TOP">Running Services</a></h2>
+ <h2>Running Services</h2>
 <table>
 <colgroup><col/><col/><col/><col/></colgroup>
 <tr><th>DisplayName</th><th>ServiceName</th><th>Status</th><th>StartType</th></tr>
@@ -1111,31 +1131,31 @@
 <tr><td>Base Filtering Engine</td><td>BFE</td><td>Running</td><td>Automatic</td></tr>
 <tr><td>Bluetooth Support Service</td><td>bthserv</td><td>Stopped</td><td>Manual</td></tr>
 <tr><td>Capability Access Manager Service</td><td>camsvc</td><td>Running</td><td>Manual</td></tr>
-<tr><td>CaptureService_51930</td><td>CaptureService_51930</td><td>Stopped</td><td>Manual</td></tr>
+<tr><td>CaptureService_50125</td><td>CaptureService_50125</td><td>Stopped</td><td>Manual</td></tr>
 <tr><td>Certificate Propagation</td><td>CertPropSvc</td><td>Running</td><td>Manual</td></tr>
-<tr><td>Client License Service (ClipSVC)</td><td>ClipSVC</td><td>Stopped</td><td>Manual</td></tr>
-<tr><td>Clipboard User Service_51930</td><td>cbdhsvc_51930</td><td>Running</td><td>Automatic</td></tr>
+<tr><td>Client License Service (ClipSVC)</td><td>ClipSVC</td><td>Running</td><td>Manual</td></tr>
+<tr><td>Clipboard User Service_50125</td><td>cbdhsvc_50125</td><td>Running</td><td>Automatic</td></tr>
 <tr><td>CNG Key Isolation</td><td>KeyIso</td><td>Running</td><td>Manual</td></tr>
 <tr><td>COM+ Event System</td><td>EventSystem</td><td>Running</td><td>Automatic</td></tr>
 <tr><td>COM+ System Application</td><td>COMSysApp</td><td>Stopped</td><td>Manual</td></tr>
 <tr><td>Connected Devices Platform Service</td><td>CDPSvc</td><td>Running</td><td>Automatic</td></tr>
-<tr><td>Connected Devices Platform User Service_51930</td><td>CDPUserSvc_51930</td><td>Running</td><td>Automatic</td></tr>
+<tr><td>Connected Devices Platform User Service_50125</td><td>CDPUserSvc_50125</td><td>Running</td><td>Automatic</td></tr>
 <tr><td>Connected User Experiences and Telemetry</td><td>DiagTrack</td><td>Running</td><td>Automatic</td></tr>
-<tr><td>ConsentUX User Service_51930</td><td>ConsentUxUserSvc_51930</td><td>Stopped</td><td>Manual</td></tr>
-<tr><td>Contact Data_51930</td><td>PimIndexMaintenanceSvc_51930</td><td>Stopped</td><td>Manual</td></tr>
+<tr><td>ConsentUX User Service_50125</td><td>ConsentUxUserSvc_50125</td><td>Stopped</td><td>Manual</td></tr>
+<tr><td>Contact Data_50125</td><td>PimIndexMaintenanceSvc_50125</td><td>Stopped</td><td>Manual</td></tr>
 <tr><td>CoreMessaging</td><td>CoreMessagingRegistrar</td><td>Running</td><td>Automatic</td></tr>
 <tr><td>Credential Manager</td><td>VaultSvc</td><td>Stopped</td><td>Manual</td></tr>
-<tr><td>CredentialEnrollmentManagerUserSvc_51930</td><td>CredentialEnrollmentManagerUserSvc_51930</td><td>Stopped</td><td>Manual</td></tr>
+<tr><td>CredentialEnrollmentManagerUserSvc_50125</td><td>CredentialEnrollmentManagerUserSvc_50125</td><td>Stopped</td><td>Manual</td></tr>
 <tr><td>Cryptographic Services</td><td>CryptSvc</td><td>Running</td><td>Automatic</td></tr>
-<tr><td>Data Sharing Service</td><td>DsSvc</td><td>Running</td><td>Manual</td></tr>
+<tr><td>Data Sharing Service</td><td>DsSvc</td><td>Stopped</td><td>Manual</td></tr>
 <tr><td>DCOM Server Process Launcher</td><td>DcomLaunch</td><td>Running</td><td>Automatic</td></tr>
 <tr><td>Delivery Optimization</td><td>DoSvc</td><td>Stopped</td><td>Manual</td></tr>
 <tr><td>Device Association Service</td><td>DeviceAssociationService</td><td>Stopped</td><td>Manual</td></tr>
 <tr><td>Device Install Service</td><td>DeviceInstall</td><td>Stopped</td><td>Manual</td></tr>
 <tr><td>Device Management Enrollment Service</td><td>DmEnrollmentSvc</td><td>Stopped</td><td>Manual</td></tr>
 <tr><td>Device Setup Manager</td><td>DsmSvc</td><td>Running</td><td>Manual</td></tr>
-<tr><td>DeviceAssociationBroker_51930</td><td>DeviceAssociationBrokerSvc_51930</td><td>Stopped</td><td>Manual</td></tr>
-<tr><td>DevicesFlow_51930</td><td>DevicesFlowUserSvc_51930</td><td>Stopped</td><td>Manual</td></tr>
+<tr><td>DeviceAssociationBroker_50125</td><td>DeviceAssociationBrokerSvc_50125</td><td>Stopped</td><td>Manual</td></tr>
+<tr><td>DevicesFlow_50125</td><td>DevicesFlowUserSvc_50125</td><td>Stopped</td><td>Manual</td></tr>
 <tr><td>DevQuery Background Discovery Broker</td><td>DevQueryBroker</td><td>Stopped</td><td>Manual</td></tr>
 <tr><td>DFS Namespace</td><td>Dfs</td><td>Running</td><td>Automatic</td></tr>
 <tr><td>DFS Replication</td><td>DFSR</td><td>Running</td><td>Automatic</td></tr>
@@ -1175,7 +1195,7 @@
 <tr><td>Local Session Manager</td><td>LSM</td><td>Running</td><td>Automatic</td></tr>
 <tr><td>McpManagementService</td><td>McpManagementService</td><td>Stopped</td><td>Manual</td></tr>
 <tr><td>Microsoft (R) Diagnostics Hub Standard Collector Service</td><td>diagnosticshub.standardcollector.service</td><td>Stopped</td><td>Manual</td></tr>
-<tr><td>Microsoft Account Sign-in Assistant</td><td>wlidsvc</td><td>Stopped</td><td>Manual</td></tr>
+<tr><td>Microsoft Account Sign-in Assistant</td><td>wlidsvc</td><td>Running</td><td>Manual</td></tr>
 <tr><td>Microsoft Defender Antivirus Network Inspection Service</td><td>WdNisSvc</td><td>Running</td><td>Manual</td></tr>
 <tr><td>Microsoft Defender Antivirus Service</td><td>WinDefend</td><td>Running</td><td>Automatic</td></tr>
 <tr><td>Microsoft Edge Elevation Service (MicrosoftEdgeElevationService)</td><td>MicrosoftEdgeElevationService</td><td>Stopped</td><td>Manual</td></tr>
@@ -1186,7 +1206,7 @@
 <tr><td>Microsoft Passport</td><td>NgcSvc</td><td>Stopped</td><td>Manual</td></tr>
 <tr><td>Microsoft Passport Container</td><td>NgcCtnrSvc</td><td>Stopped</td><td>Manual</td></tr>
 <tr><td>Microsoft Software Shadow Copy Provider</td><td>swprv</td><td>Stopped</td><td>Manual</td></tr>
-<tr><td>Microsoft Storage Spaces SMP</td><td>smphost</td><td>Stopped</td><td>Manual</td></tr>
+<tr><td>Microsoft Storage Spaces SMP</td><td>smphost</td><td>Running</td><td>Manual</td></tr>
 <tr><td>Microsoft Store Install Service</td><td>InstallService</td><td>Stopped</td><td>Manual</td></tr>
 <tr><td>Netlogon</td><td>Netlogon</td><td>Running</td><td>Automatic</td></tr>
 <tr><td>Network Connection Broker</td><td>NcbService</td><td>Running</td><td>Manual</td></tr>
@@ -1204,7 +1224,7 @@
 <tr><td>Power</td><td>Power</td><td>Running</td><td>Automatic</td></tr>
 <tr><td>Print Spooler</td><td>Spooler</td><td>Running</td><td>Automatic</td></tr>
 <tr><td>Printer Extensions and Notifications</td><td>PrintNotify</td><td>Stopped</td><td>Manual</td></tr>
-<tr><td>PrintWorkflow_51930</td><td>PrintWorkflowUserSvc_51930</td><td>Stopped</td><td>Manual</td></tr>
+<tr><td>PrintWorkflow_50125</td><td>PrintWorkflowUserSvc_50125</td><td>Stopped</td><td>Manual</td></tr>
 <tr><td>Problem Reports Control Panel Support</td><td>wercplsupport</td><td>Stopped</td><td>Manual</td></tr>
 <tr><td>Program Compatibility Assistant Service</td><td>PcaSvc</td><td>Running</td><td>Automatic</td></tr>
 <tr><td>Quality Windows Audio Video Experience</td><td>QWAVE</td><td>Stopped</td><td>Manual</td></tr>
@@ -1249,11 +1269,11 @@
 <tr><td>Themes</td><td>Themes</td><td>Running</td><td>Automatic</td></tr>
 <tr><td>Time Broker</td><td>TimeBrokerSvc</td><td>Running</td><td>Manual</td></tr>
 <tr><td>Touch Keyboard and Handwriting Panel Service</td><td>TabletInputService</td><td>Running</td><td>Automatic</td></tr>
-<tr><td>Udk User Service_51930</td><td>UdkUserSvc_51930</td><td>Stopped</td><td>Manual</td></tr>
+<tr><td>Udk User Service_50125</td><td>UdkUserSvc_50125</td><td>Stopped</td><td>Manual</td></tr>
 <tr><td>Update Orchestrator Service</td><td>UsoSvc</td><td>Running</td><td>Automatic</td></tr>
 <tr><td>User Access Logging Service</td><td>UALSVC</td><td>Running</td><td>Automatic</td></tr>
-<tr><td>User Data Access_51930</td><td>UserDataSvc_51930</td><td>Stopped</td><td>Manual</td></tr>
-<tr><td>User Data Storage_51930</td><td>UnistoreSvc_51930</td><td>Stopped</td><td>Manual</td></tr>
+<tr><td>User Data Access_50125</td><td>UserDataSvc_50125</td><td>Stopped</td><td>Manual</td></tr>
+<tr><td>User Data Storage_50125</td><td>UnistoreSvc_50125</td><td>Stopped</td><td>Manual</td></tr>
 <tr><td>User Manager</td><td>UserManager</td><td>Running</td><td>Automatic</td></tr>
 <tr><td>User Profile Service</td><td>ProfSvc</td><td>Running</td><td>Automatic</td></tr>
 <tr><td>Virtual Disk</td><td>vds</td><td>Running</td><td>Manual</td></tr>
@@ -1283,11 +1303,11 @@
 <tr><td>Windows Presentation Foundation Font Cache 3.0.0.0</td><td>FontCache3.0.0.0</td><td>Stopped</td><td>Manual</td></tr>
 <tr><td>Windows Process Activation Service</td><td>WAS</td><td>Running</td><td>Manual</td></tr>
 <tr><td>Windows Push Notifications System Service</td><td>WpnService</td><td>Running</td><td>Automatic</td></tr>
-<tr><td>Windows Push Notifications User Service_51930</td><td>WpnUserService_51930</td><td>Running</td><td>Automatic</td></tr>
+<tr><td>Windows Push Notifications User Service_50125</td><td>WpnUserService_50125</td><td>Running</td><td>Automatic</td></tr>
 <tr><td>Windows Remote Management (WS-Management)</td><td>WinRM</td><td>Running</td><td>Automatic</td></tr>
 <tr><td>Windows Security Service</td><td>SecurityHealthService</td><td>Stopped</td><td>Manual</td></tr>
 <tr><td>Windows Time</td><td>W32Time</td><td>Running</td><td>Automatic</td></tr>
-<tr><td>Windows Update</td><td>wuauserv</td><td>Stopped</td><td>Manual</td></tr>
+<tr><td>Windows Update</td><td>wuauserv</td><td>Running</td><td>Manual</td></tr>
 <tr><td>Windows Update Medic Service</td><td>WaaSMedicSvc</td><td>Stopped</td><td>Manual</td></tr>
 <tr><td>WinHTTP Web Proxy Auto-Discovery Service</td><td>WinHttpAutoProxySvc</td><td>Running</td><td>Manual</td></tr>
 <tr><td>Wired AutoConfig</td><td>dot3svc</td><td>Stopped</td><td>Manual</td></tr>
@@ -1304,14 +1324,23 @@
 			    <input type="radio" id="FileReg" name="headerTabs">
 			    <label for="FileReg">File & Registry</label>
 			    <div class="contentTab">
-				    <p><h2><a name="sysFileWrite "><a href="#TOP">Writeable Non Sys Dir</a></h2>
+				    <p><h2>Writeable Non Sys Dir</h2>
 <table>
 </table>
 <h4>A vulnerability exists when enterprise software has been installed on the root of C:\. The default permissions allow a user to replace approved software binaries with malicious binaries. <br> <br>Further information can be found @ <a href="https://www.tenaka.net/unquotedpaths" class="class1">UnQuoted Paths</a><br></h4>
- <h2><a name="SysDirWrite"><a href="#TOP">Writeable Sys Dir</a></h2>
+ <h2>Writeable Sys Dir</h2>
 <table>
 <colgroup><col/></colgroup>
-<tr><th>*</th></tr>
+
+<tr><td>C:\Program Files\Microsoft SQL Server\110</td></tr>
+<tr><td>C:\Program Files\Microsoft SQL Server\110\KeyFile</td></tr>
+<tr><td>C:\Program Files\Microsoft SQL Server\110\KeyFile\1033</td></tr>
+<tr><td>C:\Program Files\Microsoft SQL Server\110\License Terms</td></tr>
+<tr><td>C:\Program Files\Microsoft SQL Server\110\SDK</td></tr>
+<tr><td>C:\Program Files\Microsoft SQL Server\110\SDK\Include</td></tr>
+<tr><td>C:\Program Files\Microsoft SQL Server\110\SDK\Lib</td></tr>
+<tr><td>C:\Program Files\Microsoft SQL Server\110\SDK\Lib\x64</td></tr>
+<tr><td>C:\Program Files\Microsoft SQL Server\110\SDK\Lib\x86</td></tr>
 <tr><td>C:\Windows\System32\Microsoft\Crypto\RSA\MachineKeys</td></tr>
 <tr><td>C:\Windows\System32\Tasks</td></tr>
 <tr><td>C:\Windows\System32\Tasks\Microsoft\Windows\RemoteApp and Desktop Connections Update</td></tr>
@@ -1320,12 +1349,21 @@
 <tr><td>C:\Windows\tracing</td></tr>
 </table>
 <h4>Default System Folders that allow a User the Write permissions. These can be abused by creating content in some of the allowable default locations. Prevent by applying Execution controls eg Applocker.<br> <br> Further information can be found @ <a href="https://www.tenaka.net/unquotedpaths" class="class1">UnQuoted Paths</a><br></h4>
-  <h2><a name="sysFileWrite"><a href="#TOP">Writeable Sys Files</a></h2>
+  <h2>Writeable Sys Files</h2>
 <table>
+<colgroup><col/></colgroup>
+
+<tr><td><font color=#ff9933>C:\Program Files\Microsoft SQL Server\110\KeyFile\1033\sqlncli_keyfile.dll <font></td></tr>
+<tr><td><font color=#ff9933>C:\Program Files\Microsoft SQL Server\150\Tools\Binn\SQLdiag.exe <font></td></tr>
 </table>
 <h4>System files that allow users to write can be swapped out for malicious software binaries. <br> <br>Further  information can be found @ <a href="https://www.tenaka.net/unquotedpaths" class="class1">UnQuoted Paths</a></h4>
- <h2><a name="RegWrite"><a href="#TOP">Registry Permissions</a></h2>
+ <h2>Registry Permissions</h2>
 <table>
+<colgroup><col/></colgroup>
+
+<tr><td><font color=#ff9933>HKLM:\Software\Google\Chrome <font></td></tr>
+<tr><td><font color=#ff9933>HKLM:\Software\Microsoft\ASP.NET <font></td></tr>
+<tr><td><font color=#ff9933>HKLM:\Software\OpenSSH\Agent <font></td></tr>
 </table>
 <h4>Weak Registry permissions allowing users to change the path to launch malicious software.<br><br>Further information can be found @ <a href="https://www.tenaka.net/unquotedpaths" class="class1">UnQuoted Paths</a></h4>
 
@@ -1337,14 +1375,14 @@
 			    <input type="radio" id="GroupPolicy" name="headerTabs">
 			    <label for="GroupPolicy">Group Policies</label>
 			    <div class="contentTab">
-				    <p><h2><a name="LSA"><a href="#TOP">LSA</a></h2>
+				    <p><h2>LSA</h2>
 <table>
 <colgroup><col/><col/><col/></colgroup>
 <tr><th>LSASetting</th><th>LSARegValue</th><th>TrueIsCompliant</th></tr>
 <tr><td><font color=#ff9933>Secure LSA is disabled set RunAsPPL to 1 <font></td><td>HKLM:\System\CurrentControlSet\Control\lsa\</td><td>False</td></tr>
 </table>
 <h4>Enabling RunAsPPL for LSA Protection allows only digitally signed binaries to load as a protected process preventing credential theft and Access by code injection and memory Access by processes that aren't signed. <br> <br>Further information can be found @ https://docs.microsoft.com/en-us/windows-server/security/credentials-protection-and-management/configuring-additional-lsa-protection<br></h4>
- <h2><a name="SoftElevation"><a href="#TOP">Automatic Elevates</a></h2>
+ <h2>Automatic Elevates</h2>
 <table>
 <colgroup><col/><col/><col/></colgroup>
 <tr><th>AlwaysElevateSetting</th><th>AlwaysElevateRegistry</th><th>TrueIsCompliant</th></tr>
@@ -1352,35 +1390,35 @@
 <tr><td>User setting Always Install Elevate is disabled</td><td>HKCU:\Software\Policies\Microsoft\Windows\Installer</td><td>True</td></tr>
 </table>
 <h4>Auto Elevate User is a setting that elevates users allowing them to install software without being an administrator. </h4>
- <h2><a name="LAPS"><a href="#TOP">LAPS</a></h2>
+ <h2>LAPS</h2>
 <table>
 <colgroup><col/><col/><col/></colgroup>
 <tr><th>LAPSPasswordEnabled</th><th>LAPSPasswordReg</th><th>TrueIsCompliant</th></tr>
 <tr><td><font color=#ff9933>LAPS is not installed or the value is set to 0 <font></td><td>HKLM:\Software\Policies\Microsoft Services\AdmPwd\</td><td>False</td></tr>
 </table>
 <h4>Local Administrator Password Solution (LAPS) is a small program with some GPO settings that randomly sets the local administrator password for clients and servers across the estate. Domain Admins have default permission to view the local administrator password via DSA.MSC. Access to the LAPS passwords may be delegated unintentionally, this could lead to a serious security breach, leaking all local admin accounts passwords for all computer objects to those that shouldn't have Access. <br> <br>Installation guide can be found @ <a href="https://www.tenaka.net/post/local-admin-passwords" class="class1">LAPS Installation</a>. <br> <br>Security related issue details can be found @ <a href="https://www.tenaka.net/post/laps-leaks-local-admin-passwords" class="class1">LAPS Leaking Admin Passwords</a><br></h4>
- <h2><a name="CredGuard"><a href="#TOP">Credential Guard</a></h2>
+ <h2>Credential Guard</h2>
 <table>
 <colgroup><col/><col/><col/></colgroup>
 <tr><th>CredentialGuardSetting</th><th>CredentialGuardRegValue</th><th>TrueIsCompliant</th></tr>
-<tr><td><font color=#ff9933>Secure Credential Guard is disabled, LsaCfgFlags is set to 0 <font></td><td>HKLM:\System\CurrentControlSet\Control\LSA\</td><td>False</td></tr>
+<tr><td>Credential Guard is enabled, the LsaCfgFlags value is set to 1</td><td>HKLM:\System\CurrentControlSet\Control\LSA\</td><td>True</td></tr>
 </table>
 <h4>Credential Guard securely isolating the LSA process preventing the recovery of domain hashes from memory. Credential Guard only works for Domain joined clients and servers.<br> <br>Further information can be found @ <a href="https://www.tenaka.net/pass-the-hash" class="class1">Pass the Hash</a><br></h4>
- <h2><a name="WDigest"><a href="#TOP">WDigest</a></h2>
+ <h2>WDigest</h2>
 <table>
 <colgroup><col/><col/><col/></colgroup>
 <tr><th>WDigestSetting</th><th>WDigestRegValue</th><th>TrueIsCompliant</th></tr>
 <tr><td>Secure WDigest is disabled</td><td>HKLM:\System\CurrentControlSet\Control\SecurityProviders\WDigest\</td><td>True</td></tr>
 </table>
 <h4>WDigest was introduced with Windows XP\2003 and has been enabled by default until and including Windows 8 and Server 2012. Enabling allows clear text passwords to be recoverable from LSASS with Mimikatz</h4>
- <h2><a name="asr"><a href="#TOP">ASR</a></h2>
+ <h2>ASR</h2>
 <table>
 <colgroup><col/><col/><col/></colgroup>
 <tr><th>ASRGuid</th><th>ASRSetting</th><th>ASRDescription</th></tr>
 <tr><td>ASPPolicyisnotset</td><td><font color=#ff9933>ASR is disabled <font></td><td></td></tr>
 </table>
 <h4>Attack Surface Reduction (ASR) requires Windows Defender Real-Time Antivirus and works in conjunction with Exploit Guard to prevent malware abusing legitimate MS Office functionality<br> <br>Further information can be found @ https://docs.microsoft.com/en-us/microsoft-365/security/defender-endpoint/overview-attack-surface-reduction?view=o365-worldwide<br></h4>
- <h2><a name="WinSSLF"><a href="#TOP">Windows GPO's</a></h2>
+ <h2>Windows GPO's</h2>
 <table>
 <colgroup><col/><col/><col/></colgroup>
 <tr><th>WindowsSetting</th><th>WindowsRegValue</th><th>TrueIsCompliant</th></tr>
@@ -1484,7 +1522,7 @@
 <tr><td></td><td><div title="User Configuration\Policies\Administrative Templates\System\Group Policy\Determine if interactive users can generate RSOP">HKCU:\Software\Policies\Microsoft\Windows\System\DenyRsopToInteractiveUser</td><td>False</td></tr>
 </table>
 <h4>Warning: Absence of a GPO setting will raise an issue as the default setting is not assumed<br>These are recommended GPO settings to secure Windows by Microsoft, do NOT implement without the correct research and testing. Some settings could adversely affect your system.<br> <br>Due to the sheer number of settings, the script contains details and the equivalent GPO settings, search for RECOMMENDED SECURITY SETTINGS section<br><br>MS Security Compliance Toolkit can be found @ <br>https://admx.help/?Category=security-compliance-toolkit<br>https://www.microsoft.com/en-us/download/details.aspx?id=55319<br><br>**WindowsRegValue - Mouse over to show Reg Key to GPO path translation</h4>
- <h2><a name="OfficeSSLF"><a href="#TOP">MS Office GPO's</a></h2>
+ <h2>MS Office GPO's</h2>
 <table>
 <colgroup><col/><col/><col/></colgroup>
 <tr><th>OfficeGPONameSetting</th><th>OfficeRegValue</th><th>TrueIsCompliant</th></tr>
@@ -1649,7 +1687,7 @@
 <tr><td><font color=#ffd633>Disable HTTP fallback for SIP connection is not explicitly set in GPO and the default setting is applied <font></td><td><div title="Computer Configuration\Policies\Administrative Templates\Skype for Business 2016\Microsoft Lync Feature Policies\Disable HTTP fallback for SIP connection">HKLM:\Software\Policies\Microsoft\Office\16.0\Lync\disablehttpconnect</td><td>False</td></tr>
 </table>
 <h4>These are recommended GPO settings to secure Office 2016-365 by Microsoft, do NOT implement without the correct research and testing. Some settings could adversely affect your system.<br> Its recommended that Attack Surface Reduction (ASR) is enabled but requires Windows Defender Real-Time Antivirus and works in conjunction with Exploit Guard to prevent malware abusing legitimate MS Office functionality</h4>
- <h2><a name="EdgeSSLF"><a href="#TOP">MS Edge GPO's</a></h2>
+ <h2>MS Edge GPO's</h2>
 <table>
 <colgroup><col/><col/><col/></colgroup>
 <tr><th>EdgeGPONameSetting</th><th>EdgeRegValue</th><th>TrueIsCompliant</th></tr>
@@ -1714,18 +1752,18 @@
 			    <input type="radio" id="Password" name="headerTabs">
 			    <label for="Password">Embedded Passwords</label>
 			    <div class="contentTab">
-				    <p><h2><a name="AutoLogon"><a href="#TOP">AutoLogon Credentials</a></h2>
+				    <p><h2>AutoLogon Credentials</h2>
 <table>
 <colgroup><col/><col/><col/><col/></colgroup>
 <tr><th>AutoLogonUsername</th><th>AutoLogonPassword</th><th>AutoLogonRegistry</th><th>TrueIsCompliant</th></tr>
-<tr><td><font color=#ff9933>AutoLogon Default User is set with a vaule of  <font></td><td><font color=#ff9933>AutoLogon default password is set with a vaule of  <font></td><td>HKLM:\Software\Microsoft\Windows NT\Currentversion\Winlogon</td><td>False</td></tr>
+<tr><td><font color=#ff9933>AutoLogon Default User is set with a value of  <font></td><td><font color=#ff9933>AutoLogon default password is set with a vaule of  <font></td><td>HKLM:\Software\Microsoft\Windows NT\Currentversion\Winlogon</td><td>False</td></tr>
 </table>
 <h4>MECM\SCCM\MDT could leave Autologon credentials including a clear text password in the Registry.</h4>
- <h2><a name="ProcPW"><a href="#TOP">Processes with Passwords</a></h2>
+ <h2>Processes with Passwords</h2>
 <table>
 </table>
 <h4>This script has been provided by Tenaka.net, if it's beneficial, please provide feedback and any additional feature requests gratefully received. </h4>
- <h2><a name="RegPW"><a href="#TOP">Passwords Embedded in Reg</a></h2>
+ <h2>Passwords Embedded in Reg</h2>
 <table>
 <colgroup><col/><col/><col/></colgroup>
 <tr><th>RegistryPath</th><th>RegistryValue</th><th>RegistryPassword</th></tr>
@@ -1733,118 +1771,23 @@
 <tr><td><font color=#ff9933>HKLM:\Software\Microsoft\ServerManager\ServicingStorage\ServerComponentCache\RSAT-Feature-Tools-BitLocker-BdeAducExt <font></td><td><font color=#ff9933> <font></td><td><font color=#ff9933> <font></td></tr>
 <tr><td><font color=#ff9933>HKLM:\Software\Microsoft\ServerManager\ServicingStorage\ServerComponentCache\Web-Basic-Auth <font></td><td><font color=#ff9933> <font></td><td><font color=#ff9933> <font></td></tr>
 <tr><td><font color=#ff9933>HKLM:\Software\Microsoft\ServerManager\ServicingStorage\ServerComponentCache\Web-Digest-Auth <font></td><td><font color=#ff9933> <font></td><td><font color=#ff9933> <font></td></tr>
+<tr><td><font color=#ff9933>HKLM:\Software\Microsoft\Windows NT\CurrentVersion\Winlogon <font></td><td><font color=#ff9933>Password <font></td><td><font color=#ff9933>MyPasswordIsSuperDifficult <font></td></tr>
 <tr><td><font color=#ff9933>HKCU:\Software\Microsoft\Windows\Winlogon\PasswordExpiryNotification <font></td><td><font color=#ff9933> <font></td><td><font color=#ff9933> <font></td></tr>
 <tr><td><font color=#ff9933>HKLM:\SYSTEM\CurrentControlSet\Services\RemoteAccess\Policy\Pipeline\23 <font></td><td><font color=#ff9933> <font></td><td><font color=#ff9933> <font></td></tr>
 <tr><td><font color=#ff9933>HKLM:\SYSTEM\CurrentControlSet\Services\SharedAccess\Defaults\FirewallPolicy\FirewallRules <font></td><td><font color=#ff9933>ADDS-Kerberos-Password-TCP-In ADDS-Kerberos-Password-UDP-In <font></td><td><font color=#ff9933> <font></td></tr>
 <tr><td><font color=#ff9933>HKLM:\SYSTEM\CurrentControlSet\Services\SharedAccess\Parameters\FirewallPolicy\FirewallRules <font></td><td><font color=#ff9933>ADDS-Kerberos-Password-TCP-In ADDS-Kerberos-Password-UDP-In <font></td><td><font color=#ff9933> <font></td></tr>
 </table>
 <h4>Searches HKLM and HKCU for the Words 'password' and 'passwd', then displays the password value in the report.<br><br>The search will work with VNC encrypted passwords stored in the registry, from Kali run the following command<br> <br>echo -n PasswordHere | xxd -r -p | openssl enc -des-cbc --nopad --nosalt -K e84ad660c4721ae0 -iv 0000000000000000 -d | hexdump -Cv<br></h4>
- <h2><a name="PSHistory"><a href="#TOP">PowerShell History</a></h2>
+ <h2>PowerShell History</h2>
 <table>
 </table>
 <h4>Searches Powershell history for Password or Usernames @ C:\Users\SomeUser\APDATA\Microsoft\Windows\PowerShell\PSReadLine\ConsoleHost_history.txt</h4>
- <h2><a name="FilePW"><a href="#TOP">Files with Passwords</a></h2>
+ <h2>Files with Passwords</h2>
 <table>
 <colgroup><col/></colgroup>
-<tr><th>*</th></tr>
-<tr><td>C:\$Recycle.Bin\S-1-5-21-1088661895-3883890340-2819275244-500\$RBJG8JD.5-Alt\GPOs\Client\{0FBEE738-6902-4E7E-8E79-9A0B1B2668B9}\gpreport.xml</td></tr>
-<tr><td>C:\$Recycle.Bin\S-1-5-21-1088661895-3883890340-2819275244-500\$RBJG8JD.5-Alt\GPOs\Client\{43614AC7-D9C9-47B7-9428-624EC9ED03A0}\gpreport.xml</td></tr>
-<tr><td>C:\$Recycle.Bin\S-1-5-21-1088661895-3883890340-2819275244-500\$RBJG8JD.5-Alt\GPOs\Client\{932CA0DB-0AC9-413F-8EE3-9ACB5D15C4DD}\gpreport.xml</td></tr>
-<tr><td>C:\$Recycle.Bin\S-1-5-21-1088661895-3883890340-2819275244-500\$RBJG8JD.5-Alt\GPOs\Client\{C4F9D4E8-CB46-4527-991F-1D8671AE1E32}\gpreport.xml</td></tr>
-<tr><td>C:\$Recycle.Bin\S-1-5-21-1088661895-3883890340-2819275244-500\$RBJG8JD.5-Alt\GPOs\Client\{E6064767-DDA0-4532-826B-D13FBA0BC9F2}\gpreport.xml</td></tr>
-<tr><td>C:\$Recycle.Bin\S-1-5-21-1088661895-3883890340-2819275244-500\$RBJG8JD.5-Alt\GPOs\Client\{F8AE723D-AFB4-4A42-B9FA-F781618D8592}\gpreport.xml</td></tr>
-<tr><td>C:\$Recycle.Bin\S-1-5-21-1088661895-3883890340-2819275244-500\$RBJG8JD.5-Alt\GPOs\DC\{21DC8E83-95FE-4124-988D-9470111C1458}\gpreport.xml</td></tr>
-<tr><td>C:\$Recycle.Bin\S-1-5-21-1088661895-3883890340-2819275244-500\$RBJG8JD.5-Alt\GPOs\MemberServer\{B69AD12D-E96B-4F68-AF4E-E1E6FD8B7E68}\gpreport.xml</td></tr>
-<tr><td>C:\$Recycle.Bin\S-1-5-21-1088661895-3883890340-2819275244-500\$RBJG8JD.5-Alt\GPOs\Users\{53C5F5C7-724B-45FF-B0B1-4CCDCE7B1560}\gpreport.xml</td></tr>
-<tr><td>C:\$Recycle.Bin\S-1-5-21-1088661895-3883890340-2819275244-500\$RBJG8JD.5-Alt\GPOs\Users\{843FA335-CE04-4647-9118-C4BB301D7F3A}\gpreport.xml</td></tr>
-<tr><td>C:\$Recycle.Bin\S-1-5-21-1088661895-3883890340-2819275244-500\$RKSEZHP.6-Alt\GPOs\Client\{091755B0-6C83-48E7-A77A-E89D0C2EAF27}\gpreport.xml</td></tr>
-<tr><td>C:\$Recycle.Bin\S-1-5-21-1088661895-3883890340-2819275244-500\$RKSEZHP.6-Alt\GPOs\Client\{759D6369-91C2-4D49-9A60-FA7976D0B612}\gpreport.xml</td></tr>
-<tr><td>C:\$Recycle.Bin\S-1-5-21-1088661895-3883890340-2819275244-500\$RKSEZHP.6-Alt\GPOs\Client\{9FE25A81-CB6B-4F76-B9D2-147E9BED9A06}\gpreport.xml</td></tr>
-<tr><td>C:\$Recycle.Bin\S-1-5-21-1088661895-3883890340-2819275244-500\$RKSEZHP.6-Alt\GPOs\Client\{F1913EE2-F482-4E51-85E6-229B1A75C335}\gpreport.xml</td></tr>
-<tr><td>C:\$Recycle.Bin\S-1-5-21-1088661895-3883890340-2819275244-500\$RKSEZHP.6-Alt\GPOs\DC\{E2B8214C-729F-4324-A876-F067E58B740B}\gpreport.xml</td></tr>
-<tr><td>C:\$Recycle.Bin\S-1-5-21-1088661895-3883890340-2819275244-500\$RKSEZHP.6-Alt\GPOs\Domain\{AAC7C960-51D3-4BEE-89BD-7FB10361AA16}\gpreport.xml</td></tr>
-<tr><td>C:\$Recycle.Bin\S-1-5-21-1088661895-3883890340-2819275244-500\$RKSEZHP.6-Alt\GPOs\MemberServer\{0A531EAC-7B92-4E02-9877-1FB7CBE41398}\gpreport.xml</td></tr>
-<tr><td>C:\$Recycle.Bin\S-1-5-21-1088661895-3883890340-2819275244-500\$RKSEZHP.6-Alt\GPOs\MemberServer\{20FAD6FB-7C6D-496E-801C-0434769847FF}\gpreport.xml</td></tr>
-<tr><td>C:\$Recycle.Bin\S-1-5-21-1088661895-3883890340-2819275244-500\$RKSEZHP.6-Alt\GPOs\MemberServer\{BEA08B79-482E-4216-B5DE-8528F3688DD5}\gpreport.xml</td></tr>
-<tr><td>C:\$Recycle.Bin\S-1-5-21-1088661895-3883890340-2819275244-500\$RKSEZHP.6-Alt\GPOs\Users\{59C83F28-CFC3-483F-AD25-FD25E92EFAC0}\gpreport.xml</td></tr>
-<tr><td>C:\$Recycle.Bin\S-1-5-21-1088661895-3883890340-2819275244-500\$RKSEZHP.6-Alt\GPOs\Users\{EF26A62F-C04F-4B14-B1C8-379D36C5EE09}\gpreport.xml</td></tr>
-<tr><td>C:\Program Files\Common Files\microsoft shared\ink\Alphabet.xml</td></tr>
-<tr><td>C:\Program Files\Microsoft SQL Server\150\DTS\Connections\en\Microsoft.SqlServer.ManagedConnections.xml</td></tr>
-<tr><td>C:\Program Files\Microsoft SQL Server\150\SDK\Assemblies\en\Microsoft.SqlServer.Replication.xml</td></tr>
-<tr><td>C:\Program Files\Microsoft SQL Server\150\Setup Bootstrap\Log\Summary.txt</td></tr>
-<tr><td>C:\Program Files\Microsoft SQL Server\150\Setup Bootstrap\Log\20231027_011919\Detail_LandingPage.txt</td></tr>
-<tr><td>C:\Program Files\Microsoft SQL Server\150\Setup Bootstrap\Log\20231027_011919\Datastore_LandingPage\ProductSettings_AS_Private.xml</td></tr>
-<tr><td>C:\Program Files\Microsoft SQL Server\150\Setup Bootstrap\Log\20231027_011919\Datastore_LandingPage\ProductSettings_SqlEngine_Private.xml</td></tr>
-<tr><td>C:\Program Files\Microsoft SQL Server\150\Setup Bootstrap\Log\20231027_011931\Detail.txt</td></tr>
-<tr><td>C:\Program Files\Microsoft SQL Server\150\Setup Bootstrap\Log\20231027_011931\Detail_Local.txt</td></tr>
-<tr><td>C:\Program Files\Microsoft SQL Server\150\Setup Bootstrap\Log\20231027_011931\Settings_Local.xml</td></tr>
-<tr><td>C:\Program Files\Microsoft SQL Server\150\Setup Bootstrap\Log\20231027_011931\SQLServer_ERRORLOG_2023-10-27T01.25.01.txt</td></tr>
-<tr><td>C:\Program Files\Microsoft SQL Server\150\Setup Bootstrap\Log\20231027_011931\Summary_WIN-EV6QH5T262N_20231027_011931.txt</td></tr>
-<tr><td>C:\Program Files\Microsoft SQL Server\150\Setup Bootstrap\Log\20231027_011931\Datastore\ProductSettings_AS_Private.xml</td></tr>
-<tr><td>C:\Program Files\Microsoft SQL Server\150\Setup Bootstrap\Log\20231027_011931\Datastore\ProductSettings_SqlEngine_Private.xml</td></tr>
-<tr><td>C:\Program Files\Microsoft SQL Server\150\Setup Bootstrap\Log\20231027_011931\Datastore_Local\ProductSettings_Agent_Public.xml</td></tr>
-<tr><td>C:\Program Files\Microsoft SQL Server\150\Setup Bootstrap\Log\20231027_011931\Datastore_Local\ProductSettings_AS_Private.xml</td></tr>
-<tr><td>C:\Program Files\Microsoft SQL Server\150\Setup Bootstrap\Log\20231027_011931\Datastore_Local\ProductSettings_SqlEngine_Private.xml</td></tr>
-<tr><td>C:\Program Files\Microsoft SQL Server\150\Setup Bootstrap\Log\20231027_011931\Datastore_Local\SLP_Actions_PersistedActionData.xml</td></tr>
-<tr><td>C:\Program Files\Microsoft SQL Server\150\Tools\Binn\Resources\1033\sqlcm.xml</td></tr>
-<tr><td>C:\Program Files (x86)\Microsoft SQL Server\150\SDK\Assemblies\en\Microsoft.SqlServer.Rmo.xml</td></tr>
-<tr><td>C:\Program Files (x86)\Microsoft SQL Server\150\Tools\Binn\Resources\1033\sqlcm.xml</td></tr>
-<tr><td>C:\Program Files (x86)\Microsoft SQL Server\150\Tools\PowerShell\Modules\SQLPS\en\Microsoft.SqlServer.Management.PSSnapins.dll-Help.xml</td></tr>
-<tr><td>C:\Program Files (x86)\Microsoft SQL Server Management Studio 18\Common7\IDE\Mashup\DocumentFormat.OpenXml.xml</td></tr>
-<tr><td>C:\Program Files (x86)\Microsoft SQL Server Management Studio 18\Common7\IDE\Mashup\Microsoft.Data.Mashup.xml</td></tr>
-<tr><td>C:\Program Files (x86)\Microsoft SQL Server Management Studio 18\Common7\IDE\Mashup\Microsoft.Exchange.WebServices.xml</td></tr>
-<tr><td>C:\Program Files (x86)\Microsoft SQL Server Management Studio 18\Common7\IDE\SqlToolsData\1033\OleSqlCommands.xml</td></tr>
-<tr><td>C:\Program Files (x86)\Microsoft SQL Server Management Studio 18\Common7\IDE\SqlToolsData\1033\StoredProcedures.xml</td></tr>
-<tr><td>C:\Program Files (x86)\Microsoft SQL Server Management Studio 18\Common7\Profiler\TraceDefinitions\Microsoft SQL Server TraceDefinition 10.0.0.xml</td></tr>
-<tr><td>C:\Program Files (x86)\Microsoft SQL Server Management Studio 18\Common7\Profiler\TraceDefinitions\Microsoft SQL Server TraceDefinition 10.50.0.xml</td></tr>
-<tr><td>C:\Program Files (x86)\Microsoft SQL Server Management Studio 18\Common7\Profiler\TraceDefinitions\Microsoft SQL Server TraceDefinition 11.0.0.xml</td></tr>
-<tr><td>C:\Program Files (x86)\Microsoft SQL Server Management Studio 18\Common7\Profiler\TraceDefinitions\Microsoft SQL Server TraceDefinition 12.0.0.xml</td></tr>
-<tr><td>C:\Program Files (x86)\Microsoft SQL Server Management Studio 18\Common7\Profiler\TraceDefinitions\Microsoft SQL Server TraceDefinition 13.0.0.xml</td></tr>
-<tr><td>C:\Program Files (x86)\Microsoft SQL Server Management Studio 18\Common7\Profiler\TraceDefinitions\Microsoft SQL Server TraceDefinition 14.0.0.xml</td></tr>
-<tr><td>C:\Program Files (x86)\Microsoft SQL Server Management Studio 18\Common7\Profiler\TraceDefinitions\Microsoft SQL Server TraceDefinition 15.0.0.xml</td></tr>
-<tr><td>C:\Program Files (x86)\Microsoft SQL Server Management Studio 18\Common7\Profiler\TraceDefinitions\Microsoft SQL Server TraceDefinition 9.0.0.xml</td></tr>
-<tr><td>C:\Program Files (x86)\Microsoft SQL Server Management Studio 18\Common7\Profiler\TraceDefinitions\1033\Microsoft SQL Server TraceDescriptions 10.0.0.xml</td></tr>
-<tr><td>C:\Program Files (x86)\Microsoft SQL Server Management Studio 18\Common7\Profiler\TraceDefinitions\1033\Microsoft SQL Server TraceDescriptions 10.50.0.xml</td></tr>
-<tr><td>C:\Program Files (x86)\Microsoft SQL Server Management Studio 18\Common7\Profiler\TraceDefinitions\1033\Microsoft SQL Server TraceDescriptions 11.0.0.xml</td></tr>
-<tr><td>C:\Program Files (x86)\Microsoft SQL Server Management Studio 18\Common7\Profiler\TraceDefinitions\1033\Microsoft SQL Server TraceDescriptions 12.0.0.xml</td></tr>
-<tr><td>C:\Program Files (x86)\Microsoft SQL Server Management Studio 18\Common7\Profiler\TraceDefinitions\1033\Microsoft SQL Server TraceDescriptions 13.0.0.xml</td></tr>
-<tr><td>C:\Program Files (x86)\Microsoft SQL Server Management Studio 18\Common7\Profiler\TraceDefinitions\1033\Microsoft SQL Server TraceDescriptions 14.0.0.xml</td></tr>
-<tr><td>C:\Program Files (x86)\Microsoft SQL Server Management Studio 18\Common7\Profiler\TraceDefinitions\1033\Microsoft SQL Server TraceDescriptions 15.0.0.xml</td></tr>
-<tr><td>C:\Program Files (x86)\Microsoft SQL Server Management Studio 18\Common7\Profiler\TraceDefinitions\1033\Microsoft SQL Server TraceDescriptions 9.0.0.xml</td></tr>
-<tr><td>C:\Program Files (x86)\Microsoft SQL Server Management Studio 18\Licenses\1033\ThirdPartyNotices.txt</td></tr>
-<tr><td>C:\SecureReport\output\DomainUser\groups.xml</td></tr>
-<tr><td>C:\SecureReport\output\RegPasswords\RegPasswords.txt</td></tr>
-<tr><td>C:\SecureReport197\output\DomainUser\groups.xml</td></tr>
-<tr><td>C:\SecureReport197\output\RegPasswords\RegPasswords.txt</td></tr>
-<tr><td>C:\SecureReport201\output\RegPasswords\RegPasswords.txt</td></tr>
-<tr><td>C:\SecureReport601\output\RegPasswords\RegPasswords.txt</td></tr>
-<tr><td>C:\SecureReport840\output\DomainUser\groups.xml</td></tr>
-<tr><td>C:\SecureReport840\output\RegPasswords\RegPasswords.txt</td></tr>
-<tr><td>C:\SecureReport973\output\RegPasswords\RegPasswords.txt</td></tr>
-<tr><td>C:\Windows\ImmersiveControlPanel\Settings\AllSystemSettings_{253E530E-387D-4BC2-959D-E6F86122E5F2}.xml</td></tr>
-<tr><td>C:\Windows\PLA\Reports\Report.AD.xml</td></tr>
-<tr><td>C:\Windows\PLA\Reports\en-US\Report.AD.xml</td></tr>
+
 <tr><td>C:\Windows\System32\NarratorControlTemplates.xml</td></tr>
 <tr><td>C:\Windows\System32\schema.ini</td></tr>
-<tr><td>C:\Windows\System32\0409\scregedit.ini</td></tr>
-<tr><td>C:\Windows\System32\DDFs\NGCProDDF_v1.2_final.xml</td></tr>
-<tr><td>C:\Windows\System32\inetsrv\config\schema\ASPNET_schema.xml</td></tr>
-<tr><td>C:\Windows\System32\inetsrv\config\schema\Ftp_schema.xml</td></tr>
-<tr><td>C:\Windows\System32\inetsrv\config\schema\FX_schema.xml</td></tr>
-<tr><td>C:\Windows\System32\inetsrv\config\schema\IIS_schema.xml</td></tr>
-<tr><td>C:\Windows\System32\slmgr\0409\slmgr.ini</td></tr>
-<tr><td>C:\Windows\System32\WindowsPowerShell\v1.0\Modules\WebAdministration\NavigationTypes.namespace.xml</td></tr>
-<tr><td>C:\Windows\System32\winrm\0409\winrm.ini</td></tr>
-<tr><td>C:\Windows\SystemApps\Microsoft.AccountsControl_cw5n1h2txyewy\AppxManifest.xml</td></tr>
-<tr><td>C:\Windows\SystemApps\Microsoft.Windows.CloudExperienceHost_cw5n1h2txyewy\AppxManifest.xml</td></tr>
-<tr><td>C:\Windows\SystemApps\Microsoft.Windows.Search_cw5n1h2txyewy\cache\Desktop\16.txt</td></tr>
-<tr><td>C:\Windows\SystemApps\Microsoft.Windows.Search_cw5n1h2txyewy\cache\Desktop\17.txt</td></tr>
-<tr><td>C:\Windows\SystemApps\Microsoft.Windows.Search_cw5n1h2txyewy\cache\Desktop\18.txt</td></tr>
-<tr><td>C:\Windows\SystemApps\Microsoft.Windows.Search_cw5n1h2txyewy\cache\Desktop\9.txt</td></tr>
-<tr><td>C:\Windows\SysWOW64\0409\scregedit.ini</td></tr>
-<tr><td>C:\Windows\SysWOW64\slmgr\0409\slmgr.ini</td></tr>
-<tr><td>C:\Windows\SysWOW64\WindowsPowerShell\v1.0\Modules\WebAdministration\NavigationTypes.namespace.xml</td></tr>
-<tr><td>C:\Windows\SysWOW64\winrm\0409\winrm.ini</td></tr>
 </table>
 <h4>Files that contain password or credentials</h4>
 
@@ -1856,14 +1799,14 @@
 			    <input type="radio" id="SQL" name="headerTabs">
 			    <label for="SQL">SQL Server</label>
 			    <div class="contentTab">
-				    <p><h2><a name="SQLVersion"><a href="#TOP">SQL Version</summary></a></h2>
+				    <p><h2>SQL Version</summary></h2>
 <table>
 <colgroup><col/><col/><col/><col/><col/></colgroup>
 <tr><th>SQLSrvVersion</th><th>SQLSrvEdition</th><th>SQLSrvSP</th><th>SQLSrvProdVersion</th><th>SQLSrvCollation</th></tr>
 <tr><td>Microsoft SQL Server 2019 (RTM) - 15.0.2000.5 (X64) </td><td>Standard Edition (64-bit)</td><td>RTM</td><td>15.0.2000.5</td><td>SQL_Latin1_General_CP1_CI_AS</td></tr>
 </table>
 <h4></h4></details>
- <h2><a name="SQLDBConfig"><a href="#TOP">SQL Database</summary></a></h2>
+ <h2>SQL Database</summary></h2>
 <table>
 <colgroup><col/><col/><col/><col/><col/><col/></colgroup>
 <tr><th>DataBaseName</th><th>DataBaseMDF</th><th>DataBaseLDF</th><th>DataBaseDBSize</th><th>DataBaseLDFSize</th><th>DataBaseStatus</th></tr>
@@ -1876,7 +1819,7 @@
 <tr><td>MSDBData</td><td><font color=#ff9933>C:\Program Files\Microsoft SQL Server\MSSQL15.MSSQLSERVER\MSSQL\DATA\MSDBData.mdf <font></td><td><font color=#ff9933>C:\Program Files\Microsoft SQL Server\MSSQL15.MSSQLSERVER\MSSQL\DATA\MSDBLog.ldf <font></td><td>14.75</td><td>.75</td><td>ONLINE</td></tr>
 </table>
 <h4></h4></details>
- <h2><a name="SQLService"><a href="#TOP">SQL Service Account</summary></a></h2>
+ <h2>SQL Service Account</summary></h2>
 <table>
 <colgroup><col/><col/><col/><col/><col/></colgroup>
 <tr><th>SQLSvcName</th><th>SQLSvcPath</th><th>SQLSvcStartMode</th><th>SQLSvcCaption</th><th>SQLSvcState</th></tr>
@@ -1887,7 +1830,7 @@
 <tr><td>SQLWriter</td><td>&quot;C:\Program Files\Microsoft SQL Server\90\Shared\sqlwriter.exe&quot;</td><td>Auto</td><td>SQL Server VSS Writer</td><td>Running</td></tr>
 </table>
 <h4></h4></details>
- <h2><a name="SQLCIS"><a href="#TOP">SQL Server CIS Benchmarks</summary></a></h2>
+ <h2>SQL Server CIS Benchmarks</summary></h2>
 <table>
 <colgroup><col/><col/><col/><col/><col/><col/></colgroup>
 <tr><th>SQLCISTitle</th><th>Configured</th><th>Inuse</th><th>CISRecommended</th><th>Comment</th><th>TrueIsCompliant</th></tr>
