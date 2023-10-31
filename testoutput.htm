@@ -194,7 +194,9 @@
 <tr><td><a href="#SQLVersion">SQL Server is Installed</a></td><td><font color=#ffff66>Low Risk</td></tr>
 <tr><td><a href="#SQLCIS">SQL Server is CIS Benchmarks</a></td><td><font color=#ffb366>Medium Risk</td></tr>
 </table>
-</p>
+ <br><br>Thanks for using the vulnerability report written by <a href="https://www.tenaka.net" class="class1">Tenaka.net</a>, please show your support and visit my site, it's non-profit and Ad-free. <br>
+        <br>Any issues with the report's accuracy please do let me know and I'll get it fixed asap. The results in this report are a guide and not a guarantee that the tested system is not without further defects or vulnerability.<br>
+        <br>The tests focus on known and common issues with Windows that can be exploited by an attacker. Each section contains a small snippet to provide some context, follow the links for further detail.<br><br>The html output can be imported into Excel for further analysis and uses the True and False values as a drop-down filter.<br>Open Excel, Data, Import from Web. Enter the file path in the following format file:///C:/SecureReport/NameOfReport.htm, then Select multiple items and click on Load and select 'Load To', click on Table.<br><br>Further support for this report can be found @ <a href="https://www.tenaka.net/windowsclient-vulnscanner" class="class1">Vulnerability Scanner</a> </p>
 			    </div>
 		    </div>
 
@@ -622,11 +624,7 @@
 <tr><th>Name</th><th>Hash</th><th>UserorGroup</th><th>Action</th><th>Rule</th></tr>
 <tr><td>explorer.exe</td><td>SHA256 0x19252086F34F4A76D2D43F0070511E2AE167278FDCC25C12506DC1B83649359E</td><td>S-1-1-0</td><td>Allow</td><td>Exe</td></tr>
 </table>
- <h2>WDAC Policy</h2>
-<table>
-</table>
-<h4>Requires CITool.exe, comes as default with Windows 11 22H2<br><br>WDAC (Windows Defender Application Control), Device Guard was its release name, is a security feature in Windows operating systems designed to enhance system security. In kernel mode, WDAC operates by enforcing code integrity policies, which restrict the execution of unauthorized or unsigned code, preventing malicious software from running. It uses kernel-mode drivers to monitor and control the loading of executables and scripts, ensuring only approved applications run, bolstering system security<br><br>Application Control Policy and Application Control User should be set to Enforce when enabled.<br><br>There should be a named policy that is also set to (CIPolicyEnforced = True) and not Audit (CIPolicyEnforced = False)<br><br>For this to report on WDAC while Enforced, either sign this script or temporarily set 'Set-RuleOption -FilePath C:\WDAC\Policy.xml -Option 11'</h4></details>
-  <h2>WDAC Enforcement</h2>
+ <h2>WDAC Enforcement</h2>
 <table>
 <colgroup><col/><col/></colgroup>
 <tr><th>WDAC\DeviceGuard</th><th>Enforced\Audit</th></tr>
@@ -634,7 +632,11 @@
 <tr><td>Windows Defender Application Control user mode policy	</td><td>off	</td></tr>
 </table>
 <h4></h4></details>
- 
+ <h2>WDAC Policy</h2>
+<table>
+</table>
+<h4>Requires CITool.exe, comes as default with Windows 11 22H2<br><br>WDAC (Windows Defender Application Control), Device Guard was its release name, is a security feature in Windows operating systems designed to enhance system security. In kernel mode, WDAC operates by enforcing code integrity policies, which restrict the execution of unauthorized or unsigned code, preventing malicious software from running. It uses kernel-mode drivers to monitor and control the loading of executables and scripts, ensuring only approved applications run, bolstering system security<br><br>Application Control Policy and Application Control User should be set to Enforce when enabled.<br><br>There should be a named policy that is also set to (CIPolicyEnforced = True) and not Audit (CIPolicyEnforced = False)<br><br>For this to report on WDAC while Enforced, either sign this script or temporarily set 'Set-RuleOption -FilePath C:\WDAC\Policy.xml -Option 11'</h4></details>
+  
                     </p>
 			    </div>
 		    </div>
@@ -947,7 +949,12 @@
  <h2>Drivers Not Signed</h2>
 <table>
 <colgroup><col/></colgroup>
-
+<tr><th>*</th></tr>
+<tr><td><font color=#ff9933>Microsoft Remote Display Adapt rdpidd.inf    FALSE    Microsoft                 <font></td></tr>
+<tr><td><font color=#ff9933>Microsoft Remote Display Adapt rdpidd.inf    FALSE    Microsoft                 <font></td></tr>
+<tr><td><font color=#ff9933>Microsoft Remote Display Adapt rdpidd.inf    FALSE    Microsoft                 <font></td></tr>
+<tr><td><font color=#ff9933>Microsoft Remote Display Adapt rdpidd.inf    FALSE    Microsoft                 <font></td></tr>
+<tr><td><font color=#ff9933>Microsoft Remote Display Adapt rdpidd.inf    FALSE    Microsoft                 <font></td></tr>
 <tr><td><font color=#ff9933>Microsoft Remote Display Adapt rdpidd.inf    FALSE    Microsoft                 <font></td></tr>
 </table>
 <h4>All Drivers should be signed with a digital signature to verify the integrity of the packages. 64bit kernel Mode drivers must be signed without exception</h4>
@@ -1133,7 +1140,7 @@
 <tr><td>Capability Access Manager Service</td><td>camsvc</td><td>Running</td><td>Manual</td></tr>
 <tr><td>CaptureService_50125</td><td>CaptureService_50125</td><td>Stopped</td><td>Manual</td></tr>
 <tr><td>Certificate Propagation</td><td>CertPropSvc</td><td>Running</td><td>Manual</td></tr>
-<tr><td>Client License Service (ClipSVC)</td><td>ClipSVC</td><td>Running</td><td>Manual</td></tr>
+<tr><td>Client License Service (ClipSVC)</td><td>ClipSVC</td><td>Stopped</td><td>Manual</td></tr>
 <tr><td>Clipboard User Service_50125</td><td>cbdhsvc_50125</td><td>Running</td><td>Automatic</td></tr>
 <tr><td>CNG Key Isolation</td><td>KeyIso</td><td>Running</td><td>Manual</td></tr>
 <tr><td>COM+ Event System</td><td>EventSystem</td><td>Running</td><td>Automatic</td></tr>
@@ -1162,7 +1169,7 @@
 <tr><td>DHCP Client</td><td>Dhcp</td><td>Running</td><td>Automatic</td></tr>
 <tr><td>Diagnostic Policy Service</td><td>DPS</td><td>Running</td><td>Automatic</td></tr>
 <tr><td>Diagnostic Service Host</td><td>WdiServiceHost</td><td>Stopped</td><td>Manual</td></tr>
-<tr><td>Diagnostic System Host</td><td>WdiSystemHost</td><td>Running</td><td>Manual</td></tr>
+<tr><td>Diagnostic System Host</td><td>WdiSystemHost</td><td>Stopped</td><td>Manual</td></tr>
 <tr><td>Display Policy Service</td><td>DispBrokerDesktopSvc</td><td>Running</td><td>Automatic</td></tr>
 <tr><td>Distributed Link Tracking Client</td><td>TrkWks</td><td>Stopped</td><td>Manual</td></tr>
 <tr><td>Distributed Transaction Coordinator</td><td>MSDTC</td><td>Running</td><td>Automatic</td></tr>
@@ -1307,7 +1314,7 @@
 <tr><td>Windows Remote Management (WS-Management)</td><td>WinRM</td><td>Running</td><td>Automatic</td></tr>
 <tr><td>Windows Security Service</td><td>SecurityHealthService</td><td>Stopped</td><td>Manual</td></tr>
 <tr><td>Windows Time</td><td>W32Time</td><td>Running</td><td>Automatic</td></tr>
-<tr><td>Windows Update</td><td>wuauserv</td><td>Running</td><td>Manual</td></tr>
+<tr><td>Windows Update</td><td>wuauserv</td><td>Stopped</td><td>Manual</td></tr>
 <tr><td>Windows Update Medic Service</td><td>WaaSMedicSvc</td><td>Stopped</td><td>Manual</td></tr>
 <tr><td>WinHTTP Web Proxy Auto-Discovery Service</td><td>WinHttpAutoProxySvc</td><td>Running</td><td>Manual</td></tr>
 <tr><td>Wired AutoConfig</td><td>dot3svc</td><td>Stopped</td><td>Manual</td></tr>
@@ -1332,20 +1339,21 @@
 <table>
 <colgroup><col/></colgroup>
 
-<tr><td>C:\Program Files\Microsoft SQL Server\110</td></tr>
+<tr><td> </td></tr>
+<tr><td>C : \ P r o g r a m   F i l e s \ M i c r o s o f t   S Q L   S e r v e r \ 1 1 0 </td></tr>
 <tr><td>C:\Program Files\Microsoft SQL Server\110\KeyFile</td></tr>
-<tr><td>C:\Program Files\Microsoft SQL Server\110\KeyFile\1033</td></tr>
+<tr><td> C : \ P r o g r a m   F i l e s \ M i c r o s o f t   S Q L   S e r v e r \ 1 1 0 \ K e y F i l e \ 1 0 3 3 </td></tr>
 <tr><td>C:\Program Files\Microsoft SQL Server\110\License Terms</td></tr>
-<tr><td>C:\Program Files\Microsoft SQL Server\110\SDK</td></tr>
-<tr><td>C:\Program Files\Microsoft SQL Server\110\SDK\Include</td></tr>
-<tr><td>C:\Program Files\Microsoft SQL Server\110\SDK\Lib</td></tr>
-<tr><td>C:\Program Files\Microsoft SQL Server\110\SDK\Lib\x64</td></tr>
-<tr><td>C:\Program Files\Microsoft SQL Server\110\SDK\Lib\x86</td></tr>
-<tr><td>C:\Windows\System32\Microsoft\Crypto\RSA\MachineKeys</td></tr>
-<tr><td>C:\Windows\System32\Tasks</td></tr>
-<tr><td>C:\Windows\System32\Tasks\Microsoft\Windows\RemoteApp and Desktop Connections Update</td></tr>
-<tr><td>C:\Windows\SysWOW64\Tasks</td></tr>
-<tr><td>C:\Windows\SysWOW64\Tasks\Microsoft\Windows\RemoteApp and Desktop Connections Update</td></tr>
+<tr><td> C : \ P r o g r a m   F i l e s \ M i c r o s o f t   S Q L   S e r v e r \ 1 1 0 \ S D K </td></tr>
+<tr><td> C : \ P r o g r a m   F i l e s \ M i c r o s o f t   S Q L   S e r v e r \ 1 1 0 \ S D K \ I n c l u d e </td></tr>
+<tr><td> C : \ P r o g r a m   F i l e s \ M i c r o s o f t   S Q L   S e r v e r \ 1 1 0 \ S D K \ L i b </td></tr>
+<tr><td> C : \ P r o g r a m   F i l e s \ M i c r o s o f t   S Q L   S e r v e r \ 1 1 0 \ S D K \ L i b \ x 6 4 </td></tr>
+<tr><td> C : \ P r o g r a m   F i l e s \ M i c r o s o f t   S Q L   S e r v e r \ 1 1 0 \ S D K \ L i b \ x 8 6 </td></tr>
+<tr><td> C : \ W i n d o w s \ S y s t e m 3 2 \ M i c r o s o f t \ C r y p t o \ R S A \ M a c h i n e K e y s </td></tr>
+<tr><td> C : \ W i n d o w s \ S y s t e m 3 2 \ T a s k s </td></tr>
+<tr><td> C : \ W i n d o w s \ S y s t e m 3 2 \ T a s k s \ M i c r o s o f t \ W i n d o w s \ R e m o t e A p p   a n d   D e s k t o p   C o n n e c t i o n s   U p d a t e </td></tr>
+<tr><td> C : \ W i n d o w s \ S y s W O W 6 4 \ T a s k s </td></tr>
+<tr><td> C : \ W i n d o w s \ S y s W O W 6 4 \ T a s k s \ M i c r o s o f t \ W i n d o w s \ R e m o t e A p p   a n d   D e s k t o p   C o n n e c t i o n s   U p d a t e </td></tr>
 <tr><td>C:\Windows\tracing</td></tr>
 </table>
 <h4>Default System Folders that allow a User the Write permissions. These can be abused by creating content in some of the allowable default locations. Prevent by applying Execution controls eg Applocker.<br> <br> Further information can be found @ <a href="https://www.tenaka.net/unquotedpaths" class="class1">UnQuoted Paths</a><br></h4>
@@ -1355,12 +1363,22 @@
 
 <tr><td><font color=#ff9933>C:\Program Files\Microsoft SQL Server\110\KeyFile\1033\sqlncli_keyfile.dll <font></td></tr>
 <tr><td><font color=#ff9933>C:\Program Files\Microsoft SQL Server\150\Tools\Binn\SQLdiag.exe <font></td></tr>
+<tr><td><font color=#ff9933>C:\Program Files\Microsoft SQL Server\110\KeyFile\1033\sqlncli_keyfile.dll <font></td></tr>
+<tr><td><font color=#ff9933>C:\Program Files\Microsoft SQL Server\150\Tools\Binn\SQLdiag.exe <font></td></tr>
+<tr><td><font color=#ff9933>C:\Program Files\Microsoft SQL Server\110\KeyFile\1033\sqlncli_keyfile.dll <font></td></tr>
+<tr><td><font color=#ff9933>C:\Program Files\Microsoft SQL Server\150\Tools\Binn\SQLdiag.exe <font></td></tr>
 </table>
 <h4>System files that allow users to write can be swapped out for malicious software binaries. <br> <br>Further  information can be found @ <a href="https://www.tenaka.net/unquotedpaths" class="class1">UnQuoted Paths</a></h4>
  <h2>Registry Permissions</h2>
 <table>
 <colgroup><col/></colgroup>
-
+<tr><th>*</th></tr>
+<tr><td><font color=#ff9933>HKLM:\Software\Google\Chrome <font></td></tr>
+<tr><td><font color=#ff9933>HKLM:\Software\Microsoft\ASP.NET <font></td></tr>
+<tr><td><font color=#ff9933>HKLM:\Software\OpenSSH\Agent <font></td></tr>
+<tr><td><font color=#ff9933>HKLM:\Software\Google\Chrome <font></td></tr>
+<tr><td><font color=#ff9933>HKLM:\Software\Microsoft\ASP.NET <font></td></tr>
+<tr><td><font color=#ff9933>HKLM:\Software\OpenSSH\Agent <font></td></tr>
 <tr><td><font color=#ff9933>HKLM:\Software\Google\Chrome <font></td></tr>
 <tr><td><font color=#ff9933>HKLM:\Software\Microsoft\ASP.NET <font></td></tr>
 <tr><td><font color=#ff9933>HKLM:\Software\OpenSSH\Agent <font></td></tr>
@@ -1776,6 +1794,33 @@
 <tr><td><font color=#ff9933>HKLM:\SYSTEM\CurrentControlSet\Services\RemoteAccess\Policy\Pipeline\23 <font></td><td><font color=#ff9933> <font></td><td><font color=#ff9933> <font></td></tr>
 <tr><td><font color=#ff9933>HKLM:\SYSTEM\CurrentControlSet\Services\SharedAccess\Defaults\FirewallPolicy\FirewallRules <font></td><td><font color=#ff9933>ADDS-Kerberos-Password-TCP-In ADDS-Kerberos-Password-UDP-In <font></td><td><font color=#ff9933> <font></td></tr>
 <tr><td><font color=#ff9933>HKLM:\SYSTEM\CurrentControlSet\Services\SharedAccess\Parameters\FirewallPolicy\FirewallRules <font></td><td><font color=#ff9933>ADDS-Kerberos-Password-TCP-In ADDS-Kerberos-Password-UDP-In <font></td><td><font color=#ff9933> <font></td></tr>
+<tr><td><font color=#ff9933>HKLM:\Software\Microsoft\NetworkController\SDN\Diagnostics\Parameters <font></td><td><font color=#ff9933>Password <font></td><td><font color=#ff9933>  <font></td></tr>
+<tr><td><font color=#ff9933>HKLM:\Software\Microsoft\ServerManager\ServicingStorage\ServerComponentCache\RSAT-Feature-Tools-BitLocker-BdeAducExt <font></td><td><font color=#ff9933> <font></td><td><font color=#ff9933> <font></td></tr>
+<tr><td><font color=#ff9933>HKLM:\Software\Microsoft\ServerManager\ServicingStorage\ServerComponentCache\Web-Basic-Auth <font></td><td><font color=#ff9933> <font></td><td><font color=#ff9933> <font></td></tr>
+<tr><td><font color=#ff9933>HKLM:\Software\Microsoft\ServerManager\ServicingStorage\ServerComponentCache\Web-Digest-Auth <font></td><td><font color=#ff9933> <font></td><td><font color=#ff9933> <font></td></tr>
+<tr><td><font color=#ff9933>HKLM:\Software\Microsoft\Windows NT\CurrentVersion\Winlogon <font></td><td><font color=#ff9933>Password <font></td><td><font color=#ff9933>MyPasswordIsSuperDifficult <font></td></tr>
+<tr><td><font color=#ff9933>HKCU:\Software\Microsoft\Windows\Winlogon\PasswordExpiryNotification <font></td><td><font color=#ff9933> <font></td><td><font color=#ff9933> <font></td></tr>
+<tr><td><font color=#ff9933>HKLM:\SYSTEM\CurrentControlSet\Services\RemoteAccess\Policy\Pipeline\23 <font></td><td><font color=#ff9933> <font></td><td><font color=#ff9933> <font></td></tr>
+<tr><td><font color=#ff9933>HKLM:\SYSTEM\CurrentControlSet\Services\SharedAccess\Defaults\FirewallPolicy\FirewallRules <font></td><td><font color=#ff9933>ADDS-Kerberos-Password-TCP-In ADDS-Kerberos-Password-UDP-In <font></td><td><font color=#ff9933> <font></td></tr>
+<tr><td><font color=#ff9933>HKLM:\SYSTEM\CurrentControlSet\Services\SharedAccess\Parameters\FirewallPolicy\FirewallRules <font></td><td><font color=#ff9933>ADDS-Kerberos-Password-TCP-In ADDS-Kerberos-Password-UDP-In <font></td><td><font color=#ff9933> <font></td></tr>
+<tr><td><font color=#ff9933>HKLM:\Software\Microsoft\NetworkController\SDN\Diagnostics\Parameters <font></td><td><font color=#ff9933>Password <font></td><td><font color=#ff9933>  <font></td></tr>
+<tr><td><font color=#ff9933>HKLM:\Software\Microsoft\ServerManager\ServicingStorage\ServerComponentCache\RSAT-Feature-Tools-BitLocker-BdeAducExt <font></td><td><font color=#ff9933> <font></td><td><font color=#ff9933> <font></td></tr>
+<tr><td><font color=#ff9933>HKLM:\Software\Microsoft\ServerManager\ServicingStorage\ServerComponentCache\Web-Basic-Auth <font></td><td><font color=#ff9933> <font></td><td><font color=#ff9933> <font></td></tr>
+<tr><td><font color=#ff9933>HKLM:\Software\Microsoft\ServerManager\ServicingStorage\ServerComponentCache\Web-Digest-Auth <font></td><td><font color=#ff9933> <font></td><td><font color=#ff9933> <font></td></tr>
+<tr><td><font color=#ff9933>HKLM:\Software\Microsoft\Windows NT\CurrentVersion\Winlogon <font></td><td><font color=#ff9933>Password <font></td><td><font color=#ff9933>MyPasswordIsSuperDifficult <font></td></tr>
+<tr><td><font color=#ff9933>HKCU:\Software\Microsoft\Windows\Winlogon\PasswordExpiryNotification <font></td><td><font color=#ff9933> <font></td><td><font color=#ff9933> <font></td></tr>
+<tr><td><font color=#ff9933>HKLM:\SYSTEM\CurrentControlSet\Services\RemoteAccess\Policy\Pipeline\23 <font></td><td><font color=#ff9933> <font></td><td><font color=#ff9933> <font></td></tr>
+<tr><td><font color=#ff9933>HKLM:\SYSTEM\CurrentControlSet\Services\SharedAccess\Defaults\FirewallPolicy\FirewallRules <font></td><td><font color=#ff9933>ADDS-Kerberos-Password-TCP-In ADDS-Kerberos-Password-UDP-In <font></td><td><font color=#ff9933> <font></td></tr>
+<tr><td><font color=#ff9933>HKLM:\SYSTEM\CurrentControlSet\Services\SharedAccess\Parameters\FirewallPolicy\FirewallRules <font></td><td><font color=#ff9933>ADDS-Kerberos-Password-TCP-In ADDS-Kerberos-Password-UDP-In <font></td><td><font color=#ff9933> <font></td></tr>
+<tr><td><font color=#ff9933>HKLM:\Software\Microsoft\NetworkController\SDN\Diagnostics\Parameters <font></td><td><font color=#ff9933>Password <font></td><td><font color=#ff9933>  <font></td></tr>
+<tr><td><font color=#ff9933>HKLM:\Software\Microsoft\ServerManager\ServicingStorage\ServerComponentCache\RSAT-Feature-Tools-BitLocker-BdeAducExt <font></td><td><font color=#ff9933> <font></td><td><font color=#ff9933> <font></td></tr>
+<tr><td><font color=#ff9933>HKLM:\Software\Microsoft\ServerManager\ServicingStorage\ServerComponentCache\Web-Basic-Auth <font></td><td><font color=#ff9933> <font></td><td><font color=#ff9933> <font></td></tr>
+<tr><td><font color=#ff9933>HKLM:\Software\Microsoft\ServerManager\ServicingStorage\ServerComponentCache\Web-Digest-Auth <font></td><td><font color=#ff9933> <font></td><td><font color=#ff9933> <font></td></tr>
+<tr><td><font color=#ff9933>HKLM:\Software\Microsoft\Windows NT\CurrentVersion\Winlogon <font></td><td><font color=#ff9933>Password <font></td><td><font color=#ff9933>MyPasswordIsSuperDifficult <font></td></tr>
+<tr><td><font color=#ff9933>HKCU:\Software\Microsoft\Windows\Winlogon\PasswordExpiryNotification <font></td><td><font color=#ff9933> <font></td><td><font color=#ff9933> <font></td></tr>
+<tr><td><font color=#ff9933>HKLM:\SYSTEM\CurrentControlSet\Services\RemoteAccess\Policy\Pipeline\23 <font></td><td><font color=#ff9933> <font></td><td><font color=#ff9933> <font></td></tr>
+<tr><td><font color=#ff9933>HKLM:\SYSTEM\CurrentControlSet\Services\SharedAccess\Defaults\FirewallPolicy\FirewallRules <font></td><td><font color=#ff9933>ADDS-Kerberos-Password-TCP-In ADDS-Kerberos-Password-UDP-In <font></td><td><font color=#ff9933> <font></td></tr>
+<tr><td><font color=#ff9933>HKLM:\SYSTEM\CurrentControlSet\Services\SharedAccess\Parameters\FirewallPolicy\FirewallRules <font></td><td><font color=#ff9933>ADDS-Kerberos-Password-TCP-In ADDS-Kerberos-Password-UDP-In <font></td><td><font color=#ff9933> <font></td></tr>
 </table>
 <h4>Searches HKLM and HKCU for the Words 'password' and 'passwd', then displays the password value in the report.<br><br>The search will work with VNC encrypted passwords stored in the registry, from Kali run the following command<br> <br>echo -n PasswordHere | xxd -r -p | openssl enc -des-cbc --nopad --nosalt -K e84ad660c4721ae0 -iv 0000000000000000 -d | hexdump -Cv<br></h4>
  <h2>PowerShell History</h2>
@@ -1785,7 +1830,7 @@
  <h2>Files with Passwords</h2>
 <table>
 <colgroup><col/></colgroup>
-
+<tr><th>*</th></tr>
 <tr><td>C:\Windows\System32\NarratorControlTemplates.xml</td></tr>
 <tr><td>C:\Windows\System32\schema.ini</td></tr>
 </table>
