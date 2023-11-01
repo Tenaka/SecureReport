@@ -11960,7 +11960,7 @@ $MSSlSvc = Get-Service | where {$_.Name -like "*SQL*"}
     $frag_MDTBuild = $fragMDTBuild | ConvertTo-Html -As table -fragment -PreContent "<h2>MDT Details</h2>"  | Out-String
     
     #Security Review
-    $frag_AVStatus = $FragAVStatus | ConvertTo-Html -As Table  -fragment -PreContent "<h2></h2>" -PostContent "<h4>$descripAV</h4>" | Out-String
+    $frag_AVStatus = $FragAVStatus | ConvertTo-Html -As Table  -fragment -PreContent "<h2>Antivirus</h2>" -PostContent "<h4>$descripAV</h4>" | Out-String
         $Frag_AVStatusN = $Frag_AVStatus.replace("<th>*</th>","")
     
     $frag_BitLocker = $fragBitLocker | ConvertTo-Html -As List -fragment -PreContent "<h2>Bitlocker</h2>" -PostContent "<h4>$descripBitlocker</h4>" | Out-String
