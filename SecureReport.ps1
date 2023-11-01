@@ -12004,7 +12004,9 @@ $MSSlSvc = Get-Service | where {$_.Name -like "*SQL*"}
             
     $frag_TaskListings = $SchedTaskListings | ConvertTo-Html -as Table -Fragment -PreContent "<h2>Encoded Scheduled Tasks</h2>"  -PostContent "<h4>$descripTaskSchEncode</h4>" | Out-String
     $frag_DriverQuery = $DriverQuery | ConvertTo-Html -as Table -Fragment -PreContent "<h2>Drivers Not Signed</h2>" -PostContent "<h4>$descriptDriverQuery</h4>" | Out-String
-    $frag_Share = $fragShare | ConvertTo-Html -as Table -Fragment -PreContent "<h2>Share Permissions</h2>"  | Out-String
+        $frag_DriverQueryN = $frag_DriverQuery.Replace("<tr><th>*</th></tr>","")
+
+    $frag_Share = $fragShare | ConvertTo-Html -as Table -Fragment -PreContent "<h2>Share Permissions</h2>"  | Out-String 
     $frag_AuthCodeSig = $fragAuthCodeSig | ConvertTo-Html -as Table -Fragment -PreContent "<h2>Authenticode HashMisMatch</h2>" -PostContent "<h4>$descriptAuthCodeSig</h4>"  | Out-String  
     $frag_CredGuCFG = $fragCredGuCFG | ConvertTo-Html -as Table -Fragment -PreContent "<h2>Credential Guard</h2>" -PostContent "<h4>$descripCredGu</h4>" | Out-String
     $frag_LapsPwEna = $fragLapsPwEna | ConvertTo-Html -as Table -Fragment -PreContent "<h2>LAPS</h2>" -PostContent "<h4>$descripLAPS</h4>" | Out-String
@@ -12178,7 +12180,7 @@ $MSSlSvc = Get-Service | where {$_.Name -like "*SQL*"}
 			    <input type="radio" id="DLL" name="headerTabs">
 			    <label for="DLL">DLL, Signed Code</label>
 			    <div class="contentTab">
-				    <p>$frag_DLLSafe $frag_DLLHijack $frag_DllNotSigned $frag_DriverQuery $frag_AuthCodeSig
+				    <p>$frag_DLLSafe $frag_DLLHijack $frag_DllNotSigned $frag_DriverQueryN $frag_AuthCodeSig
                     </p>
 			    </div>
 		    </div>
