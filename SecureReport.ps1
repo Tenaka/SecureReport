@@ -12074,14 +12074,16 @@ $MSSlSvc = Get-Service | where {$_.Name -like "*SQL*"}
 			    </div>
 		    </div>
 
+
 		    <div class="headerTab">
 			    <input type="radio" id="OSDetails" name="headerTabs">
-			    <label for="OSDetails">Client Details</label>
+			    <label for="OSDetails">Host Details</label>
 			    <div class="contentTab">
 				    <p>$frag_Host $frag_OS $frag_Bios $frag_Cpu $frag_Network4 $frag_Network6 $frag_Share $frag_MDTBuild
                      </p>
 			    </div>
 		    </div>
+
 
 		    <div class="headerTab">
 			    <input type="radio" id="Network" name="headerTabs">
@@ -12091,6 +12093,17 @@ $MSSlSvc = Get-Service | where {$_.Name -like "*SQL*"}
                     </p>
 			    </div>
 		    </div>
+
+
+		    <div class="headerTab">
+			    <input type="radio" id="DomainInfo" name="headerTabs">
+			    <label for="DomainInfo">Users & Groups</label>
+			    <div class="contentTab">
+				    <p>$frag_AccountDetails $frag_DCListN $frag_FSMO $frag_PassPol $frag_PreAuth $frag_NeverExpires $frag_whoamiGroups $frag_GroupDetails $frag_DomainGrps 
+                    </p>
+			    </div>
+		    </div>
+
 
 		    <div class="headerTab">
 			    <input type="radio" id="URA" name="headerTabs">
@@ -12111,6 +12124,7 @@ $MSSlSvc = Get-Service | where {$_.Name -like "*SQL*"}
 			    </div>
 		    </div>
 
+
 		    <div class="headerTab">
 			    <input type="radio" id="AppExe" name="headerTabs">
 			    <label for="AppExe">AV & Application Execution</label>
@@ -12119,6 +12133,7 @@ $MSSlSvc = Get-Service | where {$_.Name -like "*SQL*"}
                     </p>
 			    </div>
 		    </div>
+
 
 		    <div class="headerTab">
 			    <input type="radio" id="Software" name="headerTabs">
@@ -12129,6 +12144,7 @@ $MSSlSvc = Get-Service | where {$_.Name -like "*SQL*"}
 			    </div>
 		    </div>
 
+
 		    <div class="headerTab">
 			    <input type="radio" id="Certs" name="headerTabs">
 			    <label for="Certs">Certificates & Ciphers</label>
@@ -12138,23 +12154,6 @@ $MSSlSvc = Get-Service | where {$_.Name -like "*SQL*"}
 			    </div>
 		    </div>
 
-		    <div class="headerTab">
-			    <input type="radio" id="DLL" name="headerTabs">
-			    <label for="DLL">DLL, Signed Code</label>
-			    <div class="contentTab">
-				    <p>$frag_DLLSafe $frag_DLLHijack $frag_DllNotSigned $frag_DriverQuery $frag_AuthCodeSig
-                    </p>
-			    </div>
-		    </div>
-
-		    <div class="headerTab">
-			    <input type="radio" id="DomainInfo" name="headerTabs">
-			    <label for="DomainInfo">Users & Groups</label>
-			    <div class="contentTab">
-				    <p>$frag_AccountDetails $frag_DCListN $frag_FSMO $frag_PassPol $frag_PreAuth $frag_NeverExpires $frag_whoamiGroups $frag_GroupDetails $frag_DomainGrps 
-                    </p>
-			    </div>
-		    </div>
 
 		    <div class="headerTab">
 			    <input type="radio" id="Services" name="headerTabs">
@@ -12174,14 +12173,16 @@ $MSSlSvc = Get-Service | where {$_.Name -like "*SQL*"}
 			    </div>
 		    </div>
 
+
 		    <div class="headerTab">
-			    <input type="radio" id="GroupPolicy" name="headerTabs">
-			    <label for="GroupPolicy">Group Policies</label>
+			    <input type="radio" id="DLL" name="headerTabs">
+			    <label for="DLL">DLL, Signed Code</label>
 			    <div class="contentTab">
-				    <p>$frag_LSAPPL $frag_PCElevate $frag_LapsPwEna $frag_CredGuCFG $frag_WDigestULC $frag_ASR $frag_WindowsOSVal $frag_OfficeVal $frag_EdgeVal
+				    <p>$frag_DLLSafe $frag_DLLHijack $frag_DllNotSigned $frag_DriverQuery $frag_AuthCodeSig
                     </p>
 			    </div>
 		    </div>
+
 
 		    <div class="headerTab">
 			    <input type="radio" id="Password" name="headerTabs">
@@ -12192,6 +12193,18 @@ $MSSlSvc = Get-Service | where {$_.Name -like "*SQL*"}
 			    </div>
 		    </div>
 
+
+
+		    <div class="headerTab">
+			    <input type="radio" id="GroupPolicy" name="headerTabs">
+			    <label for="GroupPolicy">Group Policies</label>
+			    <div class="contentTab">
+				    <p>$frag_LSAPPL $frag_PCElevate $frag_LapsPwEna $frag_CredGuCFG $frag_WDigestULC $frag_ASR $frag_WindowsOSVal $frag_OfficeVal $frag_EdgeVal
+                    </p>
+			    </div>
+		    </div>
+
+
 		    <div class="headerTab">
 			    <input type="radio" id="SQL" name="headerTabs">
 			    <label for="SQL">SQL Server</label>
@@ -12200,7 +12213,6 @@ $MSSlSvc = Get-Service | where {$_.Name -like "*SQL*"}
                     </p>
 			    </div>
 		    </div>
-
     
         </body>
 "@ | out-file $Report -Append
