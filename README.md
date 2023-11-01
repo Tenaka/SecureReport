@@ -1,3 +1,5 @@
+![Screenshot 2023-11-01 071814](https://github.com/Tenaka/SecureReport/assets/86342641/8ffb3061-3d00-4357-b6ae-7960e60ed823)
+
 .Synopsis
 Check for common and known security vulnerabilities and create an html report based on the findings
 
