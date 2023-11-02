@@ -366,6 +366,7 @@ YYMMDD
 231029.2 - SQL Reporting
 231029.3 - Truncate all headings to fit into the 31 max char when importing into Excel
 231031.1 - Removed href and compliance in page links as this breaks the Excel importing
+231102.1 - Fixed Headers in some sections, without a header Excel is unable to identify and import
 
 #>
 
@@ -11935,10 +11936,12 @@ $MSSlSvc = Get-Service | where {$_.Name -like "*SQL*"}
     $frag_Host = $fragHost | ConvertTo-Html -As List -Property Name,Domain,Model -fragment -PreContent "<h2>Host Details</h2>"  | Out-String
     $frag_OS = $OS | ConvertTo-Html -As List -property Caption,Version,OSArchitecture,InstallDate -fragment -PreContent "<h2>Windows Details</h2>" | Out-String
     $frag_Patchversion = $fragPatchversion | ConvertTo-Html -As Table  -fragment -PreContent "<h2>Windows Patch</h2>" | Out-String
-         $frag_PatchversionN = $frag_Patchversion.replace("<th>*</th>","")
+         $frag_PatchversionN = $frag_Patchversion.replace("<th>*</th>","<th>Windows Patch Level</th>")
+    
     $frag_AccountDetails = $AccountDetails  | ConvertTo-Html -As Table -fragment -PreContent "<h2>Local Accounts</h2>" -PostContent "<h4>$descripLocalAccounts</h4>" | Out-String 
     $frag_DCList  = $fragDCList | ConvertTo-Html -As Table -fragment -PreContent "<h2>Domain Controllers</h2>" | Out-String 
-        $frag_DCListN = $frag_DCList.replace("<th>*</th>","")
+        $frag_DCListN = $frag_DCList.replace("<th>*</th>","<th>List of Domain Controllers</th>")
+
     $frag_FSMO = $fragFSMO | ConvertTo-Html -As Table -fragment -PreContent "<h2>FSMO Roles</h2>" | Out-String 
     $frag_DomainGrps = $fragDomainGrps | ConvertTo-Html -As Table -fragment -PreContent "<h2>Privilege Groups</h2>" -PostContent "<h4>$descripDomainPrivsGps</h4>" | Out-String 
     $frag_PreAuth = $fragPreAuth | ConvertTo-Html -as Table -Fragment -PreContent "<h2>Pre-Authenticate</h2>" -PostContent "<h4>$descripPreAuth</h4>" | Out-String
@@ -11961,10 +11964,10 @@ $MSSlSvc = Get-Service | where {$_.Name -like "*SQL*"}
     
     #Security Review
     $frag_AVStatus = $FragAVStatus | ConvertTo-Html -As Table  -fragment -PreContent "<h2>Antivirus</h2>" -PostContent "<h4>$descripAV</h4>" | Out-String
-        $Frag_AVStatusN = $Frag_AVStatus.replace("<th>*</th>","")
+        $Frag_AVStatusN = $Frag_AVStatus.replace("<th>*</th>","<th>AV Status and Definition</th>")
     
     $frag_BitLocker = $fragBitLocker | ConvertTo-Html -As List -fragment -PreContent "<h2>Bitlocker</h2>" -PostContent "<h4>$descripBitlocker</h4>" | Out-String
-        $frag_BitLockerN = $frag_BitLocker.Replace("<td>*:</td>","")
+        $frag_BitLockerN = $frag_BitLocker.Replace("<td>*:</td>","<td>Bitlocker Configuration</td>")
     
     $frag_Msinfo = $MsinfoClixml | ConvertTo-Html -As Table -fragment -PreContent "<h2>VBS and Secure Boot</h2>" -PostContent "<h4>$descripVirt</h4>"  | Out-String
     $frag_kernelModeVal = $fragkernelModeVal | ConvertTo-Html -As Table -fragment -PreContent "<h2>Kernel-mode</h2>" -PostContent "<h4>$descripKernelMode</h4>"  | Out-String
@@ -11979,22 +11982,22 @@ $MSSlSvc = Get-Service | where {$_.Name -like "*SQL*"}
     $frag_UnQu = $fragUnQuoted | ConvertTo-Html -as Table -Fragment -PreContent "<h2>UnQuoted Paths</h2>" -PostContent "<h4>$DescripUnquoted</h4>" | Out-String
     $frag_LegNIC = $fragLegNIC | ConvertTo-Html -as Table -Fragment -PreContent "<h2>Legacy Network</h2>" -PostContent "<h4>$DescripLegacyNet</h4>" | Out-String
     $frag_SysRegPerms = $fragReg | ConvertTo-Html -as Table -Fragment -PreContent "<h2>Registry Permissions</h2>" -PostContent "<h4>$descripRegPer</h4>" | Out-String
-        $frag_SysRegPermsN = $frag_SysRegPerms.Replace("<tr><th>*</th></tr>","")
+        $frag_SysRegPermsN = $frag_SysRegPerms.Replace("<tr><th>*</th></tr>","<tr><th>Registry Permissions</th></tr>")
     
     $frag_PSPass = $fragPSPass | ConvertTo-Html -as Table -Fragment -PreContent "<h2>Processes with Passwords</h2>" -PostContent "<h4>$Finish</h4>" | Out-String
     $frag_SecOptions = $fragSecOptions | ConvertTo-Html -as Table -Fragment -PreContent "<h2>Security Options</h2>" -PostContent "<h4>$descripSecOptions</h4>" | Out-String
    
-    $frag_wFolders = $fragwFold | ConvertTo-Html -as Table -Fragment -PreContent "<h2>Writeable Non Sys Dir</h2>" -PostContent "<h4>$descripNonFold</h4>"| Out-String
-        $frag_wFoldersN = $frag_wFolders.Replace("<tr><th>*</th></tr>","")
+    $frag_wFolders = $fragwFold | ConvertTo-Html -as Table -Fragment -PreContent "<h2>Writeable Non-Sys Dir</h2>" -PostContent "<h4>$descripNonFold</h4>"| Out-String
+        $frag_wFoldersN = $frag_wFolders.Replace("<tr><th>*</th></tr>","<tr><th>Writeable Non-System Directories</th></tr>")
     
     $frag_SysFolders = $fragsysFold | ConvertTo-Html -as Table -Fragment -PreContent "<h2>Writeable Sys Dir</h2>"  -PostContent "<h4>$descripSysFold</h4>"| Out-String
-        $frag_SysFoldersN = $frag_SysFolders.Replace("<tr><th>*</th></tr>","")
+        $frag_SysFoldersN = $frag_SysFolders.Replace("<tr><th>*</th></tr>","<tr><th>Writeable System Directories</th></tr>")
     
     $frag_CreateSysFold = $fragCreateSysFold | ConvertTo-Html -as Table -Fragment -PreContent "<h2>Create Files Sys Dir</h2>"  -PostContent "<h4>$descripCreateSysFold</h4>"| Out-String
-        $frag_CreateSysFoldN = $frag_CreateSysFoldN.Replace("<tr><th>*</th></tr>","")
+        $frag_CreateSysFoldN = $frag_CreateSysFoldN.Replace("<tr><th>*</th></tr>","<tr><th>User Creates Files in System Directories</th></tr>")
     
     $frag_wFile = $fragwFile | ConvertTo-Html -as Table -Fragment -PreContent "<h2>Writeable Sys Files</h2>" -PostContent "<h4>$descripFile</h4>" | Out-String
-        $frag_wFileN = $frag_wFile.Replace("<tr><th>*</th></tr>","")
+        $frag_wFileN = $frag_wFile.Replace("<tr><th>*</th></tr>","<tr><th>Writeable System Files</th></tr>")
     
     $frag_FWProf = $fragFWProfile | ConvertTo-Html -as Table -Fragment -PreContent "<h2>Firewall Profile</h2>"  -PostContent "<h4>$DescripFirewalls</h4>"| Out-String
     $frag_FW = $fragFW | ConvertTo-Html -as Table -Fragment -PreContent "<h2>Firewall Rules</h2>" | Out-String
@@ -12004,7 +12007,7 @@ $MSSlSvc = Get-Service | where {$_.Name -like "*SQL*"}
             
     $frag_TaskListings = $SchedTaskListings | ConvertTo-Html -as Table -Fragment -PreContent "<h2>Encoded Scheduled Tasks</h2>"  -PostContent "<h4>$descripTaskSchEncode</h4>" | Out-String
     $frag_DriverQuery = $DriverQuery | ConvertTo-Html -as Table -Fragment -PreContent "<h2>Drivers Not Signed</h2>" -PostContent "<h4>$descriptDriverQuery</h4>" | Out-String
-        $frag_DriverQueryN = $frag_DriverQuery.Replace("<tr><th>*</th></tr>","")
+        $frag_DriverQueryN = $frag_DriverQuery.Replace("<tr><th>*</th></tr>","<tr><th>Encoded Scheduled Tasks</th></tr>")
 
     $frag_Share = $fragShare | ConvertTo-Html -as Table -Fragment -PreContent "<h2>Share Permissions</h2>"  | Out-String 
     $frag_AuthCodeSig = $fragAuthCodeSig | ConvertTo-Html -as Table -Fragment -PreContent "<h2>Authenticode HashMisMatch</h2>" -PostContent "<h4>$descriptAuthCodeSig</h4>"  | Out-String  
@@ -12228,9 +12231,7 @@ $MSSlSvc = Get-Service | where {$_.Name -like "*SQL*"}
     $repDate = (Get-Date).Date.ToString("yy-MM-dd").Replace(":","_")
 
     Get-Content $Report | 
-    foreach {$_ -replace "<tr><th>*</th></tr>",""} | 
     foreach {$_ -replace "<tr><td> </td></tr>",""} |
-    foreach {$_ -replace "<td>*:</td>",""} |
 
     foreach {$_ -replace "<td>expired","<td><font color=#ff9933>expired"} | 
     foreach {$_ -replace "expired</td>","<font></td>"} |
@@ -12325,6 +12326,59 @@ $MSSlSvc = Get-Service | where {$_.Name -like "*SQL*"}
     
     invoke-item 'C:\SecureReport'
 
-
-
     }
+
+    <#<><><><><><><><><><><><><><><><><><><><><>
+                   Backlog
+    <><><><><><><><><><><><><><><><><><><><><>
+
+    Printer Spooler is enabled on DC's and Servers
+    Report on Windows defender and memory protections
+    Proxy password reg key
+
+    Forest and Domain health Checks??
+    Additional account, delegation queries
+    DNS CIS
+    Certificate Services CIS
+    IIS CIS
+
+    Fix Compliance Status to link to the page or section - this is currently broken
+
+    Re-write the whole script to adhere to better scripting standards - never started or intended this to be whats its turned into
+        Funtions for logging, tests and output to text\csv file as well
+
+    Stuff still hanging over from previous version
+    FLTMC.exe - mini driver altitude looking for 'stuff' thats at an altitude to bypass security or encryption
+    report on appX bypass and seriousSam
+    Remote desktop and permissions
+    look for %COMSPEC%
+    snmp
+
+    data streams dir /r
+    Get-Item   -Stream * | where {$_.stream -notmatch "$DATA"}
+
+    netstat -ano
+    Find network neighbours and accessible shares
+    dated or old drivers
+    wifi passwords
+        netsh wlan show profile
+        netsh wlan show profile name="wifi name" key=clear
+
+    credential manager
+        %Systemdrive%\Users\<Username>\AppData\Local\Microsoft\Credentials
+        cmdkey /list 
+
+    Auditing Wec\wef - remote collection point
+    Interesting events
+    wevtutil "Microsoft-Windows-Wcmsvc/Operational"
+    File hash database
+
+    remove powershell commands where performance is an issue, consider replacing with cmd alts
+
+    Audit Settings - ms rec
+    Chrome GPOs
+    Add further MS Edge GPO checks
+    Allign look and feel for all Reg and gpo queries inc mouse over effect
+
+
+#>
