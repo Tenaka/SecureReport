@@ -367,6 +367,7 @@ YYMMDD
 231029.3 - Truncate all headings to fit into the 31 max char when importing into Excel
 231031.1 - Removed href and compliance in page links as this breaks the Excel importing
 231102.1 - Fixed Headers in some sections, without a header Excel is unable to identify and import
+231106.1 - Identified issue with common unquoted paths query, its case sensitive and filtered out EXE and SYS
 
 #>
 
@@ -1226,8 +1227,9 @@ sleep 7
 
     $vulnSvc = Get-CimInstance win32_service | foreach{$_} | 
     where {($_.pathname -ne $null) -and ($_.pathname.trim() -ne "")} | 
-    where {-not $_.pathname.startswith("`"")} | 
-    where {($_.pathname.substring(0, $_.pathname.indexof(".sys") + 4 )) -match ".* .*" -or ($_.pathname.substring(0, $_.pathname.indexof(".exe") + 4 )) -match ".* .*" }
+    where {-not $_.pathname.startswith("`"")} |
+    where {($_.pathname.substring(0, $_.pathname.indexof(".sys") + 4 )) -match ".* .*" -or ($_.pathname.substring(0, $_.pathname.indexof(".exe") + 4 ))  -match ".* .*" -or ($_.pathname.substring(0, $_.pathname.indexof(".SYS") + 4 )) -match ".* .*" -or ($_.pathname.substring(0, $_.pathname.indexof(".EXE") + 4 ))  -match ".* .*"}
+
     $fragUnQuoted=@()
     
     foreach ($unQSvc in $vulnSvc)
