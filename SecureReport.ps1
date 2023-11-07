@@ -368,6 +368,7 @@ YYMMDD
 231031.1 - Removed href and compliance in page links as this breaks the Excel importing
 231102.1 - Fixed Headers in some sections, without a header Excel is unable to identify and import
 231106.1 - Identified issue with common unquoted paths query, its case sensitive and filtered out EXE and SYS
+231106.2 - Audit Print Spooler on Servers and warning regarding it being enabled on DC's
 
 #>
 
@@ -467,6 +468,9 @@ else
 
     #Summary Frag
     $fragSummary=@()
+
+    Queries
+    $gtCIM_OS = (Get-CimInstance -ClassName win32_operatingsystem | Select-Object caption).caption
 
 
 ################################################
@@ -2982,9 +2986,12 @@ Write-Host " "
 Write-Host "Completed Scheduled Tasks" -foregroundColor Green
 
 ################################################
-##########  Enabled Services  ########
+##########  Enabled Services  ##################
 ################################################
-$gtServices = Get-Service | where {$_.StartType -ne "Disabled"} | Select-Object Displayname,ServiceName,Status,StartType | Sort-Object displayname 
+$gtServices = Get-Service | where {$_.StartType -ne "Disabled"} | 
+Select-Object Displayname,ServiceName,Status,StartType | 
+Sort-Object displayname 
+
 $fragRunServices=@()
 foreach ($runService in $gtServices)
 {
@@ -3002,6 +3009,33 @@ foreach ($runService in $gtServices)
     $fragRunServices += $newObjRunningSvc
 }
 
+################################################
+##########  Enabled PRINTER Services  ##########
+################################################
+
+if ($gtCIM_OS -match "Server" )
+    {
+        $gtSpoolerSvc = Get-Service | where {$_.StartType -ne "Disabled" -and $_.name -eq "spooler"} | 
+        Select-Object Displayname,ServiceName,Status,StartType | 
+        Sort-Object displayname   
+        
+        $fragRunSpoolerSvc=@()
+        foreach ($runSpoolerSvc in $gtSpoolerSvc)
+        {
+            $runSpoolerSvcDisName = $runSpoolerSvc.displayName
+            $runSpoolerSvcName = $runSpoolerSvc.ServiceName
+            $runSpoolerSvcStatus = $runSpoolerSvc.Status
+            $runSpoolerSvcStart = $runSpoolerSvc.StartType
+
+
+            $newObjSpoolerSvc = New-Object -TypeName PSObject
+            Add-Member -InputObject $newObjSpoolerSvc -Type NoteProperty -Name DisplayName -Value "Warning $runSpoolerSvcDisName Warning"
+            Add-Member -InputObject $newObjSpoolerSvc -Type NoteProperty -Name ServiceName -Value "Warning $runSpoolerSvcName Warning"
+            Add-Member -InputObject $newObjSpoolerSvc -Type NoteProperty -Name Status -Value "Warning $runSpoolerSvcStatus Warning"
+            Add-Member -InputObject $newObjSpoolerSvc -Type NoteProperty -Name StartType -Value "Warning $runSpoolerSvcStart Warning"
+            $fragRunSpoolerSvc += $newObjSpoolerSvc
+        }
+    }
 
 ################################################
 ##########  FILES, FOLDERS, REG AUDITS  ########
@@ -3356,7 +3390,7 @@ sleep 7
         foreach ($sysFoldItems in $sysFolderDetails)
         {
             $newObjsysFold = New-Object -TypeName PSObject
-            Add-Member -InputObject $newObjsysFold -Type NoteProperty -Name FolderWeakness -Value $sysFoldItems
+            Add-Member -InputObject $newObjsysFold -Type NoteProperty -Name FolderWeakness -Value "Warning $($sysFoldItems) Warning"
             $fragsysFold += $newObjsysFold
             #Write-Host $sysFoldItems -ForegroundColor White
         }
@@ -3443,7 +3477,7 @@ sleep 7
             foreach ($createSysFoldItems in $createSysFolderDetails)
             {
                 $newObjcreateSysFold = New-Object -TypeName PSObject
-                Add-Member -InputObject $newObjcreateSysFold -Type NoteProperty -Name CreateFiles -Value $createSysFoldItems
+                Add-Member -InputObject $newObjcreateSysFold -Type NoteProperty -Name CreateFiles -Value "Warning $($createSysFoldItems) Warning"
                 $fragcreateSysFold += $newObjcreateSysFold
                 #Write-Host $createSysFoldItems -ForegroundColor green
             }
@@ -11284,7 +11318,32 @@ $MSSlSvc = Get-Service | where {$_.Name -like "*SQL*"}
                             Compliance Status
     <><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><>#>
 
-    if ($BiosUEFI -like "*warning*")
+        if ($fragBitLocker -like "*warning*")
+        {
+           $newObjSummary = New-Object psObject
+           Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value '<a href="#Bitlockerisnotenabled">Bitlocker</a>'
+           Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Risk -Value "Very High Risk"
+           $fragSummary += $newObjSummary
+        }
+
+       if ($fragUnQuoted -like "*warning*")
+       {
+           $newObjSummary = New-Object psObject
+           Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value '<a href="#unquoted">Unquoted Paths Vulnerability</a>'
+           Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Risk -Value "Very High Risk"
+           $fragSummary += $newObjSummary
+       }  
+
+       #if ($fragFWProfile| % {$_.inbound -eq "Allow"})
+        if ($fragFWProfile -like "*Warning*")
+       {
+           $newObjSummary = New-Object psObject
+           Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value '<a href="#FirewallProf">The Firewall Profile Allows Inbound Traffic</a>'
+           Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Risk -Value "Very High Risk"
+           $fragSummary += $newObjSummary      
+       }
+    
+        if ($BiosUEFI -like "*warning*")
        {
            $newObjSummary = New-Object psObject
            Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value '<a href="#BiosUEFI">Out of date BIOS or UEFI</a>'
@@ -11321,14 +11380,6 @@ $MSSlSvc = Get-Service | where {$_.Name -like "*SQL*"}
            $newObjSummary = New-Object psObject
            Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value '<a href="#HECI">Hypervisor Enforced Code Integrity</a>'
            Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Risk -Value "High Risk"
-           $fragSummary += $newObjSummary
-        }
-
-        if ($fragBitLocker -like "*warning*")
-        {
-           $newObjSummary = New-Object psObject
-           Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value '<a href="#Bitlockerisnotenabled">Bitlocker</a>'
-           Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Risk -Value "Very High Risk"
            $fragSummary += $newObjSummary
         }
 
@@ -11429,7 +11480,7 @@ $MSSlSvc = Get-Service | where {$_.Name -like "*SQL*"}
            $fragSummary += $newObjSummary
        } 
 
-       if ($fragRegPasswords -like "*Warning*")
+       if ($fragPSPasswords -like "*Warning*")
        {
            $newObjSummary = New-Object psObject
            Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value '<a href="#PSHistory">Passwords in Powershell History</a>'
@@ -11445,6 +11496,70 @@ $MSSlSvc = Get-Service | where {$_.Name -like "*SQL*"}
            $fragSummary += $newObjSummary
         }
 
+        if ($fragwFile -like "*warning*")
+       {
+           $newObjSummary = New-Object psObject
+           Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value '<a href="#sysFileWrite">File in Program Files or Windows Directories are Writeable</a>'
+           Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Risk -Value "High Risk"
+           $fragSummary += $newObjSummary
+       } 
+
+       if ($fragReg -like "*warning*")
+       {
+           $newObjSummary = New-Object psObject
+           Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value '<a href="#RegWrite">Registry Keys that are Writeable</a>'
+           Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Risk -Value "High Risk"
+           $fragSummary += $newObjSummary
+       } 
+
+        if ($fragDLLSafe -like "*warning*")
+        {
+           $newObjSummary = New-Object psObject
+           Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value '<a href="#DLLSafe">DLL Safe Search is not Enabled</a>'
+           Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Risk -Value "High Risk"
+           $fragSummary += $newObjSummary
+        }
+
+       if ($fragSecOptions -like "*warning*")
+       {
+           $newObjSummary = New-Object psObject
+           Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value '<a href="#secOptions">Security Options that Pevent MitM Attack are Enabled</a>'
+           Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Risk -Value "High Risk"
+           $fragSummary += $newObjSummary
+       } 
+
+       if ($SchedTaskPerms -ne $null)
+       {
+           $newObjSummary = New-Object psObject
+           Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value '<a href="#schedDir">Scheduled Tasks with Scripts and Permissions are Weak</a>'
+           Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Risk -Value "High Risk"
+           $fragSummary += $newObjSummary
+       } 
+
+       if ($fragsysFold -like "*warning*")
+       {
+           $newObjSummary = New-Object psObject
+           Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value '<a href="#SysDirWrite">Program Files or Windows Directories are Writeable</a>'
+           Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Risk -Value "Medium to High Risk"
+           $fragSummary += $newObjSummary
+       } 
+
+       if ($fragcreateSysFold -like "*warning*")
+       {
+           $newObjSummary = New-Object psObject
+           Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value '<a href="#sysDirExe">Users can both Execute and Write to Program Files or Windows Directories</a>'
+           Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Risk -Value "Medium to High Risk"
+           $fragSummary += $newObjSummary
+       }
+
+       if ($fragLegNIC -like "*warning*")
+       {
+           $newObjSummary = New-Object psObject
+           Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value '<a href="#LegNetProt">Legacy Network Protocols are Enabled</a>'
+           Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Risk -Value "Medium to High Risk"
+           $fragSummary += $newObjSummary
+       } 
+
         if ($fragAutoRunsVal -like "*warning*")
         {
            $newObjSummary = New-Object psObject
@@ -11452,22 +11567,12 @@ $MSSlSvc = Get-Service | where {$_.Name -like "*SQL*"}
            Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Risk -Value "Medium Risk"
            $fragSummary += $newObjSummary
         }
-        $frag_AutoRuns
-
 
         if ($fragPCElevate -like "*warning*")
         {
            $newObjSummary = New-Object psObject
            Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value '<a href="#SoftElevation">Installation of Software will Auto Elevate</a>'
            Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Risk -Value "Medium Risk"
-           $fragSummary += $newObjSummary
-        }
-
-        if ($fragDLLSafe -like "*warning*")
-        {
-           $newObjSummary = New-Object psObject
-           Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value '<a href="#DLLSafe">DLL Safe Search is not Enabled</a>'
-           Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Risk -Value "High Risk"
            $fragSummary += $newObjSummary
         }
 
@@ -11511,77 +11616,6 @@ $MSSlSvc = Get-Service | where {$_.Name -like "*SQL*"}
            $fragSummary += $newObjSummary
        }
 
-       if ($fragUnQuoted -like "*warning*")
-       {
-           $newObjSummary = New-Object psObject
-           Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value '<a href="#unquoted">Unquoted Paths Vulnerability</a>'
-           Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Risk -Value "Very High Risk"
-           $fragSummary += $newObjSummary
-       }   
-
-       if ($fragReg -like "*warning*")
-       {
-           $newObjSummary = New-Object psObject
-           Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value '<a href="#RegWrite">Registry Keys that are Writeable</a>'
-           Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Risk -Value "High Risk"
-           $fragSummary += $newObjSummary
-       } 
-
-       if ($fragsysFold -like "*warning*")
-       {
-           $newObjSummary = New-Object psObject
-           Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value '<a href="#SysDirWrite">Program Files or Windows Directories are Writeable</a>'
-           Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Risk -Value "Medium to High Risk"
-           $fragSummary += $newObjSummary
-       } 
-
-       if ($fragcreateSysFold -like "*warning*")
-       {
-           $newObjSummary = New-Object psObject
-           Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value '<a href="#sysDirExe">Users can both Execute and Write to Program Files or Windows Directories</a>'
-           Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Risk -Value "Medium to High Risk"
-           $fragSummary += $newObjSummary
-       }
-
-       if ($fragwFile -like "*warning*")
-       {
-           $newObjSummary = New-Object psObject
-           Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value '<a href="#sysFileWrite">File in Program Files or Windows Directories are Writeable</a>'
-           Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Risk -Value "High Risk"
-           $fragSummary += $newObjSummary
-       } 
-
-       if ($fragwFold -like "*warning*")
-       {
-           $newObjSummary = New-Object psObject
-           Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value '<a href="#nonSysDirWrite">Directories that are Writeable and Non System</a>'
-           Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Risk -Value "Medium Risk"
-           $fragSummary += $newObjSummary
-       } 
-
-       if ($fragShare -like "*C$*")
-       {
-           $newObjSummary = New-Object psObject
-           Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value '<a href="#shares">There are System Shares available</a>'
-           Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Risk -Value "Informational"
-           $fragSummary += $newObjSummary
-       }
-
-       if ($fragLegNIC -like "*warning*")
-       {
-           $newObjSummary = New-Object psObject
-           Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value '<a href="#LegNetProt">Legacy Network Protocols are Enabled</a>'
-           Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Risk -Value "Medium to High Risk"
-           $fragSummary += $newObjSummary
-       } 
-
-       if ($SchedTaskPerms -ne $null)
-       {
-           $newObjSummary = New-Object psObject
-           Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value '<a href="#schedDir">Scheduled Tasks with Scripts and Permissions are Weak</a>'
-           Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Risk -Value "High Risk"
-           $fragSummary += $newObjSummary
-       } 
 
           if ($SchedTaskListings -ne $null)
        {
@@ -11590,7 +11624,14 @@ $MSSlSvc = Get-Service | where {$_.Name -like "*SQL*"}
            Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Risk -Value "Medium Risk"
            $fragSummary += $newObjSummary
        } 
-
+       
+       if ($fragwFold -like "*warning*")
+       {
+           $newObjSummary = New-Object psObject
+           Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value '<a href="#nonSysDirWrite">Directories that are Writeable and Non System</a>'
+           Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Risk -Value "Medium Risk"
+           $fragSummary += $newObjSummary
+       } 
 
         if ($DriverQuery -like "*warning*")
         {
@@ -11600,14 +11641,6 @@ $MSSlSvc = Get-Service | where {$_.Name -like "*SQL*"}
            $fragSummary += $newObjSummary
         }
 
-          if ($fragSecOptions -like "*warning*")
-       {
-           $newObjSummary = New-Object psObject
-           Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value '<a href="#secOptions">Security Options that Pevent MitM Attack are Enabled</a>'
-           Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Risk -Value "High Risk"
-           $fragSummary += $newObjSummary
-       } 
-
        if ($fragASR -like "*Warning*")
        {
            $newObjSummary = New-Object psObject
@@ -11616,7 +11649,15 @@ $MSSlSvc = Get-Service | where {$_.Name -like "*SQL*"}
            $fragSummary += $newObjSummary
        }
 
-          if ($fragWindowsOSVal -like "*Warning*")
+       if ($fragRunSpoolerSvc -like "*Warning*")
+       {
+           $newObjSummary = New-Object psObject
+           Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value '<a href="#asr">Print Spooler is enabled on a Server or DC</a>'
+           Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Risk -Value "Medium Risk"
+           $fragSummary += $newObjSummary
+       }
+
+       if ($fragWindowsOSVal -like "*Warning*")
        {
            $newObjSummary = New-Object psObject
            Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value '<a href="#WinSSLF">Windows Hardening Policies Recommended by Microsoft are Missing</a>'
@@ -11641,22 +11682,6 @@ $MSSlSvc = Get-Service | where {$_.Name -like "*SQL*"}
            $fragSummary += $newObjSummary
        }
        
-       #if ($fragFWProfile| % {$_.inbound -eq "Allow"})
-        if ($fragFWProfile -like "*Warning*")
-       {
-           $newObjSummary = New-Object psObject
-           Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value '<a href="#FirewallProf">The Firewall Profile Allows Inbound Traffic</a>'
-           Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Risk -Value "Very High Risk"
-           $fragSummary += $newObjSummary      
-       }
-
-           if ($fragSQLVer -like "*SQL Server *")
-        {
-           $newObjSummary = New-Object psObject
-           Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value '<a href="#SQLVersion">SQL Server is Installed</a>'
-           Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Risk -Value "Low Risk"
-           $fragSummary += $newObjSummary
-        }
 
         if ($fragCISSQL -like "*Warning*")
         {
@@ -11665,6 +11690,22 @@ $MSSlSvc = Get-Service | where {$_.Name -like "*SQL*"}
            Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Risk -Value "Medium Risk"
            $fragSummary += $newObjSummary
         }
+
+        if ($fragSQLVer -like "*SQL Server *")
+        {
+           $newObjSummary = New-Object psObject
+           Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value '<a href="#SQLVersion">SQL Server is Installed</a>'
+           Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Risk -Value "Informational"
+           $fragSummary += $newObjSummary
+        }
+
+       if ($fragShare -like "*C$*")
+       {
+           $newObjSummary = New-Object psObject
+           Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value '<a href="#shares">There are System Shares available</a>'
+           Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Risk -Value "Informational"
+           $fragSummary += $newObjSummary
+       }
 
     <#<><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><>
                          Helps and Explanations
@@ -11731,6 +11772,7 @@ $MSSlSvc = Get-Service | where {$_.Name -like "*SQL*"}
             "
           
         $descripToDo = ""
+        $descripSpooler = "The Print Spooler Service should be disabled on Domain Controllers to prevent Unconstrained Delegation and various AD and Kerberos Abuses. <br><br>To reduce the attack vector, consider disabling the spooler service on any Server where its not required."
 
 
     <#<><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><>
@@ -11978,7 +12020,7 @@ $MSSlSvc = Get-Service | where {$_.Name -like "*SQL*"}
     $frag_DLLHijack = $fragDLLHijack | ConvertTo-Html -as Table -Fragment -PreContent "<h2>DLL Hijacking</h2>" | Out-String
     $frag_DllNotSigned = $fragDllNotSigned | ConvertTo-Html -as Table -Fragment -PreContent "<h2>DLL's not Signed</h2>"  -PostContent "<h4>$descriptDLLHijack</h4>"| Out-String
     $frag_Code = $fragCode | ConvertTo-Html -as Table -Fragment -PreContent "<h2>HECI</h2>" -PostContent "<h4>$descripHyper</h4>" | Out-String
-    $frag_PCElevate = $fragPCElevate | ConvertTo-Html -as Table -Fragment -PreContent "<h2>Automatic Elevates</h2>"  -PostContent "<h4>$descripElev</h4>"| Out-String
+    $frag_PCElevate = $fragPCElevate | ConvertTo-Html -as Table -Fragment -PreContent "<h2>Automatically Elevates</h2>"  -PostContent "<h4>$descripElev</h4>"| Out-String
     $frag_FilePass = $fragFilePass | ConvertTo-Html -as Table -Fragment -PreContent "<h2>Files with Passwords</h2>" -PostContent "<h4>$descripFilePw</h4>" | Out-String
     $frag_AutoLogon = $fragAutoLogon   | ConvertTo-Html -as Table -Fragment -PreContent "<h2>AutoLogon Credentials</h2>"  -PostContent "<h4>$descripAutoLogon</h4>"| Out-String
     $frag_UnQu = $fragUnQuoted | ConvertTo-Html -as Table -Fragment -PreContent "<h2>UnQuoted Paths</h2>" -PostContent "<h4>$DescripUnquoted</h4>" | Out-String
@@ -12005,9 +12047,10 @@ $MSSlSvc = Get-Service | where {$_.Name -like "*SQL*"}
     $frag_FW = $fragFW | ConvertTo-Html -as Table -Fragment -PreContent "<h2>Firewall Rules</h2>" | Out-String
     $frag_TaskPerms =  $SchedTaskPerms | ConvertTo-Html -as Table -Fragment -PreContent "<h2>Scheduled Tasks</h2>"  -PostContent "<h4>$descripTaskSchPerms</h4>" | Out-String
     $frag_RunServices =  $fragRunServices | ConvertTo-Html -as Table -Fragment -PreContent "<h2>Running Services</h2>"  | Out-String
+    $frag_RunSpoolerSvc = $fragRunSpoolerSvc | ConvertTo-Html -as Table -Fragment -PreContent "<h2>Running Spooler Service</h2>" -PostContent "<h4>$descripSpooler</h4></details>"  | Out-String
     $frag_AutoRuns = $fragAutoRunsVal | ConvertTo-Html -as Table -Fragment -PreContent "<h2>AutoRuns</h2>" -PostContent "<h4>$descripAutoRuns</h4></details>" | Out-String         
-            
     $frag_TaskListings = $SchedTaskListings | ConvertTo-Html -as Table -Fragment -PreContent "<h2>Encoded Scheduled Tasks</h2>"  -PostContent "<h4>$descripTaskSchEncode</h4>" | Out-String
+    
     $frag_DriverQuery = $DriverQuery | ConvertTo-Html -as Table -Fragment -PreContent "<h2>Drivers Not Signed</h2>" -PostContent "<h4>$descriptDriverQuery</h4>" | Out-String
         $frag_DriverQueryN = $frag_DriverQuery.Replace("<tr><th>*</th></tr>","<tr><th>Encoded Scheduled Tasks</th></tr>")
 
@@ -12166,7 +12209,7 @@ $MSSlSvc = Get-Service | where {$_.Name -like "*SQL*"}
 			    <input type="radio" id="Services" name="headerTabs">
 			    <label for="Services">Services, Schedules, UnQuoted</label>
 			    <div class="contentTab">
-				    <p>$frag_UnQu $frag_TaskListings $frag_TaskPerms $frag_AutoRuns $frag_RunServices 
+				    <p>$frag_UnQu $frag_TaskListings $frag_TaskPerms $frag_RunSpoolerSvc $frag_AutoRuns $frag_RunServices 
                     </p>
 			    </div>
 		    </div>
