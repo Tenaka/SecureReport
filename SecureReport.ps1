@@ -4382,7 +4382,6 @@ $tphkuRunPath=@()
 $hkuRunComment="Placing a program within a startup folder will also cause that program to execute when a user logs in. There is a startup folder location for individual user accounts as well as a system-wide startup folder that will be checked regardless of which user account logs in. The startup folder path for the current user is C:\Users\[Username]\AppData\Roaming\Microsoft\Windows\Start Menu\Programs\Startup. The startup folder path for all users is C:\ProgramData\Microsoft\Windows\Start Menu\Programs\StartUp."
 
 $gtCachedProfiles = (Get-ChildItem c:\users\ -Force -Directory).fullname
-$fragPSPasswords=@()
 foreach ($CachedProfiles in $gtCachedProfiles)
     {
         $tpAppDataStartup = test-path "$($CachedProfiles)\AppData\Roaming\Microsoft\Windows\Start Menu\Programs\Startup"
