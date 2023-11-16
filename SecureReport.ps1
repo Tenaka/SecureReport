@@ -201,179 +201,7 @@ All Drivers should be signed with a digital signature to verify the integrity of
 #Authenticode Hash Mismatch
 Checks that digitally signed files have a valid and trusted hash. If any Hash Mis-Matches then the file could have been altered
   
-.VERSION
-YYMMDD
-211221.1 - Added Security Options
-211222.1 - Changed f$.Replace  | Out-File $Report to Foreach {$_ -replace "",""}
-211222.2 - Added Warning to be RED with a replace and set-content
-211223.1 - Added -postContent with explanations
-211223.2 - Bitlocker fixed null response
-211229.1 - Added explanations and changed colour
-211229.2 - Added .xml in Password in file search added further excluded directories due to the number of false-positive being returned
-211230.1 - Restored search for folder weaknesses in C:\Windows
-211230.2 - Added CreateFiles Audit - hashed out until testing is complete
-220107.1 - Corrected Legacy Network Netbios, incorrectly showing a warning despite being the correct setting.
-220107.2 - The report file name is dated
-220120.1 - Office 2016 and older plus updates that create keys in Uninstall hive. 
-           This is required to correctly report on legacy apps and to cover how MS is making reporting of installed updates really difficult.
-220202.1 - Fixed issue with hardcode the name of the script during id of PS or ISE
-220203.1 - Added error actions
-220203.2 - Warning about errors generated during the report run.
-220204.1 - Added Dark and Light colour themes.
-220207.1 - Fixed VBS and MSInfo32 formatting issues. 
-220208.1 - Added start and finish warning for each section to provide some feedback
-220208.2 - Fixed the file\folder parsing loops, including processing that should have been completed after the loops had finished
-220211.1 - Added Scheduled task audit looking for embedded code.
-220211.2 - Added < hash hash > to comment out the folder audits.
-220214.1 - Added Driver Query
-220214.1 - Temporary fix to scheduled task where multiple triggers or action breaks the html output
-220215.1 - Report on shares and their permissions
-220216.1 - Fixed Schedule task reporting to show multiple arguments and actions 
-220218.1 - Added Autenticode Signature Hash Mis-Match (Long running process, will be optional, unhash section to enable )
-220222.1 - Embedded passwords reworked to be more efficient 
-220224.1 - General cleanup of spacing and formatting purely aesthetic
-220228.1 - Multi drive support for Folder and File permission and password audits
-220411.1 - Added "HKLM:\Software\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\" to list x86 install applications
-220604.1 - Added Root of drive for permission check Non System Folders
-220604.2 - Added | where {$_.displayroot -notlike "*\\*"} to get drive letters and not mounted shares
-220605.1 - Added loaded dll hijacking vulnerability scanner
-220605.2 - Added READ-HOSTS to prompt to run slow processes.
-220606.1 - Added DLL hijacking for dlls not signed and where the user can write.
-220606.2 - Tidy up and formatting of script
-220607.1 - Password within file search $fragFilePass=@() moved to outside loop as it was dropping previous drives and data
-220708.1 - Added depth to Folder and File search to give option to speed up search
-220708.2 - Moved DLL not signed and user Access, update to Folder search, not an option to run or not
-220708.3 - Added filters to Folder and File search to skip winSXS and LCU folders, time consuming and pointless  - Improves preformance 
-220708.4 - DLL not signed and user Access, wrong setting on filter and excluded the files I'm looking for.
-220708.5 - Changed 'where' clause for excluding folder to $_.fullName -match
-220708.6 - Added ProgramData to folder checks as performance will allow it
-220708.7 - Added Windows directory to check for writeable files. 
-220708.8 - Updated Authenticode to exclude winSxS and LCU directories - Improves preformance 
-220708.9 - Default System Folder check was returning wrong data, updated the directory listing where statement
-220709.1 - Added Credential Guard support
-220709.2 - Added LAPS support
-220711.1 - Added URA Support - uses SecEdit, extracts Rights Assignments and then maps GUID's to User or Group Name
-220711.2 - Updated the description tags and added line separators <br>.
-220712.1 - Updated the out-file format for the URA
-220712.2 - Created if based on Folder audit, if not then the following vars wont be passed to the report, part of the prettification of the output
-           $fragwFile           $frag_wFile           
-           $fragReg             $frag_SysRegPerms     
-           $fragwFold           $frag_wFolders        
-           $fragsysFold         $frag_SysFolders      
-           $fragcreateSysFold   $frag_CreateSysFold   
-           $fragDllNotSigned    $frag_DllNotSigned    
-           $fragAuthCodeSig     $frag_AuthCodeSig  
-220712.3 - Added Grey Theme  
-220713.1 - Added warning for Powershell verison 4 - Win8\2012\2012 R2 - The Get-childitem -depth is not supported - generates a sea of red. Script generates report minus the file,folder,reg audit data.         
-220715.1 - Fixed issue with URA, Debug was missed off the list.  
-220716.1 - Updated Reg Search from -notlike to match   
-220718.1 - Added Filter to remove null content so its not displayed in the final report
-220718.2 - Added Passwords embedded in the Registry  
-220719.1 - Added ASR    
-220719.2 - Added WDigest   
-220720.1 - Added whoami groups 
-220720.2 - Added whoami privs
-220720.3 - Fixed issue with Host Details
-220721.1 - Updated warning message to include URA
-220721.2 - Updated local accounts to warn when enabled, Groups will warn on DA, EA and Schema Admin
-220721.3 - Adding support for MS Recommended Sec settings
-220722.1 - Adding support for MS Recommended Sec settings 
-220723.1 - Adding support for MS Recommended Sec settings
-220723.2 - Fixed misconfig in Security Options for 4 and 10. added Windows 2000 strong encryption
-220723.3 - Added Kerberos encryption types to Security Options
-220724.1 - Added mouse over for URA to show MS recommended settings
-220724.1 - Fixed issues with URA
-220725.1 - Added 255.255.255.255 wpad to legacy network protocols
-220726.1 - Added further Security Options and GPO checked based on ms sec guide
-220818.1 - Added MS Edge GPO check
-220819.1 - Added Office 2016\365 GPO check
-220820.1 - Updated URA to include GPO Path as a mouse over
-220825.1 - Added DSQuery to search for accounts that dont pre-auth - Issue requires AD RSAT installed
-220830.1 - Added Antivirus Audit - Uses known status codes to report on AV engine and definitions
-220831.1 - Updated Get Shares to ignore error for IPC's lack of path and permissions
-220901.1 - Added IPv4 and IPv6 Details
-220901.2 - Added FSMO Roles
-220907.1 - Added Priv Group - DA, EA and Schema
-221024.1 - Passwords embedded in files has option as it can crash PowerShell on servers
-221024.2 - Added warnings and color to unquoted paths, reg and file permission issues
-221024.3 - swapped out get-wmi for cim-instance to support powershell 7
-221025.1 - Fixed issue with Unquoted path and not finding .sys files that are unquoted
-221025.1 - Added audit for installed Windows Features
-221029.1 - Added Compliance Report showing overall status and areas of concern
-221029.2 - Fixed issue where Defender cant be detected on Server OS - will assume if WMI fails that its not installed
-221031.1 - Added Compliance Report showing overall status and areas of concern - Updated for hyperlinks
-221101.1 - Updated Frag titles so reported compliance is an in page link to the reported issue. 
-221102.1 - Replaced Net Group will ADSI LDAP for Domain Priv Group Membership - less text formating makes adsi more reliable.
-221103.1 - Fixed issue with color schemes not applying swapped out if for ifelse
-221106.1 - Firewall profile now warns on misconfiguration
-221106.2 - Fixed issues with various links to with Summary
-221106.3 - Removed the 'Warning' makes report look neater.
-221106.4 - Removed <span style='color:$titleCol'>, not required as CSS applies colour schemes
-221112.1 - Fixed issues with href a ID's - Summary links now work
-221112.2 - Fixed issue with MSInfo and out-file added additional spaces which translated into spaces in the html output - Out-File $msinfoPathcsv -Encoding utf8 
-221112.3 - Added Top to A href, summary links will return to top of page now.
-221121.1 - Added Certificate Audit - There is a naughty list that requires key words being added eg a less that desirable company
-221123.1 - Fixed issues with MS recommended settings
-221129.1 - Added more OS GPO Recommended validation checks
-221129.2 - Swapped out “ ” ’ for ' " " - some had sneaked in whilst prepping some settings in MS Word
-221208.1 - Added test path and rename to random number for C:\SecureReport if exists
-221208.2 - Updated and added further OS GPO settings testing for misconfigurations
-221208.3 - Added further Legacy network checks
-221210.1 - Updated list of MS Edge checks 
-230626.1 - Added kernel-mode hardware-enforced stack protection
-230717.1 - Updated look and feel, added fonts and font sizes vars for CSS
-230718.1 - Added True and False, true is compliant, false missing a setting
-230725.1 - Finised Report is named to hostname and date
-230727.1 - Removed 'Warning -'
-230802.1 - Certs now warns on Sha1
-230802.1 - Updated Installed Apps to warn when installed date is more than 6 months. 
-230803.1 - Updated BIOS to warn when installed date is more than 6 months. 
-230805.1 - Updated looks and feel of report.
-230805.2 - Updated Windows Updates to alert when they are more than 6 months out of date.
-230807.1 - Report on supported CipherSuites - Needs explanation to be added
-230807.2 - Thought it a good idea to audit services..... The number of active services is exponentially multiplying, the audit is available but not outputted in report unless required by adding the $frag_RunServices to the output sections - too much chaff
-230808.1 - Based64 the Tenaka.net imaage and embedded into report 
-        
-        Convert image file to base64 for embedded picture in report
-        Image is the title image on www.tenaka.net, if you wish to download image and confirm base64 and that it contains nothing malicious 
-
-        [convert]::ToBase64String((get-content -path C:\Image\Image.png -Encoding Byte)) >> C:\image\base.txt
-
-        [convert]::FromBase64String((get-content -path C:\Image\base.txt -Encoding Byte)) >> C:\image\Image.png   
-230811.1 - Search Powershell History for passwords and usernames
-230814.1 - Added Applocker Audit - Hash results show first hash only for each entry
-230815.1 - Updated Get-NetfirewallRule from -all to  -PolicyStore activestore 
-230816.1 - Added Details and Summary menu
-230816.2 - reordered headings and grouping       
-230816.3 - reordered compliance status, updated some compliances
-230817.1 - Fixed inconsistencies with searching for passwords in the Registry - now also reports correctly the password in the report
-230824.1 - Updated Fragments to weed out null fragments so they arent included in the finished report
-230824.2 - created additional unfiltered report output as a backup and comparison to the filtered final report
-230824.2 - Added final bit for Applocker auditing and showing enforcment mode
-230824.3 - Fixed typo in Reg search for passwords
-230901.1 - Added WDAC Policy and Enforcement checks
-230905.1 - Updated filtering in Password Search in Registry - displays found password in the report also
-230905.2 - Updates Installed Windows Features as MS have moved the goal posts and deprecated the dism command to list out packages
-230905.3 - Broke Server and Client Features into differenct Fargs
-230906.1 - Typo in the Autologon audit, removed the additional space that prevented it working. 
-230906.1 - Update IPv4\6 Audits to cope with multiple active NIC's eg Hyper-V Server
-230913.1 - Improved ASR reporting and fixed miss reporting when not set to 1 but not 0
-230914.1 - Added Windows Patch version
-230915.1 - Fixed excessive * char in report
-230925.1 - Fixed sizing issues with html css settings 
-231013.1 - Removed </span>, left over from original headers.
-231029.1 - NEW LOOK AND FEEL - Tabs
-231029.2 - SQL Reporting
-231029.3 - Truncate all headings to fit into the 31 max char when importing into Excel
-231031.1 - Removed href and compliance in page links as this breaks the Excel importing
-231102.1 - Fixed Headers in some sections, without a header Excel is unable to identify and import
-231106.1 - Identified issue with common unquoted paths query, its case sensitive and filtered out EXE and SYS
-231106.2 - Audit Print Spooler on Servers and warning regarding it being enabled on DC's
-231109.1 - SPN's, Delegation both Constrained and Uncontrained
-231114.1 - Enhancing searching for passwords in PowerShell history
-231115.1 - Updated Groups and Group Members 
-231115.2 - Updated searching the registry for passwords
-
+.Versioning has been move to the end of the script
 
 #>
 
@@ -652,16 +480,18 @@ sleep 5
         #Members of Group
         foreach ($grpMemberitem in $grpMember)
             {
-                $groupMemberA += ("$($grpMemberitem.name),").TrimEnd(",")
+                $groupMemberA += ("$($grpMemberitem.name),")
                 $groupMemberString = [string]$groupMemberA
             }
            if ([string]::IsNullOrWhiteSpace($groupMemberString) -eq $true){$groupMemberString = "No Group Members"}
 
             $newObjGroup = New-Object -TypeName PSObject
             Add-Member -InputObject $newObjGroup -Type NoteProperty -Name GroupName -Value $grpName
-            Add-Member -InputObject $newObjGroup -Type NoteProperty -Name GroupMembers -Value $groupMemberString
+            Add-Member -InputObject $newObjGroup -Type NoteProperty -Name GroupMembers -Value $groupMemberString.TrimEnd(",")
             $GroupDetails += $newObjGroup 
        }
+
+  
 
 ################################################
 ###############  LIST OF DCs  ##################
@@ -12595,7 +12425,7 @@ $MSSlSvc = Get-Service | where {$_.Name -like "*SQL*"}
 
     <#<><><><><><><><><><><><><><><><><><><><><>
                    Backlog
-    <><><><><><><><><><><><><><><><><><><><><>
+    <><><><><><><><><><><><><><><><><><><><><><>
 
     Report on Windows defender and memory protections
     Proxy password reg key
@@ -12644,5 +12474,187 @@ $MSSlSvc = Get-Service | where {$_.Name -like "*SQL*"}
     Add further MS Edge GPO checks
     Allign look and feel for all Reg and gpo queries inc mouse over effect
 
+
+#>
+
+
+<#
+<><><><><><><><><><><><><><><><><><><><><>
+    Versioning, Updates and Changes 
+<><><><><><><><><><><><><><><><><><><><><>
+
+YYMMDD
+
+211221.1 - Added Security Options
+211222.1 - Changed f$.Replace  | Out-File $Report to Foreach {$_ -replace "",""}
+211222.2 - Added Warning to be RED with a replace and set-content
+211223.1 - Added -postContent with explanations
+211223.2 - Bitlocker fixed null response
+211229.1 - Added explanations and changed colour
+211229.2 - Added .xml in Password in file search added further excluded directories due to the number of false-positive being returned
+211230.1 - Restored search for folder weaknesses in C:\Windows
+211230.2 - Added CreateFiles Audit - hashed out until testing is complete
+220107.1 - Corrected Legacy Network Netbios, incorrectly showing a warning despite being the correct setting.
+220107.2 - The report file name is dated
+220120.1 - Office 2016 and older plus updates that create keys in Uninstall hive. 
+           This is required to correctly report on legacy apps and to cover how MS is making reporting of installed updates really difficult.
+220202.1 - Fixed issue with hardcode the name of the script during id of PS or ISE
+220203.1 - Added error actions
+220203.2 - Warning about errors generated during the report run.
+220204.1 - Added Dark and Light colour themes.
+220207.1 - Fixed VBS and MSInfo32 formatting issues. 
+220208.1 - Added start and finish warning for each section to provide some feedback
+220208.2 - Fixed the file\folder parsing loops, including processing that should have been completed after the loops had finished
+220211.1 - Added Scheduled task audit looking for embedded code.
+220211.2 - Added < hash hash > to comment out the folder audits.
+220214.1 - Added Driver Query
+220214.1 - Temporary fix to scheduled task where multiple triggers or action breaks the html output
+220215.1 - Report on shares and their permissions
+220216.1 - Fixed Schedule task reporting to show multiple arguments and actions 
+220218.1 - Added Autenticode Signature Hash Mis-Match (Long running process, will be optional, unhash section to enable )
+220222.1 - Embedded passwords reworked to be more efficient 
+220224.1 - General cleanup of spacing and formatting purely aesthetic
+220228.1 - Multi drive support for Folder and File permission and password audits
+220411.1 - Added "HKLM:\Software\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\" to list x86 install applications
+220604.1 - Added Root of drive for permission check Non System Folders
+220604.2 - Added | where {$_.displayroot -notlike "*\\*"} to get drive letters and not mounted shares
+220605.1 - Added loaded dll hijacking vulnerability scanner
+220605.2 - Added READ-HOSTS to prompt to run slow processes.
+220606.1 - Added DLL hijacking for dlls not signed and where the user can write.
+220606.2 - Tidy up and formatting of script
+220607.1 - Password within file search $fragFilePass=@() moved to outside loop as it was dropping previous drives and data
+220708.1 - Added depth to Folder and File search to give option to speed up search
+220708.2 - Moved DLL not signed and user Access, update to Folder search, not an option to run or not
+220708.3 - Added filters to Folder and File search to skip winSXS and LCU folders, time consuming and pointless  - Improves preformance 
+220708.4 - DLL not signed and user Access, wrong setting on filter and excluded the files I'm looking for.
+220708.5 - Changed 'where' clause for excluding folder to $_.fullName -match
+220708.6 - Added ProgramData to folder checks as performance will allow it
+220708.7 - Added Windows directory to check for writeable files. 
+220708.8 - Updated Authenticode to exclude winSxS and LCU directories - Improves preformance 
+220708.9 - Default System Folder check was returning wrong data, updated the directory listing where statement
+220709.1 - Added Credential Guard support
+220709.2 - Added LAPS support
+220711.1 - Added URA Support - uses SecEdit, extracts Rights Assignments and then maps GUID's to User or Group Name
+220711.2 - Updated the description tags and added line separators <br>.
+220712.1 - Updated the out-file format for the URA
+220712.2 - Created if based on Folder audit, if not then the following vars wont be passed to the report, part of the prettification of the output
+           $fragwFile           $frag_wFile           
+           $fragReg             $frag_SysRegPerms     
+           $fragwFold           $frag_wFolders        
+           $fragsysFold         $frag_SysFolders      
+           $fragcreateSysFold   $frag_CreateSysFold   
+           $fragDllNotSigned    $frag_DllNotSigned    
+           $fragAuthCodeSig     $frag_AuthCodeSig  
+220712.3 - Added Grey Theme  
+220713.1 - Added warning for Powershell verison 4 - Win8\2012\2012 R2 - The Get-childitem -depth is not supported - generates a sea of red. Script generates report minus the file,folder,reg audit data.         
+220715.1 - Fixed issue with URA, Debug was missed off the list.  
+220716.1 - Updated Reg Search from -notlike to match   
+220718.1 - Added Filter to remove null content so its not displayed in the final report
+220718.2 - Added Passwords embedded in the Registry  
+220719.1 - Added ASR    
+220719.2 - Added WDigest   
+220720.1 - Added whoami groups 
+220720.2 - Added whoami privs
+220720.3 - Fixed issue with Host Details
+220721.1 - Updated warning message to include URA
+220721.2 - Updated local accounts to warn when enabled, Groups will warn on DA, EA and Schema Admin
+220721.3 - Adding support for MS Recommended Sec settings
+220722.1 - Adding support for MS Recommended Sec settings 
+220723.1 - Adding support for MS Recommended Sec settings
+220723.2 - Fixed misconfig in Security Options for 4 and 10. added Windows 2000 strong encryption
+220723.3 - Added Kerberos encryption types to Security Options
+220724.1 - Added mouse over for URA to show MS recommended settings
+220724.1 - Fixed issues with URA
+220725.1 - Added 255.255.255.255 wpad to legacy network protocols
+220726.1 - Added further Security Options and GPO checked based on ms sec guide
+220818.1 - Added MS Edge GPO check
+220819.1 - Added Office 2016\365 GPO check
+220820.1 - Updated URA to include GPO Path as a mouse over
+220825.1 - Added DSQuery to search for accounts that dont pre-auth - Issue requires AD RSAT installed
+220830.1 - Added Antivirus Audit - Uses known status codes to report on AV engine and definitions
+220831.1 - Updated Get Shares to ignore error for IPC's lack of path and permissions
+220901.1 - Added IPv4 and IPv6 Details
+220901.2 - Added FSMO Roles
+220907.1 - Added Priv Group - DA, EA and Schema
+221024.1 - Passwords embedded in files has option as it can crash PowerShell on servers
+221024.2 - Added warnings and color to unquoted paths, reg and file permission issues
+221024.3 - swapped out get-wmi for cim-instance to support powershell 7
+221025.1 - Fixed issue with Unquoted path and not finding .sys files that are unquoted
+221025.1 - Added audit for installed Windows Features
+221029.1 - Added Compliance Report showing overall status and areas of concern
+221029.2 - Fixed issue where Defender cant be detected on Server OS - will assume if WMI fails that its not installed
+221031.1 - Added Compliance Report showing overall status and areas of concern - Updated for hyperlinks
+221101.1 - Updated Frag titles so reported compliance is an in page link to the reported issue. 
+221102.1 - Replaced Net Group will ADSI LDAP for Domain Priv Group Membership - less text formating makes adsi more reliable.
+221103.1 - Fixed issue with color schemes not applying swapped out if for ifelse
+221106.1 - Firewall profile now warns on misconfiguration
+221106.2 - Fixed issues with various links to with Summary
+221106.3 - Removed the 'Warning' makes report look neater.
+221106.4 - Removed <span style='color:$titleCol'>, not required as CSS applies colour schemes
+221112.1 - Fixed issues with href a ID's - Summary links now work
+221112.2 - Fixed issue with MSInfo and out-file added additional spaces which translated into spaces in the html output - Out-File $msinfoPathcsv -Encoding utf8 
+221112.3 - Added Top to A href, summary links will return to top of page now.
+221121.1 - Added Certificate Audit - There is a naughty list that requires key words being added eg a less that desirable company
+221123.1 - Fixed issues with MS recommended settings
+221129.1 - Added more OS GPO Recommended validation checks
+221129.2 - Swapped out “ ” ’ for ' " " - some had sneaked in whilst prepping some settings in MS Word
+221208.1 - Added test path and rename to random number for C:\SecureReport if exists
+221208.2 - Updated and added further OS GPO settings testing for misconfigurations
+221208.3 - Added further Legacy network checks
+221210.1 - Updated list of MS Edge checks 
+230626.1 - Added kernel-mode hardware-enforced stack protection
+230717.1 - Updated look and feel, added fonts and font sizes vars for CSS
+230718.1 - Added True and False, true is compliant, false missing a setting
+230725.1 - Finised Report is named to hostname and date
+230727.1 - Removed 'Warning -'
+230802.1 - Certs now warns on Sha1
+230802.1 - Updated Installed Apps to warn when installed date is more than 6 months. 
+230803.1 - Updated BIOS to warn when installed date is more than 6 months. 
+230805.1 - Updated looks and feel of report.
+230805.2 - Updated Windows Updates to alert when they are more than 6 months out of date.
+230807.1 - Report on supported CipherSuites - Needs explanation to be added
+230807.2 - Thought it a good idea to audit services..... The number of active services is exponentially multiplying, the audit is available but not outputted in report unless required by adding the $frag_RunServices to the output sections - too much chaff
+230808.1 - Based64 the Tenaka.net imaage and embedded into report 
+        
+        Convert image file to base64 for embedded picture in report
+        Image is the title image on www.tenaka.net, if you wish to download image and confirm base64 and that it contains nothing malicious 
+
+        [convert]::ToBase64String((get-content -path C:\Image\Image.png -Encoding Byte)) >> C:\image\base.txt
+
+        [convert]::FromBase64String((get-content -path C:\Image\base.txt -Encoding Byte)) >> C:\image\Image.png   
+230811.1 - Search Powershell History for passwords and usernames
+230814.1 - Added Applocker Audit - Hash results show first hash only for each entry
+230815.1 - Updated Get-NetfirewallRule from -all to  -PolicyStore activestore 
+230816.1 - Added Details and Summary menu
+230816.2 - reordered headings and grouping       
+230816.3 - reordered compliance status, updated some compliances
+230817.1 - Fixed inconsistencies with searching for passwords in the Registry - now also reports correctly the password in the report
+230824.1 - Updated Fragments to weed out null fragments so they arent included in the finished report
+230824.2 - created additional unfiltered report output as a backup and comparison to the filtered final report
+230824.2 - Added final bit for Applocker auditing and showing enforcment mode
+230824.3 - Fixed typo in Reg search for passwords
+230901.1 - Added WDAC Policy and Enforcement checks
+230905.1 - Updated filtering in Password Search in Registry - displays found password in the report also
+230905.2 - Updates Installed Windows Features as MS have moved the goal posts and deprecated the dism command to list out packages
+230905.3 - Broke Server and Client Features into differenct Fargs
+230906.1 - Typo in the Autologon audit, removed the additional space that prevented it working. 
+230906.1 - Update IPv4\6 Audits to cope with multiple active NIC's eg Hyper-V Server
+230913.1 - Improved ASR reporting and fixed miss reporting when not set to 1 but not 0
+230914.1 - Added Windows Patch version
+230915.1 - Fixed excessive * char in report
+230925.1 - Fixed sizing issues with html css settings 
+231013.1 - Removed </span>, left over from original headers.
+231029.1 - NEW LOOK AND FEEL - Tabs
+231029.2 - SQL Reporting
+231029.3 - Truncate all headings to fit into the 31 max char when importing into Excel
+231031.1 - Removed href and compliance in page links as this breaks the Excel importing
+231102.1 - Fixed Headers in some sections, without a header Excel is unable to identify and import
+231106.1 - Identified issue with common unquoted paths query, its case sensitive and filtered out EXE and SYS
+231106.2 - Audit Print Spooler on Servers and warning regarding it being enabled on DC's
+231109.1 - SPN's, Delegation both Constrained and Uncontrained
+231114.1 - Enhancing searching for passwords in PowerShell history
+231115.1 - Updated Groups and Group Members 
+231115.2 - Updated searching the registry for passwords
+231116.1 - Updated Autologon search for passwords - Null isnt Null but empty
 
 #>
