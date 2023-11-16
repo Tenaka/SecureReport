@@ -369,6 +369,11 @@ YYMMDD
 231102.1 - Fixed Headers in some sections, without a header Excel is unable to identify and import
 231106.1 - Identified issue with common unquoted paths query, its case sensitive and filtered out EXE and SYS
 231106.2 - Audit Print Spooler on Servers and warning regarding it being enabled on DC's
+231109.1 - SPN's, Delegation both Constrained and Uncontrained
+231114.1 - Enhancing searching for passwords in PowerShell history
+231115.1 - Updated Groups and Group Members 
+231115.2 - Updated searching the registry for passwords
+
 
 #>
 
@@ -469,7 +474,7 @@ else
     #Summary Frag
     $fragSummary=@()
 
-    Queries
+    #Queries
     $gtCIM_OS = (Get-CimInstance -ClassName win32_operatingsystem | Select-Object caption).caption
 
 
@@ -479,7 +484,7 @@ else
     $fragMDTBuild =@()
 
     try {
-        $mdtBuild = gwmi -Class microsoft_BDD_info
+        $mdtBuild = gwmi -Class microsoft_BDD_info -ErrorAction SilentlyContinue
             $mdtID =  $mdtBuild.TaskSequenceID
             $mdtTS = $mdtBuild.TaskSequenceName
             $mdtVer = $mdtBuild.TaskSequenceVersion
@@ -521,25 +526,25 @@ sleep 5
     $TPMSpecVer = $TPMSpec[2]
 
     if ($bitVS -eq "FullyEncrypted")
-    {
-        $newObjBit = New-Object psObject
-        Add-Member -InputObject $newObjBit -Type NoteProperty -Name MountPoint -Value $BitMP
-        Add-Member -InputObject $newObjBit -Type NoteProperty -Name EncryptionMethod -Value $BitEM
-        Add-Member -InputObject $newObjBit -Type NoteProperty -Name KeyProtector  -Value $BitKPJ
-        Add-Member -InputObject $newObjBit -Type NoteProperty -Name VolumeStatus -Value $bitVS
-        Add-Member -InputObject $newObjBit -Type NoteProperty -Name TPMPresent -Value $TPMPres
-        Add-Member -InputObject $newObjBit -Type NoteProperty -Name TPMEnabled  -Value $TPMEn
-        Add-Member -InputObject $newObjBit -Type NoteProperty -Name TPMManufacVersion -Value $TPMVer
-        Add-Member -InputObject $newObjBit -Type NoteProperty -Name TPMSpecVersion -Value $TPMSpecVer
-        $fragBitLocker += $newObjBit
-    }
+        {
+            $newObjBit = New-Object psObject
+            Add-Member -InputObject $newObjBit -Type NoteProperty -Name MountPoint -Value $BitMP
+            Add-Member -InputObject $newObjBit -Type NoteProperty -Name EncryptionMethod -Value $BitEM
+            Add-Member -InputObject $newObjBit -Type NoteProperty -Name KeyProtector  -Value $BitKPJ
+            Add-Member -InputObject $newObjBit -Type NoteProperty -Name VolumeStatus -Value $bitVS
+            Add-Member -InputObject $newObjBit -Type NoteProperty -Name TPMPresent -Value $TPMPres
+            Add-Member -InputObject $newObjBit -Type NoteProperty -Name TPMEnabled  -Value $TPMEn
+            Add-Member -InputObject $newObjBit -Type NoteProperty -Name TPMManufacVersion -Value $TPMVer
+            Add-Member -InputObject $newObjBit -Type NoteProperty -Name TPMSpecVersion -Value $TPMSpecVer
+            $fragBitLocker += $newObjBit
+        }
     Else
-    { 
-        $BitDisabled = "Warning Bitlocker is disabled Warning"
-        $newObjBit = New-Object psObject
-        Add-Member -InputObject $newObjBit -Type NoteProperty -Name BitLockerDisabled -Value $BitDisabled
-        $fragBitLocker += $newObjBit
-    }
+        { 
+            $BitDisabled = "Warning Bitlocker is disabled Warning"
+            $newObjBit = New-Object psObject
+            Add-Member -InputObject $newObjBit -Type NoteProperty -Name BitLockerDisabled -Value $BitDisabled
+            $fragBitLocker += $newObjBit
+        }
     
 Write-Host " "
 Write-Host "Completed Bitlocker Audit" -foregroundColor Green
@@ -551,10 +556,10 @@ Write-Host "Gathering Host and Account Details" -foregroundColor Green
 sleep 5
 
     #OS Details
-    $fragHost = Get-CimInstance -ClassName win32_computersystem 
-    $OS = Get-CimInstance -ClassName win32_operatingsystem 
-    $bios = Get-CimInstance -ClassName win32_bios | Select-Object Name,Manufacturer,SerialNumber,SMBIOSBIOSVersion,ReleaseDate
-    $cpu = Get-CimInstance -ClassName win32_processor
+    $fragHost = Get-CimInstance -ClassName win32_computersystem -ErrorAction SilentlyContinue
+    $OS = Get-CimInstance -ClassName win32_operatingsystem -ErrorAction SilentlyContinue
+    $bios = Get-CimInstance -ClassName win32_bios  -ErrorAction SilentlyContinue | Select-Object Name,Manufacturer,SerialNumber,SMBIOSBIOSVersion,ReleaseDate
+    $cpu = Get-CimInstance -ClassName win32_processor -ErrorAction SilentlyContinue
 
     $fragPatchversion=@()
     #$OSBuildNumber = (Get-ItemProperty HKLM:\system\Software\Microsoft\BuildLayers\OSClient).buildnumber
@@ -633,26 +638,30 @@ sleep 5
     }
 
 ################################################
-#########  MEMBERS OF LOCAL GROUPS  ############
+#####  MEMBERS OF LOCAL\BUILT-IN GROUPS  #######
 ################################################
 #Group Members
-#Cant remove "," as looping the Split breaks HTML import...back to drawing board - to fix
     $getLGrp = Get-LocalGroup 
     $GroupDetails=@()
     foreach ($LGpItem in $getLGrp)
     {
         $grpName = $LGpItem.Name 
-        $grpMember = Get-LocalGroupMember -Group $LGpItem.ToString()
-        $grpMemSplit = $grpMember -split(",") -replace("{","") -replace("}","")
-        $grpMemAdd = $grpMemSplit[0] +","+ $grpMemSplit[1]  +","+ $grpMemSplit[2]+","+ $grpMemSplit[3]+","+ $grpMemSplit[4]
-        if ($grpMember -ne $null)
+        $grpMember = Get-LocalGroupMember -Group $LGpItem.ToString() -ErrorAction SilentlyContinue
+        $groupMemberA=@()
+        $groupMemberString=@()
+        #Members of Group
+        foreach ($grpMemberitem in $grpMember)
             {
-                $newObjGroup = New-Object -TypeName PSObject
-                Add-Member -InputObject $newObjGroup -Type NoteProperty -Name GroupName -Value $grpName
-                Add-Member -InputObject $newObjGroup -Type NoteProperty -Name GroupMembers -Value  $grpMemAdd
-                $GroupDetails += $newObjGroup
+                $groupMemberA += ("$($grpMemberitem.name),").TrimEnd(",")
+                $groupMemberString = [string]$groupMemberA
             }
-   }
+           if ([string]::IsNullOrWhiteSpace($groupMemberString) -eq $true){$groupMemberString = "No Group Members"}
+
+            $newObjGroup = New-Object -TypeName PSObject
+            Add-Member -InputObject $newObjGroup -Type NoteProperty -Name GroupName -Value $grpName
+            Add-Member -InputObject $newObjGroup -Type NoteProperty -Name GroupMembers -Value $groupMemberString
+            $GroupDetails += $newObjGroup 
+       }
 
 ################################################
 ###############  LIST OF DCs  ##################
@@ -662,7 +671,7 @@ sleep 5
 $fragDCList=@()
 [string]$queryDC = netdom /query dc
 $dcListQuery = $queryDC.Replace("The command completed successfully.","").Replace("List of domain controllers with accounts in the domain:","").Replace(" ",",").replace(",,","")
-$fqdn = ((Get-CimInstance -ClassName win32_computersystem).Domain) + "."
+$fqdn = ((Get-CimInstance -ClassName win32_computersystem  -ErrorAction SilentlyContinue).Domain) + "."
 $dcList = $dcListQuery.split(",") | sort 
 
     foreach ($dcs in $dcList)
@@ -817,6 +826,121 @@ $dcList = $dcListQuery.split(",") | sort
             Add-Member -InputObject $newObjNeverExpires -Type NoteProperty -Name NeverExpires-UACValue -Value $NeverExpiresUac
             $fragNeverExpires += $newObjNeverExpires
         }
+
+
+################################################
+################## SPNs ########################
+################################################
+
+#list all spns
+$gtUserSPNList = Get-ADUSer -Filter { ServicePrincipalName -ne "$null"} -Properties ServicePrincipalName | select SamAccountName, ServicePrincipalName
+$fragListUserSPNs=@()
+foreach ($ListUserSPNs in $gtUserSPNList)
+    {
+
+    $ListUserSPNsName = $ListUserSPNs.samaccountName
+    $ListUserSPNsUPN = [string]$ListUserSPNs.ServicePrincipalName
+
+    $newObjListUserSPNs = New-Object psObject
+    Add-Member -InputObject $newObjListUserSPNs -Type NoteProperty -Name SamAccountName -Value $ListUserSPNsName
+    Add-Member -InputObject $newObjListUserSPNs -Type NoteProperty -Name ServicePrincipalName -Value $ListUserSPNsUPN
+    $fragListUserSPNs += $newObjListUserSPNs
+}
+
+
+#list all computer spn - loop spn and split 
+$gtComputerSPN = Get-ADComputer -Filter { ServicePrincipalName -ne "$null"} -Properties ServicePrincipalName | select DNSHostname, ServicePrincipalName
+
+$fragListComputerSPNs=@()
+foreach ($ListComputerSPNs in $gtComputerSPN)
+    {
+
+    $ListComputerSPNsName = $ListComputerSPNs.DNSHostname
+    $ListComputerSPNsUPN = [string]$ListComputerSPNs.ServicePrincipalName
+
+    $newObjListComputerSPNs = New-Object psObject
+    Add-Member -InputObject $newObjListComputerSPNs -Type NoteProperty -Name Hostname -Value $ListComputerSPNsName
+    Add-Member -InputObject $newObjListComputerSPNs -Type NoteProperty -Name ServicePrincipalName -Value $ListComputerSPNsUPN
+    $fragListComputerSPNs += $newObjListComputerSPNs
+}
+
+
+#Accounts unconstrained delegation eg Admins that can delegate and their services
+$gtUserTrusted4Delegate = Get-ADUser -filter {TrustedForDelegation -eq $true} -Properties Name,DistinguishedName,UserPrincipalName,TrustedForDelegation
+$fragTrusted4Delegate=@()
+foreach ($Trusted4Delegate in $gtUserTrusted4Delegate)
+    {
+
+    $allowDelegateName = $Trusted4Delegate.Name
+    $allowDelegateDN = $Trusted4Delegate.DistinguishedName
+    $allowDelegateUPN = $Trusted4Delegate.UserPrincipalName
+    $allowDelegateTo = [string]$Trusted4Delegate.TrustedForDelegation
+
+    $newObjTrusted4Delegate = New-Object psObject
+    Add-Member -InputObject $newObjTrusted4Delegate -Type NoteProperty -Name Name -Value "Warning $($allowDelegateName) Warning"
+    Add-Member -InputObject $newObjTrusted4Delegate -Type NoteProperty -Name DistinguishedName -Value "Warning $($allowDelegateDN) Warning"
+    Add-Member -InputObject $newObjTrusted4Delegate -Type NoteProperty -Name UserPrincipalName -Value "Warning $($allowDelegateUPN) Warning"
+    Add-Member -InputObject $newObjTrusted4Delegate -Type NoteProperty -Name Trusted4Delegateto -Value "Warning $($allowDelegateTo) Warning"
+
+    $fragTrusted4Delegate += $newObjTrusted4Delegate 
+}
+
+#Accounts constrained delegation eg Admins that can delegate and their services
+$gtUserAllowed2Delegate = Get-ADUser -filter {msDS-AllowedToDelegateTo -ne "$null"} -Properties * 
+$fragAllowed2Delegate=@()
+foreach ($Allowed2Delegate in $gtUserAllowed2Delegate)
+    {
+
+    $allowDelegateName = $Allowed2Delegate.Name
+    $allowDelegateDN = $Allowed2Delegate.DistinguishedName
+    $allowDelegateUPN = $Allowed2Delegate.UserPrincipalName
+    $allowDelegateTo = [string]$Allowed2Delegate.'msDS-AllowedToDelegateTo'
+
+    $newObjAllowed2Delegate = New-Object psObject
+    Add-Member -InputObject $newObjAllowed2Delegate -Type NoteProperty -Name Name -Value "Warning $($allowDelegateName) Warning"
+    Add-Member -InputObject $newObjAllowed2Delegate -Type NoteProperty -Name DistinguishedName -Value "Warning $($allowDelegateDN) Warning"
+    Add-Member -InputObject $newObjAllowed2Delegate -Type NoteProperty -Name UserPrincipalName -Value "Warning $($allowDelegateUPN) Warning"
+    Add-Member -InputObject $newObjAllowed2Delegate -Type NoteProperty -Name Allowed2Delegateto -Value "Warning $($allowDelegateTo) Warning"
+
+    $fragAllowed2Delegate += $newObjAllowed2Delegate 
+}
+
+#Computers UnConstrained delegation
+$gtUnConstrained = Get-ADComputer -filter {TrustedForDelegation -eq $true} -Properties TrustedForDelegation, TrustedToAuthForDelegation,msDS-AllowedToActOnBehalfOfOtherIdentity,msDS-AllowedToDelegateTo,PrincipalsAllowedToDelegateToAccount,serviceprincipalname 
+$fragUnConstrained=@()
+foreach ($UnConstrained in $gtUnConstrained)
+    {
+
+    $unconstrainDN = $UnConstrained.DistinguishedName
+    $unconstrainSPN = [string]$UnConstrained.serviceprincipalname
+    $unconstrainTrusted = $UnConstrained.TrustedForDelegation 
+
+    if ($unconstrainDN -notmatch "OU=Domain Controllers"){$unconstrainDN = "Warning $($unconstrainDN) Warning" }else{$unconstrainDN = $unconstrainDN}
+
+    $newObjUnConstrained = New-Object psObject
+    Add-Member -InputObject $newObjUnConstrained -Type NoteProperty -Name DN -Value $unconstrainDN
+    Add-Member -InputObject $newObjUnConstrained -Type NoteProperty -Name SPN -Value $unconstrainSPN
+    Add-Member -InputObject $newObjUnConstrained -Type NoteProperty -Name TrustedForDelegation -Value $unconstrainTrusted
+    $fragUnConstrained += $newObjUnConstrained
+}
+
+#Computers constained delegation
+$gtConstrained = Get-ADComputer -filter {TrustedToAuthForDelegation -eq $true} -Property TrustedForDelegation, TrustedToAuthForDelegation,msDS-AllowedToActOnBehalfOfOtherIdentity,msDS-AllowedToDelegateTo,PrincipalsAllowedToDelegateToAccount,serviceprincipalname 
+$fragConstrained=@()
+foreach ($Constrained in $gtConstrained)
+    {
+
+    $constrainDN = $Constrained.DistinguishedName
+    $constrainSPN = [string]$Constrained.serviceprincipalname
+    $constrainTrusted = $Constrained.TrustedToAuthForDelegation
+
+    $newObjConstrained = New-Object psObject
+    Add-Member -InputObject $newObjConstrained -Type NoteProperty -Name DN -Value $constrainDN
+    Add-Member -InputObject $newObjConstrained -Type NoteProperty -Name SPN -Value $constrainSPN
+    Add-Member -InputObject $newObjConstrained -Type NoteProperty -Name TrustedToAuthForDelegation -Value $constrainTrusted
+    $fragConstrained += $newObjConstrained
+}
+
 
     Write-Host " "
     Write-Host "Completed Gathering Host and Account Details" -foregroundColor Green
@@ -1078,7 +1202,7 @@ sleep 5
 
     $WinFeaturePathtxt = "C:\SecureReport\output\$OutFunc\" + "$OutFunc.txt"
     $FragWinFeature=@()
-    $getWindows = Get-CimInstance win32_operatingsystem | Select-Object caption
+    $getWindows = Get-CimInstance win32_operatingsystem -ErrorAction SilentlyContinue | Select-Object caption
         if ($getWindows.caption -notlike "*Server*")
             {
             Dism /online /Get-Features >> $WinFeaturePathtxt
@@ -1148,7 +1272,7 @@ sleep 5
 #https://stackoverflow.com/questions/33649043/powershell-how-to-get-antivirus-product-details - "borrowed" baulk of script from site
 
     #$AntiVirusProducts = Get-WmiObject -Namespace "root\SecurityCenter2" -Class AntiVirusProduct  
-    $AntiVirusProducts = Get-CimInstance -Namespace "root\SecurityCenter2" -Class AntiVirusProduct 
+    $AntiVirusProducts = Get-CimInstance -Namespace "root\SecurityCenter2" -Class AntiVirusProduct -ErrorAction SilentlyContinue
 
     if ($AntiVirusProducts -ne $null)
     {
@@ -1225,11 +1349,7 @@ sleep 7
     $qpath = "C:\SecureReport\output\$OutFunc\" + "$OutFunc.log"
  
     #Unquoted paths
-    
-    #Get-CimInstance win32_service
-    #gwmi win32_service
-
-    $vulnSvc = Get-CimInstance win32_service | foreach{$_} | 
+    $vulnSvc = Get-CimInstance win32_service  -ErrorAction SilentlyContinue | foreach{$_} | 
     where {($_.pathname -ne $null) -and ($_.pathname.trim() -ne "")} | 
     where {-not $_.pathname.startswith("`"")} |
     where {($_.pathname.substring(0, $_.pathname.indexof(".sys") + 4 )) -match ".* .*" -or ($_.pathname.substring(0, $_.pathname.indexof(".exe") + 4 ))  -match ".* .*" -or ($_.pathname.substring(0, $_.pathname.indexof(".SYS") + 4 )) -match ".* .*" -or ($_.pathname.substring(0, $_.pathname.indexof(".EXE") + 4 ))  -match ".* .*"}
@@ -1345,7 +1465,7 @@ Write-Host "Finished Collecting MSInfo32 data for VBS" -foregroundColor Green
 ############  WDAC | DEVICE GUARD  #############
 ################################################
 #Citools available from Windows 11 22H2
-$osBuild = (Get-CimInstance -ClassName win32_operatingsystem).buildnumber 
+$osBuild = (Get-CimInstance -ClassName win32_operatingsystem -ErrorAction SilentlyContinue).buildnumber 
 $fragWDACCIPolicy=@()
 if ($osBuild -ge "22621")
 {
@@ -1791,8 +1911,7 @@ sleep 5
     $AutoLogonDefPass =  $getAutoLogon.GetValue("DefaultPassword") 
 
     $fragAutoLogon =@()
-
-    if ($AutoLogonDefPass  -eq "$null")
+    if ([string]::IsNullorEmpty($AutoLogonDefPass) -eq "$true")
     {
         $AutoLPass = "There is no Default Password set for AutoLogon" 
         $AutoLUser = "There is no Default User set for AutoLogon" 
@@ -1813,8 +1932,6 @@ sleep 5
     Add-Member -InputObject $newObjAutoLogon -Type NoteProperty -Name AutoLogonRegistry -Value $AutoLReg
     Add-Member -InputObject $newObjAutoLogon -Type NoteProperty -Name TrueIsCompliant -Value $trueFalse
     $fragAutoLogon += $newObjAutoLogon
-
-
         
 ################################################
 #########  LEGACY NETWORK PROTOCOLS  ##########
@@ -3761,7 +3878,7 @@ Write-Host " "
 Write-Host "Finised Auditing Shares and permissions" -foregroundColor Green
 
 ################################################
-############  EMBEDDED PASSWordS  ##############
+############  EMBEDDED PASSWORDS  ##############
 ################################################  
 
 Write-Host " "
@@ -3836,7 +3953,7 @@ Write-Host " "
 Write-Host "Finished Searching for Embedded Password in Files" -foregroundColor Green
 
 ################################################
-#####  SEARCHING FOR REGISTRY PASSWordS   ######
+#####  SEARCHING FOR REGISTRY PASSWORDS  ######
 ################################################
 Write-Host " "
 Write-Host "Auditing Registry Passwords" -foregroundColor Green
@@ -3865,7 +3982,7 @@ sleep 5
 }
 
 $getRegPassCon = (get-content $secEditPath | 
-where {$_ -notmatch "classes" -and $_ -notmatch "ClickToRun" -and $_ -notmatch "}" -and $_ -notmatch "PolicyManager" -and $_ -notmatch "Internet" -and $_ -notmatch "WSMAN" -and $_ -notmatch "PasswordEnrollmentManager"} |Select-String -Pattern "hkey_", "hkcu_")# -and $_ -notmatch "microsoft" -and $_ -notmatch "default"} | 
+where {$_ -notmatch "classes" -and $_ -notmatch "ClickToRun" -and $_ -notmatch "}" -and $_ -notmatch "PolicyManager" -and $_ -notmatch "Internet" -and $_ -notmatch "WSMAN" -and $_ -notmatch "PasswordEnrollmentManager" -and $_ -notmatch "FirewallPolicy"  -and $_ -notmatch "NetworkController"} | Select-String -Pattern "hkey_", "hkcu_")# -and $_ -notmatch "microsoft" -and $_ -notmatch "default"} | 
 
 
 $fragRegPasswords=@()
@@ -3874,16 +3991,21 @@ foreach ($getRegPassItem in $getRegPassCon)
     if ($getRegPassItem -match "HKEY_LOCAL_MACHINE"){$getRegPassItem = $getRegPassItem.tostring().replace("HKEY_LOCAL_MACHINE","HKLM:")}
     if ($getRegPassItem -match "HKEY_CURRENT_USER"){$getRegPassItem = $getRegPassItem.tostring().replace("HKEY_CURRENT_USER","HKCU:")}
 
-    $gtRegPassItem = (Get-Item $getRegPassItem)
-    $gtItemPasskey = (Get-Item $getRegPassItem).property | where {$_ -match "passd" -or $_ -match "password" -and $_ -notmatch "PasswordExpiryWarning"}
-    $gtItemPassValue = (Get-ItemProperty $getRegPassItem).$gtItemPasskey
+    $gtItemPasskey = (Get-Item $getRegPassItem).property | where {$_ -match "passd" -or $_ -match "password"-or $_ -match "user" -or $_ -match "cred" -or $_ -match "unlock" -and $_ -notmatch "PasswordExpiryWarning"}
 
-    $newObjRegPasswords = New-Object -TypeName PSObject
-    Add-Member -InputObject $newObjRegPasswords -Type NoteProperty -Name RegistryPath -Value "Warning $($getRegPassItem) warning"
-    Add-Member -InputObject $newObjRegPasswords -Type NoteProperty -Name RegistryValue -Value "Warning $($gtItemPasskey) warning"
-    Add-Member -InputObject $newObjRegPasswords -Type NoteProperty -Name RegistryPassword -Value "Warning $($gtItemPassValue) warning"
-    $fragRegPasswords += $newObjRegPasswords          
-} 
+    foreach ($gtItemPasskeyitem in $gtItemPasskey)
+    {
+
+        $gtItemPassValue = (Get-ItemProperty $getRegPassItem -Name $gtItemPasskeyitem).$gtItemPasskeyitem
+
+        $newObjRegPasswords = New-Object -TypeName PSObject
+        Add-Member -InputObject $newObjRegPasswords -Type NoteProperty -Name RegistryPath -Value "Warning $($getRegPassItem) warning"
+        Add-Member -InputObject $newObjRegPasswords -Type NoteProperty -Name RegistryValue -Value "Warning $($gtItemPasskeyitem) warning"
+        Add-Member -InputObject $newObjRegPasswords -Type NoteProperty -Name RegistryPassword -Value "Warning $($gtItemPassValue) warning"
+        $fragRegPasswords += $newObjRegPasswords   
+    }
+           
+}
 
 Write-Host " "
 Write-Host "Finished Searching for Embedded Password in the Registry" -foregroundColor Green
@@ -3892,28 +4014,70 @@ Write-Host "Finished Searching for Embedded Password in the Registry" -foregroun
 ########  POWERSHELL PASSWORD SEARCH  ##########
 ################################################
 #$gtPSPawd = get-content $env:APPDATA\Microsoft\Windows\PowerShell\PSReadLine\ConsoleHost_history.txt | where {$_ -match "pass" -or $_ -match "user" }
-
 $gtCachedProfiles = (Get-ChildItem c:\users\ -Force -Directory).fullname
-$fragPSPasswords=@()
+$fragPSPa55words=@()
+
+    $VulnReport = "C:\SecureReport"
+    $OutFunc = "PSPa55words" 
+                
+    $tpSec10 = Test-Path "C:\SecureReport\output\$OutFunc\"
+    
+    if ($tpSec10 -eq $false)
+    {
+        New-Item -Path "C:\SecureReport\output\$OutFunc\" -ItemType Directory -Force
+    }
+
+    $PSPa55wordsOutput = "C:\SecureReport\output\$OutFunc\" + "$OutFunc.txt"
+    $PSPa55wordsParsed = "C:\SecureReport\output\$OutFunc\" + "$($OutFunc)_Parsed.txt"
+
 foreach ($CachedProfiles in $gtCachedProfiles)
     {
     $tpHistory = test-path "$($CachedProfiles)\Appdata\roaming\Microsoft\Windows\PowerShell\PSReadLine\ConsoleHost_history.txt"
-    if ($tpHistory -eq $true)
-        {
-            [array]$gtPSPassword = get-content "$($CachedProfiles)\Appdata\roaming\Microsoft\Windows\PowerShell\PSReadLine\ConsoleHost_history.txt" | where {$_ -match "pass" -or $_ -match "user" }
-            foreach ($psHistory in $gtPSPassword)
+        if ($tpHistory -eq $true)
             {
-                $gtPSPassword
-                $newObjPSPasswords = New-Object -TypeName PSObject
-                Add-Member -InputObject $newObjPSPasswords -Type NoteProperty -Name PSHistoryPath -Value $CachedProfiles
-                Add-Member -InputObject $newObjPSPasswords -Type NoteProperty -Name PSWordsOfInterest -Value "Warning $($psHistory) warning"
-
-                $fragPSPasswords += $newObjPSPasswords
+                [array]$gtPSPa55words = get-content "$($CachedProfiles)\Appdata\roaming\Microsoft\Windows\PowerShell\PSReadLine\ConsoleHost_history.txt" | where {$_ -match "password" -or $_ -match "user" -or $_ -match "ConvertTo-SecureString" }
+                foreach ($psHistory in $gtPSPa55words)
+                {
+                    $gtPSPa55words
+                    $newObjPSPa55words = New-Object -TypeName PSObject
+                    Add-Member -InputObject $newObjPSPa55words -Type NoteProperty -Name PSHistoryPath -Value $CachedProfiles
+                    Add-Member -InputObject $newObjPSPa55words -Type NoteProperty -Name PSWordsOfInterest -Value "Warning $($psHistory) warning"
+                    $fragPSPa55words += $newObjPSPa55words
+                }
             }
-        }
-    else {}
+        else {}
     }
-
+        
+    $shellPSHistory = history
+    Start-Transcript -Path $PSPa55wordsOutput -Force
+    foreach ($psHistory in $shellPSHistory)
+        {
+            $pshistoutQuery = $psHistory | where {$_.CommandLine -like "*password*" -or $_.CommandLine -like "*user*" -or $_.CommandLine -like "ConvertTo-SecureString"} 
+            Write-Host $pshistoutQuery
+        }
+        
+    Stop-Transcript
+    Get-Content -Path $PSPa55wordsOutput | Select-Object -skip 22 |  Select-String -Pattern "user","password","ConvertTo-SecureString"  | Out-File $PSPa55wordsParsed
+    $gtPSPa55wordsPattern = Get-Content $PSPa55wordsParsed
+        
+    if ($gtPSPa55wordsPattern.Count -gt "30")
+        {
+            $newObjPSPa55words = New-Object -TypeName PSObject
+            Add-Member -InputObject $newObjPSPa55words -Type NoteProperty -Name PSHistoryPath -Value "C:\SecureReport\output\PSPa55words\PSPa55words_Parsed.txt"
+            Add-Member -InputObject $newObjPSPa55words -Type NoteProperty -Name PSWordsOfInterest -Value "Warning Too many matches found go to file warning"
+            $fragPSPa55words += $newObjPSPa55words
+        }
+    else
+       {
+            foreach ($gtPSPa55wordsitem in $gtPSPa55wordsPattern)
+                {
+                    $newObjPSPa55words = New-Object -TypeName PSObject
+                    Add-Member -InputObject $newObjPSPa55words -Type NoteProperty -Name PSHistoryPath -Value "Extracted from C:\SecureReport\output\PSPa55words\PSPa55words_Parsed.txt"
+                    Add-Member -InputObject $newObjPSPa55words -Type NoteProperty -Name PSWordsOfInterest -Value "$gtPSPa55wordsitem"
+                    $fragPSPa55words += $newObjPSPa55words
+                }
+       }
+                
 
 ################################################
 ###############  APPLOCKER AUDIT  ##############
@@ -4338,7 +4502,7 @@ foreach ($ASRmissingItem in $missingASRs)
     $DomainUserPath = "C:\SecureReport\output\$OutFunc\"
 
 
-    $HostDomain = ((Get-CimInstance -ClassName win32_computersystem).Domain).split(".")[0] + "\" 
+    $HostDomain = ((Get-CimInstance -ClassName win32_computersystem -ErrorAction SilentlyContinue).Domain).split(".")[0] + "\" 
 
     $DomA = $HostDomain + "Domain Admins"
     $DomAWarn = "Warning " + $HostDomain + "Domain Admins" + "  Warning"
@@ -11341,11 +11505,19 @@ $MSSlSvc = Get-Service | where {$_.Name -like "*SQL*"}
            Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Risk -Value "Very High Risk"
            $fragSummary += $newObjSummary      
        }
+
+       if ($getFw -like "*Inbound*")
+       {
+           $newObjSummary = New-Object psObject
+           Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value '<a href="#InFirewall">There are Firewall rules Allowing Inbound Firewall Traffic</a>'
+           Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Risk -Value "High Risk"
+           $fragSummary += $newObjSummary
+       } 
     
         if ($BiosUEFI -like "*warning*")
        {
            $newObjSummary = New-Object psObject
-           Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value '<a href="#BiosUEFI">Out of date BIOS or UEFI</a>'
+           Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value '<a href="#BiosUEFI">Out of date Firmware for BIOS or UEFI</a>'
            Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Risk -Value "High Risk"
            $fragSummary += $newObjSummary
        }
@@ -11407,6 +11579,31 @@ $MSSlSvc = Get-Service | where {$_.Name -like "*SQL*"}
            $fragSummary += $newObjSummary
         }
 
+
+       if ($fragTrusted4Delegate -like "*Warning*")
+       {
+           $newObjSummary = New-Object psObject
+           Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value '<a href="#Domain">User Unconstrained Delegation</a>'
+           Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Risk -Value "High Risk"
+           $fragSummary += $newObjSummary
+       }
+
+       if ($fragTrusted4Delegate -like "*Warning*")
+       {
+           $newObjSummary = New-Object psObject
+           Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value '<a href="#Domain">User Constrained Delegation</a>'
+           Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Risk -Value "High Risk"
+           $fragSummary += $newObjSummary
+       }
+
+       if ($fragConstrained -like "*Warning*")
+       {
+           $newObjSummary = New-Object psObject
+           Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value '<a href="#Domain">Computer Constrained Delegation</a>'
+           Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Risk -Value "High Risk"
+           $fragSummary += $newObjSummary
+       }
+
         if ($fragLSAPPL -like "*warning*")
         {
            $newObjSummary = New-Object psObject
@@ -11422,14 +11619,6 @@ $MSSlSvc = Get-Service | where {$_.Name -like "*SQL*"}
            Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Risk -Value "High Risk"
            $fragSummary += $newObjSummary
         }
-
-       if ($getFw -like "*Inbound*")
-       {
-           $newObjSummary = New-Object psObject
-           Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value '<a href="#InFirewall">There are Firewall rules Allowing Inbound Firewall Traffic</a>'
-           Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Risk -Value "High Risk"
-           $fragSummary += $newObjSummary
-       } 
 
         if ($fragWDigestULC -like "*warning*")
         {
@@ -11487,13 +11676,6 @@ $MSSlSvc = Get-Service | where {$_.Name -like "*SQL*"}
            $fragSummary += $newObjSummary
        }
 
-        if ($fragAutoLogon -like "*warning*")
-        {
-           $newObjSummary = New-Object psObject
-           Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value '<a href="#AutoLogon">The Registry contains Autologon credentials</a>'
-           Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Risk -Value "High Risk"
-           $fragSummary += $newObjSummary
-        }
 
         if ($fragwFile -like "*warning*")
        {
@@ -11656,6 +11838,14 @@ $MSSlSvc = Get-Service | where {$_.Name -like "*SQL*"}
            $fragSummary += $newObjSummary
        }
 
+        if ($fragAutoLogon -like "*warning*")
+       {
+           $newObjSummary = New-Object psObject
+           Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value '<a href="#AutoLogon">The Registry contains Autologon credentials</a>'
+           Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Risk -Value "Medium Risk"
+           $fragSummary += $newObjSummary
+       }
+
        if ($fragWindowsOSVal -like "*Warning*")
        {
            $newObjSummary = New-Object psObject
@@ -11690,6 +11880,14 @@ $MSSlSvc = Get-Service | where {$_.Name -like "*SQL*"}
            $fragSummary += $newObjSummary
         }
 
+       if ($fragUnConstrained -like "*Warning*")
+       {
+           $newObjSummary = New-Object psObject
+           Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value '<a href="#Domain">Computer Unconstrained Delegation</a>'
+           Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Risk -Value "Informational"
+           $fragSummary += $newObjSummary
+       }
+
         if ($fragSQLVer -like "*SQL Server *")
         {
            $newObjSummary = New-Object psObject
@@ -11705,6 +11903,8 @@ $MSSlSvc = Get-Service | where {$_.Name -like "*SQL*"}
            Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Risk -Value "Informational"
            $fragSummary += $newObjSummary
        }
+
+
 
     <#<><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><>
                          Helps and Explanations
@@ -11759,7 +11959,7 @@ $MSSlSvc = Get-Service | where {$_.Name -like "*SQL*"}
         $descripInstalledApps = "Will assume any installed program older than 6 months is out of date"
         $descripBios = "Will assume any UEFI\BIOS is out of date if its older than 6 months"
         $descripWinUpdates = "Will assume any Windows Updates are out of date if older than 6 months"
-        $descripPowershellHistory = "Searches Powershell history for Password or Usernames @ C:\Users\SomeUser\APDATA\Microsoft\Windows\PowerShell\PSReadLine\ConsoleHost_history.txt"
+        $descripPowershellHistory = "This is unreliable as an audit, the word Password is filtered from the PowerShell search history log. It's best to launch Powershell and type 'history'. However other creds may be logged @ C:\Users\SomeUser\APDATA\Microsoft\Windows\PowerShell\PSReadLine\ConsoleHost_history.txt"
         $descripAutoRuns = "Autoruns are Windows programs set to auto-execute during startup launching when the operating system boots. These include legitimate apps, system utilities, and potentially malicious software. Autoruns can be exploited by planting malicious code in startup locations or manipulating system settings. This grants them persistence and control over compromised systems. Malware in startup locations can steal data, spread, or provide backdoor access. Exploited programs often leverage system vulnerabilities or manipulate user trust through disguised software.<br><br> The `"Run`" or `"RunOnce`" keys in the Windows Registry, like `"HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Run`", enabling their malware to launch at boot. Similarly, they might abuse the `"Startup`" folder where shortcuts execute on login. Notable examples include the use of these mechanisms by malware like `"Sasser`" (2004) and `"WannaCry`" (2017) worms. Regularly monitoring and securing these auto-start points is vital to prevent such exploits. Further information can be founds @ https://attack.mitre.org/techniques/T1547/001/ "
         $descripWDAC = "Requires CITool.exe, comes as default with Windows 11 22H2<br><br>WDAC (Windows Defender Application Control), Device Guard was its release name, is a security feature in Windows operating systems designed to enhance system security. In kernel mode, WDAC operates by enforcing code integrity policies, which restrict the execution of unauthorized or unsigned code, preventing malicious software from running. It uses kernel-mode drivers to monitor and control the loading of executables and scripts, ensuring only approved applications run, bolstering system security<br><br>Application Control Policy and Application Control User should be set to Enforce when enabled.<br><br>There should be a named policy that is also set to (CIPolicyEnforced = True) and not Audit (CIPolicyEnforced = False)<br><br>For this to report on WDAC while Enforced, either sign this script or temporarily set 'Set-RuleOption -FilePath C:\WDAC\Policy.xml -Option 11'"
         $descripSQLCIS = 
@@ -11768,11 +11968,19 @@ $MSSlSvc = Get-Service | where {$_.Name -like "*SQL*"}
             Ensure the SQL Server’s Full-Text Service Account is Not an Administrator.<br><br> 
             Ensure Database and Application User Input is Sanitized - Sanitizing user input drastically minimizes risk of SQL injection.<br><br>  
             Ensure 'SQL Server Browser Service' is configured correctly - In the case of a default instance installation, the SQL Server Browser service is disabled by default. Unless there is a named instance on the same server, there is typically no reason for the SQL Server Browser service to be running.<br><br>
-            "
-          
+            "     
         $descripToDo = ""
         $descripSpooler = "The Print Spooler Service should be disabled on Domain Controllers to prevent Unconstrained Delegation and various AD and Kerberos Abuses. <br><br>To reduce the attack vector, consider disabling the spooler service on any Server where its not required."
 
+        $descripUnconstrained = "Unconstrained delegation refers to a mechanism that allows a service to impersonate a user without any restrictions.<br><br>Delegation grants a service the ability to use the Users credentials to access other resources on their behalf. 
+        This is typically done to enable seamless and secure access to various services without requiring the user to reauthenticate for each service.<br><br>With unconstrained delegation, there are no restrictions on the services or resources that the delegated authority can access. The service can impersonate the user to access any resource without limitations.
+        <br><br>Unconstrained delegation introduces security risks because it grants extensive access to the service. If an attacker gains control over a service that has unconstrained delegation privileges, they could potentially access any resource in the network using the compromised service's credentials.
+        <br><br>To reduce the attack vector don't select 'Trust this user for delegation to ANY service (Kerberos only)', instead choose the option 'Trust this user to delegation to SPECIFIC services only'.  "
+
+        $descripconstrained = "Constrained Delegation is when a user delegates authority to a service to access specific resources on their behalf. The delegation is limited to a defined set of services or resources."
+
+        $descripAdminUnconstrained = "Default settings allow for the delegation of accounts. This implies that an application has the capability to operate on behalf of a user through Kerberos delegation, assume the identity of a user across the entire forest with unconstrained delegation for any service<br><br>When delegation is set up, and in the event of an attacker gaining access to the delegated system or account, there is a risk that they may attempt to mimic an administrator account. This could potentially enable lateral movement or compromise the integrity of the domain."
+"
 
     <#<><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><>
                           Colour Mapping
@@ -11989,7 +12197,13 @@ $MSSlSvc = Get-Service | where {$_.Name -like "*SQL*"}
     $frag_DomainGrps = $fragDomainGrps | ConvertTo-Html -As Table -fragment -PreContent "<h2>Privilege Groups</h2>" -PostContent "<h4>$descripDomainPrivsGps</h4>" | Out-String 
     $frag_PreAuth = $fragPreAuth | ConvertTo-Html -as Table -Fragment -PreContent "<h2>Pre-Authenticate</h2>" -PostContent "<h4>$descripPreAuth</h4>" | Out-String
     $frag_NeverExpires = $fragNeverExpires | ConvertTo-Html -as Table -Fragment -PreContent "<h2>Password Never Expires</h2>"  | Out-String
-    $frag_GroupDetails =  $GroupDetails  | ConvertTo-Html -As Table -fragment -PreContent "<h2>Group Members</h2>" | Out-String
+    $frag_ListUserSPNs = $fragListUserSPNs | ConvertTo-Html -as Table -Fragment -PreContent "<h2>List SPNs</h2>"  | Out-String
+    $frag_ListComputerSPNs = $fragListComputerSPNs | ConvertTo-Html -as Table -Fragment -PreContent "<h2>List Device SPNs</h2>"  | Out-String
+    $frag_UnConstrained = $fragUnConstrained | ConvertTo-Html -as Table -Fragment -PreContent "<h2>Unconstrained Delegation</h2>" -PostContent "<h4>$descripUnconstrained</h4>"  | Out-String 
+    $frag_Constrained  = $fragConstrained  | ConvertTo-Html -as Table -Fragment -PreContent "<h2>Constrained Delegation</h2>" -PostContent "<h4>$descripconstrained</h4>"  | Out-String     
+    $frag_Trusted4Delegate = $fragTrusted4Delegate | ConvertTo-Html -as Table -Fragment -PreContent "<h2>Unconstrained User Delegation</h2>"  -PostContent "<h4>$descripAdminUnconstrained</h4>"  | Out-String
+    $frag_Allowed2Delegate = $fragAllowed2Delegate | ConvertTo-Html -as Table -Fragment -PreContent "<h2>Constrained User Delegation</h2>"  | Out-String
+    $frag_GroupDetails =  $GroupDetails  | ConvertTo-Html -As Table -fragment -PreContent "<h2>Built-In Groups</h2>" | Out-String
     $frag_PassPol = $PassPol | Select-Object -SkipLast 3 | ConvertTo-Html -As Table -fragment -PreContent "<h2>Password Policy</h2>" | Out-String
     $frag_InstaApps  =  $InstallApps | Sort-Object publisher,displayname -Unique  | ConvertTo-Html -As Table  -fragment -PreContent "<h2>Installed Applications</h2>" -PostContent "<h4>$descripInstalledApps</h4>" | Out-String
     $frag_HotFix = $HotFix | ConvertTo-Html -As Table -property HotFixID,InstalledOn,Caption -fragment -PreContent "<h2>Windows Updates</></h2>" -PostContent "<h4>$descripWinUpdates</h4>"| Out-String   
@@ -12069,7 +12283,6 @@ $MSSlSvc = Get-Service | where {$_.Name -like "*SQL*"}
     $frag_ApplockerPublisher = $fragApplockerPublisher | ConvertTo-Html -As table -fragment -PreContent "<h2>Applocker Publisher Rules</h2>"  | Out-String
     $frag_ApplockerHash = $fragApplockerHash | ConvertTo-Html -As table -fragment -PreContent "<h2>Applocker Hash Rules</h2>"  | Out-String
     $frag_ApplockerEnforcement = $fragApplockerEnforcement | ConvertTo-Html -As table -fragment -PreContent "<h2>Applocker Enforcement Rules</h2>"  | Out-String  
- 
     $frag_wdacClixml = $fragwdacClixml | ConvertTo-Html -As Table -fragment -PreContent "<h2>WDAC Enforcement</h2>" -PostContent "<h4>$descripToDo</h4></details>"  | Out-String
     $frag_WDACCIPolicy = $fragWDACCIPolicy | ConvertTo-Html -As Table -fragment -PreContent "<h2>WDAC Policy</h2>" -PostContent "<h4>$descripWDAC</h4></details>"  | Out-String
             
@@ -12077,7 +12290,6 @@ $MSSlSvc = Get-Service | where {$_.Name -like "*SQL*"}
     $frag_WindowsOSVal = $fragWindowsOSVal | ConvertTo-Html -as Table -Fragment -PreContent "<h2>Windows GPO's</h2>" -PostContent "<h4>$descripWindowsOS</h4>" | Out-String
     $frag_EdgeVal = $fragEdgeVal | ConvertTo-Html -as Table -Fragment -PreContent "<h2>MS Edge GPO's</h2>" | Out-String
     $frag_OfficeVal = $fragOfficeVal | ConvertTo-Html -as Table -Fragment -PreContent "<h2>MS Office GPO's</h2>" -PostContent "<h4>$descripOffice2016</h4>" | Out-String
-    
     
     #MS Server Security Checks - SQL
     $frag_SQLVer = $fragSQLVer | ConvertTo-Html -as Table -Fragment -PreContent "<h2>SQL Version</summary></h2>" -PostContent "<h4>$descripToDo</h4></details>"| Out-String
@@ -12148,7 +12360,16 @@ $MSSlSvc = Get-Service | where {$_.Name -like "*SQL*"}
 			    <input type="radio" id="DomainInfo" name="headerTabs">
 			    <label for="DomainInfo">Users & Groups</label>
 			    <div class="contentTab">
-				    <p>$frag_AccountDetails $frag_DCListN $frag_FSMO $frag_PassPol $frag_PreAuth $frag_NeverExpires $frag_whoamiGroups $frag_GroupDetails $frag_DomainGrps 
+				    <p>$frag_AccountDetails $frag_PassPol $frag_whoamiGroups $frag_DomainGrps $frag_GroupDetails  
+                    </p>
+			    </div>
+		    </div>
+
+		    <div class="headerTab">
+			    <input type="radio" id="DomainSPN" name="headerTabs">
+			    <label for="DomainSPN">Domain, Kerberos, Delegation</label>
+			    <div class="contentTab">
+				    <p>$frag_DCListN $frag_FSMO $frag_PreAuth $frag_NeverExpires $frag_ListUserSPNs $frag_ListComputerSPNs $frag_UnConstrained $frag_Constrained $frag_Trusted4Delegate $frag_Allowed2Delegate 
                     </p>
 			    </div>
 		    </div>
@@ -12158,7 +12379,7 @@ $MSSlSvc = Get-Service | where {$_.Name -like "*SQL*"}
 			    <input type="radio" id="URA" name="headerTabs">
 			    <label for="URA">URA & Security Options</label>
 			    <div class="contentTab">
-				    <p>$frag_URA $frag_whoamiPriv $frag_SecOptions 
+				    <p>$frag_SecOptions  $frag_URA $frag_whoamiPriv 
                     </p>
 			    </div>
 		    </div>
@@ -12217,7 +12438,7 @@ $MSSlSvc = Get-Service | where {$_.Name -like "*SQL*"}
 			    <input type="radio" id="FileReg" name="headerTabs">
 			    <label for="FileReg">File & Registry</label>
 			    <div class="contentTab">
-				    <p>$frag_wFoldersN $frag_SysFoldersN $frag_CreateSysFoldN $frag_wFileN $frag_SysRegPermsN
+				    <p> $frag_SysFoldersN $frag_CreateSysFoldN $frag_wFileN $frag_SysRegPermsN $frag_wFoldersN
                     </p>
 			    </div>
 		    </div>
@@ -12271,7 +12492,7 @@ $MSSlSvc = Get-Service | where {$_.Name -like "*SQL*"}
         Make the Output from PowerShell Look Pretty
 <><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><>#>
 
-    $HostDomain = ((Get-CimInstance -ClassName win32_computersystem).Domain) + "\" 
+    $HostDomain = ((Get-CimInstance -ClassName win32_computersystem -ErrorAction SilentlyContinue).Domain) + "\" 
     $repDate = (Get-Date).Date.ToString("yy-MM-dd").Replace(":","_")
 
     Get-Content $Report | 
@@ -12376,7 +12597,6 @@ $MSSlSvc = Get-Service | where {$_.Name -like "*SQL*"}
                    Backlog
     <><><><><><><><><><><><><><><><><><><><><>
 
-    Printer Spooler is enabled on DC's and Servers
     Report on Windows defender and memory protections
     Proxy password reg key
 
