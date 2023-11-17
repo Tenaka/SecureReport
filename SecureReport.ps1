@@ -309,6 +309,10 @@ else
 ################################################
 ############  MDT BUILD DETAILS  ###############
 ################################################
+Write-Host " "
+Write-Host "Auditing MDT Task Sequence" -foregroundColor Green
+Write-Host " "   
+ 
     $fragMDTBuild =@()
 
     try {
@@ -332,6 +336,8 @@ else
 ################################################
 Write-Host " "
 Write-Host "Auditing Bitlocker" -foregroundColor Green
+Write-Host " "
+
 sleep 5
 
     #Bitlocker Details
@@ -374,13 +380,13 @@ sleep 5
             $fragBitLocker += $newObjBit
         }
     
-Write-Host " "
-Write-Host "Completed Bitlocker Audit" -foregroundColor Green
 ################################################
 ################  OS DETAILS  ##################
 ################################################
 Write-Host " "
 Write-Host "Gathering Host and Account Details" -foregroundColor Green
+Write-Host " "
+
 sleep 5
 
     #OS Details
@@ -423,6 +429,10 @@ sleep 5
 ##############  ACCOUNT DETAILS  ###############
 ################################################
 #PasWord Policy
+Write-Host " "
+Write-Host "Auditing Account details" -foregroundColor Green
+Write-Host " "
+
     cd C:\
     $getPWPol = & net accounts
     $PassPol=@()
@@ -469,6 +479,10 @@ sleep 5
 #####  MEMBERS OF LOCAL\BUILT-IN GROUPS  #######
 ################################################
 #Group Members
+Write-Host " "
+Write-Host "Auditing Local Group Members" -foregroundColor Green
+Write-Host " "
+
     $getLGrp = Get-LocalGroup 
     $GroupDetails=@()
     foreach ($LGpItem in $getLGrp)
@@ -490,14 +504,17 @@ sleep 5
             Add-Member -InputObject $newObjGroup -Type NoteProperty -Name GroupMembers -Value $groupMemberString.TrimEnd(",")
             $GroupDetails += $newObjGroup 
        }
-
-  
+ 
 
 ################################################
 ###############  LIST OF DCs  ##################
 ################################################
 #Domain Info
 #List of DC's
+Write-Host " "
+Write-Host "Auditing Domain Controllers" -foregroundColor Green
+Write-Host " "
+
 $fragDCList=@()
 [string]$queryDC = netdom /query dc
 $dcListQuery = $queryDC.Replace("The command completed successfully.","").Replace("List of domain controllers with accounts in the domain:","").Replace(" ",",").replace(",,","")
@@ -516,6 +533,10 @@ $dcList = $dcListQuery.split(",") | sort
 ################  FSMO ROLES  ##################
 ################################################
     #FSMO Roles
+Write-Host " "
+Write-Host "Auditing FSMO Roles" -foregroundColor Green
+Write-Host " "
+
     $fragFSMO=@()
     [string]$fsmolist = netdom /query fsmo
     $fsmoQuery = $fsmolist.Replace("The command completed successfully.","")
@@ -550,6 +571,10 @@ $dcList = $dcListQuery.split(",") | sort
 #########  DOMAIN PRIV GROUPS ##################
 ################################################
     #Domain Priv Group members
+Write-Host " "
+Write-Host "Auditing Domain Privilege Groups" -foregroundColor Green
+Write-Host " "
+
     $Root = [ADSI]"LDAP://RootDSE"
     $rootdse = $Root.rootDomainNamingContext
 
@@ -618,6 +643,10 @@ $dcList = $dcListQuery.split(",") | sort
     #DSQUERY
     #Pre-Authenticaiton enabled
     #RSAT is requried
+Write-Host " "
+Write-Host "Auditing Domain Accounts that dont Pre-Authenticate" -foregroundColor Green
+Write-Host " "
+
     $dsQuery = & dsquery.exe * -limit 0 -filter "&(objectclass=user)(userAccountControl:1.2.840.113556.1.4.803:=4194304)" -attr samaccountname, distinguishedName, userAccountControl | select -skip 1
     $fragPreAuth=@()
 
@@ -639,6 +668,9 @@ $dcList = $dcListQuery.split(",") | sort
 ###### PASSWORDS THAT DONT EXPIRE ##############
 ################################################
     #Accounts that never Expire
+Write-Host " "
+Write-Host "Auditing Domain Accounts that Dont Expire" -foregroundColor Green
+Write-Host " "
 
     $dsQueryNexpires = & dsquery.exe * -filter "(&(objectCategory=person)(objectClass=user)(userAccountControl:1.2.840.113556.1.4.803:=65536))" -attr samaccountname, distinguishedName, userAccountControl | select -skip 1
     $fragNeverExpires=@()
@@ -661,7 +693,9 @@ $dcList = $dcListQuery.split(",") | sort
 ################################################
 ################## SPNs ########################
 ################################################
-
+Write-Host " "
+Write-Host "Auditing Service Principal Names (SPNs)" -foregroundColor Green
+Write-Host " "
 #list all spns
 $gtUserSPNList = Get-ADUSer -Filter { ServicePrincipalName -ne "$null"} -Properties ServicePrincipalName | select SamAccountName, ServicePrincipalName
 $fragListUserSPNs=@()
@@ -780,6 +814,8 @@ foreach ($Constrained in $gtConstrained)
 ################################################
 Write-Host " "
 Write-Host "Starting User Rights Assignments" -foregroundColor Green
+Write-Host " "
+
 sleep 5
 
     $VulnReport = "C:\SecureReport"
@@ -907,14 +943,13 @@ sleep 5
        $fragURA += $newObjURA
    }
     
-Write-Host " "
-Write-Host "Completed User Rights Assignments" -foregroundColor Green   
-
 ################################################
 ##############  WINDOWS UPDATES  ###############
 ################################################
 Write-Host " "
-Write-Host "Gathering Windows Update and Installed Application Information" -foregroundColor Green
+Write-Host "Auditing Windows Updates" -foregroundColor Green
+Write-Host " "
+
 sleep 5
 
 $date180days = (Get-Date).AddDays(-180).toString("yyyyMMdd")
@@ -948,6 +983,9 @@ $date180days = (Get-Date).AddDays(-180).toString("yyyyMMdd")
 ################################################
 ##############  INSTALLED APPS  ################
 ################################################
+Write-Host " "
+Write-Host "Auditing Installed Applications" -foregroundColor Green
+Write-Host " "
     $getUninx64 = Get-ChildItem  "HKLM:\Software\Microsoft\Windows\CurrentVersion\Uninstall\" -ErrorAction SilentlyContinue
     $getUninx86 = Get-ChildItem  "HKLM:\Software\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\"  -ErrorAction SilentlyContinue
     $getUnin = $getUninx64 + $getUninx86
@@ -1011,14 +1049,12 @@ $date180days = (Get-Date).AddDays(-180).toString("yyyyMMdd")
         $InstallApps16 += $newObjInstApps16
     }  
  
-Write-Host " "
-Write-Host "Completed Gathering Windows Update and Installed Application Information" -foregroundColor Green
-
 ################################################
 ##########  INSTALLED FEATURES #################
 ################################################
 Write-Host " "
-Write-Host "Windows Features" -foregroundColor Green
+Write-Host "Auditing Windows Features" -foregroundColor Green
+Write-Host " "
 sleep 5
 
     $VulnReport = "C:\SecureReport"
@@ -1098,7 +1134,9 @@ sleep 5
 ################################################
 ##################  ANTIVIRUS  #################
 ################################################
-
+Write-Host " "
+Write-Host "Auditing Antivirus" -foregroundColor Green
+Write-Host " "
 #https://stackoverflow.com/questions/33649043/powershell-how-to-get-antivirus-product-details - "borrowed" baulk of script from site
 
     #$AntiVirusProducts = Get-WmiObject -Namespace "root\SecurityCenter2" -Class AntiVirusProduct  
@@ -1161,7 +1199,7 @@ sleep 5
 ############  UNQUOTED PATHS  ##################
 ################################################
 Write-Host " "
-Write-Host "From this point onwards things will slow down, in some cases it may appear nothing is happening, be patient" -foregroundColor Green
+Write-Host "From this point onwards things will slow down, in some cases it may appear nothing is happening, be patient" -foregroundColor Yellow
 Write-Host " "
 Write-Host "Searching for UnQuoted Path Vulnerabilities" -foregroundColor Green
 sleep 7
@@ -1220,14 +1258,13 @@ sleep 7
         }
     }
 
-Write-Host " "
-Write-Host "Finished Searching for UnQuoted Path Vulnerabilities" -foregroundColor Green
-      
+   
 ################################################
 ################  MSINFO32  ####################
 ################################################
 Write-Host " "
 Write-Host "Starting MSInfo32 and Outputting to File" -foregroundColor Green
+Write-Host " "
 sleep 5
 
     #Virtualization - msinfo32
@@ -1286,15 +1323,14 @@ sleep 5
     Import-Csv $wdacEnforcecsv -Delimiter ";" | Export-Clixml $wdacEnforceXml
     $fragwdacClixml = Import-Clixml $wdacEnforceXml
 
-
-Write-Host " "
-Write-Host "Finished Collecting MSInfo32 data for VBS" -foregroundColor Green
-
-
 ################################################
 ############  WDAC | DEVICE GUARD  #############
 ################################################
 #Citools available from Windows 11 22H2
+Write-Host " "
+Write-Host "Auditing WDAC aka Device Guard Policies" -foregroundColor Green
+Write-Host " "
+
 $osBuild = (Get-CimInstance -ClassName win32_operatingsystem -ErrorAction SilentlyContinue).buildnumber 
 $fragWDACCIPolicy=@()
 if ($osBuild -ge "22621")
@@ -1326,7 +1362,8 @@ if ($osBuild -ge "22621")
 ################  DRIVERQRY  ###################
 ################################################
 Write-Host " "
-Write-Host "Starting DriverQuery and Out putting to File" -foregroundColor Green
+Write-Host "Auditing DriverQuery and Out putting to File" -foregroundColor Green
+Write-Host " "
 sleep 5
 
     $VulnReport = "C:\SecureReport"
@@ -1366,6 +1403,10 @@ Write-Host "Finished Collectiong DriverQuery data for VBS" -foregroundColor Gree
 ##############  NETWORK SETTINGS  ##############
 ################################################
 #Going to use the table below for other projects prefix, mask, available addresses, number of hosts
+ Write-Host " "
+Write-Host "Auditing Networking and IP" -foregroundColor Green
+Write-Host " " 
+ 
     $IPSubnet =[ordered]@{
 
     32 = "32","255.255.255.255","1","1"
@@ -1473,6 +1514,7 @@ $fragNetwork6=@()
 ################################################
 Write-Host " "
 Write-Host "Auditing Various Registry Settings" -foregroundColor Green
+Write-Host " "
 sleep 5
 
     #kernel-mode hardware-enforced stack protection
@@ -1767,6 +1809,10 @@ sleep 5
 #########  LEGACY NETWORK PROTOCOLS  ##########
 ################################################
 #Legacy Network
+Write-Host " "
+Write-Host "Auditing Legacy Network Protocols" -foregroundColor Green
+Write-Host " "
+
     $VulnReport = "C:\SecureReport"
     $OutFunc = "llmnr" 
     $tpSec10 = Test-Path "C:\SecureReport\output\$OutFunc\"
@@ -2358,6 +2404,10 @@ sleep 5
 ################################################
 ############  SECURITY OPTIONS  ################
 ################################################ 
+Write-Host " "
+Write-Host "Auditing Security Opotions" -foregroundColor Green
+Write-Host " "    
+    
     $fragSecOptions=@()
     $secOpTitle1 = "Domain member: Digitally encrypt or sign secure channel data (always)" # = 1
     $getSecOp1 = get-item 'HKLM:\System\CurrentControlSet\Services\Netlogon\Parameters' -ErrorAction SilentlyContinue
@@ -2721,8 +2771,6 @@ sleep 5
 
 #Network Access: Restrict anonymous Access to Named Pipes and Shares
 #Network security: Do not store LAN Manager hash value on next password change
-Write-Host " "
-Write-Host "Finished Auditing Various Registry Settings" -foregroundColor Green
 
 ################################################
 ############  FIREWALL DETAILS  ################
@@ -2730,6 +2778,8 @@ Write-Host "Finished Auditing Various Registry Settings" -foregroundColor Green
 #Firewall Enabled \ Disabled
 Write-Host " "
 Write-Host "Auditing Firewall Rules" -foregroundColor Green
+Write-Host " "
+
 sleep 5
 
     $getFWProf = Get-NetFirewallProfile -PolicyStore activestore -ErrorAction SilentlyContinue
@@ -2814,14 +2864,12 @@ sleep 5
     $fwCSV = Import-Csv $fwpathcsv -Delimiter "," | Export-Clixml $fwpathxml
     $fragFW = Import-Clixml $fwpathxml
 
-Write-Host " "
-Write-Host "Finished Auditing Firewall Rules" -foregroundColor Green
-
 ################################################
 ##############  SCHEDULED TasKS  ###############
 ################################################ 
 Write-Host " "
 Write-Host "Auditing Scheduled Tasks" -foregroundColor Green
+Write-Host " "
 sleep 5
 
     $getScTask = Get-ScheduledTask 
@@ -2935,6 +2983,10 @@ Write-Host "Completed Scheduled Tasks" -foregroundColor Green
 ################################################
 ##########  Enabled Services  ##################
 ################################################
+Write-Host " "
+Write-Host "Auditing Windows Services" -foregroundColor Green
+Write-Host " "
+
 $gtServices = Get-Service | where {$_.StartType -ne "Disabled"} | 
 Select-Object Displayname,ServiceName,Status,StartType | 
 Sort-Object displayname 
@@ -2959,6 +3011,9 @@ foreach ($runService in $gtServices)
 ################################################
 ##########  Enabled PRINTER Services  ##########
 ################################################
+Write-Host " "
+Write-Host "Auditing Printer Spooler Service - DC's only" -foregroundColor Green
+Write-Host " "
 
 if ($gtCIM_OS -match "Server" )
     {
@@ -2996,9 +3051,10 @@ if ($folders -eq "y")
 ############  WRITEABLE FILES  #################
 ################################################
 Write-Host " "
-Write-Host "Now progress will slow whilst the script enumerates all folders and their permissions, be patient" -foregroundColor Green
+Write-Host "Now progress will slow whilst the script enumerates all folders and their permissions, be patient" -foregroundColor Yellow
 Write-Host " "
 Write-Host "Searching for Writeable Files Vulnerabilities" -foregroundColor Green
+Write-Host " "
 sleep 7
 
     $VulnReport = "C:\SecureReport"
@@ -3077,16 +3133,14 @@ sleep 7
        
     }
 
-Write-Host " "
-Write-Host "Finished Searching for Writeable Files Vulnerabilities" -foregroundColor Green
-
 ################################################
 #########  WRITEABLE REGISTRY HIVES  ###########
 ################################################
 Write-Host " "
-Write-Host "Now progress will slow whilst the script enumerates all Registry Hives and permissions, be patient" -foregroundColor Green
+Write-Host "Now progress will slow whilst the script enumerates all Registry Hives and permissions, be patient" -foregroundColor Yellow
 Write-Host " "
 Write-Host "Searching for Writeable Registry Hive Vulnerabilities" -foregroundColor Green
+Write-Host " "
 sleep 7
 
     $VulnReport = "C:\SecureReport"
@@ -3154,17 +3208,15 @@ sleep 7
         }
    }
 
-Write-Host " "
-Write-Host "Finished Searching for Writeable Registry Hive Vulnerabilities" -foregroundColor Green
-
 ################################################
 #############  WRITEABLE FOLDERS  ##############
 ############  NON System FOLDERS  ##############
 ################################################
 Write-Host " "
-Write-Host "Now progress will slow whilst the script enumerates all folders and their permissions, be patient" -foregroundColor Green
+Write-Host "Now progress will slow whilst the script enumerates all folders and their permissions, be patient" -foregroundColor Yellow
 Write-Host " "
 Write-Host "Searching for Writeable Folder Vulnerabilities" -foregroundColor Green
+Write-Host " "
 sleep 7
 
     $VulnReport = "C:\SecureReport"
@@ -3248,17 +3300,15 @@ sleep 7
         }       
     }
      
-Write-Host " "
-Write-Host "Finisehd Searching for Writeable Folder Vulnerabilities" -foregroundColor Green
- 
 ################################################
 #############  WRITEABLE FOLDERS  ##############
 ###############  System FOLDERS  ###############
 ################################################
 Write-Host " "
-Write-Host "Now progress will slow whilst the script enumerates all folders and their permissions, be patient" -foregroundColor Green
+Write-Host "Now progress will slow whilst the script enumerates all folders and their permissions, be patient" -foregroundColor Yellow
 Write-Host " "
 Write-Host "Searching for Writeable System Folder Vulnerabilities" -foregroundColor Green
+Write-Host " "
 sleep 7
     
     $VulnReport = "C:\SecureReport"
@@ -3351,9 +3401,10 @@ Write-Host "Finished Searching for Writeable System Folder Vulnerabilities" -for
 ###############  System FOLDERS  ###############
 ################################################
 Write-Host " "
-Write-Host "Now progress will slow whilst the script enumerates all folders and their permissions, be patient" -foregroundColor Green
+Write-Host "Now progress will slow whilst the script enumerates all folders and their permissions, be patient" -foregroundColor Yellow
 Write-Host " "
 Write-Host "Searching for CreateFile Permissions Vulnerabilities" -foregroundColor Green
+Write-Host " "
 sleep 7
   
     $VulnReport = "C:\SecureReport"
@@ -3430,13 +3481,13 @@ sleep 7
             }
         }
 
-        
-Write-Host " "
-Write-Host "Finised Searching for CreateFile Permissions Vulnerabilities" -foregroundColor Green
-
 ################################################
 ###############  DLL HIJACKING  ################
 ################################################
+Write-Host " "
+Write-Host "Auditing DLL that a User can Write to" -foregroundColor Green
+Write-Host " "
+
 #All dlls' that are NOT signed and user permissions allow write  
     $VulnReport = "C:\SecureReport"
     $OutFunc = "DLLNotSigned"  
@@ -3509,6 +3560,10 @@ Write-Host "Finised Searching for CreateFile Permissions Vulnerabilities" -foreg
 ################################################
 #Warning Very long running process - enable only when required
 #START OF IF
+Write-Host " "
+Write-Host "Auditing Authenticode Signatures" -foregroundColor Green
+Write-Host " "
+
 if ($authenticode -eq "y")
 {
 
@@ -3551,14 +3606,16 @@ Write-Host "Searching for authenticode signature hashmismatch" -foregroundColor 
         }
     }
 
-Write-Host " "
-Write-Host "Completed searching for authenticode signature hashmismatch" -foregroundColor Green
 #END OF IF
 }
 
 ################################################
 ##########  CERTIFICATE DETAILS  ###############
 ################################################
+Write-Host " "
+Write-Host "Auditing Install Certificates" -foregroundColor Green
+Write-Host " "
+
     $getCert = (Get-ChildItem Cert:\LocalMachine).Name
     $fragCertificates=@()
     $certIssuer=@()
@@ -3640,6 +3697,9 @@ Write-Host "Completed searching for authenticode signature hashmismatch" -foregr
 ################################################
 ###############  CIPHER SUITS  #################
 ################################################
+Write-Host " "
+Write-Host "Auditing Cipher Suits" -foregroundColor Green
+Write-Host " "
 
 $gtCipherSuit = Get-TlsCipherSuite
 $fragCipherSuit=@()
@@ -3675,6 +3735,7 @@ foreach($CipherItem in $gtCipherSuit)
 
 Write-Host " "
 Write-Host "Auditing Shares and permissions" -foregroundColor Green
+write-host " "
 sleep 3
 
     $getShr = Get-SmbShare #| where {$_.name -ne "IPC$"}
@@ -3704,17 +3765,15 @@ sleep 3
             $fragShare += $newObjShare
         }
 
-Write-Host " "
-Write-Host "Finised Auditing Shares and permissions" -foregroundColor Green
-
 ################################################
 ############  EMBEDDED PASSWORDS  ##############
 ################################################  
 
 Write-Host " "
-Write-Host "Now progress will slow whilst the script enumerates all files for passwords, be patient" -foregroundColor Green
+Write-Host "Now progress will slow whilst the script enumerates all files for passwords, be patient" -foregroundColor Yellow
 Write-Host " "
 Write-Host "Searching for Embedded Password in Files" -foregroundColor Green
+Write-Host " "
 sleep 7
   
 #Passwords in Processes
@@ -3787,6 +3846,8 @@ Write-Host "Finished Searching for Embedded Password in Files" -foregroundColor 
 ################################################
 Write-Host " "
 Write-Host "Auditing Registry Passwords" -foregroundColor Green
+Write-Host " "
+
 sleep 5
 
     $VulnReport = "C:\SecureReport"
@@ -3837,12 +3898,13 @@ foreach ($getRegPassItem in $getRegPassCon)
            
 }
 
-Write-Host " "
-Write-Host "Finished Searching for Embedded Password in the Registry" -foregroundColor Green
-
 ################################################
 ########  POWERSHELL PASSWORD SEARCH  ##########
 ################################################
+Write-Host " "
+Write-Host "Auditing Powershell History for Passwords" -foregroundColor Green
+Write-Host " "
+
 #$gtPSPawd = get-content $env:APPDATA\Microsoft\Windows\PowerShell\PSReadLine\ConsoleHost_history.txt | where {$_ -match "pass" -or $_ -match "user" }
 $gtCachedProfiles = (Get-ChildItem c:\users\ -Force -Directory).fullname
 $fragPSPa55words=@()
@@ -3912,6 +3974,10 @@ foreach ($CachedProfiles in $gtCachedProfiles)
 ################################################
 ###############  APPLOCKER AUDIT  ##############
 ################################################
+Write-Host " "
+Write-Host "Auditing Applocker" -foregroundColor Green
+Write-Host " "
+
 $fragApplockerSvc=@()
 $AppLockerSvc = get-service appidsvc
 $newObjApplockerSvc = New-Object -TypeName PSObject
@@ -4135,6 +4201,7 @@ foreach ($appLockerRule in $gtAppLCollectionTypes)
 
 Write-Host " "
 Write-Host "Searching for active processes that are vulnerable to dll hijacking" -foregroundColor Green
+write-host " "
 sleep 2
 
 $getDll = Get-Process
@@ -4176,7 +4243,8 @@ foreach ($dll in $getDll)
 ################################################
 
 Write-Host " "
-Write-Host "Starting ASR Audit" -foregroundColor Green
+Write-Host "Auditing ASR " -foregroundColor Green
+Write-Host " "
 sleep 5
 
 $VulnReport = "C:\SecureReport"
@@ -4318,7 +4386,11 @@ foreach ($ASRmissingItem in $missingASRs)
 ################################################
 ##########  DOMAIN USER DETAILS  ###############
 ################################################
-#Reports on the credentials of the user running this report 
+#Reports on the credentials of the user running this report
+Write-Host " "
+Write-Host "Auditing Domain Users" -foregroundColor Green
+Write-Host " "
+ 
     $VulnReport = "C:\SecureReport"
     $OutFunc = "DomainUser"  
 
@@ -4363,6 +4435,10 @@ foreach ($ASRmissingItem in $missingASRs)
 ################  AUTORUNS  ####################
 ################################################
 #https://attack.mitre.org/techniques/T1547/001/
+
+Write-Host " "
+Write-Host "Auditing AutoRuns" -foregroundColor Green
+Write-Host " "
 
 $fragAutoRunsVal=@()  
 <#-------------------------------------------------
@@ -4965,6 +5041,9 @@ if($tphkuRunPath -eq $true)
 #######  RECOMMENDED SECURITY SETTINGS  ########
 ################  WINDOWS OS  ##################
 ################################################
+Write-Host " "
+Write-Host "Auditing Windows SCM GPO Settings" -foregroundColor Green
+Write-Host " "
 
 #Here's 3000 lines of fun ;(
 #Unable to extract GPO spreadsheet due to the numbers involved and the amount of work getting the spreadsheet into a workable format
@@ -8647,13 +8726,19 @@ if($tphkuRunPath -eq $true)
 
     if ($getWindowsOSVal -eq "0")
     {
-        $WindowsOSSet = "$WindowsOSDescrip is enabled for Enterprise Only - Computer" 
+        $WindowsOSSet = "Zero is set for $WindowsOSDescrip allowing only Security telemtry for clients Enterprise Only - User" 
+        $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
+        $trueFalse = "True"
+    }
+    elseif ($getWindowsOSVal -eq "1")
+    {
+        $WindowsOSSet = "One is set for $WindowsOSDescrip and the minimum for non-enterprise clients" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
         $trueFalse = "True"
     }
     else
     {
-        $WindowsOSSet = "Warning $WindowsOSDescrip disabled warning" 
+        $WindowsOSSet = "Warning A setting other than 1 or 0 is set for $WindowsOSDescrip warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
         $trueFalse = "False"
     }
@@ -8690,13 +8775,19 @@ if($tphkuRunPath -eq $true)
 
     if ($getWindowsOSVal -eq "0")
     {
-        $WindowsOSSet = "$WindowsOSDescrip is enabled for Enterprise Only - User" 
+        $WindowsOSSet = "Zero is set for $WindowsOSDescrip allowing only Security telemtry for clients Enterprise Only - User" 
+        $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
+        $trueFalse = "True"
+    }
+    elseif ($getWindowsOSVal -eq "1")
+    {
+        $WindowsOSSet = "One is set for $WindowsOSDescrip and the minimum for non-enterprise clients" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
         $trueFalse = "True"
     }
     else
     {
-        $WindowsOSSet = "Warning $WindowsOSDescrip disabled warning" 
+        $WindowsOSSet = "Warning A setting other than 1 or 0 is set for $WindowsOSDescrip warning" 
         $WindowsOSReg = "<div title=$gpoPath>$RegKey" +"$WindowsOSVal"
         $trueFalse = "False"
     }
@@ -9062,7 +9153,9 @@ if($tphkuRunPath -eq $true)
 #######  RECOMMENDED SECURITY SETTINGS  ########
 ###################  EDGE  #####################
 ################################################
-
+Write-Host " "
+Write-Host "Auditing MS Edge" -foregroundColor Green
+Write-Host " "
 <#
 "TyposquattingChecker" , 
 "Computer Configuration\Policies\Administrative Templates\Microsoft Edge\","   ","
@@ -9188,6 +9281,9 @@ $getEdgeValue = $getEdgePath.GetValue("$edgeRegName")
 #######  RECOMMENDED SECURITY SETTINGS  ########
 #################  Office  #####################
 ################################################
+Write-Host " "
+Write-Host "Auditing MS Office SCM Settings" -foregroundColor Green
+Write-Host " "
 
 $OfficePolicies =[ordered]@{
 
@@ -9460,6 +9556,9 @@ foreach ($OfficePolItems in $OfficePolicies.values)
 <#
        SQL SERVER
 #>
+Write-Host " "
+Write-Host "Auditing SQL Server" -foregroundColor Green
+Write-Host " "
 
 $MSSlSvc = Get-Service | where {$_.Name -like "*SQL*"} 
 
