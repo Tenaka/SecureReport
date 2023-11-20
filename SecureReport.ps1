@@ -1792,7 +1792,7 @@ sleep 5
     }
     else
     {
-        $AutoLPass = "Warning AutoLogon default password is set with a vaule of $AutoLogonDefPass Warning" 
+        $AutoLPass = "Warning AutoLogon default password is set with a value of $AutoLogonDefPass Warning" 
         $AutoLUser = "Warning AutoLogon Default User is set with a value of $AutoLogonDefUser Warning" 
         $AutoLReg = "HKLM:\Software\Microsoft\Windows NT\Currentversion\Winlogon"
         $trueFalse = "False"
