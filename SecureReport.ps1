@@ -314,9 +314,7 @@ Write-Host "Auditing MDT Task Sequence" -foregroundColor Green
 Write-Host " "   
  
     $fragMDTBuild =@()
-
-    try {
-        $mdtBuild = gwmi -Class microsoft_BDD_info -ErrorAction SilentlyContinue
+    try {$mdtBuild = gwmi -Class microsoft_BDD_info -ErrorAction SilentlyContinue
             $mdtID =  $mdtBuild.TaskSequenceID
             $mdtTS = $mdtBuild.TaskSequenceName
             $mdtVer = $mdtBuild.TaskSequenceVersion
@@ -331,6 +329,7 @@ Write-Host " "
         $fragMDTBuild += $newObjMDTBuild
     }catch{}
 
+
 ################################################
 #################  BITLOCKER  ##################
 ################################################
@@ -338,7 +337,7 @@ Write-Host " "
 Write-Host "Auditing Bitlocker" -foregroundColor Green
 Write-Host " "
 
-sleep 5
+sleep 3
 
     #Bitlocker Details
     $fragBitLocker=@()
@@ -387,7 +386,7 @@ Write-Host " "
 Write-Host "Gathering Host and Account Details" -foregroundColor Green
 Write-Host " "
 
-sleep 5
+sleep 3
 
     #OS Details
     $fragHost = Get-CimInstance -ClassName win32_computersystem -ErrorAction SilentlyContinue
@@ -805,10 +804,6 @@ foreach ($Constrained in $gtConstrained)
     $fragConstrained += $newObjConstrained
 }
 
-
-    Write-Host " "
-    Write-Host "Completed Gathering Host and Account Details" -foregroundColor Green
-
 ################################################
 #########  USER RIGHTS ASSIGNMENTS  ############
 ################################################
@@ -816,7 +811,7 @@ Write-Host " "
 Write-Host "Starting User Rights Assignments" -foregroundColor Green
 Write-Host " "
 
-sleep 5
+sleep 3
 
     $VulnReport = "C:\SecureReport"
     $OutFunc = "URA" 
@@ -904,11 +899,11 @@ sleep 5
 
             if ($uralookuptrim -eq $uraItemTrim)
                 {
-                   $uraDescripName = $uralookupName.trim()[1].split("|")[0]
-                   $uraMSRecom = $uralookupName[1].split("|")[1].trim()
-                   #Write-Host $uraDescripName -ForegroundColor Cyan
-                   
-                   $URAGPOPath = $URACommonPath + $uraDescripName
+                   try{
+                       $uraDescripName = $uralookupName.trim()[1].split("|")[0]
+                       $uraMSRecom = $uralookupName[1].split("|")[1].trim()
+                       $URAGPOPath = $URACommonPath + $uraDescripName
+                   }catch{}
 
                    Add-Content $secEditOutPath -Value " " -encoding UTF8
 
@@ -950,7 +945,7 @@ Write-Host " "
 Write-Host "Auditing Windows Updates" -foregroundColor Green
 Write-Host " "
 
-sleep 5
+sleep 3
 
 $date180days = (Get-Date).AddDays(-180).toString("yyyyMMdd")
 
@@ -1055,7 +1050,7 @@ Write-Host " "
 Write-Host " "
 Write-Host "Auditing Windows Features" -foregroundColor Green
 Write-Host " "
-sleep 5
+sleep 3
 
     $VulnReport = "C:\SecureReport"
     $OutFunc = "WindowsFeatures" 
@@ -1199,10 +1194,9 @@ Write-Host " "
 ############  UNQUOTED PATHS  ##################
 ################################################
 Write-Host " "
-Write-Host "From this point onwards things will slow down, in some cases it may appear nothing is happening, be patient" -foregroundColor Yellow
-Write-Host " "
 Write-Host "Searching for UnQuoted Path Vulnerabilities" -foregroundColor Green
-sleep 7
+Write-Host " "
+sleep 3
 
     #Unquoted paths   
     $VulnReport = "C:\SecureReport"
@@ -1265,7 +1259,7 @@ sleep 7
 Write-Host " "
 Write-Host "Starting MSInfo32 and Outputting to File" -foregroundColor Green
 Write-Host " "
-sleep 5
+sleep 3
 
     #Virtualization - msinfo32
     $VulnReport = "C:\SecureReport"
@@ -1364,7 +1358,7 @@ if ($osBuild -ge "22621")
 Write-Host " "
 Write-Host "Auditing DriverQuery and Out putting to File" -foregroundColor Green
 Write-Host " "
-sleep 5
+sleep 3
 
     $VulnReport = "C:\SecureReport"
     $OutFunc = "DriverQuery" 
@@ -1395,9 +1389,6 @@ sleep 5
         Add-Member -InputObject $newObjDriverQuery -Type NoteProperty -Name DriverName -Value $drvQryItem 
         $DriverQuery += $newObjDriverQuery
     }
-
-Write-Host " "
-Write-Host "Finished Collectiong DriverQuery data for VBS" -foregroundColor Green
 
 ################################################
 ##############  NETWORK SETTINGS  ##############
@@ -1515,7 +1506,7 @@ $fragNetwork6=@()
 Write-Host " "
 Write-Host "Auditing Various Registry Settings" -foregroundColor Green
 Write-Host " "
-sleep 5
+sleep 3
 
     #kernel-mode hardware-enforced stack protection
     $getkernelMode = Get-Item 'HKLM:\System\CurrentControlSet\Control\Session Manager\Memory Management\' -ErrorAction SilentlyContinue
@@ -1635,10 +1626,10 @@ sleep 5
 
     #LAPS is installed
     $getLapsPw = Get-Item "HKLM:\Software\Policies\Microsoft Services\AdmPwd\" -ErrorAction SilentlyContinue
-    $getLapsPwEna =  $getLapsPw.GetValue("AdmPwdEnabled")
-    $getLapsPwCom =  $getLapsPw.GetValue("PasswordComplexity")
-    $getLapsPwLen =  $getLapsPw.GetValue("PasswordLength")
-    $getLapsPwDay =  $getLapsPw.GetValue("PasswordAgeDays")
+    try{$getLapsPwEna =  $getLapsPw.GetValue("AdmPwdEnabled")}catch{}
+    try{$getLapsPwCom =  $getLapsPw.GetValue("PasswordComplexity")}catch{}
+    try{$getLapsPwLen =  $getLapsPw.GetValue("PasswordLength")}catch{}
+    try{$getLapsPwDay =  $getLapsPw.GetValue("PasswordAgeDays")}catch{}
     $fragLapsPwEna =@()
 
     if ($getLapsPwEna -eq "1")
@@ -1735,8 +1726,8 @@ sleep 5
     #InstallElevated
     $getPCInstaller = Get-Item HKLM:\Software\Policies\Microsoft\Windows\Installer -ErrorAction SilentlyContinue
     $getUserInstaller = Get-Item HKCU:\Software\Policies\Microsoft\Windows\Installer -ErrorAction SilentlyContinue
-    $PCElevate =  $getUserInstaller.GetValue("AlwaysInstallElevated")
-    $UserElevate = $getPCInstaller.GetValue("AlwaysInstallElevated")
+    try{$PCElevate =  $getUserInstaller.GetValue("AlwaysInstallElevated")}catch{}
+    try{$UserElevate = $getPCInstaller.GetValue("AlwaysInstallElevated")}catch{}
 
     $fragPCElevate =@()
     if ($PCElevate -eq "1")
@@ -2103,14 +2094,14 @@ Write-Host " "
     #https://admx.help/HKLM/Software/Policies/Microsoft/Windows/LLTD
     $getNetLLTDInt = Get-item "HKLM:\Software\Policies\Microsoft\Windows\LLTD" -ErrorAction SilentlyContinue
 
-    $getLTDIO =  $getNetLLTDInt.GetValue("EnableLLTDIO")
-    $getRspndr = $getNetLLTDInt.GetValue("EnableRspndr")
-    $getOnDomain =  $getNetLLTDInt.GetValue("AllowLLTDIOOnDomain")
-    $getPublicNet = $getNetLLTDInt.GetValue("AllowLLTDIOOnPublicNet")
-    $getRspOnDomain = $getNetLLTDInt.GetValue("AllowRspndrOnDomain")
-    $getRspPublicNet = $getNetLLTDInt.GetValue("AllowRspndrOnPublicNet")
-    $getLLnPrivateNet = $getNetLLTDInt.GetValue("ProhibitLLTDIOOnPrivateNet") 
-    $getRspPrivateNet = $getNetLLTDInt.GetValue("ProhibitRspndrOnPrivateNet")
+    try {$getLTDIO =  $getNetLLTDInt.GetValue("EnableLLTDIO")}catch{}
+    try {$getRspndr = $getNetLLTDInt.GetValue("EnableRspndr")}catch{}
+    try {$getOnDomain =  $getNetLLTDInt.GetValue("AllowLLTDIOOnDomain")}catch{}
+    try {$getPublicNet = $getNetLLTDInt.GetValue("AllowLLTDIOOnPublicNet")}catch{}
+    try {$getRspOnDomain = $getNetLLTDInt.GetValue("AllowRspndrOnDomain")}catch{}
+    try {$getRspPublicNet = $getNetLLTDInt.GetValue("AllowRspndrOnPublicNet")}catch{}
+    try {$getLLnPrivateNet = $getNetLLTDInt.GetValue("ProhibitLLTDIOOnPrivateNet")}catch{}
+    try {$getRspPrivateNet = $getNetLLTDInt.GetValue("ProhibitRspndrOnPrivateNet")}catch{}
 
     #EnableLLTDIO
     if ($getLTDIO -eq "0")
@@ -2666,7 +2657,7 @@ Write-Host " "
     
     $secOpTitle12 = "Network security: Configure encryption types allowed for Kerberos" 
     $getSecOp12 = get-item 'HKLM:\Software\Microsoft\Windows\CurrentVersion\Policies\System\Kerberos\Parameters\' -ErrorAction SilentlyContinue
-    $getSecOp12res = $getSecOp12.getvalue("supportedencryptiontypes")
+    try{$getSecOp12res = $getSecOp12.getvalue("supportedencryptiontypes")}catch{}
 
     if ($getSecOp12res -eq "2147483640")
     {
@@ -2780,7 +2771,7 @@ Write-Host " "
 Write-Host "Auditing Firewall Rules" -foregroundColor Green
 Write-Host " "
 
-sleep 5
+sleep 3
 
     $getFWProf = Get-NetFirewallProfile -PolicyStore activestore -ErrorAction SilentlyContinue
     $fragFWProfile=@()
@@ -2870,7 +2861,7 @@ sleep 5
 Write-Host " "
 Write-Host "Auditing Scheduled Tasks" -foregroundColor Green
 Write-Host " "
-sleep 5
+sleep 3
 
     $getScTask = Get-ScheduledTask 
     $TaskHash=@()
@@ -2977,9 +2968,6 @@ foreach ($shTask in $getScTask | where {$_.Actions.execute -notlike "*system32*"
         }
     }
 
-Write-Host " "
-Write-Host "Completed Scheduled Tasks" -foregroundColor Green
-
 ################################################
 ##########  Enabled Services  ##################
 ################################################
@@ -3055,7 +3043,7 @@ Write-Host "Now progress will slow whilst the script enumerates all folders and 
 Write-Host " "
 Write-Host "Searching for Writeable Files Vulnerabilities" -foregroundColor Green
 Write-Host " "
-sleep 7
+sleep 3
 
     $VulnReport = "C:\SecureReport"
     $OutFunc = "WriteableFiles"  
@@ -3141,7 +3129,7 @@ Write-Host "Now progress will slow whilst the script enumerates all Registry Hiv
 Write-Host " "
 Write-Host "Searching for Writeable Registry Hive Vulnerabilities" -foregroundColor Green
 Write-Host " "
-sleep 7
+sleep 3
 
     $VulnReport = "C:\SecureReport"
     $OutFunc = "WriteableReg"  
@@ -3217,7 +3205,7 @@ Write-Host "Now progress will slow whilst the script enumerates all folders and 
 Write-Host " "
 Write-Host "Searching for Writeable Folder Vulnerabilities" -foregroundColor Green
 Write-Host " "
-sleep 7
+sleep 3
 
     $VulnReport = "C:\SecureReport"
     $OutFunc = "WriteableFolders"  
@@ -3234,7 +3222,7 @@ sleep 7
     
     $drv = (psdrive | where {$_.root -match "^[a-zA-Z]:"}) |  where {$_.displayroot -notlike "*\\*"}
     $drvRoot = $drv.root 
-    $getRoot = Get-Item $drvRoot
+    $getRoot = Get-Item $drvRoot -ErrorAction SilentlyContinue
 
     foreach ($rt in $drvRoot)
     {
@@ -3309,7 +3297,7 @@ Write-Host "Now progress will slow whilst the script enumerates all folders and 
 Write-Host " "
 Write-Host "Searching for Writeable System Folder Vulnerabilities" -foregroundColor Green
 Write-Host " "
-sleep 7
+sleep 3
     
     $VulnReport = "C:\SecureReport"
     $OutFunc = "SystemFolders"  
@@ -3325,7 +3313,7 @@ sleep 7
 
     $drv = (psdrive | where {$_.root -match "^[a-zA-Z]:"}) |  where {$_.displayroot -notlike "*\\*"}
     $drvRoot = $drv.root
-    $getRoot = Get-Item $drvRoot
+    $getRoot = Get-Item $drvRoot -ErrorAction SilentlyContinue
 
     foreach ($rt in $drvRoot)
     {
@@ -3393,9 +3381,6 @@ sleep 7
         }
     }
  
-Write-Host " "
-Write-Host "Finished Searching for Writeable System Folder Vulnerabilities" -foregroundColor Green
-
 ################################################
 #################  CREATEFILES  ################
 ###############  System FOLDERS  ###############
@@ -3405,7 +3390,7 @@ Write-Host "Now progress will slow whilst the script enumerates all folders and 
 Write-Host " "
 Write-Host "Searching for CreateFile Permissions Vulnerabilities" -foregroundColor Green
 Write-Host " "
-sleep 7
+sleep 3
   
     $VulnReport = "C:\SecureReport"
     $OutFunc = "CreateSystemFolders"  
@@ -3421,7 +3406,7 @@ sleep 7
 
     $drv = (psdrive | where {$_.root -match "^[a-zA-Z]:"}) | where {$_.displayroot -notlike "*\\*"}
     $drvRoot = $drv.root
-    $getRoot = Get-Item $drvRoot
+    $getRoot = Get-Item $drvRoot -ErrorAction SilentlyContinue
 
     foreach ($rt in $drvRoot)
     {   
@@ -3504,7 +3489,7 @@ Write-Host " "
 
     $drv = (psdrive | where {$_.root -match "^[a-zA-Z]:"}) |  where {$_.displayroot -notlike "*\\*"}
     $drvRoot = $drv.root 
-    $getRoot = Get-Item $drvRoot
+    $getRoot = Get-Item $drvRoot -ErrorAction SilentlyContinue
 
     foreach ($rt in $drvRoot)
     {
@@ -3539,7 +3524,7 @@ Write-Host " "
     Set-Content $dllLogPathtxt -Force
 
     $fragDllNotSigned=@()
-    $getDllPath = get-content $dllLogPathtxt
+    $getDllPath = get-content $dllLogPathtxt -ErrorAction SilentlyContinue
 
     foreach ($dllNotSigned in $getDllPath)
     {
@@ -3560,15 +3545,13 @@ Write-Host " "
 ################################################
 #Warning Very long running process - enable only when required
 #START OF IF
-Write-Host " "
-Write-Host "Auditing Authenticode Signatures" -foregroundColor Green
-Write-Host " "
 
 if ($authenticode -eq "y")
 {
 
 Write-Host " "
-Write-Host "Searching for authenticode signature hashmismatch" -foregroundColor Green
+Write-Host "Auditing Authenticode Signatures" -foregroundColor Green
+Write-Host " "
 
     $fragAuthCodeSig=@()
     $newObjAuthSig=@()
@@ -3774,7 +3757,7 @@ Write-Host "Now progress will slow whilst the script enumerates all files for pa
 Write-Host " "
 Write-Host "Searching for Embedded Password in Files" -foregroundColor Green
 Write-Host " "
-sleep 7
+sleep 3
   
 #Passwords in Processes
     #$getPSPass = gwmi win32_process -ErrorAction SilentlyContinue | 
@@ -3838,8 +3821,6 @@ if ($embeddedpw -eq "y")
     }
     }
 
-Write-Host " "
-Write-Host "Finished Searching for Embedded Password in Files" -foregroundColor Green
 
 ################################################
 #####  SEARCHING FOR REGISTRY PASSWORDS  ######
@@ -3848,7 +3829,7 @@ Write-Host " "
 Write-Host "Auditing Registry Passwords" -foregroundColor Green
 Write-Host " "
 
-sleep 5
+sleep 3
 
     $VulnReport = "C:\SecureReport"
     $OutFunc = "RegPasswords" 
@@ -4202,19 +4183,19 @@ foreach ($appLockerRule in $gtAppLCollectionTypes)
 Write-Host " "
 Write-Host "Searching for active processes that are vulnerable to dll hijacking" -foregroundColor Green
 write-host " "
-sleep 2
+sleep 3
 
 $getDll = Get-Process
 $fragDLLHijack=@()
 foreach ($dll in $getDll)
 {
     $procName = $dll.Name
-    $dllMods = $dll | Select-Object -ExpandProperty modules 
+    try {$dllMods = $dll | Select-Object -ExpandProperty modules -ErrorAction SilentlyContinue}catch{}
     $dllFilename = $dllMods.filename
 
     foreach ($dllPath in $dllFilename)
     {
-        $dllFileAcl = Get-Acl $dllPath -ErrorAction SilentlyContinue
+        try{$dllFileAcl = Get-Acl $dllPath -ErrorAction SilentlyContinue}catch{} 
 
         if ($dllFileAcl | where {$_.Accesstostring -like "*Users Allow  Write*" -or `
         $_.Accesstostring -like "*Users Allow  Modify*" -or `
@@ -4226,8 +4207,8 @@ foreach ($dll in $getDll)
         $_.Accesstostring -like "*Authenticated Users Allow  Modify*" -or `
         $_.Accesstostring -like "*Authenticated Users Allow  FullControl*"})
             {
-                $getAuthCodeSig = get-authenticodesignature -FilePath $dllPath 
-                $dllStatus = $getAuthCodeSig.Status
+                try{$getAuthCodeSig = get-authenticodesignature -FilePath $dllPath 
+                $dllStatus = $getAuthCodeSig.Status}catch{} 
 
                 $newObjDLLHijack = New-Object psObject
                 Add-Member -InputObject $newObjDLLHijack -Type NoteProperty -Name DLLProcess -Value "Warning $($procName) warning"
@@ -4245,7 +4226,7 @@ foreach ($dll in $getDll)
 Write-Host " "
 Write-Host "Auditing ASR " -foregroundColor Green
 Write-Host " "
-sleep 5
+sleep 3
 
 $VulnReport = "C:\SecureReport"
 $OutFunc = "ASR" 
@@ -4454,11 +4435,11 @@ $hkuRunComment="Placing a program within a startup folder will also cause that p
 $gtCachedProfiles = (Get-ChildItem c:\users\ -Force -Directory).fullname
 foreach ($CachedProfiles in $gtCachedProfiles)
     {
-        $tpAppDataStartup = test-path "$($CachedProfiles)\AppData\Roaming\Microsoft\Windows\Start Menu\Programs\Startup"
+        $tpAppDataStartup = test-path "$($CachedProfiles)\AppData\Roaming\Microsoft\Windows\Start Menu\Programs\Startup" -ErrorAction SilentlyContinue
 
         if ($tpAppDataStartup -ne $null)
             {
-                $gtAppDataStartup = Get-ChildItem "$($CachedProfiles)\AppData\Roaming\Microsoft\Windows\Start Menu\Programs\Startup\" -Recurse -Force -Exclude desktop.ini
+                try{$gtAppDataStartup = Get-ChildItem "$($CachedProfiles)\AppData\Roaming\Microsoft\Windows\Start Menu\Programs\Startup\" -Recurse -Force -Exclude desktop.ini -ErrorAction SilentlyContinue}catch{}
 
                 foreach($AppDataStartup in $gtAppDataStartup)
                 {
@@ -4473,11 +4454,11 @@ foreach ($CachedProfiles in $gtCachedProfiles)
             }
     }
 
-$tpProgDataStartup = Test-Path "C:\ProgramData\Microsoft\Windows\Start Menu\Programs\StartUp" 
+$tpProgDataStartup = Test-Path "C:\ProgramData\Microsoft\Windows\Start Menu\Programs\StartUp" -ErrorAction SilentlyContinue
 
 if($tpProgDataStartup -ne $null)
     {
-        $gtProgDataStartup = Get-ChildItem "C:\ProgramData\Microsoft\Windows\Start Menu\Programs\StartUp" -Recurse -Force -Exclude desktop.ini
+        $gtProgDataStartup = Get-ChildItem "C:\ProgramData\Microsoft\Windows\Start Menu\Programs\StartUp" -Recurse -Force -Exclude desktop.ini -ErrorAction SilentlyContinue
 
         $newObjAutoRuns = New-Object -TypeName PSObject
         Add-Member -InputObject $newObjAutoRuns -Type NoteProperty -Name AutoRunsPath -Value ($AppDataStartup.Directory).FullName
@@ -4508,11 +4489,11 @@ foreach ($HKUSidItem in $gtHKUSid)
         $tphkuRunPath=@()
         $hkuRunComment="Placing a program within a startup folder will also cause that program to execute when a user logs in. There is a startup folder location for individual user accounts as well as a system-wide startup folder that will be checked regardless of which user account logs in. The startup folder path for the current user is C:\Users\[Username]\AppData\Roaming\Microsoft\Windows\Start Menu\Programs\Startup. The startup folder path for all users is C:\ProgramData\Microsoft\Windows\Start Menu\Programs\StartUp."
         $hkuRunPath = "$($hkuKey):\$($hkuSID)\Software\Microsoft\Windows\CurrentVersion\run"
-        $tphkuRunPath = Test-Path $hkuRunPath
+        $tphkuRunPath = Test-Path $hkuRunPath -ErrorAction SilentlyContinue
 
         if($tphkuRunPath -eq $true)
         {
-            $hkuRun = Get-Item $hkuRunPath | select -ExpandProperty property
+            $hkuRun = Get-Item $hkuRunPath  -ErrorAction SilentlyContinue | select -ExpandProperty property
             foreach($hkuRunItem in $hkuRun)
                 {
                     $gthkuRunValue = (Get-ItemProperty $hkuRunPath -Name $hkuRunItem | Select -Property * -ExcludeProperty pspath,PSParentPath,PSChildName,psdrive,psprovider).$hkuRunItem 
@@ -4535,14 +4516,14 @@ foreach ($HKUSidItem in $gtHKUSid)
 
         $hkuRunPath = "$($hkuKey):\$($hkuSID)\Software\Microsoft\Windows\CurrentVersion\runonce"
 
-        $tphkuRunPath = Test-Path $hkuRunPath
+        $tphkuRunPath = Test-Path $hkuRunPath -ErrorAction SilentlyContinue
 
         if($tphkuRunPath -eq $true)
         {
             $hkuRun = Get-Item $hkuRunPath | select -ExpandProperty property
             foreach($hkuRunItem in $hkuRun)
                 {
-                    $gthkuRunValue = (Get-ItemProperty $hkuRunPath -Name $hkuRunItem | Select -Property * -ExcludeProperty pspath,PSParentPath,PSChildName,psdrive,psprovider).$hkuRunItem 
+                    $gthkuRunValue = (Get-ItemProperty $hkuRunPath -Name $hkuRunItem -ErrorAction SilentlyContinue| Select -Property * -ExcludeProperty pspath,PSParentPath,PSChildName,psdrive,psprovider).$hkuRunItem 
             
                     $newObjAutoRuns = New-Object -TypeName PSObject
                     Add-Member -InputObject $newObjAutoRuns -Type NoteProperty -Name AutoRunsPath -Value $hkuRunPath
@@ -4565,11 +4546,11 @@ foreach ($HKUSidItem in $gtHKUSid)
 
         $hkuRunPath = "$($hkuKey):\$($hkuSID)\Software\Microsoft\Windows\CurrentVersion\Explorer\User Shell Folders"
 
-        $tphkuRunPath = Test-Path $hkuRunPath
+        $tphkuRunPath = Test-Path $hkuRunPath -ErrorAction SilentlyContinue
 
         if($tphkuRunPath -eq $true)
         {
-            $hkuRun = (Get-ItemProperty $hkuRunPath).startup #| select -ExpandProperty property 
+            $hkuRun = (Get-ItemProperty $hkuRunPath -ErrorAction SilentlyContinue).startup #| select -ExpandProperty property 
 
             $hkuRunPath = $hkuRunPath
             $hkuRunItem = "startup"
@@ -4595,11 +4576,11 @@ foreach ($HKUSidItem in $gtHKUSid)
         $hkuRunComment="The following Registry keys can be used to set startup folder items for persistence: HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\User Shell Folders and HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\Shell Folders"
 
         $hkuRunPath = "$($hkuKey):\$($hkuSID)\Software\Microsoft\Windows\CurrentVersion\Explorer\Shell Folders"
-        $tphkuRunPath = Test-Path $hkuRunPath
+        $tphkuRunPath = Test-Path $hkuRunPath -ErrorAction SilentlyContinue
 
         if($tphkuRunPath -eq $true)
         {
-            $hkuRun = (Get-ItemProperty $hkuRunPath).startup #| select -ExpandProperty property 
+            $hkuRun = (Get-ItemProperty $hkuRunPath -ErrorAction SilentlyContinue).startup #| select -ExpandProperty property 
 
             $hkuRunPath = $hkuRunPath
             $hkuRunItem = "startup"
@@ -4622,14 +4603,14 @@ foreach ($HKUSidItem in $gtHKUSid)
         $hkuRunComment="The following Registry keys can control automatic startup of services during boot: HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\RunServicesOnce and HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\RunServices"
         $hkuRunPath = "$($hkuKey):\$($hkuSID)\Software\Microsoft\Windows\CurrentVersion\RunServicesOnce"
 
-        $tphkuRunPath = Test-Path $hkuRunPath
+        $tphkuRunPath = Test-Path $hkuRunPath -ErrorAction SilentlyContinue
 
         if($tphkuRunPath -eq $true)
         {
-            $hkuRun = Get-Item $hkuRunPath | select -ExpandProperty property
+            $hkuRun = Get-Item $hkuRunPath -ErrorAction SilentlyContinue | select -ExpandProperty property
             foreach($hkuRunItem in $hkuRun)
                 {
-                    $gthkuRunValue = (Get-ItemProperty $hkuRunPath -Name $hkuRunItem | Select -Property * -ExcludeProperty pspath,PSParentPath,PSChildName,psdrive,psprovider).$hkuRunItem 
+                    $gthkuRunValue = (Get-ItemProperty $hkuRunPath -Name $hkuRunItem | Select -Property * -ExcludeProperty pspath,PSParentPath,PSChildName,psdrive,psprovider -ErrorAction SilentlyContinue).$hkuRunItem 
             
                     $newObjAutoRuns = New-Object -TypeName PSObject
                     Add-Member -InputObject $newObjAutoRuns -Type NoteProperty -Name AutoRunsPath -Value $hkuRunPath
@@ -4649,14 +4630,14 @@ foreach ($HKUSidItem in $gtHKUSid)
         $hkuRunComment="The following Registry keys can control automatic startup of services during boot: HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\RunServicesOnce and HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\RunServices"
         $hkuRunPath = "$($hkuKey):\$($hkuSID)\Software\Microsoft\Windows\CurrentVersion\RunServices"
 
-        $tphkuRunPath = Test-Path $hkuRunPath
+        $tphkuRunPath = Test-Path $hkuRunPath -ErrorAction SilentlyContinue
 
         if($tphkuRunPath -eq $true)
         {
-            $hkuRun = Get-Item $hkuRunPath | select -ExpandProperty property
+            $hkuRun = Get-Item $hkuRunPath -ErrorAction SilentlyContinue | select -ExpandProperty property
             foreach($hkuRunItem in $hkuRun)
                 {
-                    $gthkuRunValue = (Get-ItemProperty $hkuRunPath -Name $hkuRunItem | Select -Property * -ExcludeProperty pspath,PSParentPath,PSChildName,psdrive,psprovider).$hkuRunItem 
+                    $gthkuRunValue = (Get-ItemProperty $hkuRunPath -Name $hkuRunItem -ErrorAction SilentlyContinue | Select -Property * -ExcludeProperty pspath,PSParentPath,PSChildName,psdrive,psprovider).$hkuRunItem 
             
                     $newObjAutoRuns = New-Object -TypeName PSObject
                     Add-Member -InputObject $newObjAutoRuns -Type NoteProperty -Name AutoRunsPath -Value $hkuRunPath
@@ -4678,14 +4659,14 @@ foreach ($HKUSidItem in $gtHKUSid)
         $hkuRunComment="Using policy settings to specify startup programs creates corresponding values in either of Registry key: HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Policies\Explorer\Run"
         $hkuRunPath = "$($hkuKey):\$($hkuSID)\Microsoft\Windows\CurrentVersion\Policies\Explorer\Run"
 
-        $tphkuRunPath = Test-Path $hkuRunPath
+        $tphkuRunPath = Test-Path $hkuRunPath -ErrorAction SilentlyContinue
 
         if($tphkuRunPath -eq $true)
         {
-            $hkuRun = Get-Item $hkuRunPath | select -ExpandProperty property
+            $hkuRun = Get-Item $hkuRunPath -ErrorAction SilentlyContinue | select -ExpandProperty property
             foreach($hkuRunItem in $hkuRun)
                 {
-                    $gthkuRunValue = (Get-ItemProperty $hkuRunPath -Name $hkuRunItem | Select -Property * -ExcludeProperty pspath,PSParentPath,PSChildName,psdrive,psprovider).$hkuRunItem 
+                    $gthkuRunValue = (Get-ItemProperty $hkuRunPath -Name $hkuRunItem -ErrorAction SilentlyContinue | Select -Property * -ExcludeProperty pspath,PSParentPath,PSChildName,psdrive,psprovider).$hkuRunItem 
             
                     $newObjAutoRuns = New-Object -TypeName PSObject
                     Add-Member -InputObject $newObjAutoRuns -Type NoteProperty -Name AutoRunsPath -Value $hkuRunPath
@@ -4703,16 +4684,15 @@ foreach ($HKUSidItem in $gtHKUSid)
         $gthkuRunValue=@()
         $tphkuRunPath=@()
         $hkuRunComment="Programs listed in the load value of the registry key: HKEY_CURRENT_USER\Software\Microsoft\Windows NT\CurrentVersion\Windows run when any user logs on."
-        $hkuRunPath = Get-ItemProperty "$($hkuKey):\$($hkuSID)\Microsoft\Windows NT\CurrentVersion\Windows"
-
-        $tphkuRunPath = Test-Path $hkuRunPath
+        try{$hkuRunPath = Get-ItemProperty "$($hkuKey):\$($hkuSID)\Microsoft\Windows NT\CurrentVersion\Windows" -ErrorAction SilentlyContinue}catch{}
+        try{$tphkuRunPath = Test-Path $hkuRunPath -ErrorAction SilentlyContinue}catch{}
 
         if($tphkuRunPath -eq $true)
         {
-            $hkuRun = Get-Item $hkuRunPath | select -ExpandProperty property
+            $hkuRun = Get-Item $hkuRunPath | select -ExpandProperty property -ErrorAction SilentlyContinue
             foreach($hkuRunItem in $hkuRun)
                 {
-                    $gthkuRunValue = (Get-ItemProperty $hkuRunPath -Name $hkuRunItem | Select -Property * -ExcludeProperty pspath,PSParentPath,PSChildName,psdrive,psprovider).$hkuRunItem 
+                    $gthkuRunValue = (Get-ItemProperty $hkuRunPath -Name $hkuRunItem -ErrorAction SilentlyContinue | Select -Property * -ExcludeProperty pspath,PSParentPath,PSChildName,psdrive,psprovider).$hkuRunItem 
             
                     $newObjAutoRuns = New-Object -TypeName PSObject
                     Add-Member -InputObject $newObjAutoRuns -Type NoteProperty -Name AutoRunsPath -Value $hkuRunPath
@@ -4722,7 +4702,6 @@ foreach ($HKUSidItem in $gtHKUSid)
                     $fragAutoRunsVal += $newObjAutoRuns
                 }
          }
-
     }
 
 <#-------------------------------------------------
@@ -4739,14 +4718,14 @@ $gthkuRunValue=@()
 $tphkuRunPath=@()
 $hkuRunComment="Placing a program within a startup folder will also cause that program to execute when a user logs in. There is a startup folder location for individual user accounts as well as a system-wide startup folder that will be checked regardless of which user account logs in. The startup folder path for the current user is C:\Users\[Username]\AppData\Roaming\Microsoft\Windows\Start Menu\Programs\Startup. The startup folder path for all users is C:\ProgramData\Microsoft\Windows\Start Menu\Programs\StartUp."
 $hkuRunPath = "HKLM:\Software\Microsoft\Windows\CurrentVersion\Run"
-$tphkuRunPath = Test-Path $hkuRunPath
+$tphkuRunPath = Test-Path $hkuRunPath -ErrorAction SilentlyContinue
 
 if($tphkuRunPath -eq $true)
     {
         $hkuRun = Get-Item $hkuRunPath | select -ExpandProperty property
         foreach($hkuRunItem in $hkuRun)
             {
-                $gthkuRunValue = (Get-ItemProperty $hkuRunPath -Name $hkuRunItem | Select -Property *  -ExcludeProperty pspath,PSParentPath,PSChildName,psdrive,psprovider).$hkuRunItem 
+                $gthkuRunValue = (Get-ItemProperty $hkuRunPath -Name $hkuRunItem  -ErrorAction SilentlyContinue| Select -Property *  -ExcludeProperty pspath,PSParentPath,PSChildName,psdrive,psprovider).$hkuRunItem 
             
                 $newObjAutoRuns = New-Object -TypeName PSObject
                 Add-Member -InputObject $newObjAutoRuns -Type NoteProperty -Name AutoRunsPath -Value $hkuRunPath
@@ -4765,14 +4744,14 @@ $gthkuRunValue=@()
 $tphkuRunPath=@()
 $hkuRunComment="Placing a program within a startup folder will also cause that program to execute when a user logs in. There is a startup folder location for individual user accounts as well as a system-wide startup folder that will be checked regardless of which user account logs in. The startup folder path for the current user is C:\Users\[Username]\AppData\Roaming\Microsoft\Windows\Start Menu\Programs\Startup. The startup folder path for all users is C:\ProgramData\Microsoft\Windows\Start Menu\Programs\StartUp."
 $hkuRunPath = Get-Item "HKLM:\Software\Microsoft\Windows\CurrentVersion\RunOnce"
-$tphkuRunPath = Test-Path $hkuRunPath
+$tphkuRunPath = Test-Path $hkuRunPath -ErrorAction SilentlyContinue
 
 if($tphkuRunPath -eq $true)
     {
         $hkuRun = Get-Item $hkuRunPath | select -ExpandProperty property
         foreach($hkuRunItem in $hkuRun)
             {
-                $gthkuRunValue = (Get-ItemProperty $hkuRunPath -Name $hkuRunItem | Select -Property *  -ExcludeProperty pspath,PSParentPath,PSChildName,psdrive,psprovider).$hkuRunItem 
+                $gthkuRunValue = (Get-ItemProperty $hkuRunPath -Name $hkuRunItem  -ErrorAction SilentlyContinue| Select -Property * -ExcludeProperty pspath,PSParentPath,PSChildName,psdrive,psprovider).$hkuRunItem 
             
                 $newObjAutoRuns = New-Object -TypeName PSObject
                 Add-Member -InputObject $newObjAutoRuns -Type NoteProperty -Name AutoRunsPath -Value $hkuRunPath
@@ -4790,15 +4769,15 @@ $hkuRunItem=@()
 $gthkuRunValue=@()
 $tphkuRunPath=@()
 $hkuRunComment="Run keys may exist under multiple hives. The HKEY_LOCAL_MACHINE\Software\Microsoft\Windows\CurrentVersion\RunOnceEx is also available but is not created by default on Windows Vista and newer. Registry run key entries can reference programs directly or list them as a dependency. For example, it is possible to load a DLL at logon using a Depend key with RunOnceEx: reg add HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\RunOnceEx\0001\Depend /v 1 /d C:\temp\evil[.]dll"
-$hkuRunPath = Get-Item "HKLM:\Software\Microsoft\Windows\CurrentVersion\RunOnceEx"
-$tphkuRunPath = Test-Path $hkuRunPath
+try{$hkuRunPath = Get-Item "HKLM:\Software\Microsoft\Windows\CurrentVersion\RunOnceEx" -ErrorAction SilentlyContinue}catch{}
+try{$tphkuRunPath = Test-Path $hkuRunPath -ErrorAction SilentlyContinue}catch{}
 
 if($tphkuRunPath -eq $true)
     {
         $hkuRun = Get-Item $hkuRunPath | select -ExpandProperty property
         foreach($hkuRunItem in $hkuRun)
             {
-                $gthkuRunValue = (Get-ItemProperty $hkuRunPath -Name $hkuRunItem | Select -Property *  -ExcludeProperty pspath,PSParentPath,PSChildName,psdrive,psprovider).$hkuRunItem 
+                $gthkuRunValue = (Get-ItemProperty $hkuRunPath -Name $hkuRunItem  -ErrorAction SilentlyContinue| Select -Property *  -ExcludeProperty pspath,PSParentPath,PSChildName,psdrive,psprovider).$hkuRunItem 
             
                 $newObjAutoRuns = New-Object -TypeName PSObject
                 Add-Member -InputObject $newObjAutoRuns -Type NoteProperty -Name AutoRunsPath -Value $hkuRunPath
@@ -4820,11 +4799,11 @@ $tphkuRunPath=@()
 $hkuRunComment="The following Registry keys can be used to set startup folder items for persistence: HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Shell Folders and HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\User Shell Folders"
 $hkuRunPath = "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Shell Folders"
 
-$tphkuRunPath = Test-Path $hkuRunPath
+$tphkuRunPath = Test-Path $hkuRunPath -ErrorAction SilentlyContinue
 
 if($tphkuRunPath -eq $true)
     {
-        $hkuRun = (Get-ItemProperty $hkuRunPath).startup #| select -ExpandProperty property 
+        $hkuRun = (Get-ItemProperty $hkuRunPath -ErrorAction SilentlyContinue).startup #| select -ExpandProperty property 
 
         $hkuRunPath = $hkuRunPath
         $hkuRunItem = "startup"
@@ -4849,11 +4828,11 @@ $hkuRunComment="The following Registry keys can be used to set startup folder it
 
 $hkuRunPath = "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\User Shell Folders"
 
-$tphkuRunPath = Test-Path $hkuRunPath
+$tphkuRunPath = Test-Path $hkuRunPath -ErrorAction SilentlyContinue
 
 if($tphkuRunPath -eq $true)
     {
-        $hkuRun = (Get-ItemProperty $hkuRunPath).startup #| select -ExpandProperty property 
+        $hkuRun = (Get-ItemProperty $hkuRunPath -ErrorAction SilentlyContinue).startup #| select -ExpandProperty property 
 
         $hkuRunPath = $hkuRunPath
         $hkuRunItem = "startup"
@@ -4874,15 +4853,15 @@ $hkuRunItem=@()
 $gthkuRunValue=@()
 $tphkuRunPath=@()
 $hkuRunComment="The following Registry keys can control automatic startup of services during boot:HKEY_LOCAL_MACHINE\Software\Microsoft\Windows\CurrentVersion\RunServicesOnce and HKEY_LOCAL_MACHINE\Software\Microsoft\Windows\CurrentVersion\RunServices"
-$hkuRunPath = Get-Item "HKLM:\Software\Microsoft\Windows\CurrentVersion\RunServicesOnce"
-$tphkuRunPath = Test-Path $hkuRunPath
+try{$hkuRunPath = Get-Item "HKLM:\Software\Microsoft\Windows\CurrentVersion\RunServicesOnce"}catch{}
+try{$tphkuRunPath = Test-Path $hkuRunPath -ErrorAction SilentlyContinue}catch{}
 
 if($tphkuRunPath -eq $true)
     {
-        $hkuRun = Get-Item $hkuRunPath | select -ExpandProperty property
+        try{$hkuRun = Get-Item $hkuRunPath -ErrorAction SilentlyContinue | select -ExpandProperty property}catch{}
         foreach($hkuRunItem in $hkuRun)
             {
-                $gthkuRunValue = (Get-ItemProperty $hkuRunPath -Name $hkuRunItem | Select -Property *  -ExcludeProperty pspath,PSParentPath,PSChildName,psdrive,psprovider).$hkuRunItem 
+                $gthkuRunValue = (Get-ItemProperty $hkuRunPath -Name $hkuRunItem  -ErrorAction SilentlyContinue| Select -Property *  -ExcludeProperty pspath,PSParentPath,PSChildName,psdrive,psprovider).$hkuRunItem 
             
                 $newObjAutoRuns = New-Object -TypeName PSObject
                 Add-Member -InputObject $newObjAutoRuns -Type NoteProperty -Name AutoRunsPath -Value $hkuRunPath
@@ -4901,15 +4880,15 @@ $gthkuRunValue=@()
 $tphkuRunPath=@()
 $hkuRunComment="The following Registry keys can control automatic startup of services during boot:HKEY_LOCAL_MACHINE\Software\Microsoft\Windows\CurrentVersion\RunServicesOnce and HKEY_LOCAL_MACHINE\Software\Microsoft\Windows\CurrentVersion\RunServices"
 
-$hkuRunPath = Get-Item "HKLM:\Software\Microsoft\Windows\CurrentVersion\RunServices"
-$tphkuRunPath = Test-Path $hkuRunPath
+try{$hkuRunPath = Get-Item "HKLM:\Software\Microsoft\Windows\CurrentVersion\RunServices"}catch{}
+try{$tphkuRunPath = Test-Path $hkuRunPath -ErrorAction SilentlyContinue}catch{}
 
 if($tphkuRunPath -eq $true)
     {
-        $hkuRun = Get-Item $hkuRunPath | select -ExpandProperty property
+        $hkuRun = Get-Item $hkuRunPath -ErrorAction SilentlyContinue | select -ExpandProperty property
         foreach($hkuRunItem in $hkuRun)
             {
-                $gthkuRunValue = (Get-ItemProperty $hkuRunPath -Name $hkuRunItem | Select -Property *  -ExcludeProperty pspath,PSParentPath,PSChildName,psdrive,psprovider).$hkuRunItem 
+                $gthkuRunValue = (Get-ItemProperty $hkuRunPath -Name $hkuRunItem -ErrorAction SilentlyContinue | Select -Property *  -ExcludeProperty pspath,PSParentPath,PSChildName,psdrive,psprovider).$hkuRunItem 
             
                 $newObjAutoRuns = New-Object -TypeName PSObject
                 Add-Member -InputObject $newObjAutoRuns -Type NoteProperty -Name AutoRunsPath -Value $hkuRunPath
@@ -4927,15 +4906,15 @@ $hkuRunItem=@()
 $gthkuRunValue=@()
 $tphkuRunPath=@()
 $hkuRunComment="Using policy settings to specify startup programs creates corresponding values in either of two Registry keys: HKEY_LOCAL_MACHINE\Software\Microsoft\Windows\CurrentVersion\Policies\Explorer\Run"
-$hkuRunPath = Get-Item "HKLM:\Software\Microsoft\Windows\CurrentVersion\Policies\Explorer\Run"
-$tphkuRunPath = Test-Path $hkuRunPath
+try{$hkuRunPath = Get-Item "HKLM:\Software\Microsoft\Windows\CurrentVersion\Policies\Explorer\Run"}catch{}
+try{$tphkuRunPath = Test-Path $hkuRunPath -ErrorAction SilentlyContinue}catch{}
 
 if($tphkuRunPath -eq $true)
     {
-        $hkuRun = Get-Item $hkuRunPath | select -ExpandProperty property
+        $hkuRun = Get-Item $hkuRunPath -ErrorAction SilentlyContinue | select -ExpandProperty property
         foreach($hkuRunItem in $hkuRun)
             {
-                $gthkuRunValue = (Get-ItemProperty $hkuRunPath -Name $hkuRunItem | Select -Property *  -ExcludeProperty pspath,PSParentPath,PSChildName,psdrive,psprovider).$hkuRunItem 
+                $gthkuRunValue = (Get-ItemProperty $hkuRunPath -Name $hkuRunItem -ErrorAction SilentlyContinue | Select -Property *  -ExcludeProperty pspath,PSParentPath,PSChildName,psdrive,psprovider).$hkuRunItem 
             
                  $newObjAutoRuns = New-Object -TypeName PSObject
                  Add-Member -InputObject $newObjAutoRuns -Type NoteProperty -Name AutoRunsPath -Value $hkuRunPath
@@ -4956,11 +4935,11 @@ $tphkuRunPath=@()
 $hkuRunComment="The Winlogon key controls actions that occur when a user logs on to a computer running Windows 7. Most of these actions are under the control of the operating system, but you can also add custom actions here. The HKEY_LOCAL_MACHINE\Software\Microsoft\Windows NT\CurrentVersion\Winlogon\Userinit and HKEY_LOCAL_MACHINE\Software\Microsoft\Windows NT\CurrentVersion\Winlogon\Shell subkeys can automatically launch programs."
 $hkuRunPath = "HKLM:\Software\Microsoft\Windows NT\CurrentVersion\Winlogon"
 
-$tphkuRunPath = Test-Path $hkuRunPath
+$tphkuRunPath = Test-Path $hkuRunPath -ErrorAction SilentlyContinue
 
 if($tphkuRunPath -eq $true)
 {
-    $hkuRun = (Get-ItemProperty $hkuRunPath).Userinit #| select -ExpandProperty property 
+    $hkuRun = (Get-ItemProperty $hkuRunPath -ErrorAction SilentlyContinue).Userinit #| select -ExpandProperty property 
 
     $hkuRunPath = $hkuRunPath
     $hkuRunItem = "Userinit "
@@ -4987,11 +4966,11 @@ $hkuRunComment="The Winlogon key controls actions that occur when a user logs on
 
 $hkuRunPath = "HKLM:\Software\Microsoft\Windows NT\CurrentVersion\Winlogon"
 
-$tphkuRunPath = Test-Path $hkuRunPath
+$tphkuRunPath = Test-Path $hkuRunPath -ErrorAction SilentlyContinue
 
 if($tphkuRunPath -eq $true)
 {
-    $hkuRun = (Get-ItemProperty $hkuRunPath).Shell #| select -ExpandProperty property 
+    $hkuRun = (Get-ItemProperty $hkuRunPath -ErrorAction SilentlyContinue).Shell #| select -ExpandProperty property 
 
     $hkuRunPath = $hkuRunPath
     $hkuRunItem = "Shell"
@@ -5017,11 +4996,11 @@ $tphkuRunPath=@()
 $hkuRunComment="By default, the multistring BootExecute value of the registry key HKEY_LOCAL_MACHINE\System\CurrentControlSet\Control\Session Manager is set to autocheck autochk *. This value causes Windows, at startup, to check the file-system integrity of the hard disks if the system has been shut down abnormally. Adversaries can add other programs or processes to this registry value which will automatically launch at boot."
 $hkuRunPath = "HKLM:\System\CurrentControlSet\Control\Session Manager"
 
-$tphkuRunPath = Test-Path $hkuRunPath
+$tphkuRunPath = Test-Path $hkuRunPath -ErrorAction SilentlyContinue
 
 if($tphkuRunPath -eq $true)
 {
-    $hkuRun = (Get-ItemProperty $hkuRunPath).BootExecute #| select -ExpandProperty property 
+    $hkuRun = (Get-ItemProperty $hkuRunPath -ErrorAction SilentlyContinue).BootExecute #| select -ExpandProperty property 
 
     $hkuRunPath = $hkuRunPath
     $hkuRunItem = "BootExecute"
@@ -5074,8 +5053,8 @@ Write-Host " "
     $WindowsOSVal=@()
     $WindowsOSVal = "DriverLoadPolicy"  
     $getWindowsOSVal=@()
-    $getWindowsOS = Get-Item $RegKey -ErrorAction SilentlyContinue
-    $getWindowsOSVal = $getWindowsOS.GetValue("$WindowsOSVal") 
+    try{$getWindowsOS = Get-Item $RegKey -ErrorAction SilentlyContinue}catch{}
+    try{$getWindowsOSVal = $getWindowsOS.GetValue("$WindowsOSVal")}catch{}
 
     if ($getWindowsOSVal -eq "8")
     {
@@ -5127,8 +5106,8 @@ Write-Host " "
     $WindowsOSVal=@()
     $WindowsOSVal = "SafeModeBlockNonAdmins"   
     $getWindowsOSVal=@()
-    $getWindowsOS = Get-Item $RegKey -ErrorAction SilentlyContinue
-    $getWindowsOSVal = $getWindowsOS.GetValue("$WindowsOSVal") 
+    try{$getWindowsOS = Get-Item $RegKey -ErrorAction SilentlyContinue}catch{}
+    try{$getWindowsOSVal = $getWindowsOS.GetValue("$WindowsOSVal")}catch{}
 
     if ($getWindowsOSVal -eq "1")
     {
@@ -5168,7 +5147,7 @@ Write-Host " "
     $WindowsOSVal=@()
     $WindowsOSVal = "DontDisplayNetworkSelectionUI"
 
-    $getWindowsOS = Get-Item $RegKey -ErrorAction SilentlyContinue
+    try{$getWindowsOS = Get-Item $RegKey -ErrorAction SilentlyContinue}catch{}
     $getWindowsOSVal=@()
     $getWindowsOSVal = $getWindowsOS.GetValue("$WindowsOSVal")
 
@@ -5210,7 +5189,7 @@ Write-Host " "
     $WindowsOSVal=@()
     $WindowsOSVal = "EnumerateLocalUsers"
 
-    $getWindowsOS = Get-Item $RegKey -ErrorAction SilentlyContinue
+    try{$getWindowsOS = Get-Item $RegKey -ErrorAction SilentlyContinue}catch{}
     $getWindowsOSVal=@()
     $getWindowsOSVal = $getWindowsOS.GetValue("$WindowsOSVal")
 
@@ -5252,8 +5231,8 @@ Write-Host " "
     $WindowsOSVal=@()
     $WindowsOSVal = "ProcessCreationIncludeCmdLine_Enabled"  
     $getWindowsOSVal=@()
-    $getWindowsOS = Get-Item $RegKey -ErrorAction SilentlyContinue
-    $getWindowsOSVal = $getWindowsOS.GetValue("$WindowsOSVal") 
+    try{$getWindowsOS = Get-Item $RegKey -ErrorAction SilentlyContinue}catch{}
+    try{$getWindowsOSVal = $getWindowsOS.GetValue("$WindowsOSVal")}catch{}
 
     if ($getWindowsOSVal -eq "1")
     {
@@ -5296,8 +5275,8 @@ Write-Host " "
     $WindowsOSVal=@()
     $WindowsOSVal = "AllowInsecureGuestAuth"   
     $getWindowsOSVal=@()
-    $getWindowsOS = Get-Item $RegKey -ErrorAction SilentlyContinue
-    $getWindowsOSVal = $getWindowsOS.GetValue("$WindowsOSVal") 
+    try{$getWindowsOS = Get-Item $RegKey -ErrorAction SilentlyContinue}catch{}
+    try{$getWindowsOSVal = $getWindowsOS.GetValue("$WindowsOSVal")}catch{}
 
     if ($getWindowsOSVal -eq "0")
     {
@@ -5337,8 +5316,8 @@ Write-Host " "
     $WindowsOSVal=@()
     $WindowsOSVal = "BlockDomainPicturePassword"
     $getWindowsOSVal=@()
-    $getWindowsOS = Get-Item $RegKey -ErrorAction SilentlyContinue
-    $getWindowsOSVal = $getWindowsOS.GetValue("$WindowsOSVal") 
+    try{$getWindowsOS = Get-Item $RegKey -ErrorAction SilentlyContinue}catch{}
+    try{$getWindowsOSVal = $getWindowsOS.GetValue("$WindowsOSVal")}catch{}
 
     if ($getWindowsOSVal -eq "1")
     {
@@ -5379,8 +5358,8 @@ Write-Host " "
     $WindowsOSVal=@()
     $WindowsOSVal = "AllowDomainPINLogon"
     $getWindowsOSVal=@()
-    $getWindowsOS = Get-Item $RegKey -ErrorAction SilentlyContinue
-    $getWindowsOSVal = $getWindowsOS.GetValue("$WindowsOSVal") 
+    try{$getWindowsOS = Get-Item $RegKey -ErrorAction SilentlyContinue}catch{}
+    try{$getWindowsOSVal = $getWindowsOS.GetValue("$WindowsOSVal")}catch{}
 
     if ($getWindowsOSVal -eq "0")
     {
@@ -5419,8 +5398,8 @@ Write-Host " "
     $WindowsOSVal=@()
     $WindowsOSVal = "AllowDomainDelayLock"  
     $getWindowsOSVal=@()
-    $getWindowsOS = Get-Item $RegKey -ErrorAction SilentlyContinue
-    $getWindowsOSVal = $getWindowsOS.GetValue("$WindowsOSVal") 
+    try{$getWindowsOS = Get-Item $RegKey -ErrorAction SilentlyContinue}catch{}
+    try{$getWindowsOSVal = $getWindowsOS.GetValue("$WindowsOSVal")}catch{}
 
     if ($getWindowsOSVal -eq "0")
     {
@@ -5456,8 +5435,8 @@ Write-Host " "
     $WindowsOSVal=@()
     $WindowsOSVal = "DisableLockScreenAppNotifications"  
     $getWindowsOSVal=@()
-    $getWindowsOS = Get-Item $RegKey -ErrorAction SilentlyContinue
-    $getWindowsOSVal = $getWindowsOS.GetValue("$WindowsOSVal") 
+    try{$getWindowsOS = Get-Item $RegKey -ErrorAction SilentlyContinue}catch{}
+    try{$getWindowsOSVal = $getWindowsOS.GetValue("$WindowsOSVal")}catch{}
 
     if ($getWindowsOSVal -eq "1")
     {
@@ -5500,8 +5479,8 @@ Write-Host " "
     $WindowsOSVal=@()
     $WindowsOSVal = "DisableHomeGroup"  
     $getWindowsOSVal=@()
-    $getWindowsOS = Get-Item $RegKey -ErrorAction SilentlyContinue
-    $getWindowsOSVal = $getWindowsOS.GetValue("$WindowsOSVal") 
+    try{$getWindowsOS = Get-Item $RegKey -ErrorAction SilentlyContinue}catch{}
+    try{$getWindowsOSVal = $getWindowsOS.GetValue("$WindowsOSVal")}catch{}
 
     if ($getWindowsOSVal -eq "1")
     {
@@ -5537,8 +5516,8 @@ Write-Host " "
     $WindowsOSVal=@()
     $WindowsOSVal = "AllowWindowsInkWorkspace"  
     $getWindowsOSVal=@()
-    $getWindowsOS = Get-Item $RegKey -ErrorAction SilentlyContinue
-    $getWindowsOSVal = $getWindowsOS.GetValue("$WindowsOSVal") 
+    try{$getWindowsOS = Get-Item $RegKey -ErrorAction SilentlyContinue}catch{}
+    try{$getWindowsOSVal = $getWindowsOS.GetValue("$WindowsOSVal")}catch{}
 
     if ($getWindowsOSVal -eq "1")
     {
@@ -5574,8 +5553,8 @@ Write-Host " "
     $WindowsOSVal=@()
     $WindowsOSVal = "ShowLockOption"  
     $getWindowsOSVal=@()
-    $getWindowsOS = Get-Item $RegKey -ErrorAction SilentlyContinue
-    $getWindowsOSVal = $getWindowsOS.GetValue("$WindowsOSVal") 
+    try{$getWindowsOS = Get-Item $RegKey -ErrorAction SilentlyContinue}catch{}
+    try{$getWindowsOSVal = $getWindowsOS.GetValue("$WindowsOSVal")}catch{}
 
     if ($getWindowsOSVal -eq "1")
     {
@@ -5610,8 +5589,8 @@ Write-Host " "
     $WindowsOSVal=@()
     $WindowsOSVal = "ScreenSaveActive"
     $getWindowsOSVal=@()
-    $getWindowsOS = Get-Item $RegKey -ErrorAction SilentlyContinue
-    $getWindowsOSVal = $getWindowsOS.GetValue("$WindowsOSVal") 
+    try{$getWindowsOS = Get-Item $RegKey -ErrorAction SilentlyContinue}catch{}
+    try{$getWindowsOSVal = $getWindowsOS.GetValue("$WindowsOSVal")}catch{}
 
     if ($getWindowsOSVal -eq "1")
     {
@@ -5646,8 +5625,8 @@ Write-Host " "
     $WindowsOSVal=@()
     $WindowsOSVal = "ScreenSaverIsSecure"
     $getWindowsOSVal=@()
-    $getWindowsOS = Get-Item $RegKey -ErrorAction SilentlyContinue
-    $getWindowsOSVal = $getWindowsOS.GetValue("$WindowsOSVal") 
+    try{$getWindowsOS = Get-Item $RegKey -ErrorAction SilentlyContinue}catch{}
+    try{$getWindowsOSVal = $getWindowsOS.GetValue("$WindowsOSVal")}catch{}
 
     if ($getWindowsOSVal -eq "1")
     {
@@ -5682,8 +5661,8 @@ Write-Host " "
     $WindowsOSVal=@()
     $WindowsOSVal = "ScreenSaveTimeOut"
     $getWindowsOSVal=@()
-    $getWindowsOS = Get-Item $RegKey -ErrorAction SilentlyContinue
-    $getWindowsOSVal = $getWindowsOS.GetValue("$WindowsOSVal") 
+    try{$getWindowsOS = Get-Item $RegKey -ErrorAction SilentlyContinue}catch{}
+    try{$getWindowsOSVal = $getWindowsOS.GetValue("$WindowsOSVal")}catch{}
 
     if ($getWindowsOSVal -eq "900")
     {
@@ -5719,8 +5698,8 @@ Write-Host " "
     $WindowsOSVal=@()
     $WindowsOSVal = "NoToastApplicationNotificationOnLockScreen"
     $getWindowsOSVal=@()
-    $getWindowsOS = Get-Item $RegKey -ErrorAction SilentlyContinue
-    $getWindowsOSVal = $getWindowsOS.GetValue("$WindowsOSVal") 
+    try{$getWindowsOS = Get-Item $RegKey -ErrorAction SilentlyContinue}catch{}
+    try{$getWindowsOSVal = $getWindowsOS.GetValue("$WindowsOSVal")}catch{}
 
     if ($getWindowsOSVal -eq "1")
     {
@@ -5756,8 +5735,8 @@ Write-Host " "
     $WindowsOSVal=@()
     $WindowsOSVal = "DisableThirdPartySuggestions"
     $getWindowsOSVal=@()
-    $getWindowsOS = Get-Item $RegKey -ErrorAction SilentlyContinue
-    $getWindowsOSVal = $getWindowsOS.GetValue("$WindowsOSVal") 
+    try{$getWindowsOS = Get-Item $RegKey -ErrorAction SilentlyContinue}catch{}
+    try{$getWindowsOSVal = $getWindowsOS.GetValue("$WindowsOSVal")}catch{}
 
     if ($getWindowsOSVal -eq "1")
     {
@@ -5792,8 +5771,8 @@ Write-Host " "
     $WindowsOSVal=@()
     $WindowsOSVal = "NoLockScreenCamera"  
     $getWindowsOSVal=@()
-    $getWindowsOS = Get-Item $RegKey -ErrorAction SilentlyContinue
-    $getWindowsOSVal = $getWindowsOS.GetValue("$WindowsOSVal") 
+    try{$getWindowsOS = Get-Item $RegKey -ErrorAction SilentlyContinue}catch{}
+    try{$getWindowsOSVal = $getWindowsOS.GetValue("$WindowsOSVal")}catch{}
 
     if ($getWindowsOSVal -eq "1")
     {
@@ -5828,8 +5807,8 @@ Write-Host " "
     $WindowsOSVal=@()
     $WindowsOSVal = "NoLockScreenSlideshow"  
     $getWindowsOSVal=@()
-    $getWindowsOS = Get-Item $RegKey -ErrorAction SilentlyContinue
-    $getWindowsOSVal = $getWindowsOS.GetValue("$WindowsOSVal") 
+    try{$getWindowsOS = Get-Item $RegKey -ErrorAction SilentlyContinue}catch{}
+    try{$getWindowsOSVal = $getWindowsOS.GetValue("$WindowsOSVal")}catch{}
 
     if ($getWindowsOSVal -eq "1")
     {
@@ -5868,8 +5847,8 @@ Write-Host " "
     $WindowsOSVal=@()
     $WindowsOSVal = "NoInplaceSharing"  
     $getWindowsOSVal=@()
-    $getWindowsOS = Get-Item $RegKey -ErrorAction SilentlyContinue
-    $getWindowsOSVal = $getWindowsOS.GetValue("$WindowsOSVal") 
+    try{$getWindowsOS = Get-Item $RegKey -ErrorAction SilentlyContinue}catch{}
+    try{$getWindowsOSVal = $getWindowsOS.GetValue("$WindowsOSVal")}catch{}
 
     if ($getWindowsOSVal -eq "1")
     {
@@ -5911,9 +5890,9 @@ Write-Host " "
     $RegKey = 'HKLM:\Software\Policies\Microsoft\Windows\CredUI\'
     $WindowsOSVal=@()
     $WindowsOSVal = "DisablePasswordReveal"
-    $getWindowsOS = Get-Item $RegKey -ErrorAction SilentlyContinue
     $getWindowsOSVal=@()
-    $getWindowsOSVal = $getWindowsOS.GetValue("$WindowsOSVal")
+    try{$getWindowsOS = Get-Item $RegKey -ErrorAction SilentlyContinue}catch{}
+    try{$getWindowsOSVal = $getWindowsOS.GetValue("$WindowsOSVal")}catch{}
 
     if ($getWindowsOSVal -eq "1")
     {
@@ -5953,8 +5932,8 @@ Write-Host " "
     $WindowsOSVal=@()
     $WindowsOSVal = "EnumerateAdministrators"
     $getWindowsOSVal=@()
-    $getWindowsOS = Get-Item $RegKey -ErrorAction SilentlyContinue
-    $getWindowsOSVal = $getWindowsOS.GetValue("$WindowsOSVal") 
+    try{$getWindowsOS = Get-Item $RegKey -ErrorAction SilentlyContinue}catch{}
+    try{$getWindowsOSVal = $getWindowsOS.GetValue("$WindowsOSVal")}catch{}
 
     if ($getWindowsOSVal -eq "0")
     {
@@ -5994,8 +5973,8 @@ Write-Host " "
     $WindowsOSVal=@()
     $WindowsOSVal = "EnableSecureCredentialPrompting"
     $getWindowsOSVal=@()
-    $getWindowsOS = Get-Item $RegKey -ErrorAction SilentlyContinue
-    $getWindowsOSVal = $getWindowsOS.GetValue("$WindowsOSVal") 
+    try{$getWindowsOS = Get-Item $RegKey -ErrorAction SilentlyContinue}catch{}
+    try{$getWindowsOSVal = $getWindowsOS.GetValue("$WindowsOSVal")}catch{}
 
     if ($getWindowsOSVal -eq "1")
     {
@@ -6032,8 +6011,8 @@ Write-Host " "
     $WindowsOSVal=@()
     $WindowsOSVal = "NoLocalPasswordResetQuestions"
     $getWindowsOSVal=@()
-    $getWindowsOS = Get-Item $RegKey -ErrorAction SilentlyContinue
-    $getWindowsOSVal = $getWindowsOS.GetValue("$WindowsOSVal") 
+    try{$getWindowsOS = Get-Item $RegKey -ErrorAction SilentlyContinue}catch{}
+    try{$getWindowsOSVal = $getWindowsOS.GetValue("$WindowsOSVal")}catch{}
 
     if ($getWindowsOSVal -eq "1")
     {
@@ -6080,8 +6059,8 @@ Write-Host " "
     $WindowsOSVal=@()
     $WindowsOSVal = "SoftwareSASGeneration"
     $getWindowsOSVal=@()
-    $getWindowsOS = Get-Item $RegKey -ErrorAction SilentlyContinue
-    $getWindowsOSVal = $getWindowsOS.GetValue("$WindowsOSVal") 
+    try{$getWindowsOS = Get-Item $RegKey -ErrorAction SilentlyContinue}catch{}
+    try{$getWindowsOSVal = $getWindowsOS.GetValue("$WindowsOSVal")}catch{}
 
     if ($getWindowsOSVal -eq $null)
     {
@@ -6125,8 +6104,8 @@ Write-Host " "
     $WindowsOSVal=@()
     $WindowsOSVal = "DisableAutomaticRestartSignOn"
     $getWindowsOSVal=@()
-    $getWindowsOS = Get-Item $RegKey -ErrorAction SilentlyContinue
-    $getWindowsOSVal = $getWindowsOS.GetValue("$WindowsOSVal") 
+    try{$getWindowsOS = Get-Item $RegKey -ErrorAction SilentlyContinue}catch{}
+    try{$getWindowsOSVal = $getWindowsOS.GetValue("$WindowsOSVal")}catch{}
 
     if ($getWindowsOSVal -eq "1" -or $getWindowsOSVal -eq $null)
     {
@@ -6176,8 +6155,8 @@ Write-Host " "
     $WindowsOSVal=@()
     $WindowsOSVal = "disablecad"
     $getWindowsOSVal=@()
-    $getWindowsOS = Get-Item $RegKey -ErrorAction SilentlyContinue
-    $getWindowsOSVal = $getWindowsOS.GetValue("$WindowsOSVal") 
+    try{$getWindowsOS = Get-Item $RegKey -ErrorAction SilentlyContinue}catch{}
+    try{$getWindowsOSVal = $getWindowsOS.GetValue("$WindowsOSVal")}catch{}
 
     if ($getWindowsOSVal -eq "0")
     {
@@ -6212,8 +6191,8 @@ Write-Host " "
     $WindowsOSVal=@()
     $WindowsOSVal = "InactivityTimeoutSecs"
     $getWindowsOSVal=@()
-    $getWindowsOS = Get-Item $RegKey -ErrorAction SilentlyContinue
-    $getWindowsOSVal = $getWindowsOS.GetValue("$WindowsOSVal") 
+    try{$getWindowsOS = Get-Item $RegKey -ErrorAction SilentlyContinue}catch{}
+    try{$getWindowsOSVal = $getWindowsOS.GetValue("$WindowsOSVal")}catch{}
 
     if ($getWindowsOSVal -eq "900")
     {
@@ -6256,8 +6235,8 @@ Write-Host " "
     $WindowsOSVal=@()
     $WindowsOSVal = "CachedLogonsCount"
     $getWindowsOSVal=@()
-    $getWindowsOS = Get-Item $RegKey -ErrorAction SilentlyContinue
-    $getWindowsOSVal = $getWindowsOS.GetValue("$WindowsOSVal") 
+    try{$getWindowsOS = Get-Item $RegKey -ErrorAction SilentlyContinue}catch{}
+    try{$getWindowsOSVal = $getWindowsOS.GetValue("$WindowsOSVal")}catch{}
 
     if ($getWindowsOSVal -lt "2")
     {
@@ -6311,8 +6290,8 @@ Write-Host " "
     $WindowsOSVal=@()
     $WindowsOSVal = "disabledomaincreds"
     $getWindowsOSVal=@()
-    $getWindowsOS = Get-Item $RegKey -ErrorAction SilentlyContinue
-    $getWindowsOSVal = $getWindowsOS.GetValue("$WindowsOSVal") 
+    try{$getWindowsOS = Get-Item $RegKey -ErrorAction SilentlyContinue}catch{}
+    try{$getWindowsOSVal = $getWindowsOS.GetValue("$WindowsOSVal")}catch{}
 
     if ($getWindowsOSVal -eq "1")
     {
@@ -6362,8 +6341,8 @@ Write-Host " "
     $WindowsOSVal=@()
     $WindowsOSVal = "LocalAccountTokenFilterPolicy"
     $getWindowsOSVal=@()
-    $getWindowsOS = Get-Item $RegKey -ErrorAction SilentlyContinue
-    $getWindowsOSVal = $getWindowsOS.GetValue("$WindowsOSVal") 
+    try{$getWindowsOS = Get-Item $RegKey -ErrorAction SilentlyContinue}catch{}
+    try{$getWindowsOSVal = $getWindowsOS.GetValue("$WindowsOSVal")}catch{}
 
     if ($getWindowsOSVal -eq "0")
     {
@@ -6403,8 +6382,8 @@ Write-Host " "
     $WindowsOSVal=@()
     $WindowsOSVal = "HardenedPaths"  
     $getWindowsOSVal=@()
-    $getWindowsOS = Get-Item $RegKey -ErrorAction SilentlyContinue
-   # $getWindowsOSVal = $getWindowsOS.GetValue("$WindowsOSVal") 
+    try{$getWindowsOS = Get-Item $RegKey -ErrorAction SilentlyContinue}catch{}
+   # try{$getWindowsOSVal = $getWindowsOS.GetValue("$WindowsOSVal")}catch{}
      $getWindowsOSVal = $getWindowsOS.Property
 
     if ($getWindowsOSVal -eq "\\*\SYSVOL" -and "\\*\NETLOGON")
@@ -6445,8 +6424,8 @@ Write-Host " "
     $WindowsOSVal=@()
     $WindowsOSVal = "NoGPOListChanges"  
     $getWindowsOSVal=@()
-    $getWindowsOS = Get-Item $RegKey -ErrorAction SilentlyContinue
-    $getWindowsOSVal = $getWindowsOS.GetValue("$WindowsOSVal") 
+    try{$getWindowsOS = Get-Item $RegKey -ErrorAction SilentlyContinue}catch{}
+    try{$getWindowsOSVal = $getWindowsOS.GetValue("$WindowsOSVal")}catch{}
 
     if ($getWindowsOSVal -eq "0")
     {
@@ -6487,8 +6466,8 @@ Write-Host " "
     $WindowsOSVal=@()
     $WindowsOSVal = "NoBackgroundPolicy"  
     $getWindowsOSVal=@()
-    $getWindowsOS = Get-Item $RegKey -ErrorAction SilentlyContinue
-    $getWindowsOSVal = $getWindowsOS.GetValue("$WindowsOSVal") 
+    try{$getWindowsOS = Get-Item $RegKey -ErrorAction SilentlyContinue}catch{}
+    try{$getWindowsOSVal = $getWindowsOS.GetValue("$WindowsOSVal")}catch{}
 
     if ($getWindowsOSVal -eq "0")
     {
@@ -6529,8 +6508,8 @@ Write-Host " "
     $WindowsOSVal=@()
     $WindowsOSVal = "DisableBkGndGroupPolicy"  
     $getWindowsOSVal=@()
-    $getWindowsOS = Get-Item $RegKey -ErrorAction SilentlyContinue
-    $getWindowsOSVal = $getWindowsOS.GetValue("$WindowsOSVal") 
+    try{$getWindowsOS = Get-Item $RegKey -ErrorAction SilentlyContinue}catch{}
+    try{$getWindowsOSVal = $getWindowsOS.GetValue("$WindowsOSVal")}catch{}
 
     if ($getWindowsOSVal -eq "0")
     {
@@ -6571,8 +6550,8 @@ Write-Host " "
     $WindowsOSVal=@()
     $WindowsOSVal = "DisableLGPOProcessing"  
     $getWindowsOSVal=@()
-    $getWindowsOS = Get-Item $RegKey -ErrorAction SilentlyContinue
-    $getWindowsOSVal = $getWindowsOS.GetValue("$WindowsOSVal") 
+    try{$getWindowsOS = Get-Item $RegKey -ErrorAction SilentlyContinue}catch{}
+    try{$getWindowsOSVal = $getWindowsOS.GetValue("$WindowsOSVal")}catch{}
 
     if ($getWindowsOSVal -eq "1")
     {
@@ -6611,8 +6590,8 @@ Write-Host " "
     $WindowsOSVal=@()
     $WindowsOSVal = "AnonymousNameLookup"
     $getWindowsOSVal=@()
-    $getWindowsOS = Get-Item $RegKey -ErrorAction SilentlyContinue
-    $getWindowsOSVal = $getWindowsOS.GetValue("$WindowsOSVal") 
+    try{$getWindowsOS = Get-Item $RegKey -ErrorAction SilentlyContinue}catch{}
+    try{$getWindowsOSVal = $getWindowsOS.GetValue("$WindowsOSVal")}catch{}
 
     if ($getWindowsOSVal -eq "1")
     {
@@ -6656,8 +6635,8 @@ Write-Host " "
     $WindowsOSVal=@()
     $WindowsOSVal = "everyoneincludesanonymous"
     $getWindowsOSVal=@()
-    $getWindowsOS = Get-Item $RegKey -ErrorAction SilentlyContinue
-    $getWindowsOSVal = $getWindowsOS.GetValue("$WindowsOSVal") 
+    try{$getWindowsOS = Get-Item $RegKey -ErrorAction SilentlyContinue}catch{}
+    try{$getWindowsOSVal = $getWindowsOS.GetValue("$WindowsOSVal")}catch{}
 
     if ($getWindowsOSVal -eq "1")
     {
@@ -6701,8 +6680,8 @@ Write-Host " "
     $WindowsOSVal=@()
     $WindowsOSVal = "RestrictAnonymousSAM"
     $getWindowsOSVal=@()
-    $getWindowsOS = Get-Item $RegKey -ErrorAction SilentlyContinue
-    $getWindowsOSVal = $getWindowsOS.GetValue("$WindowsOSVal") 
+    try{$getWindowsOS = Get-Item $RegKey -ErrorAction SilentlyContinue}catch{}
+    try{$getWindowsOSVal = $getWindowsOS.GetValue("$WindowsOSVal")}catch{}
 
     if ($getWindowsOSVal -eq "1")
     {
@@ -6747,8 +6726,8 @@ Write-Host " "
     $WindowsOSVal=@()
     $WindowsOSVal = "RestrictAnonymous"
     $getWindowsOSVal=@()
-    $getWindowsOS = Get-Item $RegKey -ErrorAction SilentlyContinue
-    $getWindowsOSVal = $getWindowsOS.GetValue("$WindowsOSVal") 
+    try{$getWindowsOS = Get-Item $RegKey -ErrorAction SilentlyContinue}catch{}
+    try{$getWindowsOSVal = $getWindowsOS.GetValue("$WindowsOSVal")}catch{}
 
     if ($getWindowsOSVal -eq "1")
     {
@@ -6792,8 +6771,8 @@ Write-Host " "
     $WindowsOSVal=@()
     $WindowsOSVal = "RestrictNullSessAccess"
     $getWindowsOSVal=@()
-    $getWindowsOS = Get-Item $RegKey -ErrorAction SilentlyContinue
-    $getWindowsOSVal = $getWindowsOS.GetValue("$WindowsOSVal") 
+    try{$getWindowsOS = Get-Item $RegKey -ErrorAction SilentlyContinue}catch{}
+    try{$getWindowsOSVal = $getWindowsOS.GetValue("$WindowsOSVal")}catch{}
 
     if ($getWindowsOSVal -eq "1")
     {
@@ -6831,8 +6810,8 @@ Write-Host " "
     $WindowsOSVal=@()
     $WindowsOSVal = "RestrictRemoteSam"
     $getWindowsOSVal=@()
-    $getWindowsOS = Get-Item $RegKey -ErrorAction SilentlyContinue
-    $getWindowsOSVal = $getWindowsOS.GetValue("$WindowsOSVal") 
+    try{$getWindowsOS = Get-Item $RegKey -ErrorAction SilentlyContinue}catch{}
+    try{$getWindowsOSVal = $getWindowsOS.GetValue("$WindowsOSVal")}catch{}
 
     if ($getWindowsOSVal -eq "O:BAG:BAD:(A;;RC;;;BA)")
     {
@@ -6878,8 +6857,8 @@ Write-Host " "
     $WindowsOSVal=@()
     $WindowsOSVal = "UseMachineId"
     $getWindowsOSVal=@()
-    $getWindowsOS = Get-Item $RegKey -ErrorAction SilentlyContinue
-    $getWindowsOSVal = $getWindowsOS.GetValue("$WindowsOSVal") 
+    try{$getWindowsOS = Get-Item $RegKey -ErrorAction SilentlyContinue}catch{}
+    try{$getWindowsOSVal = $getWindowsOS.GetValue("$WindowsOSVal")}catch{}
 
     if ($getWindowsOSVal -eq "1")
     {
@@ -6923,8 +6902,8 @@ Write-Host " "
     $WindowsOSVal=@()
     $WindowsOSVal = "allownullsessionfallback"
     $getWindowsOSVal=@()
-    $getWindowsOS = Get-Item $RegKey -ErrorAction SilentlyContinue
-    $getWindowsOSVal = $getWindowsOS.GetValue("$WindowsOSVal") 
+    try{$getWindowsOS = Get-Item $RegKey -ErrorAction SilentlyContinue}catch{}
+    try{$getWindowsOSVal = $getWindowsOS.GetValue("$WindowsOSVal")}catch{}
 
     if ($getWindowsOSVal -eq "1")
     {
@@ -6959,8 +6938,8 @@ Write-Host " "
     $WindowsOSVal=@()
     $WindowsOSVal = "LimitBlankPasswordUse"
     $getWindowsOSVal=@()
-    $getWindowsOS = Get-Item $RegKey -ErrorAction SilentlyContinue
-    $getWindowsOSVal = $getWindowsOS.GetValue("$WindowsOSVal") 
+    try{$getWindowsOS = Get-Item $RegKey -ErrorAction SilentlyContinue}catch{}
+    try{$getWindowsOSVal = $getWindowsOS.GetValue("$WindowsOSVal")}catch{}
 
     if ($getWindowsOSVal -eq "1")
     {
@@ -6997,8 +6976,8 @@ Write-Host " "
     $WindowsOSVal=@()
     $WindowsOSVal = "NoAutoplayfornonVolume"
     $getWindowsOSVal=@()
-    $getWindowsOS = Get-Item $RegKey -ErrorAction SilentlyContinue
-    $getWindowsOSVal = $getWindowsOS.GetValue("$WindowsOSVal") 
+    try{$getWindowsOS = Get-Item $RegKey -ErrorAction SilentlyContinue}catch{}
+    try{$getWindowsOSVal = $getWindowsOS.GetValue("$WindowsOSVal")}catch{}
 
     if ($getWindowsOSVal -eq "1")
     {
@@ -7033,8 +7012,8 @@ Write-Host " "
     $WindowsOSVal=@()
     $WindowsOSVal = "NoAutoplayfornonVolume"
     $getWindowsOSVal=@()
-    $getWindowsOS = Get-Item $RegKey -ErrorAction SilentlyContinue
-    $getWindowsOSVal = $getWindowsOS.GetValue("$WindowsOSVal") 
+    try{$getWindowsOS = Get-Item $RegKey -ErrorAction SilentlyContinue}catch{}
+    try{$getWindowsOSVal = $getWindowsOS.GetValue("$WindowsOSVal")}catch{}
 
     if ($getWindowsOSVal -eq "1")
     {
@@ -7070,8 +7049,8 @@ Write-Host " "
     $WindowsOSVal=@()
     $WindowsOSVal = "NoAutorun"
     $getWindowsOSVal=@()
-    $getWindowsOS = Get-Item $RegKey -ErrorAction SilentlyContinue
-    $getWindowsOSVal = $getWindowsOS.GetValue("$WindowsOSVal") 
+    try{$getWindowsOS = Get-Item $RegKey -ErrorAction SilentlyContinue}catch{}
+    try{$getWindowsOSVal = $getWindowsOS.GetValue("$WindowsOSVal")}catch{}
 
     if ($getWindowsOSVal -eq "1")
     {
@@ -7105,8 +7084,8 @@ Write-Host " "
     $WindowsOSVal=@()
     $WindowsOSVal = "NoAutorun"
     $getWindowsOSVal=@()
-    $getWindowsOS = Get-Item $RegKey -ErrorAction SilentlyContinue
-    $getWindowsOSVal = $getWindowsOS.GetValue("$WindowsOSVal") 
+    try{$getWindowsOS = Get-Item $RegKey -ErrorAction SilentlyContinue}catch{}
+    try{$getWindowsOSVal = $getWindowsOS.GetValue("$WindowsOSVal")}catch{}
 
     if ($getWindowsOSVal -eq "1")
     {
@@ -7141,8 +7120,8 @@ Write-Host " "
     $WindowsOSVal=@()
     $WindowsOSVal = "NoDriveTypeAutoRun"
     $getWindowsOSVal=@()
-    $getWindowsOS = Get-Item $RegKey -ErrorAction SilentlyContinue
-    $getWindowsOSVal = $getWindowsOS.GetValue("$WindowsOSVal") 
+    try{$getWindowsOS = Get-Item $RegKey -ErrorAction SilentlyContinue}catch{}
+    try{$getWindowsOSVal = $getWindowsOS.GetValue("$WindowsOSVal")}catch{}
 
     if ($getWindowsOSVal -eq "255")
     {
@@ -7177,8 +7156,8 @@ Write-Host " "
     $WindowsOSVal=@()
     $WindowsOSVal = "NoDriveTypeAutoRun"
     $getWindowsOSVal=@()
-    $getWindowsOS = Get-Item $RegKey -ErrorAction SilentlyContinue
-    $getWindowsOSVal = $getWindowsOS.GetValue("$WindowsOSVal") 
+    try{$getWindowsOS = Get-Item $RegKey -ErrorAction SilentlyContinue}catch{}
+    try{$getWindowsOSVal = $getWindowsOS.GetValue("$WindowsOSVal")}catch{}
 
     if ($getWindowsOSVal -eq "255")
     {
@@ -7219,8 +7198,8 @@ Write-Host " "
     $WindowsOSVal=@()
     $WindowsOSVal = "DisableCMD"
     $getWindowsOSVal=@()
-    $getWindowsOS = Get-Item $RegKey -ErrorAction SilentlyContinue
-    $getWindowsOSVal = $getWindowsOS.GetValue("$WindowsOSVal") 
+    try{$getWindowsOS = Get-Item $RegKey -ErrorAction SilentlyContinue}catch{}
+    try{$getWindowsOSVal = $getWindowsOS.GetValue("$WindowsOSVal")}catch{}
 
     if ($getWindowsOSVal -eq "1")
     {
@@ -7255,8 +7234,8 @@ Write-Host " "
     $WindowsOSVal=@()
     $WindowsOSVal = "DisableRegistryTools"
     $getWindowsOSVal=@()
-    $getWindowsOS = Get-Item $RegKey -ErrorAction SilentlyContinue
-    $getWindowsOSVal = $getWindowsOS.GetValue("$WindowsOSVal") 
+    try{$getWindowsOS = Get-Item $RegKey -ErrorAction SilentlyContinue}catch{}
+    try{$getWindowsOSVal = $getWindowsOS.GetValue("$WindowsOSVal")}catch{}
 
     if ($getWindowsOSVal -eq "2")
     {
@@ -7291,8 +7270,8 @@ Write-Host " "
     $WindowsOSVal=@()
     $WindowsOSVal = "EnableScriptBlockLogging"
     $getWindowsOSVal=@()
-    $getWindowsOS = Get-Item $RegKey -ErrorAction SilentlyContinue
-    $getWindowsOSVal = $getWindowsOS.GetValue("$WindowsOSVal") 
+    try{$getWindowsOS = Get-Item $RegKey -ErrorAction SilentlyContinue}catch{}
+    try{$getWindowsOSVal = $getWindowsOS.GetValue("$WindowsOSVal")}catch{}
 
     if ($getWindowsOSVal -eq "1")
     {
@@ -7327,8 +7306,8 @@ Write-Host " "
     $WindowsOSVal=@()
     $WindowsOSVal = "ExecutionPolicy"
     $getWindowsOSVal=@()
-    $getWindowsOS = Get-Item $RegKey -ErrorAction SilentlyContinue
-    $getWindowsOSVal = $getWindowsOS.GetValue("$WindowsOSVal") 
+    try{$getWindowsOS = Get-Item $RegKey -ErrorAction SilentlyContinue}catch{}
+    try{$getWindowsOSVal = $getWindowsOS.GetValue("$WindowsOSVal")}catch{}
 
     if ($getWindowsOSVal -eq "1")
     {
@@ -7373,8 +7352,8 @@ Write-Host " "
     $WindowsOSVal=@()
     $WindowsOSVal = "EnableSmartScreen"
     $getWindowsOSVal=@()
-    $getWindowsOS = Get-Item $RegKey -ErrorAction SilentlyContinue
-    $getWindowsOSVal = $getWindowsOS.GetValue("$WindowsOSVal") 
+    try{$getWindowsOS = Get-Item $RegKey -ErrorAction SilentlyContinue}catch{}
+    try{$getWindowsOSVal = $getWindowsOS.GetValue("$WindowsOSVal")}catch{}
 
     if ($getWindowsOSVal -eq "1")
     {
@@ -7421,8 +7400,8 @@ Write-Host " "
     $WindowsOSVal=@()
     $WindowsOSVal = "EnableSmartScreen"
     $getWindowsOSVal=@()
-    $getWindowsOS = Get-Item $RegKey -ErrorAction SilentlyContinue
-    $getWindowsOSVal = $getWindowsOS.GetValue("$WindowsOSVal") 
+    try{$getWindowsOS = Get-Item $RegKey -ErrorAction SilentlyContinue}catch{}
+    try{$getWindowsOSVal = $getWindowsOS.GetValue("$WindowsOSVal")}catch{}
 
     if ($getWindowsOSVal -eq "1")
     {
@@ -7465,8 +7444,8 @@ Write-Host " "
     $WindowsOSVal=@()
     $WindowsOSVal = "EnableUserControl"
     $getWindowsOSVal=@()
-    $getWindowsOS = Get-Item $RegKey -ErrorAction SilentlyContinue
-    $getWindowsOSVal = $getWindowsOS.GetValue("$WindowsOSVal") 
+    try{$getWindowsOS = Get-Item $RegKey -ErrorAction SilentlyContinue}catch{}
+    try{$getWindowsOSVal = $getWindowsOS.GetValue("$WindowsOSVal")}catch{}
 
     if ($getWindowsOSVal -eq "0")
     {
@@ -7511,8 +7490,8 @@ Write-Host " "
     $WindowsOSVal=@()
     $WindowsOSVal = "AlwaysInstallElevated"
     $getWindowsOSVal=@()
-    $getWindowsOS = Get-Item $RegKey -ErrorAction SilentlyContinue
-    $getWindowsOSVal = $getWindowsOS.GetValue("$WindowsOSVal") 
+    try{$getWindowsOS = Get-Item $RegKey -ErrorAction SilentlyContinue}catch{}
+    try{$getWindowsOSVal = $getWindowsOS.GetValue("$WindowsOSVal")}catch{}
 
     if ($getWindowsOSVal -eq "0")
     {
@@ -7557,8 +7536,8 @@ Write-Host " "
     $WindowsOSVal=@()
     $WindowsOSVal = "AlwaysInstallElevated"
     $getWindowsOSVal=@()
-    $getWindowsOS = Get-Item $RegKey -ErrorAction SilentlyContinue
-    $getWindowsOSVal = $getWindowsOS.GetValue("$WindowsOSVal") 
+    try{$getWindowsOS = Get-Item $RegKey -ErrorAction SilentlyContinue}catch{}
+    try{$getWindowsOSVal = $getWindowsOS.GetValue("$WindowsOSVal")}catch{}
 
     if ($getWindowsOSVal -eq "0")
     {
@@ -7593,8 +7572,8 @@ Write-Host " "
     $WindowsOSVal=@()
     $WindowsOSVal = "AddPrinterDrivers"
     $getWindowsOSVal=@()
-    $getWindowsOS = Get-Item $RegKey -ErrorAction SilentlyContinue
-    $getWindowsOSVal = $getWindowsOS.GetValue("$WindowsOSVal") 
+    try{$getWindowsOS = Get-Item $RegKey -ErrorAction SilentlyContinue}catch{}
+    try{$getWindowsOSVal = $getWindowsOS.GetValue("$WindowsOSVal")}catch{}
 
     if ($getWindowsOSVal -eq "1")
     {
@@ -7636,8 +7615,8 @@ Write-Host " "
     $WindowsOSVal=@()
     $WindowsOSVal = "DisableCurrentUserRun"
     $getWindowsOSVal=@()
-    $getWindowsOS = Get-Item $RegKey -ErrorAction SilentlyContinue
-    $getWindowsOSVal = $getWindowsOS.GetValue("$WindowsOSVal") 
+    try{$getWindowsOS = Get-Item $RegKey -ErrorAction SilentlyContinue}catch{}
+    try{$getWindowsOSVal = $getWindowsOS.GetValue("$WindowsOSVal")}catch{}
 
     if ($getWindowsOSVal -eq "1")
     {
@@ -7679,8 +7658,8 @@ Write-Host " "
     $WindowsOSVal=@()
     $WindowsOSVal = "DisableLocalMachineRunOnce"
     $getWindowsOSVal=@()
-    $getWindowsOS = Get-Item $RegKey -ErrorAction SilentlyContinue
-    $getWindowsOSVal = $getWindowsOS.GetValue("$WindowsOSVal") 
+    try{$getWindowsOS = Get-Item $RegKey -ErrorAction SilentlyContinue}catch{}
+    try{$getWindowsOSVal = $getWindowsOS.GetValue("$WindowsOSVal")}catch{}
 
     if ($getWindowsOSVal -eq "1")
     {
@@ -7723,8 +7702,8 @@ Write-Host " "
     $WindowsOSVal=@()
     $WindowsOSVal = "1"
     $getWindowsOSVal=@()
-    $getWindowsOS = Get-Item $RegKey -ErrorAction SilentlyContinue
-    $getWindowsOSVal = $getWindowsOS.GetValue("$WindowsOSVal") 
+    try{$getWindowsOS = Get-Item $RegKey -ErrorAction SilentlyContinue}catch{}
+    try{$getWindowsOSVal = $getWindowsOS.GetValue("$WindowsOSVal")}catch{}
 
     if ($getWindowsOSVal -eq 1)
     {
@@ -7767,8 +7746,8 @@ Write-Host " "
     $WindowsOSVal=@()
     $WindowsOSVal = "SaveZoneInformation"  
     $getWindowsOSVal=@()
-    $getWindowsOS = Get-Item $RegKey -ErrorAction SilentlyContinue
-    $getWindowsOSVal = $getWindowsOS.GetValue("$WindowsOSVal") 
+    try{$getWindowsOS = Get-Item $RegKey -ErrorAction SilentlyContinue}catch{}
+    try{$getWindowsOSVal = $getWindowsOS.GetValue("$WindowsOSVal")}catch{}
 
     if ($getWindowsOSVal -eq "2")
     {
@@ -7811,8 +7790,8 @@ Write-Host " "
     $WindowsOSVal=@()
     $WindowsOSVal = "HideZoneInfoOnProperties"  
     $getWindowsOSVal=@()
-    $getWindowsOS = Get-Item $RegKey -ErrorAction SilentlyContinue
-    $getWindowsOSVal = $getWindowsOS.GetValue("$WindowsOSVal") 
+    try{$getWindowsOS = Get-Item $RegKey -ErrorAction SilentlyContinue}catch{}
+    try{$getWindowsOSVal = $getWindowsOS.GetValue("$WindowsOSVal")}catch{}
 
     if ($getWindowsOSVal -eq "1")
     {
@@ -7860,8 +7839,8 @@ Write-Host " "
     $WindowsOSVal=@()
     $WindowsOSVal = "RestrictRemoteClients"
     $getWindowsOSVal=@()
-    $getWindowsOS = Get-Item $RegKey -ErrorAction SilentlyContinue
-    $getWindowsOSVal = $getWindowsOS.GetValue("$WindowsOSVal") 
+    try{$getWindowsOS = Get-Item $RegKey -ErrorAction SilentlyContinue}catch{}
+    try{$getWindowsOSVal = $getWindowsOS.GetValue("$WindowsOSVal")}catch{}
 
     if ($getWindowsOSVal -eq "1")
     {
@@ -7905,8 +7884,8 @@ Write-Host " "
     $WindowsOSVal=@()
     $WindowsOSVal = "EnableAuthEpResolution"
     $getWindowsOSVal=@()
-    $getWindowsOS = Get-Item $RegKey -ErrorAction SilentlyContinue
-    $getWindowsOSVal = $getWindowsOS.GetValue("$WindowsOSVal") 
+    try{$getWindowsOS = Get-Item $RegKey -ErrorAction SilentlyContinue}catch{}
+    try{$getWindowsOSVal = $getWindowsOS.GetValue("$WindowsOSVal")}catch{}
 
     if ($getWindowsOSVal -eq "1")
     {
@@ -7946,8 +7925,8 @@ Write-Host " "
     $WindowsOSVal=@()
     $WindowsOSVal = "AllowDigest"  
     $getWindowsOSVal=@()
-    $getWindowsOS = Get-Item $RegKey -ErrorAction SilentlyContinue
-    $getWindowsOSVal = $getWindowsOS.GetValue("$WindowsOSVal") 
+    try{$getWindowsOS = Get-Item $RegKey -ErrorAction SilentlyContinue}catch{}
+    try{$getWindowsOSVal = $getWindowsOS.GetValue("$WindowsOSVal")}catch{}
 
     if ($getWindowsOSVal -eq "0")
     {
@@ -7986,8 +7965,8 @@ Write-Host " "
     $WindowsOSVal=@()
     $WindowsOSVal = "AllowBasic"  
     $getWindowsOSVal=@()
-    $getWindowsOS = Get-Item $RegKey -ErrorAction SilentlyContinue
-    $getWindowsOSVal = $getWindowsOS.GetValue("$WindowsOSVal") 
+    try{$getWindowsOS = Get-Item $RegKey -ErrorAction SilentlyContinue}catch{}
+    try{$getWindowsOSVal = $getWindowsOS.GetValue("$WindowsOSVal")}catch{}
 
     if ($getWindowsOSVal -eq "0")
     {
@@ -8026,8 +8005,8 @@ Write-Host " "
     $WindowsOSVal=@()
     $WindowsOSVal = "AllowUnencryptedTraffic"  
     $getWindowsOSVal=@()
-    $getWindowsOS = Get-Item $RegKey -ErrorAction SilentlyContinue
-    $getWindowsOSVal = $getWindowsOS.GetValue("$WindowsOSVal") 
+    try{$getWindowsOS = Get-Item $RegKey -ErrorAction SilentlyContinue}catch{}
+    try{$getWindowsOSVal = $getWindowsOS.GetValue("$WindowsOSVal")}catch{}
 
     if ($getWindowsOSVal -eq "0")
     {
@@ -8066,8 +8045,8 @@ Write-Host " "
     $WindowsOSVal=@()
     $WindowsOSVal = "AllowBasic"  
     $getWindowsOSVal=@()
-    $getWindowsOS = Get-Item $RegKey -ErrorAction SilentlyContinue
-    $getWindowsOSVal = $getWindowsOS.GetValue("$WindowsOSVal") 
+    try{$getWindowsOS = Get-Item $RegKey -ErrorAction SilentlyContinue}catch{}
+    try{$getWindowsOSVal = $getWindowsOS.GetValue("$WindowsOSVal")}catch{}
 
     if ($getWindowsOSVal -eq "0")
     {
@@ -8106,8 +8085,8 @@ Write-Host " "
     $WindowsOSVal=@()
     $WindowsOSVal = "AllowUnencryptedTraffic"  
     $getWindowsOSVal=@()
-    $getWindowsOS = Get-Item $RegKey -ErrorAction SilentlyContinue
-    $getWindowsOSVal = $getWindowsOS.GetValue("$WindowsOSVal") 
+    try{$getWindowsOS = Get-Item $RegKey -ErrorAction SilentlyContinue}catch{}
+    try{$getWindowsOSVal = $getWindowsOS.GetValue("$WindowsOSVal")}catch{}
 
     if ($getWindowsOSVal -eq "0")
     {
@@ -8147,8 +8126,8 @@ Write-Host " "
     $WindowsOSVal=@()
     $WindowsOSVal = "DisableRunAs"  
     $getWindowsOSVal=@()
-    $getWindowsOS = Get-Item $RegKey -ErrorAction SilentlyContinue
-    $getWindowsOSVal = $getWindowsOS.GetValue("$WindowsOSVal") 
+    try{$getWindowsOS = Get-Item $RegKey -ErrorAction SilentlyContinue}catch{}
+    try{$getWindowsOSVal = $getWindowsOS.GetValue("$WindowsOSVal")}catch{}
 
     if ($getWindowsOSVal -eq "1")
     {
@@ -8188,8 +8167,8 @@ Write-Host " "
     $WindowsOSVal=@()
     $WindowsOSVal = "AllowRemoteShellAccess"  
     $getWindowsOSVal=@()
-    $getWindowsOS = Get-Item $RegKey -ErrorAction SilentlyContinue
-    $getWindowsOSVal = $getWindowsOS.GetValue("$WindowsOSVal") 
+    try{$getWindowsOS = Get-Item $RegKey -ErrorAction SilentlyContinue}catch{}
+    try{$getWindowsOSVal = $getWindowsOS.GetValue("$WindowsOSVal")}catch{}
 
     if ($getWindowsOSVal -eq "0")
     {
@@ -8238,8 +8217,8 @@ Write-Host " "
     $WindowsOSVal=@()
     $WindowsOSVal = "fBlockNonDomain"  
     $getWindowsOSVal=@()
-    $getWindowsOS = Get-Item $RegKey -ErrorAction SilentlyContinue
-    $getWindowsOSVal = $getWindowsOS.GetValue("$WindowsOSVal") 
+    try{$getWindowsOS = Get-Item $RegKey -ErrorAction SilentlyContinue}catch{}
+    try{$getWindowsOSVal = $getWindowsOS.GetValue("$WindowsOSVal")}catch{}
 
     if ($getWindowsOSVal -eq "1")
     {
@@ -8295,8 +8274,8 @@ Write-Host " "
     $WindowsOSVal=@()
     $WindowsOSVal = "NC_ShowSharedAccessUI"  
     $getWindowsOSVal=@()
-    $getWindowsOS = Get-Item $RegKey -ErrorAction SilentlyContinue
-    $getWindowsOSVal = $getWindowsOS.GetValue("$WindowsOSVal") 
+    try{$getWindowsOS = Get-Item $RegKey -ErrorAction SilentlyContinue}catch{}
+    try{$getWindowsOSVal = $getWindowsOS.GetValue("$WindowsOSVal")}catch{}
 
     if ($getWindowsOSVal -eq "0")
     {
@@ -8342,8 +8321,8 @@ Write-Host " "
     $WindowsOSVal=@()
     $WindowsOSVal = "AutoConnectAllowedOEM"  
     $getWindowsOSVal=@()
-    $getWindowsOS = Get-Item $RegKey -ErrorAction SilentlyContinue
-    $getWindowsOSVal = $getWindowsOS.GetValue("$WindowsOSVal") 
+    try{$getWindowsOS = Get-Item $RegKey -ErrorAction SilentlyContinue}catch{}
+    try{$getWindowsOSVal = $getWindowsOS.GetValue("$WindowsOSVal")}catch{}
 
     if ($getWindowsOSVal -eq "0")
     {
@@ -8384,8 +8363,8 @@ Write-Host " "
     $WindowsOSVal=@()
     $WindowsOSVal = "AllowProtectedCreds"  
     $getWindowsOSVal=@()
-    $getWindowsOS = Get-Item $RegKey -ErrorAction SilentlyContinue
-    $getWindowsOSVal = $getWindowsOS.GetValue("$WindowsOSVal") 
+    try{$getWindowsOS = Get-Item $RegKey -ErrorAction SilentlyContinue}catch{}
+    try{$getWindowsOSVal = $getWindowsOS.GetValue("$WindowsOSVal")}catch{}
 
     if ($getWindowsOSVal -eq "1")
     {
@@ -8433,8 +8412,8 @@ Write-Host " "
     $WindowsOSVal=@()
     $WindowsOSVal = "AllowEncryptionOracle"  
     $getWindowsOSVal=@()
-    $getWindowsOS = Get-Item $RegKey -ErrorAction SilentlyContinue
-    $getWindowsOSVal = $getWindowsOS.GetValue("$WindowsOSVal") 
+    try{$getWindowsOS = Get-Item $RegKey -ErrorAction SilentlyContinue}catch{}
+    try{$getWindowsOSVal = $getWindowsOS.GetValue("$WindowsOSVal")}catch{}
 
     if ($getWindowsOSVal -eq "0")
     {
@@ -8474,8 +8453,8 @@ Write-Host " "
     $WindowsOSVal=@()
     $WindowsOSVal = "AllowCortana"  
     $getWindowsOSVal=@()
-    $getWindowsOS = Get-Item $RegKey -ErrorAction SilentlyContinue
-    $getWindowsOSVal = $getWindowsOS.GetValue("$WindowsOSVal") 
+    try{$getWindowsOS = Get-Item $RegKey -ErrorAction SilentlyContinue}catch{}
+    try{$getWindowsOSVal = $getWindowsOS.GetValue("$WindowsOSVal")}catch{}
 
     if ($getWindowsOSVal -eq "0")
     {
@@ -8516,8 +8495,8 @@ Write-Host " "
     $WindowsOSVal=@()
     $WindowsOSVal = "ConnectedSearchUseWeb"  
     $getWindowsOSVal=@()
-    $getWindowsOS = Get-Item $RegKey -ErrorAction SilentlyContinue
-    $getWindowsOSVal = $getWindowsOS.GetValue("$WindowsOSVal") 
+    try{$getWindowsOS = Get-Item $RegKey -ErrorAction SilentlyContinue}catch{}
+    try{$getWindowsOSVal = $getWindowsOS.GetValue("$WindowsOSVal")}catch{}
 
     if ($getWindowsOSVal -eq "0")
     {
@@ -8553,8 +8532,8 @@ Write-Host " "
     $WindowsOSVal=@()
     $WindowsOSVal = "DisableQueryRemoteServer"
     $getWindowsOSVal=@()
-    $getWindowsOS = Get-Item $RegKey -ErrorAction SilentlyContinue
-    $getWindowsOSVal = $getWindowsOS.GetValue("$WindowsOSVal") 
+    try{$getWindowsOS = Get-Item $RegKey -ErrorAction SilentlyContinue}catch{}
+    try{$getWindowsOSVal = $getWindowsOS.GetValue("$WindowsOSVal")}catch{}
 
     if ($getWindowsOSVal -eq "0")
     {
@@ -8595,8 +8574,8 @@ Write-Host " "
     $WindowsOSVal=@()
     $WindowsOSVal = "DisableInventory"
     $getWindowsOSVal=@()
-    $getWindowsOS = Get-Item $RegKey -ErrorAction SilentlyContinue
-    $getWindowsOSVal = $getWindowsOS.GetValue("$WindowsOSVal") 
+    try{$getWindowsOS = Get-Item $RegKey -ErrorAction SilentlyContinue}catch{}
+    try{$getWindowsOSVal = $getWindowsOS.GetValue("$WindowsOSVal")}catch{}
 
     if ($getWindowsOSVal -eq "1")
     {
@@ -8634,8 +8613,8 @@ Write-Host " "
     $WindowsOSVal=@()
     $WindowsOSVal = "DisableUAR"
     $getWindowsOSVal=@()
-    $getWindowsOS = Get-Item $RegKey -ErrorAction SilentlyContinue
-    $getWindowsOSVal = $getWindowsOS.GetValue("$WindowsOSVal") 
+    try{$getWindowsOS = Get-Item $RegKey -ErrorAction SilentlyContinue}catch{}
+    try{$getWindowsOSVal = $getWindowsOS.GetValue("$WindowsOSVal")}catch{}
 
     if ($getWindowsOSVal -eq "1")
     {
@@ -8679,8 +8658,8 @@ Write-Host " "
     $WindowsOSVal=@()
     $WindowsOSVal = "VDMDisallowed"
     $getWindowsOSVal=@()
-    $getWindowsOS = Get-Item $RegKey -ErrorAction SilentlyContinue
-    $getWindowsOSVal = $getWindowsOS.GetValue("$WindowsOSVal") 
+    try{$getWindowsOS = Get-Item $RegKey -ErrorAction SilentlyContinue}catch{}
+    try{$getWindowsOSVal = $getWindowsOS.GetValue("$WindowsOSVal")}catch{}
 
     if ($getWindowsOSVal -eq "1")
     {
@@ -8721,8 +8700,8 @@ Write-Host " "
     $WindowsOSVal=@()
     $WindowsOSVal = "AllowTelemetry"
     $getWindowsOSVal=@()
-    $getWindowsOS = Get-Item $RegKey -ErrorAction SilentlyContinue
-    $getWindowsOSVal = $getWindowsOS.GetValue("$WindowsOSVal") 
+    try{$getWindowsOS = Get-Item $RegKey -ErrorAction SilentlyContinue}catch{}
+    try{$getWindowsOSVal = $getWindowsOS.GetValue("$WindowsOSVal")}catch{}
 
     if ($getWindowsOSVal -eq "0")
     {
@@ -8770,8 +8749,8 @@ Write-Host " "
     $WindowsOSVal=@()
     $WindowsOSVal = "AllowTelemetry"
     $getWindowsOSVal=@()
-    $getWindowsOS = Get-Item $RegKey -ErrorAction SilentlyContinue
-    $getWindowsOSVal = $getWindowsOS.GetValue("$WindowsOSVal") 
+    try{$getWindowsOS = Get-Item $RegKey -ErrorAction SilentlyContinue}catch{}
+    try{$getWindowsOSVal = $getWindowsOS.GetValue("$WindowsOSVal")}catch{}
 
     if ($getWindowsOSVal -eq "0")
     {
@@ -8817,8 +8796,8 @@ Write-Host " "
     $WindowsOSVal=@()
     $WindowsOSVal = "CorporateWerUseSSL"   #query for SSL to be enabled
     $getWindowsOSVal=@()
-    $getWindowsOS = Get-Item $RegKey -ErrorAction SilentlyContinue
-    $getWindowsOSVal = $getWindowsOS.GetValue("$WindowsOSVal") 
+    try{$getWindowsOS = Get-Item $RegKey -ErrorAction SilentlyContinue}catch{}
+    try{$getWindowsOSVal = $getWindowsOS.GetValue("$WindowsOSVal")}catch{}
 
     if ($getWindowsOSVal -eq "1")
     {
@@ -8855,8 +8834,8 @@ Write-Host " "
     $WindowsOSVal=@()
     $WindowsOSVal = "NoDataExecutionPrevention"  
     $getWindowsOSVal=@()
-    $getWindowsOS = Get-Item $RegKey -ErrorAction SilentlyContinue
-    $getWindowsOSVal = $getWindowsOS.GetValue("$WindowsOSVal") 
+    try{$getWindowsOS = Get-Item $RegKey -ErrorAction SilentlyContinue}catch{}
+    try{$getWindowsOSVal = $getWindowsOS.GetValue("$WindowsOSVal")}catch{}
 
     if ($getWindowsOSVal -eq "0")
     {
@@ -8898,8 +8877,8 @@ Write-Host " "
     $WindowsOSVal=@()
     $WindowsOSVal = "DisableExceptionChainValidation"  
     $getWindowsOSVal=@()
-    $getWindowsOS = Get-Item $RegKey -ErrorAction SilentlyContinue
-    $getWindowsOSVal = $getWindowsOS.GetValue("$WindowsOSVal") 
+    try{$getWindowsOS = Get-Item $RegKey -ErrorAction SilentlyContinue}catch{}
+    try{$getWindowsOSVal = $getWindowsOS.GetValue("$WindowsOSVal")}catch{}
 
     if ($getWindowsOSVal -eq "0")
     {
@@ -8935,8 +8914,8 @@ Write-Host " "
     $WindowsOSVal=@()
     $WindowsOSVal = "NoSecurityTab"  
     $getWindowsOSVal=@()
-    $getWindowsOS = Get-Item $RegKey -ErrorAction SilentlyContinue
-    $getWindowsOSVal = $getWindowsOS.GetValue("$WindowsOSVal") 
+    try{$getWindowsOS = Get-Item $RegKey -ErrorAction SilentlyContinue}catch{}
+    try{$getWindowsOSVal = $getWindowsOS.GetValue("$WindowsOSVal")}catch{}
 
     if ($getWindowsOSVal -eq "1")
     {
@@ -8971,8 +8950,8 @@ Write-Host " "
     $WindowsOSVal=@()
     $WindowsOSVal = "DisableLocationScripting"  
     $getWindowsOSVal=@()
-    $getWindowsOS = Get-Item $RegKey -ErrorAction SilentlyContinue
-    $getWindowsOSVal = $getWindowsOS.GetValue("$WindowsOSVal") 
+    try{$getWindowsOS = Get-Item $RegKey -ErrorAction SilentlyContinue}catch{}
+    try{$getWindowsOSVal = $getWindowsOS.GetValue("$WindowsOSVal")}catch{}
 
     if ($getWindowsOSVal -eq "1")
     {
@@ -9008,8 +8987,8 @@ Write-Host " "
     $WindowsOSVal=@()
     $WindowsOSVal = "DisableWindowsLocationProvider"  
     $getWindowsOSVal=@()
-    $getWindowsOS = Get-Item $RegKey -ErrorAction SilentlyContinue
-    $getWindowsOSVal = $getWindowsOS.GetValue("$WindowsOSVal") 
+    try{$getWindowsOS = Get-Item $RegKey -ErrorAction SilentlyContinue}catch{}
+    try{$getWindowsOSVal = $getWindowsOS.GetValue("$WindowsOSVal")}catch{}
 
     if ($getWindowsOSVal -eq "1")
     {
@@ -9047,8 +9026,8 @@ Write-Host " "
     $WindowsOSVal=@()
     $WindowsOSVal = "NoUseStoreOpenWith"  
     $getWindowsOSVal=@()
-    $getWindowsOS = Get-Item $RegKey -ErrorAction SilentlyContinue
-    $getWindowsOSVal = $getWindowsOS.GetValue("$WindowsOSVal") 
+    try{$getWindowsOS = Get-Item $RegKey -ErrorAction SilentlyContinue}catch{}
+    try{$getWindowsOSVal = $getWindowsOS.GetValue("$WindowsOSVal")}catch{}
 
     if ($getWindowsOSVal -eq "1")
     {
@@ -9086,8 +9065,8 @@ Write-Host " "
     $WindowsOSVal=@()
     $WindowsOSVal = "RemoveWindowsStore"  
     $getWindowsOSVal=@()
-    $getWindowsOS = Get-Item $RegKey -ErrorAction SilentlyContinue
-    $getWindowsOSVal = $getWindowsOS.GetValue("$WindowsOSVal") 
+    try{$getWindowsOS = Get-Item $RegKey -ErrorAction SilentlyContinue}catch{}
+    try{$getWindowsOSVal = $getWindowsOS.GetValue("$WindowsOSVal")}catch{}
 
     if ($getWindowsOSVal -eq "1")
     {
@@ -9124,8 +9103,8 @@ Write-Host " "
     $WindowsOSVal=@()
     $WindowsOSVal = "DenyRsopToInteractiveUser"  
     $getWindowsOSVal=@()
-    $getWindowsOS = Get-Item $RegKey -ErrorAction SilentlyContinue
-    $getWindowsOSVal = $getWindowsOS.GetValue("$WindowsOSVal") 
+    try{$getWindowsOS = Get-Item $RegKey -ErrorAction SilentlyContinue}catch{}
+    try{$getWindowsOSVal = $getWindowsOS.GetValue("$WindowsOSVal")}catch{}
 
     if ($getWindowsOSVal -eq "0")
     {
@@ -9250,8 +9229,8 @@ if ($edgeRegValue -eq "0"){$edgeGPOValue = "Disabled"}
 $gpopath = $edgeGPOPath + $edgeGPOName
 $regpath = $edgeRegPath + $edgeRegName
 
-$getEdgePath = Get-Item $edgeRegPath -ErrorAction SilentlyContinue
-$getEdgeValue = $getEdgePath.GetValue("$edgeRegName") 
+try {$getEdgePath = Get-Item $edgeRegPath -ErrorAction SilentlyContinue}catch{}
+try {$getEdgeValue = $getEdgePath.GetValue("$edgeRegName")}catch{} 
 
     if ($getEdgeValue -eq "$edgeRegValue")
     {
@@ -9514,13 +9493,11 @@ foreach ($OfficePolItems in $OfficePolicies.values)
     $regPath = $OfficeRegPath  +"\"+ $OfficeRegName
 
     $getOfficePath = Get-Item $OfficeRegPath -ErrorAction SilentlyContinue
-    $getOfficeValue = $getOfficePath.GetValue("$OfficeRegName") 
+    try{$getOfficeValue = $getOfficePath.GetValue("$OfficeRegName")}catch{}
 
     #defaulf behaviour is disabled even with gpo set so reg value is not created
     if ($OfficeRegName -eq "allowdde" -and $getOfficeValue -eq $null){$getOfficeValue = "0"}
     if ($OfficeRegName -eq "runprograms" -and $getOfficeValue -eq $null){$getOfficeValue = "0"}
-
-   # Write-Host $getOfficeValue -ForegroundColor Cyan
 
         if ($getOfficeValue -eq "$OfficeRegValue")
         {
@@ -10299,8 +10276,8 @@ $MSSlSvc = Get-Service | where {$_.Name -like "*SQL*"}
                 {
                     $SQLCIS_Title = "Warning $SQLCIS_Title Warning"
                     #$SQLCIS_Vuln = ""
-                    $SQLCIS_Config = $SQLCIS_res.split(",")[0]
-                    $SQLCIS_InUse = $SQLCIS_res.split(",")[1]
+                    try{$SQLCIS_Config = $SQLCIS_res.split(",")[0]}catch{}
+                    try{$SQLCIS_InUse = $SQLCIS_res.split(",")[1]}catch{}
                     $trueFalse = "False"
                 }
  
@@ -11182,7 +11159,7 @@ $MSSlSvc = Get-Service | where {$_.Name -like "*SQL*"}
                     $SQLCIS_Comment = "Setting CLR Assembly Permission Sets to SAFE_ACCESS will hinder assemblies from accessing external system resources such as files, the network, environment variables, or the registry. Assemblies with EXTERNAL_ACCESS or UNSAFE permission sets can be used to access sensitive areas of the operating system, steal and/or transmit data and alter the state and other protection measures of the underlying Windows Operating System. Assemblies which are Microsoft-created (is_user_defined = 0) are excluded from this check as they are required for overall system functionality. "
                     $SQLCIS_Secure = "1"
 
-                           $SQLCIS_Check = (& sqlcmd -s "," -W -Q $sqlVuln) 
+                           try{$SQLCIS_Check = (& sqlcmd -s "," -W -Q $sqlVuln)
                             if ($SQLCIS_Check[2] -ne $null -or $SQLCIS_Check[2].split(",")[1] -ne "1")
                             {
                                 $SQLCIS_Title = "Warning $SQLCIS_Title Warning"
@@ -11202,7 +11179,7 @@ $MSSlSvc = Get-Service | where {$_.Name -like "*SQL*"}
                                 $SQLCIS_Secure = $SQLCIS_Secure
                                 $SQLCIS_Comment = $SQLCIS_Comment
                                 $trueFalse = "True"  
-                             }
+                             }}catch{} 
  
                     $newObjSQLCIS = New-Object -TypeName PSObject
                     Add-Member -InputObject $newObjSQLCIS -Type NoteProperty -Name SQLCISTitle -Value $SQLCIS_Title
@@ -11232,7 +11209,7 @@ $MSSlSvc = Get-Service | where {$_.Name -like "*SQL*"}
                     $SQLCIS_Comment = "Per the Microsoft Best Practices, only the SQL Server AES algorithm options, AES_128, AES_192, and AES_256, should be used for a symmetric key encryption algorithm. The following algorithms (as referred to by SQL Server) are considered weak or deprecated and should no longer be used in SQL Server: DES, DESX, RC2, RC4, RC4_12"
                     $SQLCIS_Secure = "AES_256"
 
-                           $SQLCIS_Check = (& sqlcmd -s "," -W -Q $sqlVuln) 
+                           try{$SQLCIS_Check = (& sqlcmd -s "," -W -Q $sqlVuln)}catch{} 
                             if ($SQLCIS_Check[3] -ne $null -or $SQLCIS_Check[2].split(",")[1] -ne "1")
                             {
                                 $SQLCIS_Title = "Warning $SQLCIS_Title Warning"
@@ -11282,7 +11259,7 @@ $MSSlSvc = Get-Service | where {$_.Name -like "*SQL*"}
                     $SQLCIS_Comment = "Microsoft Best Practices recommend to use at least a 2048-bit encryption algorithm for asymmetric keys. The RSA_2048 encryption algorithm for asymmetric keys in SQL Server is the highest bitlevel provided and therefore the most secure available choice (other choices are RSA_512 and RSA_1024)."
                     $SQLCIS_Secure = ""
 
-                           $SQLCIS_Check = (& sqlcmd -s "," -W -Q $sqlVuln) 
+                           try{$SQLCIS_Check = (& sqlcmd -s "," -W -Q $sqlVuln) 
                             if ($SQLCIS_Check[3] -ne $null -or $SQLCIS_Check[2].split(",")[1] -ne "1")
                             {
                                 $SQLCIS_Title = "Warning $SQLCIS_Title Warning"
@@ -11302,7 +11279,7 @@ $MSSlSvc = Get-Service | where {$_.Name -like "*SQL*"}
                                 $SQLCIS_Secure = $SQLCIS_Secure
                                 $SQLCIS_Comment = $SQLCIS_Comment
                                 $trueFalse = "True"  
-                             }
+                             }}catch{}
  
                     $newObjSQLCIS = New-Object -TypeName PSObject
                     Add-Member -InputObject $newObjSQLCIS -Type NoteProperty -Name SQLCISTitle -Value $SQLCIS_Title
@@ -11633,7 +11610,7 @@ $MSSlSvc = Get-Service | where {$_.Name -like "*SQL*"}
        if ($fragSecOptions -like "*warning*")
        {
            $newObjSummary = New-Object psObject
-           Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value '<a href="#secOptions">Security Options that Pevent MitM Attack are Enabled</a>'
+           Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value '<a href="#secOptions">Security Options that Prevent MitM Attack are Enabled</a>'
            Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Risk -Value "High Risk"
            $fragSummary += $newObjSummary
        } 
@@ -11841,8 +11818,8 @@ $MSSlSvc = Get-Service | where {$_.Name -like "*SQL*"}
 
         $Intro = "<br><br>Thanks for using the vulnerability report written by <a href=`"https://www.tenaka.net`" class=`"class1`">Tenaka.net</a>, please show your support and visit my site, it's non-profit and Ad-free. <br>
         <br>Any issues with the report's accuracy please do let me know and I'll get it fixed asap. The results in this report are a guide and not a guarantee that the tested system is not without further defects or vulnerability.<br>
-        <br>The tests focus on known and common issues with Windows that can be exploited by an attacker. Each section contains a small snippet to provide some context, follow the links for further detail.<br><br>The html output can be imported into Excel for further analysis and uses the True and False values as a drop-down filter.<br>Open Excel, Data, Import from Web. Enter the file path in the following format file:///C:/SecureReport/NameOfReport.htm, then Select multiple items and click on Load and select 'Load To', click on Table.<br><br>Further support for this report can be found @ <a href=`"https://www.tenaka.net/windowsclient-vulnscanner`" class=`"class1`">Vulnerability Scanner</a>"
-        #$Intro2 = "The results in this report are a guide and not a guarantee that the tested system is not without further defect or vulnerability.<br>The tests focus on known and common issues with Windows that can be exploited by an attacker. Each section contains a small snippet to provide some context, follow the links for further detail.<br><br>The html output can be imported into Excel for further analysis and uses the True and False values as a drop-down filter.<br><br>Open Excel, Data, Import from Web. Enter the file path in the following format file:///C:/SecureReport/NameOfReport.htm, then Select multiple items and click on Load and select 'Load To', click on Table.<br>"
+        <br>The tests focus on known and common issues with Windows that can be exploited by an attacker. Each section contains a small snippet to provide some context, follow the links for further detail.<br><br>The html output can be imported into Excel for further analysis and uses the True and False values as a drop-down filter.<br>Open Excel, Data, Import from Web. Enter the file path in the following format file:///C:/SecureReport/NameOfReport.htm, then select multiple items and click on Load and select 'Load To', click on Table.<br><br>Further support for this report can be found @ <a href=`"https://www.tenaka.net/windowsclient-vulnscanner`" class=`"class1`">Vulnerability Scanner</a>"
+        #$Intro2 = "The results in this report are a guide and not a guarantee that the tested system is not without further defect or vulnerability.<br>The tests focus on known and common issues with Windows that can be exploited by an attacker. Each section contains a small snippet to provide some context, follow the links for further detail.<br><br>The html output can be imported into Excel for further analysis and uses the True and False values as a drop-down filter.<br><br>Open Excel, Data, Import from Web. Enter the file path in the following format file:///C:/SecureReport/NameOfReport.htm, then select multiple items and click on Load and select 'Load To', click on Table.<br>"
         $Finish = "This script has been provided by Tenaka.net, if it's beneficial, please provide feedback and any additional feature requests gratefully received. "
         $descripBitlocker = "TPM and Bitlocker protect against offline attack from usb and mounting the local Windows system then Accessing the local data. 'TPM and Pin' enhances Bitlocker by preventing LPC Bus (Low Pin Count) bypasses of Bitlocker with TPM. <br> <br>Further information can be found @ <a href=`"https://www.tenaka.net/bitlocker`" class=`"class1`">Bitlocker</a>"
         $descripVirt = "Virtualization-based security (VBS), isolates core system resources to create secure regions of memory. Enabling VBS allows for Hypervisor-Enforced Code Integrity (HVCI), Device Guard and Credential Guard. <br> <br>Further information can be found @ https://docs.microsoft.com/en-us/windows-hardware/design/device-experiences/oem-vbs<br> <br><a href=`"https://www.tenaka.net/deviceguard-vs-rce`" class=`"class1`">WDAC vs RCE</a> and <a href=`"https://www.tenaka.net/pass-the-hash`" class=`"class1`">Pass the Hash</a> <br><br>Secure Boot is a security standard to ensure only trusted OEM software is allowed at boot. At startup the UEFi and boot software's digital signatures are validated preventing rootkits. <br> <br>More on Secure Boot can be found here @ https://media.defense.gov/2020/Sep/15/2002497594/-1/-1/0/CTR-UEFI-SECURE-BOOT-CUSTOMIZATION-20200915.PDF/CTR-UEFI-SECURE-BOOT-CUSTOMIZATION-20200915.PDF<br>"
@@ -11881,10 +11858,10 @@ $MSSlSvc = Get-Service | where {$_.Name -like "*SQL*"}
         $descripOffice2016 = "These are recommended GPO settings to secure Office 2016-365 by Microsoft, do NOT implement without the correct research and testing. Some settings could adversely affect your system.<br> Its recommended that Attack Surface Reduction (ASR) is enabled but requires Windows Defender Real-Time Antivirus and works in conjunction with Exploit Guard to prevent malware abusing legitimate MS Office functionality"
         $descripPreAuth = "READ ME - Requires the installation of the AD RSAT tools for this to work.<br><br>Pre-authentication is when the user sends the KDC an Authentication Service Request (AS_REQ) with an encrypted Timestamp. The KDC replies with an Authentication Service Reply (AS_REP) with the TGT and a logon session. The issue arises when the user's account doesn't require pre-authentication, it's a check box on the user's account settings. An attacker is then able to request a DC, and the DC dutifully replies with user encrypted TGT using the user's own NTLM password hash. An offline brute force attack is then possible in the hope of extracting the clear text password, known as AS-REP Roasting <br> <br>Further information @ <a href=`"https://www.tenaka.net/kerberos-armouring`" class=`"class1`">Kerberos Armouring</a><br>"
         $descripAV = ""
-        $descripDomainPrivsGps = "Review and minimise members of privileged groups and delegate as much as possible. Don't nest groups into Domain Admins, add direct user accounts only. Deploy User Rights Assignments to explicitly prevent Domain Admins from logging on to Member Servers and Clients more information can be found here @ <a href=`"https://www.tenaka.net/post/deny-domain-admins-logon-to-workstations`" class=`"class1`">URA to Deny Domain Admins Logging to Workstations</a><br><br>Dont add privilged groups to Guests or Domain Guests and yes I've seen Domain Guests added to Domain Admins"
+        $descripDomainPrivsGps = "Review and minimise members of privileged groups and delegate as much as possible. Don't nest groups into Domain Admins, add direct user accounts only. Deploy User Rights Assignments to explicitly prevent Domain Admins from logging on to Member Servers and Clients more information can be found here @ <a href=`"https://www.tenaka.net/post/deny-domain-admins-logon-to-workstations`" class=`"class1`">URA to Deny Domain Admins Logging to Workstations</a><br><br>Dont add privileged groups to Guests or Domain Guests and yes I've seen Domain Guests added to Domain Admins"
         $descripCerts = ""
         $decripCipher = ""
-        $descripKernelMode = "Enabed with Windwos 11 22H2 - For code running in kernel mode, the CPU confirms requested return addresses with a second copy of the address stored in the shadow stack to prevent attackers from substituting an address that runs malicious code. Not all drivers are compatiable with this security feature. More information can be found here @<br><br>https://techcommunity.microsoft.com/t5/windows-os-platform-blog/understanding-hardware-enforced-stack-protection/ba-p/1247815"
+        $descripKernelMode = "Enabled with Windows 11 22H2 - For code running in kernel mode, the CPU confirms requested return addresses with a second copy of the address stored in the shadow stack to prevent attackers from substituting an address that runs malicious code. Not all drivers are compatible with this security feature. More information can be found here @<br><br>https://techcommunity.microsoft.com/t5/windows-os-platform-blog/understanding-hardware-enforced-stack-protection/ba-p/1247815"
         $descripInstalledApps = "Will assume any installed program older than 6 months is out of date"
         $descripBios = "Will assume any UEFI\BIOS is out of date if its older than 6 months"
         $descripWinUpdates = "Will assume any Windows Updates are out of date if older than 6 months"
@@ -12194,7 +12171,7 @@ $MSSlSvc = Get-Service | where {$_.Name -like "*SQL*"}
     $frag_TaskListings = $SchedTaskListings | ConvertTo-Html -as Table -Fragment -PreContent "<h2>Encoded Scheduled Tasks</h2>"  -PostContent "<h4>$descripTaskSchEncode</h4>" | Out-String
     
     $frag_DriverQuery = $DriverQuery | ConvertTo-Html -as Table -Fragment -PreContent "<h2>Drivers Not Signed</h2>" -PostContent "<h4>$descriptDriverQuery</h4>" | Out-String
-        $frag_DriverQueryN = $frag_DriverQuery.Replace("<tr><th>*</th></tr>","<tr><th>Encoded Scheduled Tasks</th></tr>")
+         $frag_DriverQueryN = $frag_DriverQuery.Replace("<tr><th>*</th></tr>","<tr><th>Encoded Scheduled Tasks</th></tr>")
 
     $frag_Share = $fragShare | ConvertTo-Html -as Table -Fragment -PreContent "<h2>Share Permissions</h2>"  | Out-String 
     $frag_AuthCodeSig = $fragAuthCodeSig | ConvertTo-Html -as Table -Fragment -PreContent "<h2>Authenticode HashMisMatch</h2>" -PostContent "<h4>$descriptAuthCodeSig</h4>"  | Out-String  
@@ -12226,14 +12203,14 @@ $MSSlSvc = Get-Service | where {$_.Name -like "*SQL*"}
     $frag_SQLSvc = $fragSQLSvc | ConvertTo-Html -As Table -fragment -PreContent "<h2>SQL Service Account</summary></h2>" -PostContent "<h4>$descripToDo</h4></details>"| Out-String
     $frag_CISSQL = $fragCISSQL | ConvertTo-Html -As Table -fragment -PreContent "<h2>SQL Server CIS Benchmarks</summary></h2>" -PostContent "<h4>$descripSQLCIS</h4></details>" | Out-String
  
-    #MS Server Security Checks - IIS
+    #MS Server Security Checks go here - IIS
      
     <#<><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><>
                      Define OUtput of Report Location
     <><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><>#>
     $VulnReport = "C:\SecureReport"
     $OutFunc = "SystemReport"  
-    $tpSec10 = Test-Path "C:\SecureReport\output\$OutFunc\"
+    $tpSec10 = Test-Path "C:\SecureReport\output\$OutFunc\" -ErrorAction SilentlyContinue
     
     if ($tpSec10 -eq $false)
         {
@@ -12755,5 +12732,6 @@ YYMMDD
 231115.1 - Updated Groups and Group Members 
 231115.2 - Updated searching the registry for passwords
 231116.1 - Updated Autologon search for passwords - Null isnt Null but empty
+231122.1 - Added empty catch{} to suppress access warnings or added silently continue - this is best effort and will be resolved in the full rewrite
 
 #>
