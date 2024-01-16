@@ -267,21 +267,27 @@ else
 
     function SecureReportError
         {
-            Write-Host "$($SecCheck)" -foregroundColor yellow
-            Write-Host "$($SecErrorComment)" -ForegroundColor Cyan
+                Write-Host "$($SecCheck)" -foregroundColor yellow
+                Write-Host "$($SecErrorComment)" -ForegroundColor Cyan
             if ([string]::IsNullorEmpty($exceptionMessage) -ne "$true")
                 {
                     Add-Content -Path $secureReportError -value $SecCheck
                     Add-Content -Path $secureReportError -value "     Error: $exceptionMessage"
-                    Write-Host "Error: $exceptionMessage" -ForegroundColor Cyan
+                        Write-Host "Error: $exceptionMessage" -ForegroundColor Cyan
                 }
 
-            if ([string]::IsNullorEmpty($exceptionCMD) -ne "$true")
+            elseif ([string]::IsNullorEmpty($exceptionCMD) -ne "$true")
                 {
                     Add-Content -Path $secureReportError -value $exceptionCMD
                     Add-Content -Path $secureReportError -value "     Error: $exceptionCMD"
-                    write-Host $exceptionCMD -ForegroundColor Cyan   
-                }          
+                        write-Host $exceptionCMD -ForegroundColor Cyan   
+                } 
+            else
+                {
+                    Add-Content -Path $secureReportError -value $SecCheck
+                    Add-Content -Path $secureReportError -value "     Error: $exceptionMessage"
+                        Write-Host "Error: $exceptionMessage" -ForegroundColor Cyan
+                }             
         }
 
     function TestConfigOutputPath
@@ -799,7 +805,7 @@ else
                             $fragDomainGrps += $newObjDomainGrps
                             $fragDomainGrps  | Out-File "$($secureReporOutPut)\DomainDetails.log" -Append                    
                     }
-            }
+                }
             finally
                 {
                 $gpName = [ADSI]"LDAP://CN=$adGroup,CN=builtin,$($rootdse)"
