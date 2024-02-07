@@ -442,7 +442,7 @@ else
                         {
                             $BitDisabled = "Warning Bitlocker is disabled Warning"
                             $newObjBit = New-Object psObject
-                            Add-Member -InputObject $newObjBit -Type NoteProperty -Name BitLockerDisabled -Value $BitDisabled
+                                Add-Member -InputObject $newObjBit -Type NoteProperty -Name BitLockerDisabled -Value $BitDisabled
                             $fragBitLocker += $newObjBit
                         }
 
@@ -1134,7 +1134,9 @@ else
     #Export Security Settings inc User Rights Assignments with secedit.exe
     secEdit.exe /export /cfg $secEditPath
    
-    $URA = Get-Content -path  $secEditPath |  Select-String  -Pattern 'S-1'
+    #$URA = Get-Content -path  $secEditPath | Select-String  -Pattern 'S-1'
+    $URA = ((Get-Content -path  $secEditPath | select-string 'Privilege Rights]' -Context 0,50) | ForEach-Object {$_.Context.PostContext} | Select-String -Pattern 'Se')
+
     $fragURA=@()
     Foreach ($uraLine in $URA)
        {
@@ -13615,5 +13617,6 @@ YYMMDD
 240112.1 - Updated URA for accounts that aren't listed by SID but by name as these as these werent reported correctly.
 240112.2 - Updated SQL filter to due to a lack of permissions or access.
 240115.1 - Updated URA to include objects that can no longer be resolver eg the group has been deleted but referenced by GPO
+240207.1 - Updated URA to include objects that arent preceeded by guid eg added by policy and doesnt resolve to a guid or sid.
 
 #>
