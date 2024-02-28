@@ -1134,7 +1134,6 @@ else
     #Export Security Settings inc User Rights Assignments with secedit.exe
     secEdit.exe /export /cfg $secEditPath
    
-    #$URA = Get-Content -path  $secEditPath | Select-String  -Pattern 'S-1'
     $URA = ((Get-Content -path  $secEditPath | select-string 'Privilege Rights]' -Context 0,50) | ForEach-Object {$_.Context.PostContext} | Select-String -Pattern 'Se')
 
     $fragURA=@()
@@ -1887,39 +1886,39 @@ else
                       Local Shares and Permissions
 <><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><>#>
     splatVariables
-    $SecCheck = Local "Shares and Permissions"
+    $SecCheck = "Shares and Permissions"
     $exceptionMessage="No errors gathered"
 
     $SecureReportConfig = "$($secureReporOutPut)\$($OutConfigDir)"	
 
-try
-    {
-        $getShr = Get-SmbShare -erroraction Stop
-        $Permarray=@()
-        $fragShare=@()
-
-        Foreach($shr in $getShr)
+    try
         {
+            $getShr = Get-SmbShare -erroraction Stop
             $Permarray=@()
-            $shrName = $Shr.name
-            $shrPath = $Shr.path
-            $shrDes = $Shr.description
+            $fragShare=@()
 
-            $getShrPerms = Get-FileShareAccessControlEntry -Name $shr.Name -erroraction Stop
+            Foreach($shr in $getShr)
+            {
+                $Permarray=@()
+                $shrName = $Shr.name
+                $shrPath = $Shr.path
+                $shrDes = $Shr.description
+
+                $getShrPerms = Get-FileShareAccessControlEntry -Name $shr.Name -erroraction Stop
         
-            Foreach($perms in $getShrPerms)
-                {
-                    $Permarray += $perms.AccountName
-                }
-                    $arrayjoin = $Permarray -join ",  "
+                Foreach($perms in $getShrPerms)
+                    {
+                        $Permarray += $perms.AccountName
+                    }
+                        $arrayjoin = $Permarray -join ",  "
     
-                    $newObjShare = New-Object -TypeName PSObject
-                        Add-Member -InputObject $newObjShare -Type NoteProperty -Name Name -Value $shrName
-                        Add-Member -InputObject $newObjShare -Type NoteProperty -Name Path -Value $shrPath
-                        Add-Member -InputObject $newObjShare -Type NoteProperty -Name Permissions -Value $arrayjoin
-                    $fragShare += $newObjShare
-                    $fragShare | Out-File "$($secureReporOutPut)\Shares.log" -Append
-            }
+                        $newObjShare = New-Object -TypeName PSObject
+                            Add-Member -InputObject $newObjShare -Type NoteProperty -Name Name -Value $shrName
+                            Add-Member -InputObject $newObjShare -Type NoteProperty -Name Path -Value $shrPath
+                            Add-Member -InputObject $newObjShare -Type NoteProperty -Name Permissions -Value $arrayjoin
+                        $fragShare += $newObjShare
+                        $fragShare | Out-File "$($secureReporOutPut)\Shares.log" -Append
+                }
         }
     catch
         {
@@ -4026,7 +4025,87 @@ try
               FILES, FOLDERS, REG AUDITS
 <><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><>#>
 
-#START OF IF
+
+
+    <#<><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><>
+             Searching for Writeable Registry Vulnerabilities for Services - default search
+    <><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><>#>
+        splatVariables
+        $SecCheck = "Searching for Writeable Registry Hive Vulnerabilities in Services"
+        $exceptionMessage="No errors gathered"
+
+        $OutConfigDir = "WriteableSvcReg"  
+
+        $SecureReportConfig = "$($secureReporOutPut)\$($OutConfigDir)"
+        $rpath = "$($SecureReportConfig)\$OutConfigDir.log"    	
+
+        #$SecureReportConfig = "$($secureReporOutPut)\$($OutConfigDir)"
+        TestConfigOutputPath($OutConfigDir) 
+ 
+        #Registry Permissions
+        $HKLMSvc = 'HKLM:\System\CurrentControlSet\Services'
+        $HKLMCheck = $HKLMSvc
+
+        Foreach ($key in $HKLMCheck) 
+            {
+                #Get a list of key names and make a variable
+                cd hklm:
+                $SvcPath = Get-ChildItem $key -Recurse -Depth 2 -ErrorAction SilentlyContinue | where {$_.Name -notmatch "Classes"}
+                #Update HKEY_Local.... to HKLM:
+                $RegList = $SvcPath.name.replace("HKEY_LOCAL_MACHINE","HKLM:")
+    
+                Foreach ($regPath in $RegList)
+                    {
+                        try
+                            {
+                                $acl = Get-Acl $regPath -erroraction Stop
+                                $acc = $acl.AccessToString
+
+                                Foreach ($ac in $acc)
+                                    {
+                                        if ($ac | Select-String -SimpleMatch "BUILTIN\Users Allow  FullControl")
+                                            {
+                                                $regPath | Out-File $rpath -Append
+                                                #Write-Host $ac -ForegroundColor DarkCyan
+                                            } 
+
+                                        if ($ac | Select-String -SimpleMatch "NT AUTHORITY\Authenticated Users Allow  FullControl")
+                                            {
+                                                $regPath | Out-File $rpath -Append
+                                                #Write-Host $ac -ForegroundColor DarkCyan
+                                            }
+
+                                        if ($ac | Select-String -SimpleMatch "Everyone Allow  FullControl")
+                                            {
+                                                $regPath | Out-File $rpath -Append
+                                                #Write-Host $ac -ForegroundColor DarkCyan
+                                            }
+                                    }
+                                }
+                            catch
+                                {
+                                    $exceptionMessage = $_.Exception.message
+                                    SecureReportError($SecCheck,$exceptionMessage)        
+                                }
+                    }
+        
+                    $regDetails = Get-Content $rpath -ErrorAction SilentlyContinue    #|  where {$_ -ne ""} |select -skip 3
+                    $fragRegSvc =@()
+    
+                    Foreach ($regItems in $regDetails)
+                        {
+                            #Write-Host $regItems -ForegroundColor DarkCyan
+                            $newObjRegSvc = New-Object -TypeName PSObject
+                                Add-Member -InputObject $newObjRegSvc -Type NoteProperty -Name RegWeakness -Value "Warning $($regItems) warning"
+                            $fragRegSvc += $newObjRegSvc
+                            $fragRegSvc | Out-File "$($secureReporOutPut)\WriteableSvcRegistry.log" -Append    
+                        }
+            }
+  
+
+
+
+#START OF IF - Search REG, DIR and FILE permissions if $folders -eq Y
 if ($folders -eq "y")
     {
     if ($depth -eq $null){$depth = "2"}
@@ -4054,7 +4133,7 @@ if ($folders -eq "y")
             {
                 #Get a list of key names and make a variable
                 cd hklm:
-                $SvcPath = Get-ChildItem $key -Recurse -Depth 1 -ErrorAction SilentlyContinue | where {$_.Name -notmatch "Classes"}
+                $SvcPath = Get-ChildItem $key -Recurse -Depth $depth -ErrorAction SilentlyContinue | where {$_.Name -notmatch "Classes"}
                 #Update HKEY_Local.... to HKLM:
                 $RegList = $SvcPath.name.replace("HKEY_LOCAL_MACHINE","HKLM:")
     
@@ -12250,12 +12329,20 @@ if ($folders -eq "y")
                $fragSummary += $newObjSummary
             }  
 
+       if ($frag_RegSvcN -like "*warning*")
+            {
+                $newObjSummary = New-Object psObject
+                     Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value '<a href="#SvcRegPermissions">User Permission Access to Update Service Image Path</a>'
+                     Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Risk -Value "Very High Risk"
+               $fragSummary += $newObjSummary
+            } 
+
        #if ($fragFWProfile| % {$_.inbound -eq "Allow"})
         if ($fragFWProfile -like "*Warning*")
             {
                 $newObjSummary = New-Object psObject
                      Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value '<a href="#FirewallProf">The Firewall Profile Allows Inbound Traffic</a>'
-                     Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Risk -Value "Very High Risk"
+                     Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Risk -Value "High Risk"
                $fragSummary += $newObjSummary      
             }
 
@@ -12994,6 +13081,10 @@ if ($folders -eq "y")
     $frag_AutoLogon = $fragAutoLogon   | ConvertTo-Html -as Table -Fragment -PreContent "<h2>AutoLogon Credentials</h2>"  -PostContent "<h4>$descripAutoLogon</h4>"| Out-String
     $frag_UnQu = $fragUnQuoted | ConvertTo-Html -as Table -Fragment -PreContent "<h2>UnQuoted Paths</h2>" -PostContent "<h4>$DescripUnquoted</h4>" | Out-String
     $frag_LegNIC = $fragLegNIC | ConvertTo-Html -as Table -Fragment -PreContent "<h2>Legacy Network</h2>" -PostContent "<h4>$DescripLegacyNet</h4>" | Out-String
+       
+    $frag_RegSvc = $fragRegSvc | ConvertTo-Html -as Table -Fragment -PreContent "<h2>Services Reg Permissions</h2>" -PostContent "<h4>$descripRegPer</h4>" | Out-String
+        $frag_RegSvcN = $frag_RegSvc.Replace("<tr><th>*</th></tr>","<tr><th>Services Reg Permissions</th></tr>")
+    
     $frag_SysRegPerms = $fragReg | ConvertTo-Html -as Table -Fragment -PreContent "<h2>Registry Permissions</h2>" -PostContent "<h4>$descripRegPer</h4>" | Out-String
         $frag_SysRegPermsN = $frag_SysRegPerms.Replace("<tr><th>*</th></tr>","<tr><th>Registry Permissions</th></tr>")
     
@@ -13194,7 +13285,7 @@ if ($folders -eq "y")
 			    <input type="radio" id="FileReg" name="headerTabs">
 			    <label for="FileReg">File & Registry</label>
 			    <div class="contentTab">
-				    <p> $frag_SysRegPermsN $frag_SysFoldersN $frag_CreateSysFoldN $frag_wFileN $frag_wFoldersN
+				    <p>$frag_RegSvcN $frag_SysRegPermsN $frag_SysFoldersN $frag_CreateSysFoldN $frag_wFileN $frag_wFoldersN
                     </p>
 			    </div>
 		    </div>
@@ -13618,5 +13709,7 @@ YYMMDD
 240112.2 - Updated SQL filter to due to a lack of permissions or access.
 240115.1 - Updated URA to include objects that can no longer be resolver eg the group has been deleted but referenced by GPO
 240207.1 - Updated URA to include objects that arent preceeded by guid eg added by policy and doesnt resolve to a guid or sid.
-
+240228.1 - Increase search depth on Registry permissions that allow the user to modify
+240228.2 - Added permission check on Service Reg hive to run as default
+ 
 #>
