@@ -1925,6 +1925,54 @@ else
             $exceptionMessage = $_.Exception.message
             SecureReportError($SecCheck,$exceptionMessage)        
         }
+
+<#<><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><>
+                            WinRM
+<><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><>#>
+    splatVariables
+    $SecCheck = "Auditing WinRM"
+    $exceptionMessage="No errors gathered"
+
+    $OutConfigDir = "WinRM" 
+
+    $SecureReportConfig = "$($secureReporOutPut)\$($OutConfigDir)"	
+    $winRMpath = "$($SecureReportConfig)\$($OutConfigDir).log"
+
+    #$SecureReportConfig = "$($secureReporOutPut)\$($OutConfigDir)"
+    TestConfigOutputPath($OutConfigDir)
+
+    winrm enumerate winrm/config/listener > $winRMpath
+
+    $gcWinRM = (Get-Content -path $winRMpath | select-string 'listener' -Context 0,9) | ForEach-Object {$_.Context}
+
+    $fragWinRM=@()
+    foreach ($winRMCtx in $gcWinRM)
+        {
+            $winRMAddress =  ($winRMCtx.postcontext).Replace("    ","") | Select-String Address
+                if ($winRMAddress -match '`*'){$winRMAddress = "warning $($winRMAddress) warning"}
+
+            $winRMTransport = ($winRMCtx.postcontext).Replace("    ","") | Select-String Transport
+                if ($winRMTransport -notmatch 'https'){$winRMTransport = "warning $($winRMTransport) warning"}
+
+            $winRMPort = ($winRMCtx.postcontext).Replace("    ","") | Select-String Port -CaseSensitive
+                if ($winRMPort -match '5985'){$winRMPort = "warning $($winRMPort) warning"}
+
+            $winRMEnabled =  ($winRMCtx.postcontext).Replace("    ","") | Select-String Enabled
+            $winRMCert =  ($winRMCtx.postcontext).Replace("    ","") | Select-String CertificateThumbprint
+            $winRMListening =  ($winRMCtx.postcontext).Replace("    ","") | Select-String ListeningOn
+
+            $newObjWinRM = New-Object -TypeName PSObject
+                Add-Member -InputObject $newObjWinRM -Type NoteProperty -Name WinRMAddress -Value $winRMAddress
+                Add-Member -InputObject $newObjWinRM -Type NoteProperty -Name WinRMTransport -Value $winRMTransport
+                Add-Member -InputObject $newObjWinRM -Type NoteProperty -Name WinRMPort -Value $winRMPort
+                Add-Member -InputObject $newObjWinRM -Type NoteProperty -Name WinRMEnabled -Value $winRMEnabled
+                Add-Member -InputObject $newObjWinRM -Type NoteProperty -Name WinRMCert -Value $winRMCert
+                Add-Member -InputObject $newObjWinRM -Type NoteProperty -Name WinRMListening -Value $winRMListening
+
+            $fragWinRM += $newObjWinRM
+            $fragWinRM | Out-File "$($secureReporOutPut)\WinRM.log" -Append
+
+        }
             
 <#<><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><>
                     Misc Registry Settings
@@ -2322,6 +2370,7 @@ else
             $exceptionMessage = $_.Exception.message
             SecureReportError($SecCheck,$exceptionMessage)        
         } 
+
 
 <#<><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><>
                   Legacy Network Protocols
@@ -12820,7 +12869,14 @@ if ($folders -eq "y")
         $descripconstrained = "Constrained Delegation is when a user delegates authority to a service to access specific resources on their behalf. The delegation is limited to a defined set of services or resources."
 
         $descripAdminUnconstrained = "Default settings allow for the delegation of accounts. This implies that an application has the capability to operate on behalf of a user through Kerberos delegation, assume the identity of a user across the entire forest with unconstrained delegation for any service<br><br>When delegation is set up, and in the event of an attacker gaining access to the delegated system or account, there is a risk that they may attempt to mimic an administrator account. This could potentially enable lateral movement or compromise the integrity of the domain."
-"
+
+        $descripWinrm = "Securing WinRM (Windows Remote Management) is crucial to ensure the safety and integrity of remote management in a Windows environment.<br><br>
+        Limit IP Addresses and Subnets - Restrict WinRM access to specific IP addresses or subnets by configuring the listener address. Avoid using the wildcard '*' to bind to all addresses unless necessary.<br><br>
+        Use HTTPS for Transport - Encrypt WinRM communication by using HTTPS instead of HTTP. This adds a layer of security to prevent eavesdropping and man-in-the-middle attacks.<br><br>
+        Restrict Listening Interfaces - If possible, configure WinRM to listen only on specific network interfaces to minimize the attack surface.<br><br>
+        Implement Strong Authentication - Utilize strong authentication mechanisms such as Kerberos or certificate-based authentication for WinRM connections."
+
+
 
     <#<><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><>
                           Colour Mapping
@@ -12848,8 +12904,7 @@ if ($folders -eq "y")
     $colorH4 = "#9f9696"             #Grey
 
     $colorBorders = "#FFF9EC"        #off white
-
-
+    
     $font = "Raleway"
 
     <#<><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><>
@@ -13132,6 +13187,8 @@ if ($folders -eq "y")
     $frag_ApplockerEnforcement = $fragApplockerEnforcement | ConvertTo-Html -As Table -fragment -PreContent "<h2>Applocker Enforcement Rules</h2>"  | Out-String  
     $frag_wdacClixml = $fragwdacClixml | ConvertTo-Html -As Table -fragment -PreContent "<h2>WDAC Enforcement</h2>" -PostContent "<h4>$descripToDo</h4></details>"  | Out-String
     $frag_WDACCIPolicy = $fragWDACCIPolicy | ConvertTo-Html -As Table -fragment -PreContent "<h2>WDAC Policy</h2>" -PostContent "<h4>$descripWDAC</h4></details>"  | Out-String
+    
+    $frag_WinRM = $fragWinRM | ConvertTo-Html -As Table -fragment -PreContent "<h2>WinRM</h2>" -PostContent "<h4>$descripWinrm</h4></details>"  | Out-String
             
     #MS Recommended Secuirty settings (SSLF)
     $frag_WindowsOSVal = $fragWindowsOSVal | ConvertTo-Html -as Table -Fragment -PreContent "<h2>Windows GPO's</h2>" -PostContent "<h4>$descripWindowsOS</h4>" | Out-String
@@ -13195,9 +13252,9 @@ if ($folders -eq "y")
 
 		    <div class="headerTab">
 			    <input type="radio" id="Network" name="headerTabs">
-			    <label for="Network">Legacy Networks, Firewalls</label>
+			    <label for="Network">WinRM, Networks, Firewalls</label>
 			    <div class="contentTab">
-				    <p>$frag_LegNIC $frag_FWProf $frag_FW
+				    <p>$frag_WinRM $frag_LegNIC $frag_FWProf $frag_FW
                     </p>
 			    </div>
 		    </div>
@@ -13711,5 +13768,6 @@ YYMMDD
 240207.1 - Updated URA to include objects that arent preceeded by guid eg added by policy and doesnt resolve to a guid or sid.
 240228.1 - Increase search depth on Registry permissions that allow the user to modify
 240228.2 - Added permission check on Service Reg hive to run as default
+240229.1 - WinRM checks
  
 #>
