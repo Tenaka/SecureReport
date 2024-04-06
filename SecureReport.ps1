@@ -1249,6 +1249,46 @@ else
         }
 
 <#<><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><>
+                    Powershell Version
+<><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><>#>
+    splatVariables
+    $SecCheck = "PowerShell Version"
+    $exceptionMessage="No errors gathered"
+
+    <#
+    $gtPowerShellReg = Get-ChildItem HKLM:\SOFTWARE\Microsoft\PowerShell -Recurse
+    foreach ($PowerShellReg in $gtPowerShellReg)
+        {
+            $rpPowerShellHKLM = $PowerShellReg.name("HKEY_LOCAL_MACHINE","HKLM:")
+
+                foreach($PowerShellPath in $rpPowerShellHKLM)
+                    {
+                        $psVersion2 = (Get-Item $PowerShellPath).getValue("RuntimeVersion") | where {$_ -match "v2"}
+                    }
+        }
+        #>
+     $fragPsVersion2=@()
+     $pcVerLaunch = powershell.exe -version 2 'write-host "Version 2 is installed"' 2>&1
+     [string]$psVertoString = $pcVerLaunch 
+     $psVerResult = $psVertoString.replace("`0",'')
+     if ($psVerResult -match "not installed" )
+         {
+            $newObjPSv2 = New-Object psObject
+            Add-Member -InputObject $newObjPSv2 -Type NoteProperty -Name HotFixID -Value $($psVerResult)
+         }
+    else
+        {
+            $newObjPSv2 = New-Object psObject
+            Add-Member -InputObject $newObjPSv2 -Type NoteProperty -Name HotFixID -Value "Warning .Net Framwwork 2 is install and PowerShell version 2 is accessible Warning"    
+        }
+
+    $fragPsVersion2 += $newObjPSv2
+    $fragPsVersion2 | Out-File "$($secureReporOutPut)\PowerShellVersion.log" -Append 
+
+
+
+
+<#<><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><>
                     Installed Applications
 <><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><>#>
     splatVariables
@@ -1710,6 +1750,96 @@ else
         {
             $exceptionMessage = $_.Exception.message
             SecureReportError($SecCheck,$exceptionMessage)        
+        }
+
+<#<><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><>
+              List PnP Devices that have been Used
+<><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><>#>
+    splatVariables
+    $SecCheck = "Auditing ALL PnP Devices Used by or System"
+    $exceptionMessage="No errors gathered"
+    SecureReportError($SecCheck,$exceptionMessage)  
+    $fragPnPDevices=@()
+
+    #$deviceClass = "DiskDrive","PrintQueue","USB","HIDClass","Mouse","softwareDevice","Monitor","Media","WPN","display","Bluetooth","BioMetric","System"
+
+    $gtPnPdeviceClass = (Get-PnpDevice).class | Sort-Object -Unique
+
+    foreach ($deviceClassItem in $gtPnPdeviceClass)
+        {
+            $classItem = Get-PnpDevice -Class $deviceClassItem | Select-Object * 
+
+            foreach ($device in $classItem)
+                {
+                    $pnpFriendlyName = $device.FriendlyName
+                    $instance = $device.InstanceId
+
+                    $pnpDriveDesc = Get-PnpDeviceProperty -InstanceId $instance -keyname DEVPKEY_Device_DriverDesc
+                    $pnpDeviceClass = Get-PnpDeviceProperty -InstanceId $instance -keyname DEVPKEY_Device_Class
+                    $pnpClassGuid = Get-PnpDeviceProperty -InstanceId $instance -keyname DEVPKEY_Device_ClassGuid 
+                    $pnpManufacturer = Get-PnpDeviceProperty -InstanceId $instance -keyname DEVPKEY_Device_Manufacturer
+                    $pnpKeyInstallDate = Get-PnpDeviceProperty -InstanceId $instance -keyname DEVPKEY_Device_FirstInstallDate
+                    $pnpLastUsed = Get-PnpDeviceProperty -InstanceId $instance -keyname DEVPKEY_Device_LastArrivalDate
+                    $pnpDriverDate = Get-PnpDeviceProperty -InstanceId $instance -keyname DEVPKEY_Device_DriverDate
+                    $pnpDriverVer = Get-PnpDeviceProperty -InstanceId $instance -keyname DEVPKEY_Device_DriverVersion
+
+                    $newObjPnPDevices = New-Object -TypeName PSObject
+                        Add-Member -InputObject $newObjPnPDevices -Type NoteProperty -Name DeviceName -Value $pnpFriendlyName
+                        #Add-Member -InputObject $newObjPnPDevices -Type NoteProperty -Name DriverDescription -Value ($pnpDriveDesc).Data
+                        Add-Member -InputObject $newObjPnPDevices -Type NoteProperty -Name DeviceClass -Value ($pnpDeviceClass).Data
+                        Add-Member -InputObject $newObjPnPDevices -Type NoteProperty -Name DeviceGUID -Value ($pnpClassGuid).Data
+                        Add-Member -InputObject $newObjPnPDevices -Type NoteProperty -Name DeviceManufacturer -Value ($pnpManufacturer).Data
+                        Add-Member -InputObject $newObjPnPDevices -Type NoteProperty -Name DeviceInstallDate -Value ($pnpKeyInstallDate).Data
+                        Add-Member -InputObject $newObjPnPDevices -Type NoteProperty -Name DeviceLastUsed -Value ($pnpLastUsed).Data
+                        Add-Member -InputObject $newObjPnPDevices -Type NoteProperty -Name DriverDate -Value ($pnpDriverDate).Data
+                        Add-Member -InputObject $newObjPnPDevices -Type NoteProperty -Name DriverVersion -Value ($pnpDriverVer).Data
+                    $fragPnPDevices += $newObjPnPDevices 
+                    $fragPnPDevices | Out-File "$($secureReporOutPut)\PnPDevices.log" -Append
+                }
+        }
+
+<#<><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><>
+              List known USB Disk Drives
+<><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><>#>
+    splatVariables
+    $SecCheck = "Auditing USB Disk and Pen Devices Used by the System"
+    $exceptionMessage="No errors gathered"
+    SecureReportError($SecCheck,$exceptionMessage)  
+    $fragUSBDevices=@()
+
+    $deviceClass = "DiskDrive","WPD"
+    
+    foreach ($deviceClassItem in $deviceClass)
+        {
+            $classItem = Get-PnpDevice -Class $deviceClassItem | Select-Object * 
+
+            foreach ($device in $classItem)
+                {
+                    $pnpFriendlyName = $device.FriendlyName
+                    $instance = $device.InstanceId
+
+                    $pnpDriveDesc = Get-PnpDeviceProperty -InstanceId $instance -keyname DEVPKEY_Device_DriverDesc
+                    $pnpDeviceClass = Get-PnpDeviceProperty -InstanceId $instance -keyname DEVPKEY_Device_Class
+                    $pnpClassGuid = Get-PnpDeviceProperty -InstanceId $instance -keyname DEVPKEY_Device_ClassGuid 
+                    $pnpManufacturer = Get-PnpDeviceProperty -InstanceId $instance -keyname DEVPKEY_Device_Manufacturer
+                    $pnpKeyInstallDate = Get-PnpDeviceProperty -InstanceId $instance -keyname DEVPKEY_Device_FirstInstallDate
+                    $pnpLastUsed = Get-PnpDeviceProperty -InstanceId $instance -keyname DEVPKEY_Device_LastArrivalDate
+                    $pnpDriverDate = Get-PnpDeviceProperty -InstanceId $instance -keyname DEVPKEY_Device_DriverDate
+                    $pnpDriverVer = Get-PnpDeviceProperty -InstanceId $instance -keyname DEVPKEY_Device_DriverVersion
+
+                    $newObjUSBDevices = New-Object -TypeName PSObject
+                        Add-Member -InputObject $newObjUSBDevices -Type NoteProperty -Name DeviceName -Value $pnpFriendlyName
+                        #Add-Member -InputObject $newObjUSBDevices -Type NoteProperty -Name DriverDescription -Value ($pnpDriveDesc).Data
+                        Add-Member -InputObject $newObjUSBDevices -Type NoteProperty -Name DeviceClass -Value ($pnpDeviceClass).Data
+                        Add-Member -InputObject $newObjUSBDevices -Type NoteProperty -Name DeviceGUID -Value ($pnpClassGuid).Data
+                        Add-Member -InputObject $newObjUSBDevices -Type NoteProperty -Name DeviceManufacturer -Value ($pnpManufacturer).Data
+                        Add-Member -InputObject $newObjUSBDevices -Type NoteProperty -Name DeviceInstallDate -Value ($pnpKeyInstallDate).Data
+                        Add-Member -InputObject $newObjUSBDevices -Type NoteProperty -Name DeviceLastUsed -Value ($pnpLastUsed).Data
+                        Add-Member -InputObject $newObjUSBDevices -Type NoteProperty -Name DriverDate -Value ($pnpDriverDate).Data
+                        Add-Member -InputObject $newObjUSBDevices -Type NoteProperty -Name DriverVersion -Value ($pnpDriverVer).Data
+                    $fragUSBDevices += $newObjUSBDevices 
+                    $fragUSBDevices | Out-File "$($secureReporOutPut)\USBDevices.log" -Append
+                }
         }
 
 <#<><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><>
@@ -4188,31 +4318,37 @@ if ($folders -eq "y")
     
                 Foreach ($regPath in $RegList)
                     {
+                        $regExe=@()
                         try
                             {
-                                $acl = Get-Acl $regPath -erroraction Stop
-                                $acc = $acl.AccessToString
-
-                                Foreach ($ac in $acc)
+                                $regExe = Get-ItemProperty $regPath -ErrorAction Stop | where {$_ -like "*.exe*" -or $_ -like "*.dll*"}
+                                
+                                if ($regExe -ne $null)
                                     {
-                                        if ($ac | Select-String -SimpleMatch "BUILTIN\Users Allow  FullControl")
-                                            {
-                                                $regPath | Out-File $rpath -Append
-                                                #Write-Host $ac -ForegroundColor DarkCyan
-                                            } 
+                                        $acl = Get-Acl $regPath -erroraction Stop
+                                        $acc = $acl.AccessToString
 
-                                        if ($ac | Select-String -SimpleMatch "NT AUTHORITY\Authenticated Users Allow  FullControl")
+                                        Foreach ($ac in $acc)
                                             {
-                                                $regPath | Out-File $rpath -Append
-                                                #Write-Host $ac -ForegroundColor DarkCyan
-                                            }
+                                                if ($ac | Select-String -SimpleMatch "BUILTIN\Users Allow  FullControl")
+                                                    {
+                                                        $regPath | Out-File $rpath -Append
+                                                        #Write-Host $ac -ForegroundColor DarkCyan
+                                                    } 
 
-                                        if ($ac | Select-String -SimpleMatch "Everyone Allow  FullControl")
-                                            {
-                                                $regPath | Out-File $rpath -Append
-                                                #Write-Host $ac -ForegroundColor DarkCyan
+                                                if ($ac | Select-String -SimpleMatch "NT AUTHORITY\Authenticated Users Allow  FullControl")
+                                                    {
+                                                        $regPath | Out-File $rpath -Append
+                                                        #Write-Host $ac -ForegroundColor DarkCyan
+                                                    }
+
+                                                if ($ac | Select-String -SimpleMatch "Everyone Allow  FullControl")
+                                                    {
+                                                        $regPath | Out-File $rpath -Append
+                                                        #Write-Host $ac -ForegroundColor DarkCyan
+                                                    }
                                             }
-                                    }
+                                        }      
                                 }
                             catch
                                 {
@@ -12419,6 +12555,14 @@ if ($folders -eq "y")
                $fragSummary += $newObjSummary
             }
 
+       if ($fragPsVersion2 -like "*warning*")
+            {
+                $newObjSummary = New-Object psObject
+                     Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Vulnerability -Value '<a href="#PowerShellV2">PowerShell Version 2 Installed</a>'
+                     Add-Member -InputObject $newObjSummary -Type NoteProperty -Name Risk -Value "High Risk"
+               $fragSummary += $newObjSummary
+            }
+
        if ($fragInstaApps -like "*warning*")
             {
                 $newObjSummary = New-Object psObject
@@ -12817,7 +12961,8 @@ if ($folders -eq "y")
         $descripUnquoted = "The Unquoted paths vulnerability is when a Windows Service's 'Path to Executable' contains spaces and not wrapped in double-quotes providing a route to System. <br> <br>Further information can be found @ <a href=`"https://www.tenaka.net/unquotedpaths`" class=`"class1`">UnQuoted Paths</a><br>"
         $descripProcPw = "Processes that contain credentials to authenticate and Access applications. Launching Task Manager, Details and add 'Command line' to the view."
         $descripLegacyNet = "LLMNR and other legacy network protocols can be used to steal password hashes. <br> <br>Further information can be found @ <a href=`"https://www.tenaka.net/responder`" class=`"class1`">Responder</a><br>"
-        $descripRegPer ="Weak Registry permissions allowing users to change the path to launch malicious software.<br><br>Further information can be found @ <a href=`"https://www.tenaka.net/unquotedpaths`" class=`"class1`">UnQuoted Paths</a>"
+        $descripRegSvc ="Weak Registry permissions for Windows Services allow users to change the path to an EXE and launch malicious software under the context of the service, likley to be the System account.<br><br>Further information can be found @ <a href=`"https://www.tenaka.net/unquotedpaths`" class=`"class1`">UnQuoted Paths</a>"
+        $descripRegPer ="Weak Registry permissions allows a user to change the path to an EXE or DLL and launch malicious software.<br><br>Any positive result means that a Registry permission allows both a User to update the path and the path includes an EXE or DLL in the HKLM:\Software hive<br><br>Further information can be found @ <a href=`"https://www.tenaka.net/unquotedpaths`" class=`"class1`">UnQuoted Paths</a>"
         $descripSysFold = "Default System Folders that allow a User the Write permissions. These can be abused by creating content in some of the allowable default locations. Prevent by applying Execution controls eg Applocker.<br> <br> Further information can be found @ <a href=`"https://www.tenaka.net/unquotedpaths`" class=`"class1`">UnQuoted Paths</a><br>"
         $descripCreateSysFold = "Default System Folders that allows a User the CreateFile permissions. These can be abused by creating content in some of the allowable default locations. Prevent by applying Execution controls eg Applocker.<br> <br>Further information can be found @ <a href=`"https://www.tenaka.net/unquotedpaths`" class=`"class1`">UnQuoted Paths</a><br>"
         $descripNonFold = "A vulnerability exists when enterprise software has been installed on the root of C:\. The default permissions allow a user to replace approved software binaries with malicious binaries. <br> <br>Further information can be found @ <a href=`"https://www.tenaka.net/unquotedpaths`" class=`"class1`">UnQuoted Paths</a><br>"
@@ -12876,7 +13021,8 @@ if ($folders -eq "y")
         Restrict Listening Interfaces - If possible, configure WinRM to listen only on specific network interfaces to minimize the attack surface.<br><br>
         Implement Strong Authentication - Utilize strong authentication mechanisms such as Kerberos or certificate-based authentication for WinRM connections."
 
-
+        $descripUSBDisks = "Knowing the history of USB drives plugged into Windows aids security by tracing potential security breaches or unauthorized access. It allows administrators to monitor for suspicious activities, track the introduction of malware, and enforce authorization policies. Understanding past USB connections helps identify patterns of risky behavior and strengthens security protocols, enhancing overall system integrity and mitigating threats effectively."
+        $descripPowerShellV2 = "PowerShell version 2 can be abused to bypass PowerShell security and logging features due to its limited security controls and lack of comprehensive logging capabilities compared to later versions. Attackers can exploit vulnerabilities in PowerShell v2 to execute malicious scripts without triggering security alerts or leaving traces in logs. <br><br>Additionally, PowerShell v2 lacks some of the advanced security features introduced in later versions, such as script block logging and transcription, making it easier for attackers to evade detection. By leveraging these limitations, attackers can execute unauthorized commands, evade detection, and maintain persistence within a compromised system."
 
     <#<><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><>
                           Colour Mapping
@@ -13137,7 +13283,7 @@ if ($folders -eq "y")
     $frag_UnQu = $fragUnQuoted | ConvertTo-Html -as Table -Fragment -PreContent "<h2>UnQuoted Paths</h2>" -PostContent "<h4>$DescripUnquoted</h4>" | Out-String
     $frag_LegNIC = $fragLegNIC | ConvertTo-Html -as Table -Fragment -PreContent "<h2>Legacy Network</h2>" -PostContent "<h4>$DescripLegacyNet</h4>" | Out-String
        
-    $frag_RegSvc = $fragRegSvc | ConvertTo-Html -as Table -Fragment -PreContent "<h2>Services Reg Permissions</h2>" -PostContent "<h4>$descripRegPer</h4>" | Out-String
+    $frag_RegSvc = $fragRegSvc | ConvertTo-Html -as Table -Fragment -PreContent "<h2>Services Reg Permissions</h2>" -PostContent "<h4>$descripRegSvc</h4>" | Out-String
         $frag_RegSvcN = $frag_RegSvc.Replace("<tr><th>*</th></tr>","<tr><th>Services Reg Permissions</th></tr>")
     
     $frag_SysRegPerms = $fragReg | ConvertTo-Html -as Table -Fragment -PreContent "<h2>Registry Permissions</h2>" -PostContent "<h4>$descripRegPer</h4>" | Out-String
@@ -13189,7 +13335,12 @@ if ($folders -eq "y")
     $frag_WDACCIPolicy = $fragWDACCIPolicy | ConvertTo-Html -As Table -fragment -PreContent "<h2>WDAC Policy</h2>" -PostContent "<h4>$descripWDAC</h4></details>"  | Out-String
     
     $frag_WinRM = $fragWinRM | ConvertTo-Html -As Table -fragment -PreContent "<h2>WinRM</h2>" -PostContent "<h4>$descripWinrm</h4></details>"  | Out-String
-            
+    $frag_PsVersion2 = $fragPsVersion2 | ConvertTo-Html -As Table -fragment -PreContent "<h2>PowerShell Ver 2</h2>" -PostContent "<h4>$descripPowerShellV2</h4></details>"  | Out-String    
+        $frag_PsVersion2N = $frag_PsVersion2.Replace("<tr><th>*</th></tr>","<tr><th>PowerShell Version</th></tr>")
+
+    $frag_PnPDevices = $fragPnPDevices | ConvertTo-Html -As Table -fragment -PreContent "<h2>All Known Devices</h2>" -PostContent "<h4>$descripToDo</h4></details>"  | Out-String
+    $frag_USBDevices = $fragUSBDevices | ConvertTo-Html -As Table -fragment -PreContent "<h2>Known Disks</h2>" -PostContent "<h4>$descripUSBDisks</h4></details>"  | Out-String       
+    
     #MS Recommended Secuirty settings (SSLF)
     $frag_WindowsOSVal = $fragWindowsOSVal | ConvertTo-Html -as Table -Fragment -PreContent "<h2>Windows GPO's</h2>" -PostContent "<h4>$descripWindowsOS</h4>" | Out-String
     $frag_EdgeVal = $fragEdgeVal | ConvertTo-Html -as Table -Fragment -PreContent "<h2>MS Edge GPO's</h2>" | Out-String
@@ -13249,7 +13400,15 @@ if ($folders -eq "y")
 			    </div>
 		    </div>
 
-
+		    <div class="headerTab">
+			    <input type="radio" id="Hardware" name="headerTabs">
+			    <label for="Hardware">Device History</label>
+			    <div class="contentTab">
+				    <p>$frag_USBDevices $frag_PnPDevices
+                    </p>
+			    </div>
+		    </div>
+ 
 		    <div class="headerTab">
 			    <input type="radio" id="Network" name="headerTabs">
 			    <label for="Network">WinRM, Networks, Firewalls</label>
@@ -13283,7 +13442,7 @@ if ($folders -eq "y")
 			    <input type="radio" id="URA" name="headerTabs">
 			    <label for="URA">URA & Security Options</label>
 			    <div class="contentTab">
-				    <p>$frag_SecOptions  $frag_URA $frag_whoamiPriv 
+				    <p>$frag_SecOptions $frag_URA $frag_whoamiPriv 
                     </p>
 			    </div>
 		    </div>
@@ -13313,7 +13472,7 @@ if ($folders -eq "y")
 			    <input type="radio" id="Software" name="headerTabs">
 			    <label for="Software">Software and Features</label>
 			    <div class="contentTab">
-				    <p>$frag_PatchversionN $frag_HotFix $frag_InstaApps $frag_WinFeature $frag_Appx $frag_InstaApps16 $frag_SrvWinFeature
+				    <p>$frag_PsVersion2N $frag_PatchversionN $frag_HotFix $frag_InstaApps $frag_WinFeature $frag_Appx $frag_InstaApps16 $frag_SrvWinFeature
                     </p>
 			    </div>
 		    </div>
@@ -13366,7 +13525,6 @@ if ($folders -eq "y")
                     </p>
 			    </div>
 		    </div>
-
 
 
 		    <div class="headerTab">
@@ -13765,9 +13923,12 @@ YYMMDD
 240112.1 - Updated URA for accounts that aren't listed by SID but by name as these as these werent reported correctly.
 240112.2 - Updated SQL filter to due to a lack of permissions or access.
 240115.1 - Updated URA to include objects that can no longer be resolver eg the group has been deleted but referenced by GPO
-240207.1 - Updated URA to include objects that arent preceeded by guid eg added by policy and doesnt resolve to a guid or sid.
+240207.1 - Updated URA to include objects that arent preceded by guid eg added by policy and doesnt resolve to a guid or sid.
 240228.1 - Increase search depth on Registry permissions that allow the user to modify
 240228.2 - Added permission check on Service Reg hive to run as default
 240229.1 - WinRM checks
+240327.1 - Reg audit for weak permissions returned too much noise, added addtional check to only look for weak permissions where the reg hive contains an exe or dll
+240402.1 - Audit USB Devices that have been inserted into system
+240406.1 - Check to see if PowerShell version 2 or .net framework 2 is installed
  
 #>
