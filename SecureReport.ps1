@@ -332,7 +332,7 @@ else
         }
     
 <#<><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><>
-               Audit Functions and Tests
+          Declare Variables and what tests to execute
 <><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><>#>
 
     $psver4 = $psversiontable.PSVersion 
@@ -350,13 +350,26 @@ else
         Write-Warning "READ ME - To audit for Dll Hijacking vulnerabilities applications and services must be active, launch programs before continuing." 
         Write-Host " "
 
+        #Run checks on Folder and Registry permissions
         $folders = Read-Host "Long running audit - Do you want to audit Files, Folders and Registry for permissions issues....type `"Y`" to audit, any other key for no"
 
         if ($folders -eq "Y") {$depth = Read-Host "What depth do you wish the folders to be auditied, the higher the number the slower the audit, the default is 2, recommended is 4"}
         write-host " "
+
+        #Check for embedded passwords within files
         $embeddedpw = Read-Host "Some systems whilst retrieving passwords from within files crash PowerShell....type `"Y`" to audit, any other key for no"
         write-host " "
+
+        #Check for files not digitally signed
         $authenticode = Read-Host "Long running audit - Do you want to check that digitally signed files are valid with a trusted hash....type `"Y`" to audit, any other key for no"
+
+        #Audit for all PnP Devices this system has encountered including all embedded devices
+        #Default is to run this audit, but may not be required and can be a long running process, will leave as user choice but without yet another prompt
+        $pnpAllDevices = "Y"
+
+<#<><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><>
+                        Windows Version
+<><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><>#>
 
         #Summary Frag
         $fragSummary=@()
@@ -1755,47 +1768,48 @@ else
 <#<><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><>
               List PnP Devices that have been Used
 <><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><>#>
-    splatVariables
-    $SecCheck = "Auditing ALL PnP Devices Used by or System"
-    $exceptionMessage="No errors gathered"
-    SecureReportError($SecCheck,$exceptionMessage)  
-    $fragPnPDevices=@()
+#User choice to run this or not, var declared at the top of script
+if ($pnpAllDevices -eq "y")
+    {
+        splatVariables
+        $SecCheck = "Auditing ALL PnP Devices Used by or System"
+        $exceptionMessage="No errors gathered"
+        SecureReportError($SecCheck,$exceptionMessage)  
+        $fragPnPDevices=@()
+        $gtPnPdeviceClass = (Get-PnpDevice).class | Sort-Object -Unique
 
-    #$deviceClass = "DiskDrive","PrintQueue","USB","HIDClass","Mouse","softwareDevice","Monitor","Media","WPN","display","Bluetooth","BioMetric","System"
+        foreach ($deviceClassItem in $gtPnPdeviceClass)
+            {
+                $classItem = Get-PnpDevice -Class $deviceClassItem | Select-Object * 
 
-    $gtPnPdeviceClass = (Get-PnpDevice).class | Sort-Object -Unique
+                foreach ($device in $classItem)
+                    {
+                        $pnpFriendlyName = $device.FriendlyName
+                        $instance = $device.InstanceId
 
-    foreach ($deviceClassItem in $gtPnPdeviceClass)
-        {
-            $classItem = Get-PnpDevice -Class $deviceClassItem | Select-Object * 
+                        $pnpDriveDesc = Get-PnpDeviceProperty -InstanceId $instance -keyname DEVPKEY_Device_DriverDesc
+                        $pnpDeviceClass = Get-PnpDeviceProperty -InstanceId $instance -keyname DEVPKEY_Device_Class
+                        $pnpClassGuid = Get-PnpDeviceProperty -InstanceId $instance -keyname DEVPKEY_Device_ClassGuid 
+                        $pnpManufacturer = Get-PnpDeviceProperty -InstanceId $instance -keyname DEVPKEY_Device_Manufacturer
+                        $pnpKeyInstallDate = Get-PnpDeviceProperty -InstanceId $instance -keyname DEVPKEY_Device_FirstInstallDate
+                        $pnpLastUsed = Get-PnpDeviceProperty -InstanceId $instance -keyname DEVPKEY_Device_LastArrivalDate
+                        $pnpDriverDate = Get-PnpDeviceProperty -InstanceId $instance -keyname DEVPKEY_Device_DriverDate
+                        $pnpDriverVer = Get-PnpDeviceProperty -InstanceId $instance -keyname DEVPKEY_Device_DriverVersion
 
-            foreach ($device in $classItem)
-                {
-                    $pnpFriendlyName = $device.FriendlyName
-                    $instance = $device.InstanceId
-
-                    $pnpDriveDesc = Get-PnpDeviceProperty -InstanceId $instance -keyname DEVPKEY_Device_DriverDesc
-                    $pnpDeviceClass = Get-PnpDeviceProperty -InstanceId $instance -keyname DEVPKEY_Device_Class
-                    $pnpClassGuid = Get-PnpDeviceProperty -InstanceId $instance -keyname DEVPKEY_Device_ClassGuid 
-                    $pnpManufacturer = Get-PnpDeviceProperty -InstanceId $instance -keyname DEVPKEY_Device_Manufacturer
-                    $pnpKeyInstallDate = Get-PnpDeviceProperty -InstanceId $instance -keyname DEVPKEY_Device_FirstInstallDate
-                    $pnpLastUsed = Get-PnpDeviceProperty -InstanceId $instance -keyname DEVPKEY_Device_LastArrivalDate
-                    $pnpDriverDate = Get-PnpDeviceProperty -InstanceId $instance -keyname DEVPKEY_Device_DriverDate
-                    $pnpDriverVer = Get-PnpDeviceProperty -InstanceId $instance -keyname DEVPKEY_Device_DriverVersion
-
-                    $newObjPnPDevices = New-Object -TypeName PSObject
-                        Add-Member -InputObject $newObjPnPDevices -Type NoteProperty -Name DeviceName -Value $pnpFriendlyName
-                        #Add-Member -InputObject $newObjPnPDevices -Type NoteProperty -Name DriverDescription -Value ($pnpDriveDesc).Data
-                        Add-Member -InputObject $newObjPnPDevices -Type NoteProperty -Name DeviceClass -Value ($pnpDeviceClass).Data
-                        Add-Member -InputObject $newObjPnPDevices -Type NoteProperty -Name DeviceGUID -Value ($pnpClassGuid).Data
-                        Add-Member -InputObject $newObjPnPDevices -Type NoteProperty -Name DeviceManufacturer -Value ($pnpManufacturer).Data
-                        Add-Member -InputObject $newObjPnPDevices -Type NoteProperty -Name DeviceInstallDate -Value ($pnpKeyInstallDate).Data
-                        Add-Member -InputObject $newObjPnPDevices -Type NoteProperty -Name DeviceLastUsed -Value ($pnpLastUsed).Data
-                        Add-Member -InputObject $newObjPnPDevices -Type NoteProperty -Name DriverDate -Value ($pnpDriverDate).Data
-                        Add-Member -InputObject $newObjPnPDevices -Type NoteProperty -Name DriverVersion -Value ($pnpDriverVer).Data
-                    $fragPnPDevices += $newObjPnPDevices 
-                    $fragPnPDevices | Out-File "$($secureReporOutPut)\PnPDevices.log" -Append
-                }
+                        $newObjPnPDevices = New-Object -TypeName PSObject
+                            Add-Member -InputObject $newObjPnPDevices -Type NoteProperty -Name DeviceName -Value $pnpFriendlyName
+                            #Add-Member -InputObject $newObjPnPDevices -Type NoteProperty -Name DriverDescription -Value ($pnpDriveDesc).Data
+                            Add-Member -InputObject $newObjPnPDevices -Type NoteProperty -Name DeviceClass -Value ($pnpDeviceClass).Data
+                            Add-Member -InputObject $newObjPnPDevices -Type NoteProperty -Name DeviceGUID -Value ($pnpClassGuid).Data
+                            Add-Member -InputObject $newObjPnPDevices -Type NoteProperty -Name DeviceManufacturer -Value ($pnpManufacturer).Data
+                            Add-Member -InputObject $newObjPnPDevices -Type NoteProperty -Name DeviceInstallDate -Value ($pnpKeyInstallDate).Data
+                            Add-Member -InputObject $newObjPnPDevices -Type NoteProperty -Name DeviceLastUsed -Value ($pnpLastUsed).Data
+                            Add-Member -InputObject $newObjPnPDevices -Type NoteProperty -Name DriverDate -Value ($pnpDriverDate).Data
+                            Add-Member -InputObject $newObjPnPDevices -Type NoteProperty -Name DriverVersion -Value ($pnpDriverVer).Data
+                        $fragPnPDevices += $newObjPnPDevices 
+                        $fragPnPDevices | Out-File "$($secureReporOutPut)\PnPDevices.log" -Append
+                    }
+            }
         }
 
 <#<><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><>
@@ -13930,5 +13944,6 @@ YYMMDD
 240327.1 - Reg audit for weak permissions returned too much noise, added addtional check to only look for weak permissions where the reg hive contains an exe or dll
 240402.1 - Audit USB Devices that have been inserted into system
 240406.1 - Check to see if PowerShell version 2 or .net framework 2 is installed
+240409.1 - PnP all Device check has an option to skip as it can take a while to run, the default is set to Y to run, change $pnpAllDevices = "Y" to anything else to disable check 
  
 #>
