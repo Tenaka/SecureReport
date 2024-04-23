@@ -634,8 +634,11 @@ else
     $SchAWarn = "Warning " + $HostDomain + "Schema Admins" + "  Warning"
 
     #WHOAMI /User /FO CSV /NH > C:\SecureReport\output\DomainUser\User.csv
-    WHOAMI /Groups /FO CSV /NH > "$($SecureReportConfig)\Groups.csv"
-    WHOAMI /Priv /FO CSV /NH > "$($SecureReportConfig)\Priv.csv"
+    #WHOAMI /Groups /FO CSV /NH > "$($SecureReportConfig)\Groups.csv"
+    #WHOAMI /Priv /FO CSV /NH > "$($SecureReportConfig)\Priv.csv"
+
+    WHOAMI /Groups /FO CSV > "$($SecureReportConfig)\Groups.csv"
+    WHOAMI /Priv /FO CSV > "$($SecureReportConfig)\Priv.csv"
 
         try #parse Groups and tidy plus warn if the current user has Pri Groups
             {
@@ -13443,20 +13446,19 @@ if ($folders -eq "y")
 		    </div>
 
 		    <div class="headerTab">
-			    <input type="radio" id="DomainSPN" name="headerTabs">
-			    <label for="DomainSPN">Domain, Kerberos, Delegation</label>
-			    <div class="contentTab">
-				    <p>$frag_DCListN $frag_FSMO $frag_PreAuth $frag_NeverExpires $frag_ListUserSPNs $frag_ListComputerSPNs $frag_UnConstrained $frag_Constrained $frag_Trusted4Delegate $frag_Allowed2Delegate 
-                    </p>
-			    </div>
-		    </div>
-
-
-		    <div class="headerTab">
 			    <input type="radio" id="URA" name="headerTabs">
 			    <label for="URA">URA & Security Options</label>
 			    <div class="contentTab">
 				    <p>$frag_SecOptions $frag_URA $frag_whoamiPriv 
+                    </p>
+			    </div>
+		    </div>
+
+		    <div class="headerTab">
+			    <input type="radio" id="DomainSPN" name="headerTabs">
+			    <label for="DomainSPN">Domain, Kerberos, Delegation</label>
+			    <div class="contentTab">
+				    <p>$frag_DCListN $frag_FSMO $frag_PreAuth $frag_NeverExpires $frag_ListUserSPNs $frag_ListComputerSPNs $frag_UnConstrained $frag_Constrained $frag_Trusted4Delegate $frag_Allowed2Delegate 
                     </p>
 			    </div>
 		    </div>
