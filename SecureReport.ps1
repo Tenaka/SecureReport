@@ -1574,7 +1574,7 @@ else
             Else  #server and Defender cant be detected
                 {
                     $newObjAVStatus = New-Object -TypeName PSObject
-                        Add-Member -InputObject $newObjAVStatus -Type NoteProperty -Name AVName -Value "Warning Antivirus cant be detected, assume the worst and its not installed warning"
+                        Add-Member -InputObject $newObjAVStatus -Type NoteProperty -Name AVName -Value "Warning Antivirus cant be detected, assume the worst, its not installed warning"
                     $FragAVStatus += $newObjAVStatus
                     $FragAVStatus | Out-File "$($secureReporOutPut)\Antivirus.log" -Append 
                 }
@@ -1587,7 +1587,7 @@ else
             $newObjAVStatus=@()
             $FragAVStatus=@()
             $newObjAVStatus = New-Object -TypeName PSObject
-                Add-Member -InputObject $newObjAVStatus -Type NoteProperty -Name AVName -Value "Warning Antivirus cant be detected, assume the worst and its not installed warning"
+                Add-Member -InputObject $newObjAVStatus -Type NoteProperty -Name AVName -Value "Warning Antivirus cant be detected, assume the worst, its not installed warning"
             $FragAVStatus += $newObjAVStatus       
         }
 
@@ -13252,7 +13252,7 @@ if ($folders -eq "y")
         $frag_DCListN = $frag_DCList.replace("<th>*</th>","<th>List of Domain Controllers</th>")
 
     $frag_FSMO = $fragFSMO | ConvertTo-Html -As Table -fragment -PreContent "<h2>FSMO Roles</h2>" | Out-String 
-    $frag_DomainGrps = $fragDomainGrps | ConvertTo-Html -As Table -fragment -PreContent "<h2>Privilege Groups</h2>" -PostContent "<h4>$descripDomainPrivsGps</h4>" | Out-String 
+    $frag_DomainGrps = $fragDomainGrps | ConvertTo-Html -As Table -fragment -PreContent "<h2>Domain Priv Grps</h2>" -PostContent "<h4>$descripDomainPrivsGps</h4>" | Out-String 
     $frag_PreAuth = $fragPreAuth | ConvertTo-Html -as Table -Fragment -PreContent "<h2>Pre-Authenticate</h2>" -PostContent "<h4>$descripPreAuth</h4>" | Out-String
     $frag_NeverExpires = $fragNeverExpires | ConvertTo-Html -as Table -Fragment -PreContent "<h2>Password Never Expires</h2>"  | Out-String
     $frag_ListUserSPNs = $fragListUserSPNs | ConvertTo-Html -as Table -Fragment -PreContent "<h2>List SPNs</h2>"  | Out-String
@@ -13440,7 +13440,7 @@ if ($folders -eq "y")
 			    <input type="radio" id="DomainInfo" name="headerTabs">
 			    <label for="DomainInfo">Users & Groups</label>
 			    <div class="contentTab">
-				    <p>$frag_AccountDetails $frag_PassPol $frag_whoamiGroups $frag_DomainGrps $frag_GroupDetails  
+				    <p>$frag_AccountDetails $frag_PassPol $frag_whoamiGroups $frag_GroupDetails  
                     </p>
 			    </div>
 		    </div>
@@ -13458,7 +13458,7 @@ if ($folders -eq "y")
 			    <input type="radio" id="DomainSPN" name="headerTabs">
 			    <label for="DomainSPN">Domain, Kerberos, Delegation</label>
 			    <div class="contentTab">
-				    <p>$frag_DCListN $frag_FSMO $frag_PreAuth $frag_NeverExpires $frag_ListUserSPNs $frag_ListComputerSPNs $frag_UnConstrained $frag_Constrained $frag_Trusted4Delegate $frag_Allowed2Delegate 
+				    <p>$frag_DCListN $frag_FSMO $frag_DomainGrps $frag_PreAuth $frag_NeverExpires $frag_ListUserSPNs $frag_ListComputerSPNs $frag_UnConstrained $frag_Constrained $frag_Trusted4Delegate $frag_Allowed2Delegate 
                     </p>
 			    </div>
 		    </div>
