@@ -351,21 +351,43 @@ else
         Write-Host " "
 
         #Run checks on Folder and Registry permissions
-        $folders = Read-Host "Long running audit - Do you want to audit Files, Folders and Registry for permissions issues....type `"Y`" to audit, any other key for no"
-
-        if ($folders -eq "Y") {$depth = Read-Host "What depth do you wish the folders to be auditied, the higher the number the slower the audit, the default is 2, recommended is 4"}
+        Write-Host -NoNewline "Long running audit: " -ForegroundColor Red -BackgroundColor Black
+        Write-Host -NoNewline "Files, Folders, DLL and Registry for permissions issues" -ForegroundColor Yellow -BackgroundColor Black
+        Write-Host -NoNewline  "....type `"Y`" to audit, any other key for no    " -ForegroundColor Yellow -BackgroundColor Black
         write-host " "
+        $folders = Read-Host
 
-        #Check for embedded passwords within files
-        $embeddedpw = Read-Host "Some systems whilst retrieving passwords from within files crash PowerShell....type `"Y`" to audit, any other key for no"
+        if ($folders -eq "Y") 
+            {
+                Write-Host "What depth do you wish the folders to be auditied, the higher the number the slower the audit, the default is 2, recommended is 4"  -ForegroundColor Yellow -BackgroundColor Black
+                $depth = Read-Host 
+            }
         write-host " "
 
         #Check for files not digitally signed
-        $authenticode = Read-Host "Long running audit - Do you want to check that digitally signed files are valid with a trusted hash....type `"Y`" to audit, any other key for no"
+        Write-Host -NoNewline "Long running audit: " -ForegroundColor Red -BackgroundColor Black
+        Write-Host -NoNewline "Check digitally signed files are valid with a trusted hash" -ForegroundColor Yellow -BackgroundColor Black
+        Write-Host -NoNewline "....type `"Y`" to audit, any other key for no" -ForegroundColor Yellow -BackgroundColor Black
+        write-host " "
+        $authenticode = Read-Host 
+        write-host " "
 
         #Audit for all PnP Devices this system has encountered including all embedded devices
         #Default is to run this audit, but may not be required and can be a long running process, will leave as user choice but without yet another prompt
-        $pnpAllDevices = "Y"
+        Write-Host -NoNewline "Long running audit: " -ForegroundColor Red -BackgroundColor Black
+        Write-Host -NoNewline "Retrieve the history of ALL USB devices" -ForegroundColor Yellow -BackgroundColor Black
+        Write-Host -NoNewline "....type `"Y`" to audit, any other key for no" -ForegroundColor Yellow -BackgroundColor Black
+        write-host " "
+        $pnpAllDevices = Read-Host 
+        write-host " "
+
+        #Check for embedded passwords within files
+        Write-Host -NoNewline "Potential PS Crash: " -ForegroundColor Red -BackgroundColor Black
+        Write-Host -NoNewline "Retrieving embedded passwords can crash PowerShell" -ForegroundColor Yellow -BackgroundColor Black
+        Write-Host -NoNewline "....type `"Y`" to audit, any other key for no" -ForegroundColor Yellow -BackgroundColor Black
+        write-host " "
+        $embeddedpw = Read-Host 
+        write-host " "
 
 <#<><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><>
                         Windows Version
@@ -1828,8 +1850,11 @@ if ($pnpAllDevices -eq "y")
     
     foreach ($deviceClassItem in $deviceClass)
         {
-            $classItem = Get-PnpDevice -Class $deviceClassItem | Select-Object * 
-
+            try
+                {
+                    $classItem = Get-PnpDevice -Class $deviceClassItem -erroraction stop | Select-Object * 
+                }catch{}
+                
             foreach ($device in $classItem)
                 {
                     $pnpFriendlyName = $device.FriendlyName
@@ -1902,6 +1927,43 @@ if ($pnpAllDevices -eq "y")
             $exceptionMessage = $_.Exception.message
             SecureReportError($SecCheck,$exceptionMessage)        
         }
+
+<#<><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><>
+                            CO-INSTALLER
+<><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><>#>
+
+    try
+        {         
+            $getcoInstaller = Get-Item 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Device Installer\' -ErrorAction SilentlyContinue
+            $getcoInstallerULC =  $getcoInstaller.GetValue("DisableCoInstallers")
+            $fragcoInstallerULC =@()
+
+            if ($getcoInstallerULC -ne "1")
+                {
+                    $coInstallerSet = "Warning Co-Installer will allow PnP devices to install software and drivers as System Warning" 
+                    $coInstallerReg = "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Device Installer\"
+                    $trueFalse = "False"
+                }
+            else
+                {
+                    $coInstallerSet = "Co-Installer will wont PnP devices to install software and drivers as System" 
+                    $coInstallerReg = "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Device Installer\"
+                    $trueFalse = "True"
+                }
+
+            $newObjcoInstaller = New-Object -TypeName PSObject
+                Add-Member -InputObject $newObjcoInstaller -Type NoteProperty -Name CoInstallerSetting -Value  $coInstallerSet
+                Add-Member -InputObject $newObjcoInstaller -Type NoteProperty -Name CoInstallerRegValue -Value $coInstallerReg 
+                Add-Member -InputObject $newObjcoInstaller -Type NoteProperty -Name TrueIsCompliant -Value $trueFalse
+            $fragcoInstallerULC += $newObjcoInstaller
+            $fragcoInstallerULC | Out-File "$($secureReporOutPut)\coInstaller.log" -Append
+        }
+    catch
+        {
+            $exceptionMessage = $_.Exception.message
+            SecureReportError($SecCheck,$exceptionMessage)        
+        }
+
 
 <#<><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><>
                       Networking
@@ -2028,6 +2090,105 @@ if ($pnpAllDevices -eq "y")
             $exceptionMessage = $_.Exception.message
             SecureReportError($SecCheck,$exceptionMessage)        
         }
+
+<#<><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><>
+                          ARP -A
+<><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><>#>
+
+$gtNetAdapter = Get-NetAdapter | select *
+$fragARPA=@()
+foreach ($NetAdapter in $gtNetAdapter)
+    {
+    $ip4n6address=@()
+
+        $gtIPIndex = (Get-NetIPAddress | where {$_.InterfaceIndex -eq ($NetAdapter.ifIndex)})
+        foreach ($IPIndex in $gtIPIndex)
+            {            
+                $ipAddress = "$($IPIndex.IPAddress) "
+                $ip4n6address += $ipAddress
+            }
+
+            if($ip4n6address[1] -ne $null)
+                {$IPaddjoined =  $ip4n6address[0], $ip4n6address[1] -join " - "}
+            else 
+                {$IPaddjoined  = $ip4n6address[0]}                
+
+        $gtNeighbor = Get-NetNeighbor | where {$_.ifIndex -eq ($NetAdapter.ifIndex)}| Select-Object * #ifIndex,IPAddress,LinkLayerAddress,State
+
+        foreach ($Neighbor in $gtNeighbor)
+            {        
+                $ifIndex = $Neighbor.ifIndex
+                $ipAddy = $Neighbor.IPAddress
+                $LLA = $Neighbor.LinkLayerAddress
+                $state = $Neighbor.state
+
+                $newObjARPA = New-Object -TypeName PSObject
+                    Add-Member -InputObject $newObjARPA -Type NoteProperty -Name IPAdddress -Value $IPaddjoined 
+                    Add-Member -InputObject $newObjARPA -Type NoteProperty -Name Interface -Value $ifIndex -Force
+                    Add-Member -InputObject $newObjARPA -Type NoteProperty -Name RemoteIP -Value $ipAddy -Force
+                    Add-Member -InputObject $newObjARPA -Type NoteProperty -Name MAC -Value $LLA -Force
+                    Add-Member -InputObject $newObjARPA -Type NoteProperty -Name State -Value $state  -Force
+                $fragARPA += $newObjARPA
+            }    
+    }
+
+<#<><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><>
+                          NETSTAT -BNAO
+<><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><>#>
+$gtNetConnections = Get-NetTCPConnection | where {$_.RemoteAddress -ne "0.0.0.0" -and $_.RemoteAddress -ne "::" -and $_.RemoteAddress -ne "127.0.0.1"} 
+$fragNetConnection=@()
+foreach($NetConnections in $gtNetConnections)
+    {
+        $localAddy = $NetConnections.LocalAddress
+        $localPort = $NetConnections.LocalPort
+        $remoteAddy = $NetConnections.RemoteAddress
+        $remotePort = $NetConnections.RemotePort
+        $state = $NetConnections.state
+        $process = $NetConnections.OwningProcess
+        $procName = (Get-Process -PID $process).ProcessName
+
+        try {[string]$gtDnsResolver = (Resolve-DnsName -type PTR -Name $remoteAddy -ErrorAction Stop).NameHost}
+        catch{}
+
+        #Write-Host $remoteAddy
+        #Write-Host $gtDnsResolver
+    
+        $newObjNetConnection = New-Object -TypeName PSObject
+            Add-Member -InputObject $newObjNetConnection -Type NoteProperty -Name LocalIP -Value $localAddy
+            Add-Member -InputObject $newObjNetConnection -Type NoteProperty -Name LocalPort -Value $localPort
+            Add-Member -InputObject $newObjNetConnection -Type NoteProperty -Name RemoteIP -Value $remoteAddy
+            Add-Member -InputObject $newObjNetConnection -Type NoteProperty -Name RemotePort -Value $remotePort
+            Add-Member -InputObject $newObjNetConnection -Type NoteProperty -Name ProcID -Value $process
+            Add-Member -InputObject $newObjNetConnection -Type NoteProperty -Name ProcExec -Value $procName
+            Add-Member -InputObject $newObjNetConnection -Type NoteProperty -Name DNS -Value $gtDnsResolver
+
+        $fragNetConnection += $newObjNetConnection 
+    
+    } 
+
+<#<><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><>
+                       ROUTE PRINT
+<><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><>#>
+
+$gtNetRoute = Get-NetRoute 
+$fragRoute=@()
+
+foreach ($NetRoute in $gtNetRoute)
+{
+    $ifIndex = $NetRoute.ifIndex
+    $DestPrefix = $NetRoute.DestinationPrefix
+    $nextHop = $NetRoute.NextHop
+    $ifMetric = $NetRoute.ifMetric
+    $policyStore = $NetRoute.PolicyStore
+
+    $newObjRoutePrint = New-Object -TypeName PSObject
+        Add-Member -InputObject $newObjRoutePrint -Type NoteProperty -Name Interface -Value $ifIndex
+        Add-Member -InputObject $newObjRoutePrint -Type NoteProperty -Name DestinationPrefix -Value $DestPrefix -Force
+        Add-Member -InputObject $newObjRoutePrint -Type NoteProperty -Name NextHop -Value $nextHop -Force
+        Add-Member -InputObject $newObjRoutePrint -Type NoteProperty -Name ifMetric -Value $ifMetric -Force
+        Add-Member -InputObject $newObjRoutePrint -Type NoteProperty -Name PolicyStore -Value $policyStore  -Force
+    $fragRoute += $newObjRoutePrint
+}
 
 <#<><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><>
                       Local Shares and Permissions
@@ -3664,7 +3825,6 @@ if ($pnpAllDevices -eq "y")
     
     try
         {
-
             $secOpTitle15 = "Network security: Minimum session security for NTLM SSP based (including secure RPC) clients" 
             $getSecOp15 = Get-Item 'HKLM:\System\CurrentControlSet\Control\Lsa\MSV1_0\' -erroraction Stop
             $getSecOp15res = $getSecOp15.getvalue("NTLMMinClientSec")
@@ -4819,6 +4979,80 @@ if ($folders -eq "y")
                 $fragDllNotSigned | Out-File "$($secureReporOutPut)\DLLsNotSignedUserWrite.log" -Append
             }  
 
+    <#<><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><>
+        Loaded  dll's that are vulnerable to dll hijacking
+    <><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><>#>
+        splatVariables
+        $SecCheck = "Searching for active processes that are vulnerable to dll hijacking"
+        $exceptionMessage="No errors gathered"
+
+        $OutConfigDir = "LoadedDLLsHijacking" 
+
+        $SecureReportConfig = "$($secureReporOutPut)\$($OutConfigDir)"
+
+        #$SecureReportConfig = "$($secureReporOutPut)\$($OutConfigDir)"
+        TestConfigOutputPath($OutConfigDir) 
+
+        $getDll = Get-Process
+        $fragDLLHijack=@()
+        Foreach ($dll in $getDll)
+            {
+                $procName = $dll.Name
+                try 
+                    {
+                        $dllMods = $dll | Select-Object -ExpandProperty modules -erroraction Stop
+                    }
+                catch
+                    {
+                        $exceptionMessage = $_.Exception.message
+                        SecureReportError($SecCheck,$exceptionMessage)        
+                    }
+
+                $dllFilename = $dllMods.filename
+
+                Foreach ($dllPath in $dllFilename)
+                    {
+                        try
+                            {
+                                $dllFileAcl = Get-Acl $dllPath -erroraction Stop
+                            }     
+                        catch
+                            {
+                                $exceptionMessage = $_.Exception.message
+                                SecureReportError($SecCheck,$exceptionMessage)        
+                            }
+
+                        if ($dllFileAcl | where {$_.Accesstostring -like "*Users Allow  Write*" -or `
+                            $_.Accesstostring -like "*Users Allow  Modify*" -or `
+                            $_.Accesstostring -like "*Users Allow  FullControl*" -or `
+                            $_.Accesstostring -like "*Everyone Allow  Write*" -or `
+                            $_.Accesstostring -like "*Everyone Allow  Modify*" -or `
+                            $_.Accesstostring -like "*Everyone Allow  FullControl*" -or `
+                            $_.Accesstostring -like "*Authenticated Users Allow  Write*" -or `
+                            $_.Accesstostring -like "*Authenticated Users Allow  Modify*" -or `
+                            $_.Accesstostring -like "*Authenticated Users Allow  FullControl*"})
+                                {
+                                    try
+                                        {
+                                            $getAuthCodeSig = Get-AuthenticodeSignature -FilePath $dllPath -erroraction Stop
+                                            $dllStatus = $getAuthCodeSig.Status
+                                        }
+                                    catch
+                                        {
+                                            $exceptionMessage = $_.Exception.message
+                                            SecureReportError($SecCheck,$exceptionMessage)        
+                                        }
+
+                                    $newObjDLLHijack = New-Object psObject
+                                        Add-Member -InputObject $newObjDLLHijack -Type NoteProperty -Name DLLProcess -Value "Warning $($procName) warning"
+                                        Add-Member -InputObject $newObjDLLHijack -Type NoteProperty -Name DLLPath -Value "Warning $($dllPath) warning"
+                                        Add-Member -InputObject $newObjDLLHijack -Type NoteProperty -Name DLLSigStatus -Value "Warning $($dllStatus) warning"
+                                    $fragDLLHijack += $newObjDLLHijack
+                                    $fragDLLHijack | Out-File "$($secureReporOutPut)\DLLHijack.log" -Append 
+                                }              
+                     }
+            }
+
     #END OF IF
     }
 
@@ -5473,79 +5707,6 @@ if ($folders -eq "y")
                     }
         }
 
-    <#<><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><>
-        Loaded  dll's that are vulnerable to dll hijacking
-    <><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><>#>
-        splatVariables
-        $SecCheck = "Searching for active processes that are vulnerable to dll hijacking"
-        $exceptionMessage="No errors gathered"
-
-        $OutConfigDir = "LoadedDLLsHijacking" 
-
-        $SecureReportConfig = "$($secureReporOutPut)\$($OutConfigDir)"
-
-        #$SecureReportConfig = "$($secureReporOutPut)\$($OutConfigDir)"
-        TestConfigOutputPath($OutConfigDir) 
-
-        $getDll = Get-Process
-        $fragDLLHijack=@()
-        Foreach ($dll in $getDll)
-            {
-                $procName = $dll.Name
-                try 
-                    {
-                        $dllMods = $dll | Select-Object -ExpandProperty modules -erroraction Stop
-                    }
-                catch
-                    {
-                        $exceptionMessage = $_.Exception.message
-                        SecureReportError($SecCheck,$exceptionMessage)        
-                    }
-
-                $dllFilename = $dllMods.filename
-
-                Foreach ($dllPath in $dllFilename)
-                    {
-                        try
-                            {
-                                $dllFileAcl = Get-Acl $dllPath -erroraction Stop
-                            }     
-                        catch
-                            {
-                                $exceptionMessage = $_.Exception.message
-                                SecureReportError($SecCheck,$exceptionMessage)        
-                            }
-
-                        if ($dllFileAcl | where {$_.Accesstostring -like "*Users Allow  Write*" -or `
-                            $_.Accesstostring -like "*Users Allow  Modify*" -or `
-                            $_.Accesstostring -like "*Users Allow  FullControl*" -or `
-                            $_.Accesstostring -like "*Everyone Allow  Write*" -or `
-                            $_.Accesstostring -like "*Everyone Allow  Modify*" -or `
-                            $_.Accesstostring -like "*Everyone Allow  FullControl*" -or `
-                            $_.Accesstostring -like "*Authenticated Users Allow  Write*" -or `
-                            $_.Accesstostring -like "*Authenticated Users Allow  Modify*" -or `
-                            $_.Accesstostring -like "*Authenticated Users Allow  FullControl*"})
-                                {
-                                    try
-                                        {
-                                            $getAuthCodeSig = Get-AuthenticodeSignature -FilePath $dllPath -erroraction Stop
-                                            $dllStatus = $getAuthCodeSig.Status
-                                        }
-                                    catch
-                                        {
-                                            $exceptionMessage = $_.Exception.message
-                                            SecureReportError($SecCheck,$exceptionMessage)        
-                                        }
-
-                                    $newObjDLLHijack = New-Object psObject
-                                        Add-Member -InputObject $newObjDLLHijack -Type NoteProperty -Name DLLProcess -Value "Warning $($procName) warning"
-                                        Add-Member -InputObject $newObjDLLHijack -Type NoteProperty -Name DLLPath -Value "Warning $($dllPath) warning"
-                                        Add-Member -InputObject $newObjDLLHijack -Type NoteProperty -Name DLLSigStatus -Value "Warning $($dllStatus) warning"
-                                    $fragDLLHijack += $newObjDLLHijack
-                                    $fragDLLHijack | Out-File "$($secureReporOutPut)\DLLHijack.log" -Append 
-                                }              
-                     }
-            }
 
     <#<><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><>
                      Attack Surface Reduction (ASR)
@@ -13041,6 +13202,12 @@ if ($folders -eq "y")
         $descripUSBDisks = "Knowing the history of USB drives plugged into Windows aids security by tracing potential security breaches or unauthorized access. It allows administrators to monitor for suspicious activities, track the introduction of malware, and enforce authorization policies. Understanding past USB connections helps identify patterns of risky behavior and strengthens security protocols, enhancing overall system integrity and mitigating threats effectively."
         $descripPowerShellV2 = "PowerShell version 2 can be abused to bypass PowerShell security and logging features due to its limited security controls and lack of comprehensive logging capabilities compared to later versions. Attackers can exploit vulnerabilities in PowerShell v2 to execute malicious scripts without triggering security alerts or leaving traces in logs. <br><br>Additionally, PowerShell v2 lacks some of the advanced security features introduced in later versions, such as script block logging and transcription, making it easier for attackers to evade detection. By leveraging these limitations, attackers can execute unauthorized commands, evade detection, and maintain persistence within a compromised system."
 
+        $descripCoInstall = "A method has been uncovered that stops vulnerable Windows applications from taking control of your device when external devices are connected to your computer.<br><br>
+        Researchers revealed that simply connecting a device to a Windows system could install a vendor's application, potentially allowing ordinary users to gain SYSTEM privileges—the highest level of access in Windows.<br><br>
+        For instance, when users connected a Razer USB mouse, Windows would automatically install the necessary driver along with the Razer Synapse software.<br><br>
+        Because Windows initiated the installation process with SYSTEM-level privileges, the Razer Synapse software also ran with those same elevated privileges.<br><br>"
+
+
     <#<><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><>
                           Colour Mapping
     <><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><>#>
@@ -13278,6 +13445,10 @@ if ($folders -eq "y")
     $frag_MDTBuild = $fragMDTBuild | ConvertTo-Html -As Table -fragment -PreContent "<h2>MDT Details</h2>"  | Out-String
         $frag_MDTBuildN = $frag_MDTBuild.replace("<th>*</th>","<th>MDT Deployment Task</th>")
 
+    $frag_ARPA = $fragARPA | ConvertTo-Html -As Table -fragment -PreContent "<h2>ARP -A</h2>"  | Out-String
+    $frag_Route = $fragRoute | ConvertTo-Html -As Table -fragment -PreContent "<h2>Route Print</h2>"  | Out-String 
+    $frag_NetConnection = $fragNetConnection | ConvertTo-Html -As Table -fragment -PreContent "<h2>NETSTAT</h2>"  | Out-String 
+
     #Security Review
     $frag_AVStatus = $FragAVStatus | ConvertTo-Html -As Table  -fragment -PreContent "<h2>Antivirus</h2>" -PostContent "<h4>$descripAV</h4>" | Out-String
         $Frag_AVStatusN = $Frag_AVStatus.replace("<th>*</th>","<th>AV Status and Definition</th>")
@@ -13356,8 +13527,9 @@ if ($folders -eq "y")
         $frag_PsVersion2N = $frag_PsVersion2.Replace("<tr><th>*</th></tr>","<tr><th>PowerShell Version</th></tr>")
 
     $frag_PnPDevices = $fragPnPDevices | ConvertTo-Html -As Table -fragment -PreContent "<h2>All Known Devices</h2>" -PostContent "<h4>$descripToDo</h4></details>"  | Out-String
-    $frag_USBDevices = $fragUSBDevices | ConvertTo-Html -As Table -fragment -PreContent "<h2>Known Disks</h2>" -PostContent "<h4>$descripUSBDisks</h4></details>"  | Out-String       
-    
+    $frag_USBDevices = $fragUSBDevices | ConvertTo-Html -As Table -fragment -PreContent "<h2>Known Disks</h2>" -PostContent "<h4>$descripUSBDisks</h4></details>"  | Out-String          
+    $frag_coInstallerULC = $fragcoInstallerULC| ConvertTo-Html -As Table -fragment -PreContent "<h2>Co-Installer</h2>" -PostContent "<h4>$descripCoInstall</h4></details>"  | Out-String       
+
     #MS Recommended Secuirty settings (SSLF)
     $frag_WindowsOSVal = $fragWindowsOSVal | ConvertTo-Html -as Table -Fragment -PreContent "<h2>Windows GPO's</h2>" -PostContent "<h4>$descripWindowsOS</h4>" | Out-String
     $frag_EdgeVal = $fragEdgeVal | ConvertTo-Html -as Table -Fragment -PreContent "<h2>MS Edge GPO's</h2>" | Out-String
@@ -13412,14 +13584,14 @@ if ($folders -eq "y")
 			    <input type="radio" id="OSDetails" name="headerTabs">
 			    <label for="OSDetails">Host Details</label>
 			    <div class="contentTab">
-				    <p>$frag_Host $frag_OS $frag_Bios $frag_Cpu $frag_Network4 $frag_Network6 $frag_Share $frag_MDTBuildN
+				    <p>$frag_Host $frag_OS $frag_Bios $frag_Cpu $frag_Share $frag_MDTBuildN
                      </p>
 			    </div>
 		    </div>
 
 		    <div class="headerTab">
 			    <input type="radio" id="Hardware" name="headerTabs">
-			    <label for="Hardware">Device History</label>
+			    <label for="Hardware">Hardware PnP</label>
 			    <div class="contentTab">
 				    <p>$frag_USBDevices $frag_PnPDevices
                     </p>
@@ -13428,9 +13600,9 @@ if ($folders -eq "y")
  
 		    <div class="headerTab">
 			    <input type="radio" id="Network" name="headerTabs">
-			    <label for="Network">WinRM, Networks, Firewalls</label>
+			    <label for="Network">Network, Firewalls</label>
 			    <div class="contentTab">
-				    <p>$frag_WinRM $frag_LegNIC $frag_FWProf $frag_FW
+				    <p>$frag_Network4 $frag_Network6 $frag_NetConnection $frag_ARPA $frag_Route $frag_FWProf $frag_FW
                     </p>
 			    </div>
 		    </div>
@@ -13545,9 +13717,9 @@ if ($folders -eq "y")
 
 		    <div class="headerTab">
 			    <input type="radio" id="GroupPolicy" name="headerTabs">
-			    <label for="GroupPolicy">Group Policies</label>
+			    <label for="GroupPolicy">Policy Settings</label>
 			    <div class="contentTab">
-				    <p>$frag_LSAPPL $frag_PCElevate $frag_LapsPwEna $frag_CredGuCFG $frag_WDigestULC $frag_ASR $frag_WindowsOSVal $frag_OfficeVal $frag_EdgeVal
+				    <p>$frag_LSAPPL $frag_PCElevate $frag_LegNIC $frag_LapsPwEna $frag_WinRM $frag_CredGuCFG $frag_WDigestULC $frag_coInstallerULC $frag_ASR $frag_WindowsOSVal $frag_OfficeVal $frag_EdgeVal
                     </p>
 			    </div>
 		    </div>
@@ -13671,87 +13843,7 @@ if ($folders -eq "y")
 
     }
 
-    <#<><><><><><><><><><><><><><><><><><><><><>
-                   Backlog
-    <><><><><><><><><><><><><><><><><><><><><><>
-
-    Report on memory protections
-    Proxy password reg key
-
-    Forest and Domain health Checks??
-    Additional account, delegation queries
-
-    #Sections to add to audit
-    DNS CIS
-    Certificate Services CIS
-    IIS CIS
-    Chrome GPOs
-    Add further MS Edge GPO checks
-
-    cscript and vbscript reg setting - report on
-
-    Fix Compliance Status to link to the page or section - this is currently broken
-
-    Stuff still hanging over from previous version
-    FLTMC.exe - mini driver altitude looking for 'stuff' thats at an altitude to bypass security or encryption
-    report on appX bypass and seriousSam
-    Remote desktop and permissions
-    look for %COMSPEC%
-    snmp
-
-    data streams dir /r
-    Get-Item   -Stream * | where {$_.stream -notmatch "$DATA"}
-
-    netstat -ano
-    Find network neighbours and accessible shares
-    dated or old drivers
-    wifi passwords
-        netsh wlan show profile
-        netsh wlan show profile name="wifi name" key=clear
-
-    credential manager
-        %Systemdrive%\Users\<Username>\AppData\Local\Microsoft\Credentials
-        cmdkey /list 
-
-    Auditing Wec\wef - remote collection point
-    Interesting events
-    wevtutil "Microsoft-Windows-Wcmsvc/Operational"
-    File hash database
-
-    remove powershell commands where performance is an issue, consider replacing with cmd alts
-
-    Audit Settings - ms rec
-
-    Allign look and feel for all Reg and gpo queries inc mouse over effect
-
-    View all loaded DLLs
-    tasklist /m
     
-    Find specific DLLs
-    tasklist /m | find /i <dll name>
-
-    Running Processes (with Service Names)
-    List all running processes, plus PID and service name.
-    tasklist /SVC
-
-    sysmon installation??
-
-    Get-ItemProperty -Path 'HKLM:\SOFTWARE\Microsoft\Windows Script Host\Settings' #-Name Enabled -Value 0 
-
-    Get-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\CrashControl' #-name CrashDumpEnabled
-        0 = None
-        1 = Complete Memory Dump
-        2 = Kernel Memory Dump
-        3 = Small Memory Dump
-        7 = Automatic Memory Dump (Default)
-
-
-#>
-#######################################################################
-#
-
-
-#>
 
 
 <#
@@ -13947,5 +14039,12 @@ YYMMDD
 240402.1 - Audit USB Devices that have been inserted into system
 240406.1 - Check to see if PowerShell version 2 or .net framework 2 is installed
 240409.1 - PnP all Device check has an option to skip as it can take a while to run, the default is set to Y to run, change $pnpAllDevices = "Y" to anything else to disable check 
+241011.1 - Arp -a for other network devices
+241011.2 - Route Print
+241011.3 - Netstat -bnao
+241012.1 - Moved DLL hijacking to File, Folder and Reg Permissions - On Windows with many apps the DLL HJ search too an age.
+241012.2 - Realigned the output moved wpad and Network settings to Policy Settings
+241012.3 - History of all used USB devices is now user choice - on machines that use lots of usb's the history retrieval is slow
+241012.4 - What audits to run has been tweaked to make it easier to read
  
 #>
