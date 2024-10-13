@@ -4577,7 +4577,7 @@ if ($folders -eq "y")
                 $filehash = @()
                 Foreach ($hfile in $hfiles.fullname)
                     {
-                        $subfl = Get-ChildItem -Path $hfile -force -Recurse -Include *.exe, *.dll -ErrorAction SilentlyContinue | 
+                        $subfl = Get-ChildItem -Path $hfile -force -Recurse  -Depth $depth -Include *.exe, *.dll -ErrorAction SilentlyContinue | 
                             Where {$_.FullName -notMatch "winsxs" -and $_.FullName -notmatch "LCU"} 
                         $filehash+=$subfl
                         $filehash 
