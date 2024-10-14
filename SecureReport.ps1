@@ -4567,7 +4567,7 @@ if ($folders -eq "y")
 
         Foreach ($rt in $drvRoot)
             {
-                $hfiles =  Get-ChildItem $rt -ErrorAction SilentlyContinue |
+                $hfiles =  Get-ChildItem $rt -Directory -ErrorAction SilentlyContinue |
                     where {$_.Name -eq "PerfLogs" -or ` 
                         $_.Name -eq "ProgramData" -or `
                         $_.Name -eq "Program Files" -or `
@@ -4577,14 +4577,17 @@ if ($folders -eq "y")
                 $filehash = @()
                 Foreach ($hfile in $hfiles.fullname)
                     {
-                        $subfl = Get-ChildItem -Path $hfile -force -Recurse  -Depth $depth -Include *.exe, *.dll -ErrorAction SilentlyContinue | 
-                            Where {$_.FullName -notMatch "winsxs" -and $_.FullName -notmatch "LCU"} 
+                        $subfl = Get-ChildItem -Path $hfile -force -Recurse -Depth $depth -Include *.exe, *.dll -ErrorAction SilentlyContinue | 
+                            Where {$_.FullName -notMatch "winsxs" -and $_.FullName -notmatch "LCU"
+       
+                    } 
                         $filehash+=$subfl
                         $filehash 
                     }
     
                 Foreach ($cfile in $filehash.fullname)
                     {
+                    #Write-Host "Checking if file $($cfile) is writeable" -ForegroundColor red 
                         try
                             {
                                 $cfileAcl = Get-Acl $cfile -erroraction Stop
@@ -4619,6 +4622,7 @@ if ($folders -eq "y")
     
                 $wFileDetails = Get-Content $hpath -ErrorAction SilentlyContinue #|  where {$_ -ne ""} |select -skip 3
                 $fragwFile =@()
+               # Write-Host $hfile -ForegroundColor Yellow
     
                 Foreach ($wFileItems in $wFileDetails)
                     {
@@ -4659,7 +4663,7 @@ if ($folders -eq "y")
 
         Foreach ($rt in $drvRoot)
         {
-            $ffolders =  Get-ChildItem $rt -ErrorAction SilentlyContinue  | 
+            $ffolders =  Get-ChildItem $rt -Directory -ErrorAction SilentlyContinue  | 
             where {$_.Name -ne "PerfLogs" -and ` 
                 $_.Name -ne "Program Files" -and `
                 $_.Name -ne "Program Files (x86)" -and `
@@ -4677,6 +4681,7 @@ if ($folders -eq "y")
     
             Foreach ($cfold in $foldhash.fullname)
                 {
+                    #Write-Host "Checking if the non system folder $($cfold) is writeable" -ForegroundColor yellow
                     try {
                             $cfoldAcl = Get-Acl $cfold -erroraction Stop
 
@@ -4753,7 +4758,7 @@ if ($folders -eq "y")
 
         Foreach ($rt in $drvRoot)
         {
-            $sysfolders =  Get-ChildItem $rt -ErrorAction SilentlyContinue | 
+            $sysfolders =  Get-ChildItem $rt -Directory -ErrorAction SilentlyContinue | 
             where {$_.Name -eq "PerfLogs" -or ` 
                 $_.Name -eq "ProgramData" -or `
                 $_.Name -eq "Program Files" -or `
@@ -4772,6 +4777,7 @@ if ($folders -eq "y")
     
             Foreach ($syfold in $sysfoldhash.fullname)
                 {
+                  #Write-Host "Checking if system folder $($syfold) is writeable" -ForegroundColor Red
                     try
                         {
                             $syfoldAcl = Get-Acl $syfold -erroraction Stop
@@ -4820,7 +4826,7 @@ if ($folders -eq "y")
         }
 
     <#<><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><>
-       Searching for Writeable System Folders Vulnerabilities
+       Searching for Create Files Vulnerabilities
 
             IS the following Directories
              
@@ -4849,7 +4855,7 @@ if ($folders -eq "y")
 
         Foreach ($rt in $drvRoot)
             {   
-                $createSysfolders =  Get-ChildItem $rt  -ErrorAction SilentlyContinue | 
+                $createSysfolders =  Get-ChildItem $rt -Directory -ErrorAction SilentlyContinue | 
                 where {$_.Name -eq "PerfLogs" -or ` 
                     $_.Name -eq "ProgramData" -or `
                     $_.Name -eq "Program Files" -or `
@@ -4867,6 +4873,7 @@ if ($folders -eq "y")
 
                 Foreach ($createSyfold in $createSysfoldhash.fullname)
                     {
+                     #Write-Host "Checking if $($createSyfold) allows to create folders" -ForegroundColor Red              
                         try 
                             {
                                 $createSyfoldAcl = Get-Acl $createSyfold -erroraction Stop
@@ -4936,6 +4943,7 @@ if ($folders -eq "y")
       
                 Foreach ($dllFold in $dllFolders.fullname)
                     {
+                     #Write-Host "Checking for DLL's that a User can Write to $($createSyfold)" -ForegroundColor Red       
                         try
                             {
                                 $dllSigned = Get-ChildItem -Path $dllFold -Recurse -depth $depth -force -ErrorAction SilentlyContinue | 
@@ -5012,6 +5020,7 @@ if ($folders -eq "y")
 
                 Foreach ($dllPath in $dllFilename)
                     {
+                     #Write-Host "Checking for Writeable DLL's for active processes $($dllPath)" -ForegroundColor Red       
                         try
                             {
                                 $dllFileAcl = Get-Acl $dllPath -erroraction Stop
@@ -14046,5 +14055,7 @@ YYMMDD
 241012.2 - Realigned the output moved wpad and Network settings to Policy Settings
 241012.3 - History of all used USB devices is now user choice - on machines that use lots of usb's the history retrieval is slow
 241012.4 - What audits to run has been tweaked to make it easier to read
+241014.1 - An update to get-childitem resulted in the directory trawl failing to complete the task and hang. Added -directory to the file and folder audits.
+
  
 #>
