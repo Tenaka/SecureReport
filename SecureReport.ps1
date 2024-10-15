@@ -2123,10 +2123,10 @@ foreach ($NetAdapter in $gtNetAdapter)
                 $state = $Neighbor.state
 
                 $newObjARPA = New-Object -TypeName PSObject
-                    Add-Member -InputObject $newObjARPA -Type NoteProperty -Name IPAdddress -Value $IPaddjoined 
+                    Add-Member -InputObject $newObjARPA -Type NoteProperty -Name IPAdddress -Value $IPaddjoined -Force
                     Add-Member -InputObject $newObjARPA -Type NoteProperty -Name Interface -Value $ifIndex -Force
                     Add-Member -InputObject $newObjARPA -Type NoteProperty -Name RemoteIP -Value $ipAddy -Force
-                    Add-Member -InputObject $newObjARPA -Type NoteProperty -Name MAC -Value $LLA -Force
+                    Add-Member -InputObject $newObjARPA -Type NoteProperty -Name LinkLayer -Value $LLA -Force
                     Add-Member -InputObject $newObjARPA -Type NoteProperty -Name State -Value $state  -Force
                 $fragARPA += $newObjARPA
             }    
@@ -4936,7 +4936,7 @@ if ($folders -eq "y")
 
         Foreach ($rt in $drvRoot)
             {
-                $dllFolders =  Get-ChildItem $rt -ErrorAction SilentlyContinue  |
+                $dllFolders =  Get-ChildItem $rt -Directory -ErrorAction SilentlyContinue  |
                 where {$_.fullName -match "Program Files" -or `
                     $_.fullName -match "(x86)" -or `
                     $_.fullName -match "Windows"}
@@ -14055,7 +14055,7 @@ YYMMDD
 241012.2 - Realigned the output moved wpad and Network settings to Policy Settings
 241012.3 - History of all used USB devices is now user choice - on machines that use lots of usb's the history retrieval is slow
 241012.4 - What audits to run has been tweaked to make it easier to read
-241014.1 - An update to get-childitem resulted in the directory trawl failing to complete the task and hang. Added -directory to the file and folder audits.
+241014.1 - An update to get-childitem resulted in the directory trawl failing to complete the task and hang. 
 
  
 #>
