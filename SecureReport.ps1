@@ -4536,7 +4536,9 @@ if ($folders -eq "y")
         
                     $regDetails = Get-Content $rpath -ErrorAction SilentlyContinue    #|  where {$_ -ne ""} |select -skip 3
                     $fragReg =@()
-    
+                    
+                    cd C:\
+
                     Foreach ($regItems in $regDetails)
                         {
                             #Write-Host $regItems -ForegroundColor DarkCyan
@@ -14055,7 +14057,7 @@ YYMMDD
 241012.2 - Realigned the output moved wpad and Network settings to Policy Settings
 241012.3 - History of all used USB devices is now user choice - on machines that use lots of usb's the history retrieval is slow
 241012.4 - What audits to run has been tweaked to make it easier to read
-241014.1 - An update to get-childitem resulted in the directory trawl failing to complete the task and hang. 
+241014.1 - Get-childitem directory trawl failing to complete the task and hang, added cd C:\ as previous task was to cd to HKLM - its slow will swap out for [System.IO.Directory]::GetDirectories($currentPath) as part of the on going improvements
 
  
 #>
